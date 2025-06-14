@@ -120,13 +120,28 @@ const Fleet = () => {
   );
 
   const openEditForm = (vehicule: Vehicule) => {
+    console.log('Ouverture du formulaire d\'édition pour:', vehicule);
     setSelectedVehicule(vehicule);
     setIsFormOpen(true);
   };
 
   const openCreateForm = () => {
+    console.log('Ouverture du formulaire de création');
     setSelectedVehicule(null);
     setIsFormOpen(true);
+  };
+
+  const handleFormClose = () => {
+    console.log('Fermeture du formulaire');
+    setIsFormOpen(false);
+    setSelectedVehicule(null);
+  };
+
+  const handleFormSuccess = () => {
+    console.log('Succès du formulaire - rechargement des données');
+    loadData();
+    setIsFormOpen(false);
+    setSelectedVehicule(null);
   };
 
   if (loading) {
@@ -299,10 +314,11 @@ const Fleet = () => {
         </TabsContent>
       </Tabs>
 
+      {console.log('Rendu du VehicleForm - isFormOpen:', isFormOpen, 'selectedVehicule:', selectedVehicule)}
       <VehicleForm
         isOpen={isFormOpen}
-        onClose={() => setIsFormOpen(false)}
-        onSuccess={loadData}
+        onClose={handleFormClose}
+        onSuccess={handleFormSuccess}
         vehicule={selectedVehicule}
       />
     </div>
