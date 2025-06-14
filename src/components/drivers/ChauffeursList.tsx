@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Table,
   TableBody,
@@ -106,6 +107,10 @@ export const ChauffeursList = ({ searchTerm, onSelectChauffeur }: ChauffeursList
     return alertes;
   };
 
+  const getInitials = (nom: string, prenom: string) => {
+    return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
+  };
+
   return (
     <>
       <Card>
@@ -130,9 +135,15 @@ export const ChauffeursList = ({ searchTerm, onSelectChauffeur }: ChauffeursList
                     <TableRow key={chauffeur.id}>
                       <TableCell>
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                            <User className="w-4 h-4" />
-                          </div>
+                          <Avatar className="w-10 h-10">
+                            <AvatarImage 
+                              src={chauffeur.photo_url || undefined} 
+                              alt={`${chauffeur.prenom} ${chauffeur.nom}`} 
+                            />
+                            <AvatarFallback className="bg-orange-100 text-orange-700">
+                              {getInitials(chauffeur.nom, chauffeur.prenom)}
+                            </AvatarFallback>
+                          </Avatar>
                           <div>
                             <div className="font-medium">{chauffeur.prenom} {chauffeur.nom}</div>
                             <div className="text-sm text-gray-500">{chauffeur.email}</div>

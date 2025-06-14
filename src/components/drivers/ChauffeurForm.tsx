@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +9,7 @@ import { PersonalInfoStep } from './form/PersonalInfoStep';
 import { DocumentsStep } from './form/DocumentsStep';
 import { PhotoSignatureStep } from './form/PhotoSignatureStep';
 import { FormNavigation } from './form/FormNavigation';
+import { ProfileHeader } from './ProfileHeader';
 import { formSteps } from './form/steps';
 import { chauffeursService } from '@/services/chauffeurs';
 
@@ -48,6 +50,28 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
       statut: chauffeur?.statut || 'actif'
     }
   });
+
+  // Initialiser les photos existantes
+  useEffect(() => {
+    if (chauffeur?.photo_url) {
+      setProfilePhoto({
+        id: 'existing-photo',
+        name: 'Photo existante',
+        size: 0,
+        type: 'image/jpeg',
+        url: chauffeur.photo_url
+      });
+    }
+    if (chauffeur?.signature_url) {
+      setSignature({
+        id: 'existing-signature',
+        name: 'Signature existante',
+        size: 0,
+        type: 'image/jpeg',
+        url: chauffeur.signature_url
+      });
+    }
+  }, [chauffeur]);
 
   const createChauffeurMutation = useMutation({
     mutationFn: chauffeursService.create,
@@ -126,25 +150,30 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
   const handlePhotoChange = (files: UploadedFile[]) => {
     if (files.length > 0) {
       setProfilePhoto(files[0]);
+    } else {
+      setProfilePhoto(null);
     }
   };
 
   const handleSignatureChange = (files: UploadedFile[]) => {
     if (files.length > 0) {
       setSignature(files[0]);
+    } else {
+      setSignature(null);
     }
   };
 
-  const handleNext = () => {
-    setCurrentStep(Math.min(formSteps.length, currentStep + 1));
-  };
-
-  const handlePrevious = () => {
-    setCurrentStep(Math.max(1, currentStep - 1));
-  };
+  const formValues = form.watch();
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Affichage du profil pour les modifications */}
+      {chauffeur && (
+        <div className="mb-6">
+          <ProfileHeader chauffeur={chauffeur} size="md" />
+        </div>
+      )}
+
       <StepIndicator steps={formSteps} currentStep={currentStep} />
 
       <Form {...form}>
@@ -163,8 +192,9 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
             <PhotoSignatureStep
               profilePhoto={profilePhoto}
               signature={signature}
-              onPhotoChange={(files) => setProfilePhoto(files[0] || null)}
-              onSignatureChange={(files) => setSignature(files[0] || null)}
+              onPhotoChange={handlePhotoChange}
+              onSignatureChange={handleSignatureChange}
+              chauffeurData={formValues}
             />
           )}
 
