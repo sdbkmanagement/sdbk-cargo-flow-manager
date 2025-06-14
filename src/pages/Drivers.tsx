@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,8 @@ import { ChauffeurForm } from '@/components/drivers/ChauffeurForm';
 import { AlertesDocuments } from '@/components/drivers/AlertesDocuments';
 import { PlanningModule } from '@/components/drivers/planning/PlanningModule';
 import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { chauffeursService } from '@/services/chauffeurs';
 
 const Drivers = () => {
   const { hasPermission } = useAuth();
@@ -26,12 +28,47 @@ const Drivers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChauffeur, setSelectedChauffeur] = useState(null);
 
-  const stats = {
-    total: 25,
-    actifs: 22,
-    inactifs: 3,
-    alertes: 5
-  };
+  // Récupération des données en temps réel
+  const { data: chauffeurs = [], isLoading } = useQuery({
+    queryKey: ['chauffeurs'],
+    queryFn: chauffeursService.getAll,
+    refetchInterval: 30000, // Actualisation toutes les 30 secondes
+  });
+
+  // Calcul des statistiques en temps réel
+  const stats = useMemo(() => {
+    const today = new Date();
+    let alertes = 0;
+    let actifs = 0;
+    let inactifs = 0;
+
+    chauffeurs.forEach(chauffeur => {
+      // Calcul des chauffeurs actifs/inactifs
+      if (chauffeur.statut === 'actif') {
+        actifs++;
+      } else {
+        inactifs++;
+      }
+
+      // Calcul des alertes (permis expirant dans moins de 30 jours)
+      if (chauffeur.date_expiration_permis) {
+        const expirationDate = new Date(chauffeur.date_expiration_permis);
+        const diffTime = expirationDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays <= 30 && diffDays >= 0) {
+          alertes++;
+        }
+      }
+    });
+
+    return {
+      total: chauffeurs.length,
+      actifs,
+      inactifs,
+      alertes
+    };
+  }, [chauffeurs]);
 
   const handleSelectChauffeur = (chauffeur: any) => {
     setSelectedChauffeur(chauffeur);
@@ -49,6 +86,16 @@ const Drivers = () => {
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
           <p className="text-gray-600 mt-2">Vous n'avez pas les permissions pour accéder à ce module.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900">Chargement...</h1>
         </div>
       </div>
     );
@@ -78,7 +125,7 @@ const Drivers = () => {
         )}
       </div>
 
-      {/* Statistiques */}
+      {/* Statistiques en temps réel */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
@@ -126,6 +173,7 @@ const Drivers = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600">Alertes</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.alertes}</p>
+                <p className="text-xs text-gray-500 mt-1">Permis < 30 jours</p>
               </div>
               <AlertTriangle className="w-8 h-8 text-orange-600" />
             </div>

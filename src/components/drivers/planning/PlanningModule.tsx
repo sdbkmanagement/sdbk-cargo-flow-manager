@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,8 +66,36 @@ export const PlanningModule = () => {
 
   const { data: chauffeurs = [], isLoading } = useQuery({
     queryKey: ['chauffeurs'],
-    queryFn: chauffeursService.getAll
+    queryFn: chauffeursService.getAll,
+    refetchInterval: 30000, // Actualisation toutes les 30 secondes
   });
+
+  // Calcul des statistiques en temps réel à partir des vraies données
+  const planningStats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    const missionsAujourdhui = missions.filter(m => m.date === today).length;
+    const missionsEnCours = missions.filter(m => m.status === 'en_cours').length;
+    const missionsTerminees = missions.filter(m => m.status === 'termine').length;
+    const missionsAnnulees = missions.filter(m => m.status === 'annule').length;
+    
+    // Calcul des chauffeurs disponibles (actifs et sans mission en cours)
+    const chauffeursActifs = chauffeurs.filter(c => c.statut === 'actif');
+    const chauffeursEnMission = missions
+      .filter(m => m.status === 'en_cours' || m.status === 'planifie')
+      .map(m => m.chauffeurId);
+    const chauffeursDisponibles = chauffeursActifs.filter(c => 
+      !chauffeursEnMission.includes(c.id)
+    ).length;
+
+    return {
+      totalChauffeurs: chauffeurs.length,
+      chauffeursDisponibles,
+      missionsAujourdhui,
+      missionsEnCours,
+      missionsTerminees,
+      missionsAnnulees
+    };
+  }, [chauffeurs, missions]);
 
   const handleAddMission = (date: Date, chauffeurId: string) => {
     setDefaultDate(date);
@@ -111,14 +139,6 @@ export const PlanningModule = () => {
     setDefaultChauffeurId(undefined);
   };
 
-  // Calcul des statistiques
-  const today = new Date().toISOString().split('T')[0];
-  const missionsAujourdhui = missions.filter(m => m.date === today).length;
-  const missionsEnCours = missions.filter(m => m.status === 'en_cours').length;
-  const missionsTerminees = missions.filter(m => m.status === 'termine').length;
-  const missionsAnnulees = missions.filter(m => m.status === 'annule').length;
-  const chauffeursActifs = chauffeurs.filter(c => c.statut === 'actif').length;
-
   if (isLoading) {
     return (
       <Card>
@@ -150,12 +170,12 @@ export const PlanningModule = () => {
           </div>
 
           <PlanningStats
-            totalChauffeurs={chauffeurs.length}
-            chauffeursDisponibles={chauffeursActifs}
-            missionsAujourdhui={missionsAujourdhui}
-            missionsEnCours={missionsEnCours}
-            missionsTerminees={missionsTerminees}
-            missionsAnnulees={missionsAnnulees}
+            totalChauffeurs={planningStats.totalChauffeurs}
+            chauffeursDisponibles={planningStats.chauffeursDisponibles}
+            missionsAujourdhui={planningStats.missionsAujourdhui}
+            missionsEnCours={planningStats.missionsEnCours}
+            missionsTerminees={planningStats.missionsTerminees}
+            missionsAnnulees={planningStats.missionsAnnulees}
           />
 
           <div className="flex flex-col sm:flex-row gap-4 mb-4">
