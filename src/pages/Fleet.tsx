@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -154,6 +153,9 @@ const Fleet = () => {
       </div>
     );
   }
+
+  // Debug log pour le rendu du formulaire
+  console.log('Rendu du VehicleForm - isFormOpen:', isFormOpen, 'selectedVehicule:', selectedVehicule);
 
   return (
     <div className="space-y-6">
@@ -314,7 +316,6 @@ const Fleet = () => {
         </TabsContent>
       </Tabs>
 
-      {console.log('Rendu du VehicleForm - isFormOpen:', isFormOpen, 'selectedVehicule:', selectedVehicule)}
       <VehicleForm
         isOpen={isFormOpen}
         onClose={handleFormClose}
