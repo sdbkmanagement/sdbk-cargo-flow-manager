@@ -9,6 +9,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { Sidebar } from "@/components/layout/Sidebar";
 import Dashboard from "@/pages/Dashboard";
 import Fleet from "@/pages/Fleet";
+import Drivers from "@/pages/Drivers";
 
 const queryClient = new QueryClient();
 
@@ -51,10 +52,7 @@ const AppContent = () => {
       } />
       <Route path="/drivers" element={
         <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Gestion des chauffeurs</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
+          <Drivers />
         </ProtectedRoute>
       } />
       <Route path="/missions" element={

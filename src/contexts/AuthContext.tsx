@@ -36,7 +36,15 @@ const demoUsers: User[] = [
     prenom: 'Pierre',
     email: 'transport@sdbk.com',
     role: 'transport',
-    permissions: ['missions_read', 'missions_write', 'drivers_read']
+    permissions: ['missions_read', 'missions_write', 'drivers_read', 'drivers_write']
+  },
+  {
+    id: '4',
+    nom: 'Diallo',
+    prenom: 'Fatou',
+    email: 'rh@sdbk.com',
+    role: 'rh',
+    permissions: ['drivers_read', 'drivers_write', 'hr_read', 'hr_write']
   }
 ];
 
