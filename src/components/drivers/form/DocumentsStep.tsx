@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { FileText } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
@@ -24,6 +25,17 @@ interface DocumentsStepProps {
 }
 
 export const DocumentsStep = ({ form, uploadedDocuments, onDocumentsChange }: DocumentsStepProps) => {
+  const typePermis = form.watch('typePermis') || [];
+
+  const handlePermisChange = (value: string, checked: boolean) => {
+    const currentValues = form.getValues('typePermis') || [];
+    if (checked) {
+      form.setValue('typePermis', [...currentValues, value]);
+    } else {
+      form.setValue('typePermis', currentValues.filter((v: string) => v !== value));
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -68,10 +80,12 @@ export const DocumentsStep = ({ form, uploadedDocuments, onDocumentsChange }: Do
           <div className="grid grid-cols-2 gap-4 mt-2">
             {typePermisOptions.map((option) => (
               <div key={option.value} className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
+                <Checkbox
                   id={option.value}
-                  className="rounded border-gray-300"
+                  checked={typePermis.includes(option.value)}
+                  onCheckedChange={(checked) => 
+                    handlePermisChange(option.value, checked as boolean)
+                  }
                 />
                 <Label htmlFor={option.value} className="text-sm">
                   {option.label}
