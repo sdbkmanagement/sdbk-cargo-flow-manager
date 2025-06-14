@@ -17,6 +17,7 @@ import {
 import { ChauffeursList } from '@/components/drivers/ChauffeursList';
 import { ChauffeurForm } from '@/components/drivers/ChauffeurForm';
 import { AlertesDocuments } from '@/components/drivers/AlertesDocuments';
+import { PlanningModule } from '@/components/drivers/planning/PlanningModule';
 import { useAuth } from '@/contexts/AuthContext';
 
 const Drivers = () => {
@@ -196,14 +197,7 @@ const Drivers = () => {
         )}
 
         {activeTab === 'planning' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Planning des chauffeurs</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600">Module planning en développement...</p>
-            </CardContent>
-          </Card>
+          <PlanningModule />
         )}
 
         {activeTab === 'nouveau' && hasPermission('drivers_write') && (
