@@ -60,7 +60,7 @@ export const DriversStats = ({ total, actifs, inactifs, alertes }: DriversStatsP
             <div>
               <p className="text-sm font-medium text-gray-600">Alertes</p>
               <p className="text-2xl font-bold text-orange-600">{alertes}</p>
-              <p className="text-xs text-gray-500 mt-1">Permis < 30 jours</p>
+              <p className="text-xs text-gray-500 mt-1">Permis &lt; 30 jours</p>
             </div>
             <AlertTriangle className="w-8 h-8 text-orange-600" />
           </div>
