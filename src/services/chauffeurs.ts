@@ -1,6 +1,10 @@
 
-import { supabase } from '@/lib/supabase'
-import type { Chauffeur } from '@/lib/supabase'
+import { supabase } from '@/integrations/supabase/client'
+import type { Database } from '@/integrations/supabase/types'
+
+type Chauffeur = Database['public']['Tables']['chauffeurs']['Row']
+type ChauffeurInsert = Database['public']['Tables']['chauffeurs']['Insert']
+type ChauffeurUpdate = Database['public']['Tables']['chauffeurs']['Update']
 
 export const chauffeursService = {
   // Récupérer tous les chauffeurs
@@ -19,7 +23,7 @@ export const chauffeursService = {
   },
 
   // Créer un nouveau chauffeur
-  async create(chauffeurData: Omit<Chauffeur, 'id' | 'created_at' | 'updated_at'>): Promise<Chauffeur> {
+  async create(chauffeurData: ChauffeurInsert): Promise<Chauffeur> {
     const { data, error } = await supabase
       .from('chauffeurs')
       .insert([chauffeurData])
@@ -35,7 +39,7 @@ export const chauffeursService = {
   },
 
   // Mettre à jour un chauffeur
-  async update(id: string, chauffeurData: Partial<Chauffeur>): Promise<Chauffeur> {
+  async update(id: string, chauffeurData: ChauffeurUpdate): Promise<Chauffeur> {
     const { data, error } = await supabase
       .from('chauffeurs')
       .update({ ...chauffeurData, updated_at: new Date().toISOString() })
