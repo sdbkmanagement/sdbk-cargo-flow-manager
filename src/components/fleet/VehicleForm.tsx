@@ -76,10 +76,15 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
         .select('*')
         .eq('statut', 'actif');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur lors du chargement des chauffeurs:', error);
+        setChauffeurs([]);
+        return;
+      }
       setChauffeurs(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des chauffeurs:', error);
+      setChauffeurs([]);
     }
   };
 
@@ -124,6 +129,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
         prochaine_maintenance: formData.prochaine_maintenance || null
       };
 
+      console.log('Données à soumettre:', dataToSubmit);
+
       if (vehicule) {
         await vehiculesService.update(vehicule.id, dataToSubmit);
         toast({
@@ -140,11 +147,12 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
 
       onSuccess();
       onClose();
+      resetForm();
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur lors de la soumission:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de l'enregistrement",
+        description: error instanceof Error ? error.message : "Une erreur est survenue lors de l'enregistrement",
         variant: "destructive",
       });
     } finally {
@@ -152,8 +160,13 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
     }
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{vehicule ? 'Modifier le véhicule' : 'Nouveau véhicule'}</DialogTitle>
@@ -171,6 +184,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 value={formData.numero}
                 onChange={(e) => setFormData(prev => ({ ...prev, numero: e.target.value }))}
                 required
+                placeholder="Ex: VH001"
               />
             </div>
             <div>
@@ -180,6 +194,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 value={formData.immatriculation}
                 onChange={(e) => setFormData(prev => ({ ...prev, immatriculation: e.target.value }))}
                 required
+                placeholder="Ex: AB-123-CD"
               />
             </div>
           </div>
@@ -192,6 +207,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 value={formData.marque}
                 onChange={(e) => setFormData(prev => ({ ...prev, marque: e.target.value }))}
                 required
+                placeholder="Ex: Mercedes"
               />
             </div>
             <div>
@@ -201,6 +217,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 value={formData.modele}
                 onChange={(e) => setFormData(prev => ({ ...prev, modele: e.target.value }))}
                 required
+                placeholder="Ex: Actros"
               />
             </div>
           </div>
@@ -273,6 +290,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 step="0.01"
                 value={formData.capacite_max}
                 onChange={(e) => setFormData(prev => ({ ...prev, capacite_max: e.target.value }))}
+                placeholder="25000"
               />
             </div>
             <div>
@@ -291,6 +309,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 type="number"
                 value={formData.annee_fabrication}
                 onChange={(e) => setFormData(prev => ({ ...prev, annee_fabrication: e.target.value }))}
+                placeholder="2020"
               />
             </div>
           </div>
@@ -302,6 +321,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 id="numero_chassis"
                 value={formData.numero_chassis}
                 onChange={(e) => setFormData(prev => ({ ...prev, numero_chassis: e.target.value }))}
+                placeholder="VIN123456789"
               />
             </div>
             <div>
@@ -312,6 +332,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 step="0.1"
                 value={formData.consommation_moyenne}
                 onChange={(e) => setFormData(prev => ({ ...prev, consommation_moyenne: e.target.value }))}
+                placeholder="35.5"
               />
             </div>
           </div>
@@ -338,7 +359,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={handleClose}>
               Annuler
             </Button>
             <Button type="submit" disabled={loading}>
