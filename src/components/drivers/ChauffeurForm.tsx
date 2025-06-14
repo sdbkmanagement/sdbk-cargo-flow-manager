@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
   Form,
@@ -15,13 +14,14 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
+import { useToast } from '@/hooks/use-toast';
+import { DocumentUpload } from './DocumentUpload';
 import { 
   User, 
   Phone, 
   Mail, 
   Calendar,
   FileText,
-  Upload,
   Camera,
   Save,
   X
@@ -32,9 +32,20 @@ interface ChauffeurFormProps {
   onSuccess: () => void;
 }
 
+interface UploadedFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string;
+}
+
 export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState<UploadedFile[]>([]);
+  const [profilePhoto, setProfilePhoto] = useState<UploadedFile | null>(null);
+  const [signature, setSignature] = useState<UploadedFile | null>(null);
+  const { toast } = useToast();
 
   const form = useForm({
     defaultValues: {
@@ -55,7 +66,15 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
 
   const onSubmit = (data: any) => {
     console.log('Données du chauffeur:', data);
-    // Ici, on sauvegarderait les données
+    console.log('Documents uploadés:', uploadedDocuments);
+    console.log('Photo de profil:', profilePhoto);
+    console.log('Signature:', signature);
+    
+    toast({
+      title: "Chauffeur enregistré",
+      description: "Les informations ont été sauvegardées avec succès",
+    });
+    
     onSuccess();
   };
 
@@ -71,6 +90,22 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
     { value: 'CE', label: 'Permis CE (Camion + remorque)' },
     { value: 'D', label: 'Permis D (Transport de personnes)' }
   ];
+
+  const handleDocumentsChange = (files: UploadedFile[]) => {
+    setUploadedDocuments(files);
+  };
+
+  const handlePhotoChange = (files: UploadedFile[]) => {
+    if (files.length > 0) {
+      setProfilePhoto(files[0]);
+    }
+  };
+
+  const handleSignatureChange = (files: UploadedFile[]) => {
+    if (files.length > 0) {
+      setSignature(files[0]);
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -298,18 +333,13 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
 
                 <div>
                   <Label>Documents à télécharger</Label>
-                  <div className="mt-2 space-y-4">
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                      <div className="mt-4">
-                        <Button type="button" variant="outline">
-                          Télécharger les documents
-                        </Button>
-                      </div>
-                      <p className="mt-2 text-sm text-gray-500">
-                        PDF, JPG, PNG jusqu'à 10MB chacun
-                      </p>
-                    </div>
+                  <div className="mt-2">
+                    <DocumentUpload
+                      onFilesChange={handleDocumentsChange}
+                      maxFiles={5}
+                      maxSizePerFile={10}
+                      acceptedTypes={['application/pdf', 'image/jpeg', 'image/png']}
+                    />
                   </div>
                 </div>
               </CardContent>
@@ -329,21 +359,25 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <Label>Photo de profil</Label>
-                    <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <Camera className="mx-auto h-8 w-8 text-gray-400" />
-                      <Button type="button" variant="outline" className="mt-2">
-                        Ajouter une photo
-                      </Button>
+                    <div className="mt-2">
+                      <DocumentUpload
+                        onFilesChange={handlePhotoChange}
+                        maxFiles={1}
+                        maxSizePerFile={5}
+                        acceptedTypes={['image/jpeg', 'image/png']}
+                      />
                     </div>
                   </div>
 
                   <div>
                     <Label>Signature numérique</Label>
-                    <div className="mt-2 border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                      <FileText className="mx-auto h-8 w-8 text-gray-400" />
-                      <Button type="button" variant="outline" className="mt-2">
-                        Ajouter signature
-                      </Button>
+                    <div className="mt-2">
+                      <DocumentUpload
+                        onFilesChange={handleSignatureChange}
+                        maxFiles={1}
+                        maxSizePerFile={2}
+                        acceptedTypes={['image/jpeg', 'image/png', 'application/pdf']}
+                      />
                     </div>
                   </div>
                 </div>
