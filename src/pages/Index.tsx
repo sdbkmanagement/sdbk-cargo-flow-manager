@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { SupabaseTest } from '@/components/SupabaseTest';
 
 const Index = () => {
-  return <Navigate to="/dashboard" replace />;
+  return <SupabaseTest />;
 };
 
 export default Index;

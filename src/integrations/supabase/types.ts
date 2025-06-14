@@ -9,7 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chauffeurs: {
+        Row: {
+          adresse: string | null
+          code_postal: string | null
+          created_at: string | null
+          date_expiration_permis: string
+          date_naissance: string | null
+          email: string | null
+          id: string
+          nom: string
+          numero_permis: string
+          photo_url: string | null
+          prenom: string
+          signature_url: string | null
+          statut: string | null
+          telephone: string
+          type_permis: string[]
+          updated_at: string | null
+          vehicule_assigne: string | null
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_expiration_permis: string
+          date_naissance?: string | null
+          email?: string | null
+          id?: string
+          nom: string
+          numero_permis: string
+          photo_url?: string | null
+          prenom: string
+          signature_url?: string | null
+          statut?: string | null
+          telephone: string
+          type_permis?: string[]
+          updated_at?: string | null
+          vehicule_assigne?: string | null
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string | null
+          date_expiration_permis?: string
+          date_naissance?: string | null
+          email?: string | null
+          id?: string
+          nom?: string
+          numero_permis?: string
+          photo_url?: string | null
+          prenom?: string
+          signature_url?: string | null
+          statut?: string | null
+          telephone?: string
+          type_permis?: string[]
+          updated_at?: string | null
+          vehicule_assigne?: string | null
+          ville?: string | null
+        }
+        Relationships: []
+      }
+      documents: {
+        Row: {
+          chauffeur_id: string | null
+          created_at: string | null
+          id: string
+          nom: string
+          taille: number
+          type: string
+          url: string
+        }
+        Insert: {
+          chauffeur_id?: string | null
+          created_at?: string | null
+          id?: string
+          nom: string
+          taille: number
+          type: string
+          url: string
+        }
+        Update: {
+          chauffeur_id?: string | null
+          created_at?: string | null
+          id?: string
+          nom?: string
+          taille?: number
+          type?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
