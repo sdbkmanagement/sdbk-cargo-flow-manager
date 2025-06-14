@@ -23,7 +23,9 @@ import { ChauffeurDetailDialog } from './ChauffeurDetailDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
-import type { Chauffeur } from '@/lib/supabase';
+import type { Database } from '@/integrations/supabase/types';
+
+type Chauffeur = Database['public']['Tables']['chauffeurs']['Row'];
 
 interface ChauffeursListProps {
   searchTerm: string;
@@ -68,17 +70,18 @@ export const ChauffeursList = ({ searchTerm, onSelectChauffeur }: ChauffeursList
     (chauffeur.email && chauffeur.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const getStatutBadge = (statut: string) => {
+  const getStatutBadge = (statut: string | null) => {
+    const statusValue = statut || 'actif';
     const variants = {
       'actif': 'default',
       'conge': 'secondary',
       'maladie': 'destructive',
       'suspendu': 'destructive'
-    };
+    } as const;
     
     return (
-      <Badge variant={variants[statut] || 'secondary'}>
-        {statut.charAt(0).toUpperCase() + statut.slice(1)}
+      <Badge variant={variants[statusValue as keyof typeof variants] || 'secondary'}>
+        {statusValue.charAt(0).toUpperCase() + statusValue.slice(1)}
       </Badge>
     );
   };
