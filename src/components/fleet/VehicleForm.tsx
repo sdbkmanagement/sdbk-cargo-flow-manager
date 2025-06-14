@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { vehiculesService } from '@/services/vehicules';
-import { chauffeursService } from '@/services/chauffeurs';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type Vehicule = Database['public']['Tables']['vehicules']['Row'];
@@ -71,8 +71,13 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
 
   const loadChauffeurs = async () => {
     try {
-      const data = await chauffeursService.getAll();
-      setChauffeurs(data.filter(c => c.statut === 'actif'));
+      const { data, error } = await supabase
+        .from('chauffeurs')
+        .select('*')
+        .eq('statut', 'actif');
+      
+      if (error) throw error;
+      setChauffeurs(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des chauffeurs:', error);
     }
