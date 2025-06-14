@@ -32,6 +32,16 @@ const Drivers = () => {
     alertes: 5
   };
 
+  const handleSelectChauffeur = (chauffeur: any) => {
+    setSelectedChauffeur(chauffeur);
+    setActiveTab('modifier');
+  };
+
+  const handleFormSuccess = () => {
+    setSelectedChauffeur(null);
+    setActiveTab('liste');
+  };
+
   if (!hasPermission('drivers_read')) {
     return (
       <div className="p-6">
@@ -55,7 +65,10 @@ const Drivers = () => {
         </div>
         {hasPermission('drivers_write') && (
           <Button 
-            onClick={() => setActiveTab('nouveau')}
+            onClick={() => {
+              setSelectedChauffeur(null);
+              setActiveTab('nouveau');
+            }}
             className="bg-orange-500 hover:bg-orange-600"
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -126,7 +139,10 @@ const Drivers = () => {
             { id: 'liste', label: 'Liste des chauffeurs', icon: Users },
             { id: 'alertes', label: 'Alertes documents', icon: AlertTriangle },
             { id: 'planning', label: 'Planning', icon: Calendar },
-            ...(hasPermission('drivers_write') ? [{ id: 'nouveau', label: 'Nouveau', icon: Plus }] : [])
+            ...(hasPermission('drivers_write') ? [
+              { id: 'nouveau', label: 'Nouveau', icon: Plus },
+              ...(selectedChauffeur ? [{ id: 'modifier', label: 'Modifier', icon: Settings }] : [])
+            ] : [])
           ].map(tab => {
             const Icon = tab.icon;
             return (
@@ -170,7 +186,7 @@ const Drivers = () => {
 
             <ChauffeursList 
               searchTerm={searchTerm}
-              onSelectChauffeur={setSelectedChauffeur}
+              onSelectChauffeur={handleSelectChauffeur}
             />
           </div>
         )}
@@ -191,7 +207,25 @@ const Drivers = () => {
         )}
 
         {activeTab === 'nouveau' && hasPermission('drivers_write') && (
-          <ChauffeurForm onSuccess={() => setActiveTab('liste')} />
+          <ChauffeurForm onSuccess={handleFormSuccess} />
+        )}
+
+        {activeTab === 'modifier' && hasPermission('drivers_write') && selectedChauffeur && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Modifier le chauffeur</h2>
+              <Button 
+                variant="outline" 
+                onClick={() => setActiveTab('liste')}
+              >
+                Retour à la liste
+              </Button>
+            </div>
+            <ChauffeurForm 
+              chauffeur={selectedChauffeur} 
+              onSuccess={handleFormSuccess} 
+            />
+          </div>
         )}
       </div>
     </div>
