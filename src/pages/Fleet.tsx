@@ -1,59 +1,87 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Plus, Truck, Wrench, FileText, AlertTriangle } from 'lucide-react';
-import { Vehicle } from '@/types';
+import { Search, Plus, Truck, Wrench, FileText, AlertTriangle, Edit, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { vehiculesService } from '@/services/vehicules';
+import { FleetStats } from '@/components/fleet/FleetStats';
+import { VehicleForm } from '@/components/fleet/VehicleForm';
+import type { Database } from '@/integrations/supabase/types';
+
+type Vehicule = Database['public']['Tables']['vehicules']['Row'] & {
+  chauffeur?: {
+    nom: string;
+    prenom: string;
+  } | null;
+};
 
 const Fleet = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [vehicules, setVehicules] = useState<Vehicule[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [selectedVehicule, setSelectedVehicule] = useState<Vehicule | null>(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    disponibles: 0,
+    en_mission: 0,
+    maintenance: 0,
+    hydrocarbures: 0,
+    bauxite: 0,
+    maintenance_urgente: 0
+  });
+  const { toast } = useToast();
 
-  // Données demo
-  const vehicles: Vehicle[] = [
-    {
-      id: '1',
-      numero: 'V-001',
-      marque: 'Volvo',
-      modele: 'FH16',
-      immatriculation: 'AB-123-CD',
-      typeTransport: 'hydrocarbures',
-      statut: 'disponible',
-      derniereMaintenance: new Date('2024-01-15'),
-      prochaineMaintenance: new Date('2024-03-15'),
-      documents: [],
-      chauffeurAssigne: 'Jean Dupont'
-    },
-    {
-      id: '2',
-      numero: 'V-002',
-      marque: 'Mercedes',
-      modele: 'Actros',
-      immatriculation: 'EF-456-GH',
-      typeTransport: 'bauxite',
-      statut: 'en_mission',
-      derniereMaintenance: new Date('2024-02-01'),
-      prochaineMaintenance: new Date('2024-04-01'),
-      documents: [],
-      chauffeurAssigne: 'Pierre Martin'
-    },
-    {
-      id: '3',
-      numero: 'V-003',
-      marque: 'Scania',
-      modele: 'R450',
-      immatriculation: 'IJ-789-KL',
-      typeTransport: 'hydrocarbures',
-      statut: 'maintenance',
-      derniereMaintenance: new Date('2024-02-10'),
-      prochaineMaintenance: new Date('2024-04-10'),
-      documents: [],
-      chauffeurAssigne: undefined
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [vehiculesData, statsData] = await Promise.all([
+        vehiculesService.getAll(),
+        vehiculesService.getFleetStats()
+      ]);
+      
+      setVehicules(vehiculesData);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les données de la flotte",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce véhicule ?')) return;
+    
+    try {
+      await vehiculesService.delete(id);
+      toast({
+        title: "Véhicule supprimé",
+        description: "Le véhicule a été supprimé avec succès",
+      });
+      loadData();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le véhicule",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatusBadge = (statut: string) => {
     const variants = {
@@ -85,11 +113,32 @@ const Fleet = () => {
     );
   };
 
-  const filteredVehicles = vehicles.filter(vehicle =>
+  const filteredVehicles = vehicules.filter(vehicle =>
     vehicle.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const openEditForm = (vehicule: Vehicule) => {
+    setSelectedVehicule(vehicule);
+    setIsFormOpen(true);
+  };
+
+  const openCreateForm = () => {
+    setSelectedVehicule(null);
+    setIsFormOpen(true);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -100,11 +149,13 @@ const Fleet = () => {
             Gérez vos véhicules, maintenance et documentations
           </p>
         </div>
-        <Button>
+        <Button onClick={openCreateForm}>
           <Plus className="mr-2 h-4 w-4" />
           Nouveau véhicule
         </Button>
       </div>
+
+      <FleetStats {...stats} />
 
       <div className="flex items-center space-x-4">
         <div className="relative flex-1 max-w-md">
@@ -162,10 +213,13 @@ const Fleet = () => {
                       </TableCell>
                       <TableCell>{vehicle.immatriculation}</TableCell>
                       <TableCell>
-                        {getTransportTypeBadge(vehicle.typeTransport)}
+                        {getTransportTypeBadge(vehicle.type_transport)}
                       </TableCell>
                       <TableCell>
-                        {vehicle.chauffeurAssigne || 'Non assigné'}
+                        {vehicle.chauffeur 
+                          ? `${vehicle.chauffeur.prenom} ${vehicle.chauffeur.nom}`
+                          : 'Non assigné'
+                        }
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(vehicle.statut)}
@@ -173,20 +227,38 @@ const Fleet = () => {
                       <TableCell>
                         <div className="flex items-center space-x-2">
                           <span className="text-sm">
-                            {vehicle.prochaineMaintenance.toLocaleDateString()}
+                            {vehicle.prochaine_maintenance 
+                              ? new Date(vehicle.prochaine_maintenance).toLocaleDateString()
+                              : 'Non définie'
+                            }
                           </span>
-                          {vehicle.prochaineMaintenance < new Date() && (
+                          {vehicle.prochaine_maintenance && 
+                           new Date(vehicle.prochaine_maintenance) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
                             <AlertTriangle className="h-4 w-4 text-red-500" />
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditForm(vehicle)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
                           <Button variant="outline" size="sm">
                             <FileText className="h-4 w-4" />
                           </Button>
                           <Button variant="outline" size="sm">
                             <Wrench className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDelete(vehicle.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -226,6 +298,13 @@ const Fleet = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <VehicleForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        onSuccess={loadData}
+        vehicule={selectedVehicule}
+      />
     </div>
   );
 };

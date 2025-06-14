@@ -110,6 +110,171 @@ export type Database = {
           },
         ]
       }
+      documents_vehicules: {
+        Row: {
+          created_at: string
+          date_expiration: string | null
+          id: string
+          nom: string
+          statut: string | null
+          taille: number | null
+          type: string
+          url: string
+          vehicule_id: string
+        }
+        Insert: {
+          created_at?: string
+          date_expiration?: string | null
+          id?: string
+          nom: string
+          statut?: string | null
+          taille?: number | null
+          type: string
+          url: string
+          vehicule_id: string
+        }
+        Update: {
+          created_at?: string
+          date_expiration?: string | null
+          id?: string
+          nom?: string
+          statut?: string | null
+          taille?: number | null
+          type?: string
+          url?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_vehicules_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_vehicules: {
+        Row: {
+          cout: number | null
+          created_at: string
+          date_maintenance: string
+          description: string | null
+          garage: string | null
+          id: string
+          kilometrage_maintenance: number | null
+          pieces_changees: string[] | null
+          prochaine_maintenance_prevue: string | null
+          type_maintenance: string
+          vehicule_id: string
+        }
+        Insert: {
+          cout?: number | null
+          created_at?: string
+          date_maintenance: string
+          description?: string | null
+          garage?: string | null
+          id?: string
+          kilometrage_maintenance?: number | null
+          pieces_changees?: string[] | null
+          prochaine_maintenance_prevue?: string | null
+          type_maintenance: string
+          vehicule_id: string
+        }
+        Update: {
+          cout?: number | null
+          created_at?: string
+          date_maintenance?: string
+          description?: string | null
+          garage?: string | null
+          id?: string
+          kilometrage_maintenance?: number | null
+          pieces_changees?: string[] | null
+          prochaine_maintenance_prevue?: string | null
+          type_maintenance?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_vehicules_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vehicules: {
+        Row: {
+          annee_fabrication: number | null
+          capacite_max: number | null
+          chauffeur_assigne: string | null
+          consommation_moyenne: number | null
+          created_at: string
+          derniere_maintenance: string | null
+          id: string
+          immatriculation: string
+          kilometrage: number | null
+          marque: string
+          modele: string
+          numero: string
+          numero_chassis: string | null
+          prochaine_maintenance: string | null
+          statut: string
+          type_transport: string
+          unite_capacite: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee_fabrication?: number | null
+          capacite_max?: number | null
+          chauffeur_assigne?: string | null
+          consommation_moyenne?: number | null
+          created_at?: string
+          derniere_maintenance?: string | null
+          id?: string
+          immatriculation: string
+          kilometrage?: number | null
+          marque: string
+          modele: string
+          numero: string
+          numero_chassis?: string | null
+          prochaine_maintenance?: string | null
+          statut?: string
+          type_transport: string
+          unite_capacite?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee_fabrication?: number | null
+          capacite_max?: number | null
+          chauffeur_assigne?: string | null
+          consommation_moyenne?: number | null
+          created_at?: string
+          derniere_maintenance?: string | null
+          id?: string
+          immatriculation?: string
+          kilometrage?: number | null
+          marque?: string
+          modele?: string
+          numero?: string
+          numero_chassis?: string | null
+          prochaine_maintenance?: string | null
+          statut?: string
+          type_transport?: string
+          unite_capacite?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicules_chauffeur_assigne_fkey"
+            columns: ["chauffeur_assigne"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
