@@ -1,14 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Plus, Truck, Wrench, FileText, AlertTriangle, Edit, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { vehiculesService } from '@/services/vehicules';
 import { FleetStats } from '@/components/fleet/FleetStats';
+import { FleetHeader } from '@/components/fleet/FleetHeader';
+import { SearchInput } from '@/components/fleet/SearchInput';
+import { VehicleListTab } from '@/components/fleet/VehicleListTab';
+import { MaintenanceTabContent } from '@/components/fleet/MaintenanceTabContent';
+import { DocumentsTabContent } from '@/components/fleet/DocumentsTabContent';
 import { VehicleForm } from '@/components/fleet/VehicleForm';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -82,36 +82,6 @@ const Fleet = () => {
     }
   };
 
-  const getStatusBadge = (statut: string) => {
-    const variants = {
-      'disponible': 'bg-green-100 text-green-800',
-      'en_mission': 'bg-blue-100 text-blue-800',
-      'maintenance': 'bg-orange-100 text-orange-800',
-      'validation_requise': 'bg-red-100 text-red-800'
-    };
-    
-    const labels = {
-      'disponible': 'Disponible',
-      'en_mission': 'En mission',
-      'maintenance': 'Maintenance',
-      'validation_requise': 'Validation requise'
-    };
-
-    return (
-      <Badge className={variants[statut as keyof typeof variants]}>
-        {labels[statut as keyof typeof labels]}
-      </Badge>
-    );
-  };
-
-  const getTransportTypeBadge = (type: string) => {
-    return (
-      <Badge variant={type === 'hydrocarbures' ? 'destructive' : 'secondary'}>
-        {type === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
-      </Badge>
-    );
-  };
-
   const filteredVehicles = vehicules.filter(vehicle =>
     vehicle.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
     vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -159,32 +129,14 @@ const Fleet = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion de la flotte</h1>
-          <p className="text-muted-foreground">
-            Gérez vos véhicules, maintenance et documentations
-          </p>
-        </div>
-        <Button onClick={openCreateForm}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nouveau véhicule
-        </Button>
-      </div>
+      <FleetHeader onNewVehicle={openCreateForm} />
 
       <FleetStats {...stats} />
 
-      <div className="flex items-center space-x-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher un véhicule..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-      </div>
+      <SearchInput
+        value={searchTerm}
+        onChange={setSearchTerm}
+      />
 
       <Tabs defaultValue="list" className="space-y-4">
         <TabsList>
@@ -194,125 +146,19 @@ const Fleet = () => {
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Véhicules de la flotte</CardTitle>
-              <CardDescription>
-                {filteredVehicles.length} véhicule(s) trouvé(s)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Véhicule</TableHead>
-                    <TableHead>Immatriculation</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Chauffeur</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Prochaine maintenance</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredVehicles.map((vehicle) => (
-                    <TableRow key={vehicle.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Truck className="h-5 w-5 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">{vehicle.numero}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {vehicle.marque} {vehicle.modele}
-                            </p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{vehicle.immatriculation}</TableCell>
-                      <TableCell>
-                        {getTransportTypeBadge(vehicle.type_transport)}
-                      </TableCell>
-                      <TableCell>
-                        {vehicle.chauffeur 
-                          ? `${vehicle.chauffeur.prenom} ${vehicle.chauffeur.nom}`
-                          : 'Non assigné'
-                        }
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(vehicle.statut)}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm">
-                            {vehicle.prochaine_maintenance 
-                              ? new Date(vehicle.prochaine_maintenance).toLocaleDateString()
-                              : 'Non définie'
-                            }
-                          </span>
-                          {vehicle.prochaine_maintenance && 
-                           new Date(vehicle.prochaine_maintenance) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
-                            <AlertTriangle className="h-4 w-4 text-red-500" />
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => openEditForm(vehicle)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <FileText className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Wrench className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDelete(vehicle.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <VehicleListTab
+            vehicles={filteredVehicles}
+            onEdit={openEditForm}
+            onDelete={handleDelete}
+          />
         </TabsContent>
 
         <TabsContent value="maintenance">
-          <Card>
-            <CardHeader>
-              <CardTitle>Planification maintenance</CardTitle>
-              <CardDescription>
-                Gérez les maintenances préventives et correctives
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Module de maintenance en développement...</p>
-            </CardContent>
-          </Card>
+          <MaintenanceTabContent />
         </TabsContent>
 
         <TabsContent value="documents">
-          <Card>
-            <CardHeader>
-              <CardTitle>Documents véhicules</CardTitle>
-              <CardDescription>
-                Suivi des assurances, contrôles techniques, etc.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Module de gestion documentaire en développement...</p>
-            </CardContent>
-          </Card>
+          <DocumentsTabContent />
         </TabsContent>
       </Tabs>
 
