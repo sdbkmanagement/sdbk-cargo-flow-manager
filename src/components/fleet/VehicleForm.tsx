@@ -3,12 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { vehiculesService } from '@/services/vehicules';
 import { supabase } from '@/integrations/supabase/client';
+import { BasicInfoFields } from './form/BasicInfoFields';
+import { TransportStatusFields } from './form/TransportStatusFields';
+import { SpecificationsFields } from './form/SpecificationsFields';
+import { MaintenanceFields } from './form/MaintenanceFields';
 import type { Database } from '@/integrations/supabase/types';
 
 type Vehicule = Database['public']['Tables']['vehicules']['Row'];
@@ -61,8 +62,6 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
       prochaine_maintenance: ''
     }
   });
-
-  const watchedValues = watch();
 
   useEffect(() => {
     if (isOpen) {
@@ -198,187 +197,17 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="numero">Numéro du véhicule *</Label>
-              <Input
-                id="numero"
-                {...register('numero', { required: 'Le numéro est requis' })}
-                placeholder="Ex: VH001"
-              />
-              {errors.numero && (
-                <p className="text-sm text-red-500">{errors.numero.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="immatriculation">Immatriculation *</Label>
-              <Input
-                id="immatriculation"
-                {...register('immatriculation', { required: 'L\'immatriculation est requise' })}
-                placeholder="Ex: AB-123-CD"
-              />
-              {errors.immatriculation && (
-                <p className="text-sm text-red-500">{errors.immatriculation.message}</p>
-              )}
-            </div>
-          </div>
+          <BasicInfoFields register={register} errors={errors} />
+          
+          <TransportStatusFields 
+            setValue={setValue} 
+            watch={watch} 
+            chauffeurs={chauffeurs} 
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="marque">Marque *</Label>
-              <Input
-                id="marque"
-                {...register('marque', { required: 'La marque est requise' })}
-                placeholder="Ex: Mercedes"
-              />
-              {errors.marque && (
-                <p className="text-sm text-red-500">{errors.marque.message}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="modele">Modèle *</Label>
-              <Input
-                id="modele"
-                {...register('modele', { required: 'Le modèle est requis' })}
-                placeholder="Ex: Actros"
-              />
-              {errors.modele && (
-                <p className="text-sm text-red-500">{errors.modele.message}</p>
-              )}
-            </div>
-          </div>
+          <SpecificationsFields register={register} />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="type_transport">Type de transport *</Label>
-              <Select 
-                value={watchedValues.type_transport} 
-                onValueChange={(value: 'hydrocarbures' | 'bauxite') => setValue('type_transport', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
-                  <SelectItem value="bauxite">Bauxite</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="statut">Statut</Label>
-              <Select 
-                value={watchedValues.statut} 
-                onValueChange={(value: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise') => setValue('statut', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="disponible">Disponible</SelectItem>
-                  <SelectItem value="en_mission">En mission</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="validation_requise">Validation requise</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="chauffeur_assigne">Chauffeur assigné</Label>
-            <Select 
-              value={watchedValues.chauffeur_assigne} 
-              onValueChange={(value) => setValue('chauffeur_assigne', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un chauffeur" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Aucun chauffeur assigné</SelectItem>
-                {chauffeurs.map((chauffeur) => (
-                  <SelectItem key={chauffeur.id} value={chauffeur.id}>
-                    {chauffeur.prenom} {chauffeur.nom}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="capacite_max">Capacité max</Label>
-              <Input
-                id="capacite_max"
-                type="number"
-                step="0.01"
-                {...register('capacite_max')}
-                placeholder="25000"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="unite_capacite">Unité</Label>
-              <Input
-                id="unite_capacite"
-                {...register('unite_capacite')}
-                placeholder="L, m³, tonnes..."
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="annee_fabrication">Année</Label>
-              <Input
-                id="annee_fabrication"
-                type="number"
-                {...register('annee_fabrication')}
-                placeholder="2020"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="numero_chassis">Numéro de châssis</Label>
-              <Input
-                id="numero_chassis"
-                {...register('numero_chassis')}
-                placeholder="VIN123456789"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="consommation_moyenne">Consommation (L/100km)</Label>
-              <Input
-                id="consommation_moyenne"
-                type="number"
-                step="0.1"
-                {...register('consommation_moyenne')}
-                placeholder="35.5"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="derniere_maintenance">Dernière maintenance</Label>
-              <Input
-                id="derniere_maintenance"
-                type="date"
-                {...register('derniere_maintenance')}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="prochaine_maintenance">Prochaine maintenance</Label>
-              <Input
-                id="prochaine_maintenance"
-                type="date"
-                {...register('prochaine_maintenance')}
-              />
-            </div>
-          </div>
+          <MaintenanceFields register={register} />
 
           <div className="flex justify-end space-x-3 pt-6 border-t">
             <Button type="button" variant="outline" onClick={handleClose}>
