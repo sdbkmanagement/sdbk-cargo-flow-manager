@@ -125,7 +125,7 @@ const Fleet = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <FleetHeader onNewVehicle={handleNewVehicle} />
 
       <FleetStats {...stats} />
@@ -159,12 +159,14 @@ const Fleet = () => {
         </TabsContent>
       </Tabs>
 
-      <VehicleForm
-        isOpen={isFormOpen}
-        onClose={handleFormClose}
-        onSuccess={handleFormSuccess}
-        vehicule={selectedVehicule}
-      />
+      {isFormOpen && (
+        <VehicleForm
+          isOpen={isFormOpen}
+          onClose={handleFormClose}
+          onSuccess={handleFormSuccess}
+          vehicule={selectedVehicule}
+        />
+      )}
     </div>
   );
 };

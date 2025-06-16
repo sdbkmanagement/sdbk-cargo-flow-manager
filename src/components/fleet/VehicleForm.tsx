@@ -68,7 +68,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
     if (isOpen) {
       loadChauffeurs();
       if (vehicule) {
-        // Remplir le formulaire avec les données du véhicule
+        console.log('Remplissage du formulaire avec:', vehicule);
         reset({
           numero: vehicule.numero || '',
           marque: vehicule.marque || '',
@@ -86,7 +86,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
           prochaine_maintenance: vehicule.prochaine_maintenance || ''
         });
       } else {
-        // Réinitialiser le formulaire pour un nouveau véhicule
+        console.log('Réinitialisation du formulaire pour nouveau véhicule');
         reset({
           numero: '',
           marque: '',
@@ -127,6 +127,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
   };
 
   const onSubmit = async (data: FormData) => {
+    console.log('Soumission du formulaire avec:', data);
     setLoading(true);
 
     try {
@@ -147,7 +148,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
         prochaine_maintenance: data.prochaine_maintenance || null
       };
 
-      console.log('Données à soumettre:', dataToSubmit);
+      console.log('Données préparées pour soumission:', dataToSubmit);
 
       if (vehicule) {
         await vehiculesService.update(vehicule.id, dataToSubmit);
@@ -177,25 +178,28 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
   };
 
   const handleClose = () => {
+    console.log('Fermeture du formulaire');
     reset();
     onClose();
   };
 
-  if (!isOpen) return null;
+  console.log('Rendu du formulaire - isOpen:', isOpen, 'vehicule:', vehicule);
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{vehicule ? 'Modifier le véhicule' : 'Nouveau véhicule'}</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {vehicule ? 'Modifier le véhicule' : 'Nouveau véhicule'}
+          </DialogTitle>
           <DialogDescription>
             {vehicule ? 'Modifiez les informations du véhicule' : 'Ajoutez un nouveau véhicule à la flotte'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="numero">Numéro du véhicule *</Label>
               <Input
                 id="numero"
@@ -203,10 +207,11 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 placeholder="Ex: VH001"
               />
               {errors.numero && (
-                <p className="text-sm text-red-500 mt-1">{errors.numero.message}</p>
+                <p className="text-sm text-red-500">{errors.numero.message}</p>
               )}
             </div>
-            <div>
+            
+            <div className="space-y-2">
               <Label htmlFor="immatriculation">Immatriculation *</Label>
               <Input
                 id="immatriculation"
@@ -214,13 +219,13 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 placeholder="Ex: AB-123-CD"
               />
               {errors.immatriculation && (
-                <p className="text-sm text-red-500 mt-1">{errors.immatriculation.message}</p>
+                <p className="text-sm text-red-500">{errors.immatriculation.message}</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="marque">Marque *</Label>
               <Input
                 id="marque"
@@ -228,10 +233,11 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 placeholder="Ex: Mercedes"
               />
               {errors.marque && (
-                <p className="text-sm text-red-500 mt-1">{errors.marque.message}</p>
+                <p className="text-sm text-red-500">{errors.marque.message}</p>
               )}
             </div>
-            <div>
+            
+            <div className="space-y-2">
               <Label htmlFor="modele">Modèle *</Label>
               <Input
                 id="modele"
@@ -239,13 +245,13 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 placeholder="Ex: Actros"
               />
               {errors.modele && (
-                <p className="text-sm text-red-500 mt-1">{errors.modele.message}</p>
+                <p className="text-sm text-red-500">{errors.modele.message}</p>
               )}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="type_transport">Type de transport *</Label>
               <Select 
                 value={watchedValues.type_transport} 
@@ -260,7 +266,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 </SelectContent>
               </Select>
             </div>
-            <div>
+            
+            <div className="space-y-2">
               <Label htmlFor="statut">Statut</Label>
               <Select 
                 value={watchedValues.statut} 
@@ -279,7 +286,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
             </div>
           </div>
 
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="chauffeur_assigne">Chauffeur assigné</Label>
             <Select 
               value={watchedValues.chauffeur_assigne} 
@@ -299,8 +306,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
             </Select>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="capacite_max">Capacité max</Label>
               <Input
                 id="capacite_max"
@@ -310,7 +317,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 placeholder="25000"
               />
             </div>
-            <div>
+            
+            <div className="space-y-2">
               <Label htmlFor="unite_capacite">Unité</Label>
               <Input
                 id="unite_capacite"
@@ -318,7 +326,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 placeholder="L, m³, tonnes..."
               />
             </div>
-            <div>
+            
+            <div className="space-y-2">
               <Label htmlFor="annee_fabrication">Année</Label>
               <Input
                 id="annee_fabrication"
@@ -329,8 +338,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="numero_chassis">Numéro de châssis</Label>
               <Input
                 id="numero_chassis"
@@ -338,7 +347,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 placeholder="VIN123456789"
               />
             </div>
-            <div>
+            
+            <div className="space-y-2">
               <Label htmlFor="consommation_moyenne">Consommation (L/100km)</Label>
               <Input
                 id="consommation_moyenne"
@@ -350,8 +360,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
               <Label htmlFor="derniere_maintenance">Dernière maintenance</Label>
               <Input
                 id="derniere_maintenance"
@@ -359,7 +369,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 {...register('derniere_maintenance')}
               />
             </div>
-            <div>
+            
+            <div className="space-y-2">
               <Label htmlFor="prochaine_maintenance">Prochaine maintenance</Label>
               <Input
                 id="prochaine_maintenance"
@@ -369,7 +380,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
             </div>
           </div>
 
-          <div className="flex justify-end space-x-2 pt-4">
+          <div className="flex justify-end space-x-3 pt-6 border-t">
             <Button type="button" variant="outline" onClick={handleClose}>
               Annuler
             </Button>
