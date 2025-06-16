@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { vehiculesService } from '@/services/vehicules';
 import { FleetStats } from '@/components/fleet/FleetStats';
@@ -10,6 +11,8 @@ import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { MaintenanceTabContent } from '@/components/fleet/MaintenanceTabContent';
 import { DocumentsTabContent } from '@/components/fleet/DocumentsTabContent';
 import { VehicleForm } from '@/components/fleet/VehicleForm';
+import { NewVehicleForm } from '@/components/fleet/NewVehicleForm';
+import { Plus, TestTube } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Vehicule = Database['public']['Tables']['vehicules']['Row'] & {
@@ -24,6 +27,7 @@ const Fleet = () => {
   const [vehicules, setVehicules] = useState<Vehicule[]>([]);
   const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isNewFormOpen, setIsNewFormOpen] = useState(false);
   const [selectedVehicule, setSelectedVehicule] = useState<Vehicule | null>(null);
   const [stats, setStats] = useState({
     total: 0,
@@ -100,16 +104,32 @@ const Fleet = () => {
     setIsFormOpen(true);
   };
 
+  const handleNewVehicleTest = () => {
+    console.log('Ouverture du nouveau formulaire de test');
+    setIsNewFormOpen(true);
+  };
+
   const handleFormClose = () => {
     console.log('Fermeture du formulaire');
     setIsFormOpen(false);
     setSelectedVehicule(null);
   };
 
+  const handleNewFormClose = () => {
+    console.log('Fermeture du nouveau formulaire');
+    setIsNewFormOpen(false);
+  };
+
   const handleFormSuccess = () => {
     console.log('Succès du formulaire - rechargement des données');
     setIsFormOpen(false);
     setSelectedVehicule(null);
+    loadData();
+  };
+
+  const handleNewFormSuccess = () => {
+    console.log('Succès du nouveau formulaire - rechargement des données');
+    setIsNewFormOpen(false);
     loadData();
   };
 
@@ -126,7 +146,24 @@ const Fleet = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <FleetHeader onNewVehicle={handleNewVehicle} />
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Gestion de la flotte</h1>
+          <p className="text-muted-foreground">
+            Gérez vos véhicules, maintenance et documentations
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button onClick={handleNewVehicle}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nouveau véhicule
+          </Button>
+          <Button onClick={handleNewVehicleTest} variant="secondary">
+            <TestTube className="mr-2 h-4 w-4" />
+            Test Nouveau véhicule
+          </Button>
+        </div>
+      </div>
 
       <FleetStats {...stats} />
 
@@ -165,6 +202,14 @@ const Fleet = () => {
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
           vehicule={selectedVehicule}
+        />
+      )}
+
+      {isNewFormOpen && (
+        <NewVehicleForm
+          isOpen={isNewFormOpen}
+          onClose={handleNewFormClose}
+          onSuccess={handleNewFormSuccess}
         />
       )}
     </div>
