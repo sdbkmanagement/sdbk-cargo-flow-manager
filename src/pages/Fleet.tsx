@@ -88,13 +88,13 @@ const Fleet = () => {
     vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const openEditForm = (vehicule: Vehicule) => {
+  const handleEdit = (vehicule: Vehicule) => {
     console.log('Ouverture du formulaire d\'édition pour:', vehicule);
     setSelectedVehicule(vehicule);
     setIsFormOpen(true);
   };
 
-  const openCreateForm = () => {
+  const handleNewVehicle = () => {
     console.log('Ouverture du formulaire de création');
     setSelectedVehicule(null);
     setIsFormOpen(true);
@@ -108,9 +108,9 @@ const Fleet = () => {
 
   const handleFormSuccess = () => {
     console.log('Succès du formulaire - rechargement des données');
-    loadData();
     setIsFormOpen(false);
     setSelectedVehicule(null);
+    loadData();
   };
 
   if (loading) {
@@ -124,12 +124,9 @@ const Fleet = () => {
     );
   }
 
-  // Debug log pour le rendu du formulaire
-  console.log('Rendu du VehicleForm - isFormOpen:', isFormOpen, 'selectedVehicule:', selectedVehicule);
-
   return (
     <div className="space-y-6">
-      <FleetHeader onNewVehicle={openCreateForm} />
+      <FleetHeader onNewVehicle={handleNewVehicle} />
 
       <FleetStats {...stats} />
 
@@ -148,7 +145,7 @@ const Fleet = () => {
         <TabsContent value="list" className="space-y-4">
           <VehicleListTab
             vehicles={filteredVehicles}
-            onEdit={openEditForm}
+            onEdit={handleEdit}
             onDelete={handleDelete}
           />
         </TabsContent>

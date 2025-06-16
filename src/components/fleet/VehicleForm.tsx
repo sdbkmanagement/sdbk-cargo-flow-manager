@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { vehiculesService } from '@/services/vehicules';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,39 +21,61 @@ interface VehicleFormProps {
   vehicule?: Vehicule | null;
 }
 
+interface FormData {
+  numero: string;
+  marque: string;
+  modele: string;
+  immatriculation: string;
+  type_transport: 'hydrocarbures' | 'bauxite';
+  statut: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise';
+  chauffeur_assigne: string;
+  capacite_max: string;
+  unite_capacite: string;
+  annee_fabrication: string;
+  numero_chassis: string;
+  consommation_moyenne: string;
+  derniere_maintenance: string;
+  prochaine_maintenance: string;
+}
+
 export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFormProps) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [chauffeurs, setChauffeurs] = useState<Chauffeur[]>([]);
   
-  const [formData, setFormData] = useState({
-    numero: '',
-    marque: '',
-    modele: '',
-    immatriculation: '',
-    type_transport: 'hydrocarbures' as 'hydrocarbures' | 'bauxite',
-    statut: 'disponible' as 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise',
-    chauffeur_assigne: '',
-    capacite_max: '',
-    unite_capacite: '',
-    annee_fabrication: '',
-    numero_chassis: '',
-    consommation_moyenne: '',
-    derniere_maintenance: '',
-    prochaine_maintenance: ''
+  const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormData>({
+    defaultValues: {
+      numero: '',
+      marque: '',
+      modele: '',
+      immatriculation: '',
+      type_transport: 'hydrocarbures',
+      statut: 'disponible',
+      chauffeur_assigne: '',
+      capacite_max: '',
+      unite_capacite: '',
+      annee_fabrication: '',
+      numero_chassis: '',
+      consommation_moyenne: '',
+      derniere_maintenance: '',
+      prochaine_maintenance: ''
+    }
   });
+
+  const watchedValues = watch();
 
   useEffect(() => {
     if (isOpen) {
       loadChauffeurs();
       if (vehicule) {
-        setFormData({
+        // Remplir le formulaire avec les données du véhicule
+        reset({
           numero: vehicule.numero || '',
           marque: vehicule.marque || '',
           modele: vehicule.modele || '',
           immatriculation: vehicule.immatriculation || '',
-          type_transport: vehicule.type_transport as 'hydrocarbures' | 'bauxite' || 'hydrocarbures',
-          statut: vehicule.statut as 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise' || 'disponible',
+          type_transport: (vehicule.type_transport as 'hydrocarbures' | 'bauxite') || 'hydrocarbures',
+          statut: (vehicule.statut as 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise') || 'disponible',
           chauffeur_assigne: vehicule.chauffeur_assigne || '',
           capacite_max: vehicule.capacite_max?.toString() || '',
           unite_capacite: vehicule.unite_capacite || '',
@@ -64,10 +86,26 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
           prochaine_maintenance: vehicule.prochaine_maintenance || ''
         });
       } else {
-        resetForm();
+        // Réinitialiser le formulaire pour un nouveau véhicule
+        reset({
+          numero: '',
+          marque: '',
+          modele: '',
+          immatriculation: '',
+          type_transport: 'hydrocarbures',
+          statut: 'disponible',
+          chauffeur_assigne: '',
+          capacite_max: '',
+          unite_capacite: '',
+          annee_fabrication: '',
+          numero_chassis: '',
+          consommation_moyenne: '',
+          derniere_maintenance: '',
+          prochaine_maintenance: ''
+        });
       }
     }
-  }, [isOpen, vehicule]);
+  }, [isOpen, vehicule, reset]);
 
   const loadChauffeurs = async () => {
     try {
@@ -88,45 +126,25 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      numero: '',
-      marque: '',
-      modele: '',
-      immatriculation: '',
-      type_transport: 'hydrocarbures',
-      statut: 'disponible',
-      chauffeur_assigne: '',
-      capacite_max: '',
-      unite_capacite: '',
-      annee_fabrication: '',
-      numero_chassis: '',
-      consommation_moyenne: '',
-      derniere_maintenance: '',
-      prochaine_maintenance: ''
-    });
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: FormData) => {
     setLoading(true);
 
     try {
       const dataToSubmit = {
-        numero: formData.numero,
-        marque: formData.marque,
-        modele: formData.modele,
-        immatriculation: formData.immatriculation,
-        type_transport: formData.type_transport,
-        statut: formData.statut,
-        chauffeur_assigne: formData.chauffeur_assigne || null,
-        capacite_max: formData.capacite_max ? parseFloat(formData.capacite_max) : null,
-        unite_capacite: formData.unite_capacite || null,
-        annee_fabrication: formData.annee_fabrication ? parseInt(formData.annee_fabrication) : null,
-        numero_chassis: formData.numero_chassis || null,
-        consommation_moyenne: formData.consommation_moyenne ? parseFloat(formData.consommation_moyenne) : null,
-        derniere_maintenance: formData.derniere_maintenance || null,
-        prochaine_maintenance: formData.prochaine_maintenance || null
+        numero: data.numero,
+        marque: data.marque,
+        modele: data.modele,
+        immatriculation: data.immatriculation,
+        type_transport: data.type_transport,
+        statut: data.statut,
+        chauffeur_assigne: data.chauffeur_assigne || null,
+        capacite_max: data.capacite_max ? parseFloat(data.capacite_max) : null,
+        unite_capacite: data.unite_capacite || null,
+        annee_fabrication: data.annee_fabrication ? parseInt(data.annee_fabrication) : null,
+        numero_chassis: data.numero_chassis || null,
+        consommation_moyenne: data.consommation_moyenne ? parseFloat(data.consommation_moyenne) : null,
+        derniere_maintenance: data.derniere_maintenance || null,
+        prochaine_maintenance: data.prochaine_maintenance || null
       };
 
       console.log('Données à soumettre:', dataToSubmit);
@@ -146,8 +164,6 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
       }
 
       onSuccess();
-      onClose();
-      resetForm();
     } catch (error) {
       console.error('Erreur lors de la soumission:', error);
       toast({
@@ -161,9 +177,11 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
   };
 
   const handleClose = () => {
-    resetForm();
+    reset();
     onClose();
   };
+
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -175,27 +193,29 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="numero">Numéro du véhicule *</Label>
               <Input
                 id="numero"
-                value={formData.numero}
-                onChange={(e) => setFormData(prev => ({ ...prev, numero: e.target.value }))}
-                required
+                {...register('numero', { required: 'Le numéro est requis' })}
                 placeholder="Ex: VH001"
               />
+              {errors.numero && (
+                <p className="text-sm text-red-500 mt-1">{errors.numero.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="immatriculation">Immatriculation *</Label>
               <Input
                 id="immatriculation"
-                value={formData.immatriculation}
-                onChange={(e) => setFormData(prev => ({ ...prev, immatriculation: e.target.value }))}
-                required
+                {...register('immatriculation', { required: 'L\'immatriculation est requise' })}
                 placeholder="Ex: AB-123-CD"
               />
+              {errors.immatriculation && (
+                <p className="text-sm text-red-500 mt-1">{errors.immatriculation.message}</p>
+              )}
             </div>
           </div>
 
@@ -204,21 +224,23 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
               <Label htmlFor="marque">Marque *</Label>
               <Input
                 id="marque"
-                value={formData.marque}
-                onChange={(e) => setFormData(prev => ({ ...prev, marque: e.target.value }))}
-                required
+                {...register('marque', { required: 'La marque est requise' })}
                 placeholder="Ex: Mercedes"
               />
+              {errors.marque && (
+                <p className="text-sm text-red-500 mt-1">{errors.marque.message}</p>
+              )}
             </div>
             <div>
               <Label htmlFor="modele">Modèle *</Label>
               <Input
                 id="modele"
-                value={formData.modele}
-                onChange={(e) => setFormData(prev => ({ ...prev, modele: e.target.value }))}
-                required
+                {...register('modele', { required: 'Le modèle est requis' })}
                 placeholder="Ex: Actros"
               />
+              {errors.modele && (
+                <p className="text-sm text-red-500 mt-1">{errors.modele.message}</p>
+              )}
             </div>
           </div>
 
@@ -226,10 +248,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
             <div>
               <Label htmlFor="type_transport">Type de transport *</Label>
               <Select 
-                value={formData.type_transport} 
-                onValueChange={(value: 'hydrocarbures' | 'bauxite') => 
-                  setFormData(prev => ({ ...prev, type_transport: value }))
-                }
+                value={watchedValues.type_transport} 
+                onValueChange={(value: 'hydrocarbures' | 'bauxite') => setValue('type_transport', value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -243,10 +263,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
             <div>
               <Label htmlFor="statut">Statut</Label>
               <Select 
-                value={formData.statut} 
-                onValueChange={(value: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise') => 
-                  setFormData(prev => ({ ...prev, statut: value }))
-                }
+                value={watchedValues.statut} 
+                onValueChange={(value: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise') => setValue('statut', value)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -264,8 +282,8 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
           <div>
             <Label htmlFor="chauffeur_assigne">Chauffeur assigné</Label>
             <Select 
-              value={formData.chauffeur_assigne} 
-              onValueChange={(value) => setFormData(prev => ({ ...prev, chauffeur_assigne: value }))}
+              value={watchedValues.chauffeur_assigne} 
+              onValueChange={(value) => setValue('chauffeur_assigne', value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner un chauffeur" />
@@ -288,8 +306,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 id="capacite_max"
                 type="number"
                 step="0.01"
-                value={formData.capacite_max}
-                onChange={(e) => setFormData(prev => ({ ...prev, capacite_max: e.target.value }))}
+                {...register('capacite_max')}
                 placeholder="25000"
               />
             </div>
@@ -297,8 +314,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
               <Label htmlFor="unite_capacite">Unité</Label>
               <Input
                 id="unite_capacite"
-                value={formData.unite_capacite}
-                onChange={(e) => setFormData(prev => ({ ...prev, unite_capacite: e.target.value }))}
+                {...register('unite_capacite')}
                 placeholder="L, m³, tonnes..."
               />
             </div>
@@ -307,8 +323,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
               <Input
                 id="annee_fabrication"
                 type="number"
-                value={formData.annee_fabrication}
-                onChange={(e) => setFormData(prev => ({ ...prev, annee_fabrication: e.target.value }))}
+                {...register('annee_fabrication')}
                 placeholder="2020"
               />
             </div>
@@ -319,8 +334,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
               <Label htmlFor="numero_chassis">Numéro de châssis</Label>
               <Input
                 id="numero_chassis"
-                value={formData.numero_chassis}
-                onChange={(e) => setFormData(prev => ({ ...prev, numero_chassis: e.target.value }))}
+                {...register('numero_chassis')}
                 placeholder="VIN123456789"
               />
             </div>
@@ -330,8 +344,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
                 id="consommation_moyenne"
                 type="number"
                 step="0.1"
-                value={formData.consommation_moyenne}
-                onChange={(e) => setFormData(prev => ({ ...prev, consommation_moyenne: e.target.value }))}
+                {...register('consommation_moyenne')}
                 placeholder="35.5"
               />
             </div>
@@ -343,8 +356,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
               <Input
                 id="derniere_maintenance"
                 type="date"
-                value={formData.derniere_maintenance}
-                onChange={(e) => setFormData(prev => ({ ...prev, derniere_maintenance: e.target.value }))}
+                {...register('derniere_maintenance')}
               />
             </div>
             <div>
@@ -352,8 +364,7 @@ export const VehicleForm = ({ isOpen, onClose, onSuccess, vehicule }: VehicleFor
               <Input
                 id="prochaine_maintenance"
                 type="date"
-                value={formData.prochaine_maintenance}
-                onChange={(e) => setFormData(prev => ({ ...prev, prochaine_maintenance: e.target.value }))}
+                {...register('prochaine_maintenance')}
               />
             </div>
           </div>
