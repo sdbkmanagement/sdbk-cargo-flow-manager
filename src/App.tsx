@@ -8,8 +8,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { Sidebar } from "@/components/layout/Sidebar";
 import Dashboard from "@/pages/Dashboard";
-import Fleet from "@/pages/Fleet";
 import Drivers from "@/pages/Drivers";
+import Billing from "@/pages/Billing";
 
 const queryClient = new QueryClient();
 
@@ -45,14 +45,14 @@ const AppContent = () => {
           <Dashboard />
         </ProtectedRoute>
       } />
-      <Route path="/fleet" element={
-        <ProtectedRoute>
-          <Fleet />
-        </ProtectedRoute>
-      } />
       <Route path="/drivers" element={
         <ProtectedRoute>
           <Drivers />
+        </ProtectedRoute>
+      } />
+      <Route path="/billing" element={
+        <ProtectedRoute>
+          <Billing />
         </ProtectedRoute>
       } />
       <Route path="/missions" element={
@@ -75,14 +75,6 @@ const AppContent = () => {
         <ProtectedRoute>
           <div className="p-6">
             <h1 className="text-2xl font-bold">Suivi des chargements</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/billing" element={
-        <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Facturation</h1>
             <p className="text-muted-foreground mt-2">Module en développement...</p>
           </div>
         </ProtectedRoute>
