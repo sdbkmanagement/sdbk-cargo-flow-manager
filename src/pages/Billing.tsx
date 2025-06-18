@@ -1,6 +1,5 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { BillingDashboard } from '@/components/billing/BillingDashboard';
@@ -10,12 +9,21 @@ import { PaymentTracking } from '@/components/billing/PaymentTracking';
 import { InvoiceForm } from '@/components/billing/InvoiceForm';
 import { QuoteForm } from '@/components/billing/QuoteForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, FileText, Calculator } from 'lucide-react';
+import { Plus, Calculator } from 'lucide-react';
 
 const Billing = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleInvoiceCreated = () => {
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleQuoteCreated = () => {
+    setRefreshKey(prev => prev + 1);
+  };
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -36,7 +44,10 @@ const Billing = () => {
               <DialogHeader>
                 <DialogTitle>Créer un nouveau devis</DialogTitle>
               </DialogHeader>
-              <QuoteForm onClose={() => setShowQuoteForm(false)} />
+              <QuoteForm 
+                onClose={() => setShowQuoteForm(false)} 
+                onQuoteCreated={handleQuoteCreated}
+              />
             </DialogContent>
           </Dialog>
           
@@ -51,7 +62,10 @@ const Billing = () => {
               <DialogHeader>
                 <DialogTitle>Créer une nouvelle facture</DialogTitle>
               </DialogHeader>
-              <InvoiceForm onClose={() => setShowInvoiceForm(false)} />
+              <InvoiceForm 
+                onClose={() => setShowInvoiceForm(false)} 
+                onInvoiceCreated={handleInvoiceCreated}
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -66,15 +80,15 @@ const Billing = () => {
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
-          <BillingDashboard />
+          <BillingDashboard key={refreshKey} />
         </TabsContent>
 
         <TabsContent value="invoices" className="space-y-6">
-          <InvoiceList />
+          <InvoiceList key={refreshKey} />
         </TabsContent>
 
         <TabsContent value="quotes" className="space-y-6">
-          <QuoteList />
+          <QuoteList key={refreshKey} />
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6">

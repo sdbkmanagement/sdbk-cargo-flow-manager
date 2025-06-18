@@ -72,6 +72,99 @@ export type Database = {
         }
         Relationships: []
       }
+      clients: {
+        Row: {
+          adresse: string | null
+          code_postal: string | null
+          contact: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          societe: string | null
+          updated_at: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          code_postal?: string | null
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          societe?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          code_postal?: string | null
+          contact?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          societe?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
+      devis: {
+        Row: {
+          client_email: string | null
+          client_nom: string
+          client_societe: string | null
+          created_at: string
+          date_creation: string
+          date_validite: string
+          description: string
+          id: string
+          montant_ht: number
+          montant_ttc: number
+          montant_tva: number
+          numero: string
+          observations: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          client_email?: string | null
+          client_nom: string
+          client_societe?: string | null
+          created_at?: string
+          date_creation: string
+          date_validite: string
+          description: string
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          numero: string
+          observations?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          client_email?: string | null
+          client_nom?: string
+          client_societe?: string | null
+          created_at?: string
+          date_creation?: string
+          date_validite?: string
+          description?: string
+          id?: string
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          numero?: string
+          observations?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           chauffeur_id: string | null
@@ -150,6 +243,121 @@ export type Database = {
             columns: ["vehicule_id"]
             isOneToOne: false
             referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      facture_lignes: {
+        Row: {
+          created_at: string
+          description: string
+          facture_id: string | null
+          id: string
+          prix_unitaire: number
+          quantite: number
+          total: number
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          facture_id?: string | null
+          id?: string
+          prix_unitaire?: number
+          quantite?: number
+          total?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          facture_id?: string | null
+          id?: string
+          prix_unitaire?: number
+          quantite?: number
+          total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "facture_lignes_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      factures: {
+        Row: {
+          chauffeur: string | null
+          client_contact: string | null
+          client_email: string | null
+          client_id: string | null
+          client_nom: string
+          client_societe: string | null
+          created_at: string
+          date_echeance: string
+          date_emission: string
+          id: string
+          mission_numero: string | null
+          montant_ht: number
+          montant_ttc: number
+          montant_tva: number
+          numero: string
+          observations: string | null
+          statut: string
+          type_transport: string | null
+          updated_at: string
+          vehicule: string | null
+        }
+        Insert: {
+          chauffeur?: string | null
+          client_contact?: string | null
+          client_email?: string | null
+          client_id?: string | null
+          client_nom: string
+          client_societe?: string | null
+          created_at?: string
+          date_echeance: string
+          date_emission: string
+          id?: string
+          mission_numero?: string | null
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          numero: string
+          observations?: string | null
+          statut?: string
+          type_transport?: string | null
+          updated_at?: string
+          vehicule?: string | null
+        }
+        Update: {
+          chauffeur?: string | null
+          client_contact?: string | null
+          client_email?: string | null
+          client_id?: string | null
+          client_nom?: string
+          client_societe?: string | null
+          created_at?: string
+          date_echeance?: string
+          date_emission?: string
+          id?: string
+          mission_numero?: string | null
+          montant_ht?: number
+          montant_ttc?: number
+          montant_tva?: number
+          numero?: string
+          observations?: string | null
+          statut?: string
+          type_transport?: string | null
+          updated_at?: string
+          vehicule?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]

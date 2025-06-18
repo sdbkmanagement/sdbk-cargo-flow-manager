@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,49 +22,34 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { billingService, type Facture } from '@/services/billing';
+import { generateInvoicePDF } from '@/utils/pdfGenerator';
+import { toast } from '@/hooks/use-toast';
 
 export const InvoiceList = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [invoices, setInvoices] = useState<Facture[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Données simulées - à remplacer par des données réelles
-  const invoices = [
-    {
-      id: 'F2024-001',
-      client: 'Total Guinée',
-      mission: 'M2024-045',
-      dateEmission: '2024-01-15',
-      dateEcheance: '2024-02-15',
-      montantHT: 5200.00,
-      montantTTC: 6136.00,
-      statut: 'en_attente',
-      chauffeur: 'Mamadou Diallo',
-      vehicule: 'CAM-001'
-    },
-    {
-      id: 'F2024-002',
-      client: 'CBG Bauxite',
-      mission: 'M2024-046',
-      dateEmission: '2024-01-14',
-      dateEcheance: '2024-02-14',
-      montantHT: 3800.00,
-      montantTTC: 4484.00,
-      statut: 'paye',
-      chauffeur: 'Ibrahima Sow',
-      vehicule: 'CAM-002'
-    },
-    {
-      id: 'F2024-003',
-      client: 'SMB Mining',
-      mission: 'M2024-047',
-      dateEmission: '2024-01-10',
-      dateEcheance: '2024-02-10',
-      montantHT: 4500.00,
-      montantTTC: 5310.00,
-      statut: 'en_retard',
-      chauffeur: 'Fatou Keita',
-      vehicule: 'CAM-003'
+  useEffect(() => {
+    loadInvoices();
+  }, []);
+
+  const loadInvoices = async () => {
+    try {
+      const data = await billingService.getFactures();
+      setInvoices(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des factures:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les factures.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -85,11 +69,19 @@ export const InvoiceList = () => {
     }
   };
 
+  const handleDownloadPDF = (invoice: Facture) => {
+    generateInvoicePDF(invoice);
+  };
+
   const filteredInvoices = invoices.filter(invoice =>
-    invoice.client.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.mission.toLowerCase().includes(searchTerm.toLowerCase())
+    invoice.client_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    invoice.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (invoice.mission_numero && invoice.mission_numero.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  if (loading) {
+    return <div className="flex justify-center p-8">Chargement des factures...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -134,68 +126,74 @@ export const InvoiceList = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>N° Facture</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Mission</TableHead>
-                <TableHead>Date émission</TableHead>
-                <TableHead>Échéance</TableHead>
-                <TableHead>Montant HT</TableHead>
-                <TableHead>Montant TTC</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredInvoices.map((invoice) => (
-                <TableRow key={invoice.id}>
-                  <TableCell className="font-medium">{invoice.id}</TableCell>
-                  <TableCell>{invoice.client}</TableCell>
-                  <TableCell>{invoice.mission}</TableCell>
-                  <TableCell>{new Date(invoice.dateEmission).toLocaleDateString('fr-FR')}</TableCell>
-                  <TableCell>{new Date(invoice.dateEcheance).toLocaleDateString('fr-FR')}</TableCell>
-                  <TableCell>{invoice.montantHT.toLocaleString('fr-FR')} €</TableCell>
-                  <TableCell className="font-medium">{invoice.montantTTC.toLocaleString('fr-FR')} €</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(invoice.statut)}>
-                      {getStatusLabel(invoice.statut)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Voir détails
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Modifier
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                          <Download className="mr-2 h-4 w-4" />
-                          Télécharger PDF
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <Mail className="mr-2 h-4 w-4" />
-                          Envoyer par email
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+          {filteredInvoices.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              {searchTerm ? 'Aucune facture trouvée pour cette recherche.' : 'Aucune facture créée pour le moment.'}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>N° Facture</TableHead>
+                  <TableHead>Client</TableHead>
+                  <TableHead>Mission</TableHead>
+                  <TableHead>Date émission</TableHead>
+                  <TableHead>Échéance</TableHead>
+                  <TableHead>Montant HT</TableHead>
+                  <TableHead>Montant TTC</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredInvoices.map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.numero}</TableCell>
+                    <TableCell>{invoice.client_nom}</TableCell>
+                    <TableCell>{invoice.mission_numero || '-'}</TableCell>
+                    <TableCell>{new Date(invoice.date_emission).toLocaleDateString('fr-FR')}</TableCell>
+                    <TableCell>{new Date(invoice.date_echeance).toLocaleDateString('fr-FR')}</TableCell>
+                    <TableCell>{invoice.montant_ht.toLocaleString('fr-FR')} €</TableCell>
+                    <TableCell className="font-medium">{invoice.montant_ttc.toLocaleString('fr-FR')} €</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(invoice.statut)}>
+                        {getStatusLabel(invoice.statut)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem>
+                            <Eye className="mr-2 h-4 w-4" />
+                            Voir détails
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Modifier
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleDownloadPDF(invoice)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Télécharger PDF
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <Mail className="mr-2 h-4 w-4" />
+                            Envoyer par email
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Calculator, Plus, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { billingService } from '@/services/billing';
 
 interface InvoiceFormProps {
   onClose: () => void;
+  onInvoiceCreated?: () => void;
 }
 
 interface InvoiceFormData {
@@ -37,13 +38,14 @@ interface InvoiceLine {
   total: number;
 }
 
-export const InvoiceForm = ({ onClose }: InvoiceFormProps) => {
+export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<InvoiceFormData>();
   const [invoiceLines, setInvoiceLines] = useState<InvoiceLine[]>([
     { id: '1', description: '', quantite: 1, prixUnitaire: 0, total: 0 }
   ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const TVA_RATE = 0.18; // 18% TVA en Guinée
+  const TVA_RATE = 0.18;
 
   const addInvoiceLine = () => {
     const newLine: InvoiceLine = {
@@ -80,27 +82,56 @@ export const InvoiceForm = ({ onClose }: InvoiceFormProps) => {
     return { sousTotal, tva, total };
   };
 
-  const onSubmit = (data: InvoiceFormData) => {
-    const { sousTotal, tva, total } = calculateTotals();
-    
-    const invoiceData = {
-      ...data,
-      lignes: invoiceLines,
-      montantHT: sousTotal,
-      montantTVA: tva,
-      montantTTC: total,
-      statut: 'en_attente',
-      numero: `F${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`
-    };
+  const onSubmit = async (data: InvoiceFormData) => {
+    setIsSubmitting(true);
+    try {
+      const { sousTotal, tva, total } = calculateTotals();
+      
+      const factureData = {
+        numero: `F${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
+        client_nom: data.clientNom,
+        client_societe: data.clientSociete || null,
+        client_contact: data.clientContact || null,
+        client_email: data.clientEmail || null,
+        mission_numero: data.missionNumero || null,
+        date_emission: data.dateEmission,
+        date_echeance: data.dateEcheance,
+        chauffeur: data.chauffeur || null,
+        vehicule: data.vehicule || null,
+        type_transport: data.typeTransport || null,
+        montant_ht: sousTotal,
+        montant_tva: tva,
+        montant_ttc: total,
+        statut: 'en_attente',
+        observations: data.observations || null
+      };
 
-    console.log('Données de la facture:', invoiceData);
-    
-    toast({
-      title: "Facture créée avec succès",
-      description: `La facture ${invoiceData.numero} a été créée et est en attente de paiement.`,
-    });
+      const lignes = invoiceLines.map(line => ({
+        description: line.description,
+        quantite: line.quantite,
+        prix_unitaire: line.prixUnitaire,
+        total: line.total
+      }));
 
-    onClose();
+      const facture = await billingService.createFacture(factureData, lignes);
+      
+      toast({
+        title: "Facture créée avec succès",
+        description: `La facture ${facture.numero} a été créée et est en attente de paiement.`,
+      });
+
+      onInvoiceCreated?.();
+      onClose();
+    } catch (error) {
+      console.error('Erreur lors de la création de la facture:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la création de la facture.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const { sousTotal, tva, total } = calculateTotals();
@@ -350,11 +381,11 @@ export const InvoiceForm = ({ onClose }: InvoiceFormProps) => {
 
       {/* Actions */}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
           Annuler
         </Button>
-        <Button type="submit">
-          Créer la facture
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Création...' : 'Créer la facture'}
         </Button>
       </div>
     </form>

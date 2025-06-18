@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
+import { billingService } from '@/services/billing';
 
 interface QuoteFormProps {
   onClose: () => void;
+  onQuoteCreated?: () => void;
 }
 
 interface QuoteFormData {
@@ -22,31 +23,51 @@ interface QuoteFormData {
   observations: string;
 }
 
-export const QuoteForm = ({ onClose }: QuoteFormProps) => {
+export const QuoteForm = ({ onClose, onQuoteCreated }: QuoteFormProps) => {
   const { register, handleSubmit, formState: { errors } } = useForm<QuoteFormData>();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const onSubmit = (data: QuoteFormData) => {
-    const TVA_RATE = 0.18;
-    const montantTVA = data.montantHT * TVA_RATE;
-    const montantTTC = data.montantHT + montantTVA;
+  const onSubmit = async (data: QuoteFormData) => {
+    setIsSubmitting(true);
+    try {
+      const TVA_RATE = 0.18;
+      const montantTVA = data.montantHT * TVA_RATE;
+      const montantTTC = data.montantHT + montantTVA;
 
-    const quoteData = {
-      ...data,
-      montantTVA,
-      montantTTC,
-      statut: 'en_attente',
-      numero: `D${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
-      dateCreation: new Date().toISOString().split('T')[0]
-    };
+      const quoteData = {
+        numero: `D${new Date().getFullYear()}-${String(Date.now()).slice(-3)}`,
+        client_nom: data.clientNom,
+        client_societe: data.clientSociete || null,
+        client_email: data.clientEmail || null,
+        description: data.description,
+        date_creation: new Date().toISOString().split('T')[0],
+        date_validite: data.dateValidite,
+        montant_ht: data.montantHT,
+        montant_tva: montantTVA,
+        montant_ttc: montantTTC,
+        statut: 'en_attente',
+        observations: data.observations || null
+      };
 
-    console.log('Données du devis:', quoteData);
-    
-    toast({
-      title: "Devis créé avec succès",
-      description: `Le devis ${quoteData.numero} a été créé et envoyé au client.`,
-    });
+      const devis = await billingService.createDevis(quoteData);
+      
+      toast({
+        title: "Devis créé avec succès",
+        description: `Le devis ${devis.numero} a été créé et envoyé au client.`,
+      });
 
-    onClose();
+      onQuoteCreated?.();
+      onClose();
+    } catch (error) {
+      console.error('Erreur lors de la création du devis:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la création du devis.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -152,11 +173,11 @@ export const QuoteForm = ({ onClose }: QuoteFormProps) => {
       </Card>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onClose}>
+        <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
           Annuler
         </Button>
-        <Button type="submit">
-          Créer le devis
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Création...' : 'Créer le devis'}
         </Button>
       </div>
     </form>

@@ -1,40 +1,59 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { 
   Euro, 
-  FileText, 
   Clock, 
   CheckCircle, 
   AlertTriangle,
   TrendingUp,
   Users,
-  Calendar
+  Calendar,
+  Calculator
 } from 'lucide-react';
+import { billingService } from '@/services/billing';
+import { toast } from '@/hooks/use-toast';
 
 export const BillingDashboard = () => {
-  // Données simulées - à remplacer par des données réelles depuis la base
-  const stats = {
-    totalFacture: 45760.50,
-    facturesEnAttente: 12,
-    facturesEnRetard: 3,
-    facturesReglees: 28,
-    totalDevis: 8,
-    chiffreAffaireMois: 38420.00,
-    topClients: [
-      { nom: "Total Guinée", montant: 15650.00 },
-      { nom: "CBG Bauxite", montant: 12300.00 },
-      { nom: "SMB Mining", montant: 8970.00 }
-    ]
+  const [stats, setStats] = useState({
+    totalFacture: 0,
+    facturesEnAttente: 0,
+    facturesEnRetard: 0,
+    facturesReglees: 0,
+    totalDevis: 0,
+    chiffreAffaireMois: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      const data = await billingService.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des statistiques:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les statistiques.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const recentActivity = [
-    { action: "Facture F2024-001 créée", date: "Il y a 2h", type: "success" },
-    { action: "Paiement reçu - F2024-002", date: "Il y a 4h", type: "success" },
-    { action: "Relance envoyée - F2024-003", date: "Il y a 1j", type: "warning" },
-    { action: "Devis D2024-004 validé", date: "Il y a 2j", type: "info" }
+    { action: "Nouvelles factures créées", date: "Disponibles dans l'onglet Factures", type: "info" },
+    { action: "Nouveaux devis créés", date: "Disponibles dans l'onglet Devis", type: "info" },
+    { action: "Système connecté à la base de données", date: "Toutes les données sont sauvegardées", type: "success" }
   ];
+
+  if (loading) {
+    return <div className="flex justify-center p-8">Chargement du tableau de bord...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -47,7 +66,7 @@ export const BillingDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stats.totalFacture.toLocaleString('fr-FR')} €</div>
-            <p className="text-xs text-muted-foreground">+20.1% ce mois</p>
+            <p className="text-xs text-muted-foreground">Toutes factures confondues</p>
           </CardContent>
         </Card>
 
@@ -75,12 +94,12 @@ export const BillingDashboard = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Factures réglées</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-500" />
+            <CardTitle className="text-sm font-medium">Devis créés</CardTitle>
+            <Calculator className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.facturesReglees}</div>
-            <p className="text-xs text-muted-foreground">Ce mois</p>
+            <div className="text-2xl font-bold text-blue-600">{stats.totalDevis}</div>
+            <p className="text-xs text-muted-foreground">Total des devis</p>
           </CardContent>
         </Card>
       </div>
@@ -91,9 +110,9 @@ export const BillingDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Chiffre d'affaires mensuel
+              Chiffre d'affaires
             </CardTitle>
-            <CardDescription>Performance financière du mois en cours</CardDescription>
+            <CardDescription>Performance financière actuelle</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600 mb-2">
@@ -101,42 +120,50 @@ export const BillingDashboard = () => {
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span>Objectif mensuel</span>
-                <span>45 000 €</span>
+                <span>Factures créées</span>
+                <span>{stats.facturesEnAttente + stats.facturesReglees}</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div 
-                  className="bg-green-600 h-2 rounded-full" 
-                  style={{ width: `${(stats.chiffreAffaireMois / 45000) * 100}%` }}
-                ></div>
+              <div className="flex justify-between text-sm">
+                <span>Devis en attente</span>
+                <span>{stats.totalDevis}</span>
               </div>
-              <p className="text-xs text-muted-foreground">85% de l'objectif atteint</p>
+              <p className="text-xs text-muted-foreground">Module facturation opérationnel</p>
             </div>
           </CardContent>
         </Card>
 
-        {/* Top clients */}
+        {/* Répartition des statuts */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Top clients par montant
+              Répartition des factures
             </CardTitle>
-            <CardDescription>Les clients les plus rentables ce mois</CardDescription>
+            <CardDescription>État actuel des factures</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {stats.topClients.map((client, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <span className="text-sm font-medium">{client.nom}</span>
-                  </div>
-                  <span className="text-sm font-bold">
-                    {client.montant.toLocaleString('fr-FR')} €
-                  </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span className="text-sm font-medium">En attente</span>
                 </div>
-              ))}
+                <span className="text-sm font-bold">{stats.facturesEnAttente}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                  <span className="text-sm font-medium">Réglées</span>
+                </div>
+                <span className="text-sm font-bold">{stats.facturesReglees}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span className="text-sm font-medium">En retard</span>
+                </div>
+                <span className="text-sm font-bold">{stats.facturesEnRetard}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -147,9 +174,9 @@ export const BillingDashboard = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            Activités récentes
+            État du système
           </CardTitle>
-          <CardDescription>Dernières actions effectuées dans le module facturation</CardDescription>
+          <CardDescription>Module facturation connecté à la base de données</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
