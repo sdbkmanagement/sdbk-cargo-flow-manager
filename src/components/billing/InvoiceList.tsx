@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +13,8 @@ import {
   Eye, 
   Edit,
   MoreHorizontal,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -22,14 +24,30 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { billingService, type Facture } from '@/services/billing';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
+import { exportInvoicesToCSV } from '@/utils/exportUtils';
+import { InvoiceDetail } from './InvoiceDetail';
 import { toast } from '@/hooks/use-toast';
 
 export const InvoiceList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [invoices, setInvoices] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadInvoices();
@@ -73,6 +91,55 @@ export const InvoiceList = () => {
     generateInvoicePDF(invoice);
   };
 
+  const handleExportAll = () => {
+    exportInvoicesToCSV(filteredInvoices);
+    toast({
+      title: "Export réussi",
+      description: "Les factures ont été exportées en CSV.",
+    });
+  };
+
+  const handleViewDetails = (invoiceId: string) => {
+    setSelectedInvoice(invoiceId);
+    setShowDetail(true);
+  };
+
+  const handleEdit = () => {
+    setShowDetail(false);
+    toast({
+      title: "Fonctionnalité à venir",
+      description: "La modification de factures sera disponible prochainement.",
+    });
+  };
+
+  const handleDeleteClick = (invoiceId: string) => {
+    setInvoiceToDelete(invoiceId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (invoiceToDelete) {
+      try {
+        await billingService.deleteFacture(invoiceToDelete);
+        toast({
+          title: "Facture supprimée",
+          description: "La facture a été supprimée avec succès.",
+        });
+        loadInvoices();
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de supprimer la facture.",
+          variant: "destructive"
+        });
+      }
+    }
+    setDeleteDialogOpen(false);
+    setInvoiceToDelete(null);
+    setShowDetail(false);
+  };
+
   const filteredInvoices = invoices.filter(invoice =>
     invoice.client_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
     invoice.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -103,7 +170,7 @@ export const InvoiceList = () => {
           </Button>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExportAll}>
             <Download className="h-4 w-4 mr-2" />
             Exporter
           </Button>
@@ -167,13 +234,13 @@ export const InvoiceList = () => {
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className="bg-white border shadow-md z-50">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewDetails(invoice.id)}>
                             <Eye className="mr-2 h-4 w-4" />
                             Voir détails
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={handleEdit}>
                             <Edit className="mr-2 h-4 w-4" />
                             Modifier
                           </DropdownMenuItem>
@@ -186,6 +253,14 @@ export const InvoiceList = () => {
                             <Mail className="mr-2 h-4 w-4" />
                             Envoyer par email
                           </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteClick(invoice.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Supprimer
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -196,6 +271,35 @@ export const InvoiceList = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog de détails */}
+      {selectedInvoice && (
+        <InvoiceDetail
+          invoiceId={selectedInvoice}
+          open={showDetail}
+          onClose={() => setShowDetail(false)}
+          onEdit={handleEdit}
+          onDelete={() => handleDeleteClick(selectedInvoice)}
+        />
+      )}
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer cette facture ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} className="bg-red-600 hover:bg-red-700">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

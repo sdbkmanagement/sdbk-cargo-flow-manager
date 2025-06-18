@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 export type Facture = Tables<'factures'>;
 export type Devis = Tables<'devis'>;
@@ -58,6 +58,27 @@ export const billingService = {
     return data;
   },
 
+  async updateFacture(id: string, factureData: TablesUpdate<'factures'>) {
+    const { data, error } = await supabase
+      .from('factures')
+      .update(factureData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteFacture(id: string) {
+    const { error } = await supabase
+      .from('factures')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
+
   // Devis
   async createDevis(devisData: TablesInsert<'devis'>) {
     const { data, error } = await supabase
@@ -80,6 +101,18 @@ export const billingService = {
     return data;
   },
 
+  async updateDevis(id: string, devisData: TablesUpdate<'devis'>) {
+    const { data, error } = await supabase
+      .from('devis')
+      .update(devisData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
   async updateDevisStatus(id: string, statut: string) {
     const { data, error } = await supabase
       .from('devis')
@@ -90,6 +123,15 @@ export const billingService = {
 
     if (error) throw error;
     return data;
+  },
+
+  async deleteDevis(id: string) {
+    const { error } = await supabase
+      .from('devis')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
   },
 
   // Clients
