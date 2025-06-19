@@ -1,125 +1,64 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { 
-  Truck, 
+  Home, 
   Users, 
-  CheckSquare, 
-  Calendar, 
-  Package, 
+  Truck, 
   FileText, 
-  BarChart3, 
+  BarChart3,
   Settings,
-  UserCheck,
-  MapPin
+  LogOut
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 
-const navigationItems = [
-  {
-    title: 'Tableau de bord',
-    icon: BarChart3,
-    path: '/dashboard',
-    roles: ['all']
-  },
-  {
-    title: 'Flotte',
-    icon: Truck,
-    path: '/fleet',
-    roles: ['maintenance', 'admin', 'transport']
-  },
-  {
-    title: 'Chauffeurs',
-    icon: Users,
-    path: '/drivers',
-    roles: ['rh', 'admin', 'transport']
-  },
-  {
-    title: 'Missions',
-    icon: MapPin,
-    path: '/missions',
-    roles: ['transport', 'admin', 'obc']
-  },
-  {
-    title: 'Validations',
-    icon: CheckSquare,
-    path: '/validations',
-    roles: ['maintenance', 'administratif', 'hsecq', 'obc', 'admin']
-  },
-  {
-    title: 'Chargements',
-    icon: Package,
-    path: '/cargo',
-    roles: ['transport', 'obc', 'admin']
-  },
-  {
-    title: 'Facturation',
-    icon: FileText,
-    path: '/billing',
-    roles: ['facturation', 'admin', 'direction']
-  },
-  {
-    title: 'RH',
-    icon: UserCheck,
-    path: '/hr',
-    roles: ['rh', 'admin']
-  },
-  {
-    title: 'Administration',
-    icon: Settings,
-    path: '/admin',
-    roles: ['admin']
-  }
+const navigation = [
+  { name: 'Tableau de bord', href: '/dashboard', icon: Home },
+  { name: 'Chauffeurs', href: '/drivers', icon: Users },
+  { name: 'Gestion de la flotte', href: '/fleet', icon: Truck },
+  { name: 'Facturation', href: '/billing', icon: FileText },
+  { name: 'Statistiques', href: '/stats', icon: BarChart3 },
+  { name: 'Paramètres', href: '/settings', icon: Settings },
 ];
 
-export const Sidebar = () => {
+export default function Sidebar() {
   const location = useLocation();
-  const { user, hasRole } = useAuth();
-
-  const filteredItems = navigationItems.filter(item => 
-    item.roles.includes('all') || item.roles.some(role => hasRole(role as any))
-  );
 
   return (
-    <div className="w-64 bg-slate-900 text-white min-h-screen p-4">
-      <div className="mb-8">
-        <h1 className="text-xl font-bold text-orange-400">SDBK Transport</h1>
-        <p className="text-sm text-slate-400">Gestion de flotte</p>
+    <div className="flex h-full w-64 flex-col bg-gray-900">
+      <div className="flex h-16 shrink-0 items-center px-4">
+        <div className="text-white font-bold text-xl">SDBK Cargo</div>
       </div>
-
-      <div className="mb-6">
-        <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
-          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-            {user?.prenom.charAt(0)}
-          </div>
-          <div>
-            <p className="text-sm font-medium">{user?.prenom} {user?.nom}</p>
-            <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
-          </div>
-        </div>
-      </div>
-
-      <nav className="space-y-2">
-        {filteredItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname.startsWith(item.path);
-          
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-orange-500 text-white' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <Icon size={20} />
-              <span className="text-sm font-medium">{item.title}</span>
-            </Link>
-          );
-        })}
+      <nav className="flex flex-1 flex-col">
+        <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <li>
+            <ul role="list" className="-mx-2 space-y-1">
+              {navigation.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    to={item.href}
+                    className={cn(
+                      location.pathname === item.href
+                        ? 'bg-gray-800 text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800',
+                      'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+                    )}
+                  >
+                    <item.icon className="h-6 w-6 shrink-0" />
+                    {item.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </li>
+          <li className="mt-auto">
+            <button className="group -mx-2 flex w-full gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white">
+              <LogOut className="h-6 w-6 shrink-0" />
+              Déconnexion
+            </button>
+          </li>
+        </ul>
       </nav>
     </div>
   );
-};
+}
