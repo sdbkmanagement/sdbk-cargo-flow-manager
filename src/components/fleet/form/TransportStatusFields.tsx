@@ -80,14 +80,14 @@ export const TransportStatusFields = ({ setValue, watch, chauffeurs }: Transport
       <div className="space-y-2">
         <Label htmlFor="chauffeur_assigne">Chauffeur assigné</Label>
         <Select 
-          value={watchedValues.chauffeur_assigne} 
-          onValueChange={(value) => setValue('chauffeur_assigne', value)}
+          value={watchedValues.chauffeur_assigne || "none"} 
+          onValueChange={(value) => setValue('chauffeur_assigne', value === "none" ? "" : value)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner un chauffeur" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Aucun chauffeur assigné</SelectItem>
+            <SelectItem value="none">Aucun chauffeur assigné</SelectItem>
             {chauffeurs.map((chauffeur) => (
               <SelectItem key={chauffeur.id} value={chauffeur.id}>
                 {chauffeur.prenom} {chauffeur.nom}
