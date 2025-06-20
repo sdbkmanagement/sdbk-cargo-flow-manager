@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -12,6 +12,7 @@ import { TransportStatusFields } from './form/TransportStatusFields';
 import { MaintenanceFields } from './form/MaintenanceFields';
 import { DocumentUploadSection } from './form/DocumentUploadSection';
 import { vehiculesService } from '@/services/vehicules';
+import { chauffeurService } from '@/services/chauffeurs';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -48,11 +49,17 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
   const [activeTab, setActiveTab] = useState('basic');
   const { toast } = useToast();
 
-  const { register, handleSubmit, formState: { errors }, reset, setValue } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<FormData>({
     defaultValues: {
       statut: 'disponible',
       type_transport: 'hydrocarbures',
     }
+  });
+
+  // Récupérer la liste des chauffeurs
+  const { data: chauffeurs = [] } = useQuery({
+    queryKey: ['chauffeurs'],
+    queryFn: chauffeurService.getAll,
   });
 
   // Charger les données du véhicule pour l'édition
@@ -80,7 +87,6 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
         chauffeur_assigne: data.chauffeur_assigne || null,
         capacite_max: data.capacite_max ? parseFloat(data.capacite_max) : null,
         unite_capacite: data.unite_capacite || null,
-        type_carburant: data.type_carburant || null,
         date_mise_service: data.date_mise_service || null,
         kilometrage: data.kilometrage ? parseInt(data.kilometrage) : 0,
         annee_fabrication: data.annee_fabrication ? parseInt(data.annee_fabrication) : null,
@@ -202,7 +208,11 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
                   <CardTitle className="text-lg">Transport et statut</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <TransportStatusFields register={register} />
+                  <TransportStatusFields 
+                    setValue={setValue} 
+                    watch={watch} 
+                    chauffeurs={chauffeurs} 
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
