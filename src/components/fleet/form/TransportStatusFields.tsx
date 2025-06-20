@@ -14,6 +14,9 @@ interface FormData {
   chauffeur_assigne: string;
   capacite_max: string;
   unite_capacite: string;
+  type_carburant: string;
+  date_mise_service: string;
+  kilometrage: string;
   annee_fabrication: string;
   numero_chassis: string;
   consommation_moyenne: string;

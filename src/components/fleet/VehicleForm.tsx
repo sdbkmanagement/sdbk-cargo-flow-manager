@@ -12,7 +12,7 @@ import { TransportStatusFields } from './form/TransportStatusFields';
 import { MaintenanceFields } from './form/MaintenanceFields';
 import { DocumentUploadSection } from './form/DocumentUploadSection';
 import { vehiculesService } from '@/services/vehicules';
-import { chauffeurService } from '@/services/chauffeurs';
+import { chauffeursService } from '@/services/chauffeurs';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -59,7 +59,7 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
   // Récupérer la liste des chauffeurs
   const { data: chauffeurs = [] } = useQuery({
     queryKey: ['chauffeurs'],
-    queryFn: chauffeurService.getAll,
+    queryFn: chauffeursService.getAll,
   });
 
   // Charger les données du véhicule pour l'édition
@@ -87,7 +87,6 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
         chauffeur_assigne: data.chauffeur_assigne || null,
         capacite_max: data.capacite_max ? parseFloat(data.capacite_max) : null,
         unite_capacite: data.unite_capacite || null,
-        date_mise_service: data.date_mise_service || null,
         kilometrage: data.kilometrage ? parseInt(data.kilometrage) : 0,
         annee_fabrication: data.annee_fabrication ? parseInt(data.annee_fabrication) : null,
         numero_chassis: data.numero_chassis || null,
