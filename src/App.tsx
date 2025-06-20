@@ -10,6 +10,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import Dashboard from "@/pages/Dashboard";
 import Drivers from "@/pages/Drivers";
 import Billing from "@/pages/Billing";
+import Fleet from "@/pages/Fleet";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,11 @@ const AppContent = () => {
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      } />
+      <Route path="/fleet" element={
+        <ProtectedRoute>
+          <Fleet />
         </ProtectedRoute>
       } />
       <Route path="/drivers" element={
