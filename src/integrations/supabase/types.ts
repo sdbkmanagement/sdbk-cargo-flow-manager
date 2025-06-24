@@ -412,6 +412,122 @@ export type Database = {
           },
         ]
       }
+      missions: {
+        Row: {
+          chauffeur_id: string
+          created_at: string
+          created_by: string | null
+          date_heure_arrivee_prevue: string
+          date_heure_depart: string
+          id: string
+          numero: string
+          observations: string | null
+          site_arrivee: string
+          site_depart: string
+          statut: string
+          type_transport: string
+          unite_mesure: string | null
+          updated_at: string
+          vehicule_id: string
+          volume_poids: number | null
+        }
+        Insert: {
+          chauffeur_id: string
+          created_at?: string
+          created_by?: string | null
+          date_heure_arrivee_prevue: string
+          date_heure_depart: string
+          id?: string
+          numero: string
+          observations?: string | null
+          site_arrivee: string
+          site_depart: string
+          statut?: string
+          type_transport: string
+          unite_mesure?: string | null
+          updated_at?: string
+          vehicule_id: string
+          volume_poids?: number | null
+        }
+        Update: {
+          chauffeur_id?: string
+          created_at?: string
+          created_by?: string | null
+          date_heure_arrivee_prevue?: string
+          date_heure_depart?: string
+          id?: string
+          numero?: string
+          observations?: string | null
+          site_arrivee?: string
+          site_depart?: string
+          statut?: string
+          type_transport?: string
+          unite_mesure?: string | null
+          updated_at?: string
+          vehicule_id?: string
+          volume_poids?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missions_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "missions_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missions_historique: {
+        Row: {
+          action: string
+          ancien_statut: string | null
+          created_at: string
+          details: string | null
+          id: string
+          mission_id: string
+          nouveau_statut: string | null
+          utilisateur_nom: string | null
+          utilisateur_role: string | null
+        }
+        Insert: {
+          action: string
+          ancien_statut?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          mission_id: string
+          nouveau_statut?: string | null
+          utilisateur_nom?: string | null
+          utilisateur_role?: string | null
+        }
+        Update: {
+          action?: string
+          ancien_statut?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          mission_id?: string
+          nouveau_statut?: string | null
+          utilisateur_nom?: string | null
+          utilisateur_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "missions_historique_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       validation_etapes: {
         Row: {
           commentaire: string | null
@@ -611,7 +727,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_resource_availability: {
+        Args: {
+          p_vehicule_id: string
+          p_chauffeur_id: string
+          p_date_debut: string
+          p_date_fin: string
+          p_mission_id?: string
+        }
+        Returns: {
+          vehicule_disponible: boolean
+          chauffeur_disponible: boolean
+          message: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
