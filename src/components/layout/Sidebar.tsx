@@ -1,50 +1,125 @@
+
 import React from 'react';
-import { useLocation, Link } from 'react-router-dom';
-import { Home, BarChart3, Users, Truck, FileText, MapPin } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { 
+  Truck, 
+  Users, 
+  CheckSquare, 
+  Calendar, 
+  Package, 
+  FileText, 
+  BarChart3, 
+  Settings,
+  UserCheck,
+  MapPin
+} from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
-interface MenuItem {
-  icon: React.ComponentType<any>;
-  label: string;
-  path: string;
-}
+const navigationItems = [
+  {
+    title: 'Tableau de bord',
+    icon: BarChart3,
+    path: '/dashboard',
+    roles: ['all']
+  },
+  {
+    title: 'Flotte',
+    icon: Truck,
+    path: '/fleet',
+    roles: ['maintenance', 'admin', 'transport']
+  },
+  {
+    title: 'Chauffeurs',
+    icon: Users,
+    path: '/drivers',
+    roles: ['rh', 'admin', 'transport']
+  },
+  {
+    title: 'Missions',
+    icon: MapPin,
+    path: '/missions',
+    roles: ['transport', 'admin', 'obc']
+  },
+  {
+    title: 'Validations',
+    icon: CheckSquare,
+    path: '/validations',
+    roles: ['maintenance', 'administratif', 'hsecq', 'obc', 'admin']
+  },
+  {
+    title: 'Chargements',
+    icon: Package,
+    path: '/cargo',
+    roles: ['transport', 'obc', 'admin']
+  },
+  {
+    title: 'Facturation',
+    icon: FileText,
+    path: '/billing',
+    roles: ['facturation', 'admin', 'direction']
+  },
+  {
+    title: 'RH',
+    icon: UserCheck,
+    path: '/hr',
+    roles: ['rh', 'admin']
+  },
+  {
+    title: 'Administration',
+    icon: Settings,
+    path: '/admin',
+    roles: ['admin']
+  }
+];
 
-const Sidebar = () => {
+export const Sidebar = () => {
   const location = useLocation();
-  
-  const menuItems = [
-    { icon: Home, label: 'Accueil', path: '/' },
-    { icon: BarChart3, label: 'Dashboard', path: '/dashboard' },
-    { icon: Users, label: 'Chauffeurs', path: '/drivers' },
-    { icon: Truck, label: 'Flotte', path: '/fleet' },
-    { icon: MapPin, label: 'Missions', path: '/missions' },
-    { icon: FileText, label: 'Facturation', path: '/billing' },
-  ];
+  const { user, hasRole } = useAuth();
+
+  const filteredItems = navigationItems.filter(item => 
+    item.roles.includes('all') || item.roles.some(role => hasRole(role as any))
+  );
 
   return (
-    <aside className="fixed left-0 top-0 h-full w-64 bg-gray-800 text-white">
-      <div className="p-6">
-        <Link to="/" className="flex items-center text-lg font-semibold">
-          <Truck className="mr-2 w-6 h-6" />
-          SDBK Cargo
-        </Link>
+    <div className="w-64 bg-slate-900 text-white min-h-screen p-4">
+      <div className="mb-8">
+        <h1 className="text-xl font-bold text-orange-400">SDBK Transport</h1>
+        <p className="text-sm text-slate-400">Gestion de flotte</p>
       </div>
-      <nav className="py-4">
-        <ul>
-          {menuItems.map((item) => (
-            <li key={item.label} className="mb-1">
-              <Link
-                to={item.path}
-                className={`flex items-center p-4 hover:bg-gray-700 transition-colors ${location.pathname === item.path ? 'bg-gray-700' : ''}`}
-              >
-                <item.icon className="mr-3 w-5 h-5" />
-                {item.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
+
+      <div className="mb-6">
+        <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
+          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+            {user?.prenom.charAt(0)}
+          </div>
+          <div>
+            <p className="text-sm font-medium">{user?.prenom} {user?.nom}</p>
+            <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
+          </div>
+        </div>
+      </div>
+
+      <nav className="space-y-2">
+        {filteredItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname.startsWith(item.path);
+          
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                isActive 
+                  ? 'bg-orange-500 text-white' 
+                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <Icon size={20} />
+              <span className="text-sm font-medium">{item.title}</span>
+            </Link>
+          );
+        })}
       </nav>
-    </aside>
+    </div>
   );
 };
-
-export default Sidebar;
