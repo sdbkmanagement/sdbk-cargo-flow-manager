@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { FleetStats } from '@/components/fleet/FleetStats';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
+import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { SearchInput } from '@/components/fleet/SearchInput';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
@@ -134,7 +134,7 @@ const Fleet = () => {
           <div>
             <CardTitle>Gestion de la flotte</CardTitle>
             <CardDescription>
-              Gérez vos véhicules, maintenances et documents
+              Gérez vos véhicules, maintenances, validations et documents
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -174,6 +174,7 @@ const Fleet = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="list">Liste des véhicules</TabsTrigger>
+              <TabsTrigger value="validation">Workflows de validation</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenances</TabsTrigger>
             </TabsList>
             
@@ -183,6 +184,10 @@ const Fleet = () => {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
               />
+            </TabsContent>
+            
+            <TabsContent value="validation">
+              <ValidationTab vehicles={vehicles} />
             </TabsContent>
             
             <TabsContent value="maintenance">

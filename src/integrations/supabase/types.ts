@@ -412,6 +412,129 @@ export type Database = {
           },
         ]
       }
+      validation_etapes: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          date_validation: string | null
+          etape: string
+          id: string
+          statut: string
+          updated_at: string
+          validateur_nom: string | null
+          validateur_role: string | null
+          workflow_id: string
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          date_validation?: string | null
+          etape: string
+          id?: string
+          statut?: string
+          updated_at?: string
+          validateur_nom?: string | null
+          validateur_role?: string | null
+          workflow_id: string
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          date_validation?: string | null
+          etape?: string
+          id?: string
+          statut?: string
+          updated_at?: string
+          validateur_nom?: string | null
+          validateur_role?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_etapes_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "validation_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_historique: {
+        Row: {
+          ancien_statut: string | null
+          commentaire: string | null
+          created_at: string
+          etape: string
+          id: string
+          nouveau_statut: string
+          validateur_nom: string | null
+          validateur_role: string | null
+          workflow_id: string
+        }
+        Insert: {
+          ancien_statut?: string | null
+          commentaire?: string | null
+          created_at?: string
+          etape: string
+          id?: string
+          nouveau_statut: string
+          validateur_nom?: string | null
+          validateur_role?: string | null
+          workflow_id: string
+        }
+        Update: {
+          ancien_statut?: string | null
+          commentaire?: string | null
+          created_at?: string
+          etape?: string
+          id?: string
+          nouveau_statut?: string
+          validateur_nom?: string | null
+          validateur_role?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_historique_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "validation_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      validation_workflows: {
+        Row: {
+          created_at: string
+          id: string
+          statut_global: string
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          statut_global?: string
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          statut_global?: string
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "validation_workflows_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: true
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicules: {
         Row: {
           annee_fabrication: number | null
