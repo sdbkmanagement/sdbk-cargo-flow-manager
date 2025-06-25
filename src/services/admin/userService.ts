@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import type { SystemUser } from '@/types/admin';
 
@@ -33,32 +34,9 @@ export const userService = {
     try {
       console.log('Début de la création utilisateur:', user);
       
-      // Étape 1: Créer d'abord le compte Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: user.email,
-        password: 'password123', // Mot de passe temporaire
-        email_confirm: true, // Confirmer l'email automatiquement
-        user_metadata: {
-          nom: user.nom,
-          prenom: user.prenom,
-          role: user.role
-        }
-      });
-
-      if (authError) {
-        console.error('Erreur lors de la création du compte Auth:', authError);
-        throw authError;
-      }
-
-      if (!authData.user) {
-        throw new Error('Aucun utilisateur créé dans Auth');
-      }
-
-      console.log('Utilisateur Auth créé avec ID:', authData.user.id);
-
-      // Étape 2: Insérer l'utilisateur dans la table users avec l'ID Auth
+      // Insérer directement l'utilisateur dans la table users
+      // L'utilisateur devra créer son compte Auth séparément
       const userData = {
-        id: authData.user.id, // Utiliser l'ID du compte Auth
         nom: user.nom,
         prenom: user.prenom,
         email: user.email,
@@ -77,12 +55,6 @@ export const userService = {
       
       if (error) {
         console.error('Erreur lors de l\'insertion dans users:', error);
-        // Nettoyer le compte Auth créé en cas d'erreur
-        try {
-          await supabase.auth.admin.deleteUser(authData.user.id);
-        } catch (cleanupError) {
-          console.error('Erreur lors du nettoyage du compte Auth:', cleanupError);
-        }
         throw error;
       }
 

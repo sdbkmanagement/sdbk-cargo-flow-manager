@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 import { adminService } from '@/services/admin';
 import { ROLES, ROLE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -45,7 +47,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
     onSuccess: () => {
       toast({
         title: "Utilisateur créé",
-        description: "Le nouvel utilisateur a été créé avec succès."
+        description: "Le nouvel utilisateur a été créé avec succès. L'utilisateur devra créer son compte de connexion séparément."
       });
       onSuccess();
     },
@@ -89,6 +91,15 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {!isEdit && (
+        <Alert>
+          <InfoIcon className="h-4 w-4" />
+          <AlertDescription>
+            Après la création de l'utilisateur, celui-ci devra créer son compte de connexion en utilisant la même adresse email.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
