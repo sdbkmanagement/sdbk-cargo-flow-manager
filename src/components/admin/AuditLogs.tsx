@@ -61,14 +61,17 @@ export const AuditLogs = () => {
     );
   };
 
-  const formatDetails = (details: any): string => {
+  const formatDetails = (details: unknown): string => {
     if (!details) return 'Aucun détail';
     
     try {
       if (typeof details === 'string') {
         return details;
       }
-      return JSON.stringify(details, null, 2);
+      if (typeof details === 'object') {
+        return JSON.stringify(details, null, 2);
+      }
+      return String(details);
     } catch {
       return 'Détails non formatables';
     }
