@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -6,7 +7,6 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { LoginForm } from "@/components/auth/LoginForm";
-import Index from "./pages/Index";
 import Fleet from "./pages/Fleet";
 import Drivers from "./pages/Drivers";
 import Missions from "./pages/Missions";
@@ -55,14 +55,8 @@ function App() {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Redirection automatique vers l'authentification */}
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Index />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
+              {/* Redirection automatique vers le tableau de bord */}
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
               
               {/* Routes protégées avec layout */}
               <Route path="/dashboard" element={

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign } from 'lucide-react';
+import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, FileText, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -223,13 +223,17 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Tableau de bord</h1>
-        <p className="text-muted-foreground">
-          Bienvenue {user?.prenom}, voici un aperçu de votre activité
+      {/* En-tête de bienvenue */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Bienvenue dans SDBK Cargo Flow Manager
+        </h1>
+        <p className="text-gray-600">
+          Bonjour {user?.prenom} {user?.nom}, vous êtes connecté en tant que {user?.role}
         </p>
       </div>
 
+      {/* Statistiques principales */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
@@ -237,6 +241,7 @@ const Dashboard = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
+        {/* Activité récente */}
         <Card>
           <CardHeader>
             <CardTitle>Activité récente</CardTitle>
@@ -264,10 +269,11 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
+        {/* Alertes importantes */}
         <Card>
           <CardHeader>
             <CardTitle>Alertes importantes</CardTitle>
-            <CardDescription>Actions requises</CardDescription>
+            <CardDescription>Actions requises et notifications</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {validationsStats?.enAttente > 0 && (
@@ -286,6 +292,29 @@ const Dashboard = () => {
                 </p>
               </div>
             )}
+            
+            {/* Alertes système basées sur le contenu d'origine */}
+            <div className="space-y-3">
+              <div className="flex items-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Maintenance programmée</p>
+                  <p className="text-xs text-muted-foreground">Véhicule TRK-001 - Échéance dans 2 jours</p>
+                </div>
+              </div>
+              <div className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Nouvelle mission</p>
+                  <p className="text-xs text-muted-foreground">Transport vers Dakar - À affecter</p>
+                </div>
+              </div>
+              <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Formation terminée</p>
+                  <p className="text-xs text-muted-foreground">3 chauffeurs certifiés HSE</p>
+                </div>
+              </div>
+            </div>
+            
             {(!validationsStats?.enAttente && !missionsStats?.enCours) && (
               <div className="p-4 border-l-4 border-green-500 bg-green-50">
                 <p className="text-sm font-medium">Système opérationnel</p>
@@ -295,6 +324,28 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Accès rapide */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Accès rapide</CardTitle>
+          <CardDescription>
+            Fonctionnalités disponibles selon votre rôle
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {user?.role === 'admin' && (
+              <p className="text-sm text-green-600 font-medium">
+                ✓ Accès administrateur - Tous les modules disponibles
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Utilisez la navigation latérale pour accéder aux différents modules du système SDBK.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
