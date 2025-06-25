@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { SystemUser, RolePermission, AdminAuditLog, AppRole, AppPermission } from '@/types/admin';
 
@@ -190,7 +189,12 @@ export const adminService = {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data || [];
+    
+    // Fix the ip_address type conversion
+    return (data || []).map(attempt => ({
+      ...attempt,
+      ip_address: attempt.ip_address ? String(attempt.ip_address) : undefined
+    }));
   },
 
   // Statistiques
