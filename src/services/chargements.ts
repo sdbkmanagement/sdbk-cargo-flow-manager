@@ -1,9 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import type { Database } from '@/integrations/supabase/types'
 
 type Chargement = Database['public']['Tables']['chargements']['Row']
-type ChargementInsert = Database['public']['Tables']['chargements']['Insert']
+type ChargementInsert = Omit<Database['public']['Tables']['chargements']['Insert'], 'numero'> & {
+  numero?: string;
+}
 type ChargementUpdate = Database['public']['Tables']['chargements']['Update']
 type ChargementHistorique = Database['public']['Tables']['chargements_historique']['Row']
 
