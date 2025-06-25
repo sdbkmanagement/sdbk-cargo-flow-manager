@@ -11,6 +11,7 @@ import Dashboard from "@/pages/Dashboard";
 import Drivers from "@/pages/Drivers";
 import Billing from "@/pages/Billing";
 import Fleet from "@/pages/Fleet";
+import Validations from "@/pages/Validations";
 
 const queryClient = new QueryClient();
 
@@ -71,10 +72,7 @@ const AppContent = () => {
       } />
       <Route path="/validations" element={
         <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Workflow de validation</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
+          <Validations />
         </ProtectedRoute>
       } />
       <Route path="/cargo" element={
