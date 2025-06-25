@@ -62,6 +62,50 @@ export type Database = {
           },
         ]
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          target_id: string | null
+          target_type: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_type: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_type?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chargements: {
         Row: {
           chauffeur_id: string
@@ -693,6 +737,33 @@ export type Database = {
           },
         ]
       }
+      login_attempts: {
+        Row: {
+          created_at: string | null
+          email: string
+          error_message: string | null
+          id: string
+          ip_address: unknown | null
+          success: boolean
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          success: boolean
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: unknown | null
+          success?: boolean
+        }
+        Relationships: []
+      }
       maintenance_vehicules: {
         Row: {
           cout: number | null
@@ -855,6 +926,80 @@ export type Database = {
             columns: ["mission_id"]
             isOneToOne: false
             referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          module: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module: string
+          permission: Database["public"]["Enums"]["app_permission"]
+          role: Database["public"]["Enums"]["app_role"]
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module?: string
+          permission?: Database["public"]["Enums"]["app_permission"]
+          role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      users: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          derniere_connexion: string | null
+          email: string
+          id: string
+          mot_de_passe_change: boolean | null
+          nom: string
+          prenom: string
+          role: Database["public"]["Enums"]["app_role"]
+          statut: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          derniere_connexion?: string | null
+          email: string
+          id?: string
+          mot_de_passe_change?: boolean | null
+          nom: string
+          prenom: string
+          role?: Database["public"]["Enums"]["app_role"]
+          statut?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          derniere_connexion?: string | null
+          email?: string
+          id?: string
+          mot_de_passe_change?: boolean | null
+          nom?: string
+          prenom?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          statut?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -1086,7 +1231,23 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_permission:
+        | "read"
+        | "write"
+        | "delete"
+        | "validate"
+        | "export"
+        | "admin"
+      app_role:
+        | "maintenance"
+        | "administratif"
+        | "hsecq"
+        | "obc"
+        | "transport"
+        | "rh"
+        | "facturation"
+        | "direction"
+        | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1201,6 +1362,26 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_permission: [
+        "read",
+        "write",
+        "delete",
+        "validate",
+        "export",
+        "admin",
+      ],
+      app_role: [
+        "maintenance",
+        "administratif",
+        "hsecq",
+        "obc",
+        "transport",
+        "rh",
+        "facturation",
+        "direction",
+        "admin",
+      ],
+    },
   },
 } as const

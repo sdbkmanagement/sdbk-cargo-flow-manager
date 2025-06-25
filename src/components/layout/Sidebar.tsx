@@ -16,7 +16,8 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+  Shield
 } from 'lucide-react';
 
 const navigation = [
@@ -29,6 +30,7 @@ const navigation = [
   { name: 'Facturation', href: '/billing', icon: FileText },
   { name: 'Validations', href: '/validations', icon: CheckSquare },
   { name: 'Ressources Humaines', href: '/rh', icon: UserCheck },
+  { name: 'Administration', href: '/administration', icon: Shield },
   { name: 'Guide', href: '/guide', icon: BookOpen },
 ];
 

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
 
@@ -12,12 +11,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Données demo pour le MVP
+// Mise à jour des utilisateurs demo avec la nouvelle structure
 const demoUsers: User[] = [
   {
     id: '1',
-    nom: 'Dupont',
-    prenom: 'Jean',
+    nom: 'Admin',
+    prenom: 'Système',
     email: 'admin@sdbk.com',
     role: 'admin',
     permissions: ['all'] // Admin a tous les droits
