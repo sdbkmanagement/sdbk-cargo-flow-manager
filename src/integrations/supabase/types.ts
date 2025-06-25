@@ -9,6 +9,59 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      absences: {
+        Row: {
+          approuve_par: string | null
+          commentaires: string | null
+          created_at: string
+          date_debut: string
+          date_fin: string
+          employe_id: string
+          id: string
+          motif: string | null
+          nombre_jours: number | null
+          statut: string
+          type_absence: string
+          updated_at: string
+        }
+        Insert: {
+          approuve_par?: string | null
+          commentaires?: string | null
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          employe_id: string
+          id?: string
+          motif?: string | null
+          nombre_jours?: number | null
+          statut?: string
+          type_absence: string
+          updated_at?: string
+        }
+        Update: {
+          approuve_par?: string | null
+          commentaires?: string | null
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          employe_id?: string
+          id?: string
+          motif?: string | null
+          nombre_jours?: number | null
+          statut?: string
+          type_absence?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "absences_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chargements: {
         Row: {
           chauffeur_id: string
@@ -365,6 +418,60 @@ export type Database = {
           },
         ]
       }
+      employes: {
+        Row: {
+          created_at: string
+          date_embauche: string
+          date_fin_contrat: string | null
+          email: string | null
+          id: string
+          nom: string
+          photo_url: string | null
+          poste: string
+          prenom: string
+          remarques: string | null
+          service: string
+          statut: string
+          telephone: string | null
+          type_contrat: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_embauche: string
+          date_fin_contrat?: string | null
+          email?: string | null
+          id?: string
+          nom: string
+          photo_url?: string | null
+          poste: string
+          prenom: string
+          remarques?: string | null
+          service: string
+          statut?: string
+          telephone?: string | null
+          type_contrat?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_embauche?: string
+          date_fin_contrat?: string | null
+          email?: string | null
+          id?: string
+          nom?: string
+          photo_url?: string | null
+          poste?: string
+          prenom?: string
+          remarques?: string | null
+          service?: string
+          statut?: string
+          telephone?: string | null
+          type_contrat?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       facture_lignes: {
         Row: {
           created_at: string
@@ -476,6 +583,112 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formations_employes: {
+        Row: {
+          certificat_url: string | null
+          created_at: string
+          date_debut: string
+          date_expiration: string | null
+          date_fin: string | null
+          employe_id: string
+          id: string
+          nom_formation: string
+          obligatoire: boolean | null
+          organisme: string | null
+          remarques: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          certificat_url?: string | null
+          created_at?: string
+          date_debut: string
+          date_expiration?: string | null
+          date_fin?: string | null
+          employe_id: string
+          id?: string
+          nom_formation: string
+          obligatoire?: boolean | null
+          organisme?: string | null
+          remarques?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          certificat_url?: string | null
+          created_at?: string
+          date_debut?: string
+          date_expiration?: string | null
+          date_fin?: string | null
+          employe_id?: string
+          id?: string
+          nom_formation?: string
+          obligatoire?: boolean | null
+          organisme?: string | null
+          remarques?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formations_employes_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      historique_rh: {
+        Row: {
+          ancien_poste: string | null
+          ancien_service: string | null
+          created_at: string
+          date_evenement: string
+          description: string
+          employe_id: string
+          id: string
+          nouveau_poste: string | null
+          nouveau_service: string | null
+          saisi_par: string | null
+          type_evenement: string
+        }
+        Insert: {
+          ancien_poste?: string | null
+          ancien_service?: string | null
+          created_at?: string
+          date_evenement?: string
+          description: string
+          employe_id: string
+          id?: string
+          nouveau_poste?: string | null
+          nouveau_service?: string | null
+          saisi_par?: string | null
+          type_evenement: string
+        }
+        Update: {
+          ancien_poste?: string | null
+          ancien_service?: string | null
+          created_at?: string
+          date_evenement?: string
+          description?: string
+          employe_id?: string
+          id?: string
+          nouveau_poste?: string | null
+          nouveau_service?: string | null
+          saisi_par?: string | null
+          type_evenement?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "historique_rh_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
             referencedColumns: ["id"]
           },
         ]
@@ -842,7 +1055,19 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      alertes_rh: {
+        Row: {
+          date_echeance: string | null
+          employe_id: string | null
+          message: string | null
+          nom_complet: string | null
+          poste: string | null
+          priorite: string | null
+          service: string | null
+          type_alerte: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       check_resource_availability: {

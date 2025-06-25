@@ -3,122 +3,56 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { LoginForm } from "@/components/auth/LoginForm";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
-import Dashboard from "@/pages/Dashboard";
-import Drivers from "@/pages/Drivers";
-import Billing from "@/pages/Billing";
-import Fleet from "@/pages/Fleet";
-import Validations from "@/pages/Validations";
-import Missions from "@/pages/Missions";
-import Guide from "@/pages/Guide";
-import Cargo from "@/pages/Cargo";
+import Index from "./pages/Index";
+import Fleet from "./pages/Fleet";
+import Drivers from "./pages/Drivers";
+import Missions from "./pages/Missions";
+import Cargo from "./pages/Cargo";
+import Billing from "./pages/Billing";
+import Validations from "./pages/Validations";
+import RH from "./pages/RH";
+import Dashboard from "./pages/Dashboard";
+import Guide from "./pages/Guide";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-  
-  if (!user) {
-    return <LoginForm />;
-  }
-
+function App() {
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 p-6 bg-gray-50">
-        {children}
-      </main>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="flex h-screen bg-gray-100">
+              <Sidebar />
+              <main className="flex-1 overflow-auto">
+                <div className="p-6">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/dashboard" element={<Dashboard />} />
+                    <Route path="/fleet" element={<Fleet />} />
+                    <Route path="/drivers" element={<Drivers />} />
+                    <Route path="/missions" element={<Missions />} />
+                    <Route path="/cargo" element={<Cargo />} />
+                    <Route path="/billing" element={<Billing />} />
+                    <Route path="/validations" element={<Validations />} />
+                    <Route path="/rh" element={<RH />} />
+                    <Route path="/guide" element={<Guide />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </div>
+              </main>
+            </div>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
-};
-
-const AppContent = () => {
-  const { user } = useAuth();
-
-  if (!user) {
-    return <LoginForm />;
-  }
-
-  return (
-    <Routes>
-      <Route path="/login" element={<LoginForm />} />
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
-      <Route path="/fleet" element={
-        <ProtectedRoute>
-          <Fleet />
-        </ProtectedRoute>
-      } />
-      <Route path="/drivers" element={
-        <ProtectedRoute>
-          <Drivers />
-        </ProtectedRoute>
-      } />
-      <Route path="/billing" element={
-        <ProtectedRoute>
-          <Billing />
-        </ProtectedRoute>
-      } />
-      <Route path="/missions" element={
-        <ProtectedRoute>
-          <Missions />
-        </ProtectedRoute>
-      } />
-      <Route path="/validations" element={
-        <ProtectedRoute>
-          <Validations />
-        </ProtectedRoute>
-      } />
-      <Route path="/cargo" element={
-        <ProtectedRoute>
-          <Cargo />
-        </ProtectedRoute>
-      } />
-      <Route path="/guide" element={
-        <ProtectedRoute>
-          <Guide />
-        </ProtectedRoute>
-      } />
-      <Route path="/hr" element={
-        <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Ressources Humaines</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/admin" element={
-        <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Administration</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
-        </ProtectedRoute>
-      } />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
-  );
-};
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppContent />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+}
 
 export default App;

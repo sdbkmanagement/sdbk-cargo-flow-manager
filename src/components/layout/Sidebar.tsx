@@ -1,132 +1,95 @@
 
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { 
+  LayoutDashboard,
   Truck, 
   Users, 
-  CheckSquare, 
-  Calendar, 
+  MapPin, 
   Package, 
   FileText, 
-  BarChart3, 
-  Settings,
+  CheckSquare,
   UserCheck,
-  MapPin,
-  BookOpen
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  Menu
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 
-const navigationItems = [
-  {
-    title: 'Tableau de bord',
-    icon: BarChart3,
-    path: '/dashboard',
-    roles: ['all']
-  },
-  {
-    title: 'Flotte',
-    icon: Truck,
-    path: '/fleet',
-    roles: ['maintenance', 'admin', 'transport']
-  },
-  {
-    title: 'Chauffeurs',
-    icon: Users,
-    path: '/drivers',
-    roles: ['rh', 'admin', 'transport']
-  },
-  {
-    title: 'Missions',
-    icon: MapPin,
-    path: '/missions',
-    roles: ['transport', 'admin', 'obc']
-  },
-  {
-    title: 'Validations',
-    icon: CheckSquare,
-    path: '/validations',
-    roles: ['maintenance', 'administratif', 'hsecq', 'obc', 'admin']
-  },
-  {
-    title: 'Chargements',
-    icon: Package,
-    path: '/cargo',
-    roles: ['transport', 'obc', 'admin']
-  },
-  {
-    title: 'Facturation',
-    icon: FileText,
-    path: '/billing',
-    roles: ['facturation', 'admin', 'direction']
-  },
-  {
-    title: 'RH',
-    icon: UserCheck,
-    path: '/hr',
-    roles: ['rh', 'admin']
-  },
-  {
-    title: 'Guide d\'utilisation',
-    icon: BookOpen,
-    path: '/guide',
-    roles: ['admin']
-  },
-  {
-    title: 'Administration',
-    icon: Settings,
-    path: '/admin',
-    roles: ['admin']
-  }
+const navigation = [
+  { name: 'Accueil', href: '/', icon: LayoutDashboard },
+  { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Flotte', href: '/fleet', icon: Truck },
+  { name: 'Chauffeurs', href: '/drivers', icon: Users },
+  { name: 'Missions', href: '/missions', icon: MapPin },
+  { name: 'Chargements', href: '/cargo', icon: Package },
+  { name: 'Facturation', href: '/billing', icon: FileText },
+  { name: 'Validations', href: '/validations', icon: CheckSquare },
+  { name: 'Ressources Humaines', href: '/rh', icon: UserCheck },
+  { name: 'Guide', href: '/guide', icon: BookOpen },
 ];
 
 export const Sidebar = () => {
-  const location = useLocation();
-  const { user, hasRole } = useAuth();
-
-  const filteredItems = navigationItems.filter(item => 
-    item.roles.includes('all') || item.roles.some(role => hasRole(role as any))
-  );
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className="w-64 bg-slate-900 text-white min-h-screen p-4">
-      <div className="mb-8">
-        <h1 className="text-xl font-bold text-orange-400">SDBK Transport</h1>
-        <p className="text-sm text-slate-400">Gestion de flotte</p>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex items-center space-x-3 p-3 bg-slate-800 rounded-lg">
-          <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-            {user?.prenom.charAt(0)}
-          </div>
-          <div>
-            <p className="text-sm font-medium">{user?.prenom} {user?.nom}</p>
-            <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
-          </div>
+    <div className={cn(
+      "bg-white shadow-lg transition-all duration-300 flex flex-col",
+      collapsed ? "w-16" : "w-64"
+    )}>
+      {/* Header */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          {!collapsed && (
+            <div className="flex items-center space-x-2">
+              <Truck className="h-8 w-8 text-blue-600" />
+              <span className="text-xl font-bold text-gray-900">SDBK</span>
+            </div>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(!collapsed)}
+            className="h-8 w-8 p-0"
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
         </div>
       </div>
 
-      <nav className="space-y-2">
-        {filteredItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = location.pathname.startsWith(item.path);
-          
-          return (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                isActive 
-                  ? 'bg-orange-500 text-white' 
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
-              }`}
-            >
-              <Icon size={20} />
-              <span className="text-sm font-medium">{item.title}</span>
-            </Link>
-          );
-        })}
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-2">
+        {navigation.map((item) => (
+          <NavLink
+            key={item.name}
+            to={item.href}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-blue-100 text-blue-700"
+                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+              )
+            }
+          >
+            <item.icon className="h-5 w-5 flex-shrink-0" />
+            {!collapsed && <span>{item.name}</span>}
+          </NavLink>
+        ))}
       </nav>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-gray-200">
+        {!collapsed && (
+          <div className="text-xs text-gray-500 text-center">
+            SDBK Cargo Flow Manager
+            <br />
+            v1.0.0
+          </div>
+        )}
+      </div>
     </div>
   );
 };
