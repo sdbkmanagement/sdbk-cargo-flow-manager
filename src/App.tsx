@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +13,7 @@ import Billing from "@/pages/Billing";
 import Fleet from "@/pages/Fleet";
 import Validations from "@/pages/Validations";
 import Missions from "@/pages/Missions";
+import Cargo from "@/pages/Cargo";
 
 const queryClient = new QueryClient();
 
@@ -74,10 +76,7 @@ const AppContent = () => {
       } />
       <Route path="/cargo" element={
         <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Suivi des chargements</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
+          <Cargo />
         </ProtectedRoute>
       } />
       <Route path="/hr" element={

@@ -9,6 +9,102 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      chargements: {
+        Row: {
+          chauffeur_id: string
+          client_nom: string
+          created_at: string
+          created_by: string | null
+          date_heure_chargement: string
+          id: string
+          lieu_chargement: string
+          lieu_livraison: string
+          mission_id: string
+          numero: string
+          observations: string | null
+          statut: string
+          type_chargement: string
+          unite_mesure: string
+          updated_at: string
+          vehicule_id: string
+          volume_poids: number
+        }
+        Insert: {
+          chauffeur_id: string
+          client_nom: string
+          created_at?: string
+          created_by?: string | null
+          date_heure_chargement: string
+          id?: string
+          lieu_chargement: string
+          lieu_livraison: string
+          mission_id: string
+          numero: string
+          observations?: string | null
+          statut?: string
+          type_chargement: string
+          unite_mesure?: string
+          updated_at?: string
+          vehicule_id: string
+          volume_poids: number
+        }
+        Update: {
+          chauffeur_id?: string
+          client_nom?: string
+          created_at?: string
+          created_by?: string | null
+          date_heure_chargement?: string
+          id?: string
+          lieu_chargement?: string
+          lieu_livraison?: string
+          mission_id?: string
+          numero?: string
+          observations?: string | null
+          statut?: string
+          type_chargement?: string
+          unite_mesure?: string
+          updated_at?: string
+          vehicule_id?: string
+          volume_poids?: number
+        }
+        Relationships: []
+      }
+      chargements_historique: {
+        Row: {
+          action: string
+          ancien_statut: string | null
+          chargement_id: string
+          created_at: string
+          details: string | null
+          id: string
+          nouveau_statut: string | null
+          utilisateur_nom: string | null
+          utilisateur_role: string | null
+        }
+        Insert: {
+          action: string
+          ancien_statut?: string | null
+          chargement_id: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          nouveau_statut?: string | null
+          utilisateur_nom?: string | null
+          utilisateur_role?: string | null
+        }
+        Update: {
+          action?: string
+          ancien_statut?: string | null
+          chargement_id?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          nouveau_statut?: string | null
+          utilisateur_nom?: string | null
+          utilisateur_role?: string | null
+        }
+        Relationships: []
+      }
       chauffeurs: {
         Row: {
           adresse: string | null
