@@ -11,7 +11,10 @@ export const adminService = {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(user => ({
+      ...user,
+      statut: user.statut as 'actif' | 'inactif' | 'suspendu'
+    }));
   },
 
   async getUserById(id: string): Promise<SystemUser | null> {
@@ -22,18 +25,44 @@ export const adminService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return data ? {
+      ...data,
+      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+    } : null;
   },
 
   async createUser(user: Omit<SystemUser, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<SystemUser> {
+    // Créer d'abord le compte dans Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: user.email,
+      password: 'password123', // Mot de passe par défaut
+      options: {
+        data: {
+          nom: user.nom,
+          prenom: user.prenom,
+          role: user.role
+        }
+      }
+    });
+
+    if (authError) throw authError;
+
+    // Créer l'utilisateur dans notre table
     const { data, error } = await supabase
       .from('users')
-      .insert([user])
+      .insert([{
+        ...user,
+        id: authData.user?.id,
+        mot_de_passe_change: false
+      }])
       .select()
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+    };
   },
 
   async updateUser(id: string, updates: Partial<SystemUser>): Promise<SystemUser> {
@@ -45,7 +74,10 @@ export const adminService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+    };
   },
 
   async deleteUser(id: string): Promise<void> {
@@ -59,6 +91,26 @@ export const adminService = {
 
   async toggleUserStatus(id: string, statut: 'actif' | 'inactif' | 'suspendu'): Promise<SystemUser> {
     return this.updateUser(id, { statut });
+  },
+
+  async resetPassword(userId: string): Promise<void> {
+    // Réinitialiser le mot de passe dans Auth
+    const { data: user } = await supabase
+      .from('users')
+      .select('email')
+      .eq('id', userId)
+      .single();
+
+    if (!user) throw new Error('Utilisateur non trouvé');
+
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`
+    });
+
+    if (error) throw error;
+
+    // Marquer que le mot de passe doit être changé
+    await this.updateUser(userId, { mot_de_passe_change: false });
   },
 
   // Gestion des rôles et permissions
@@ -119,7 +171,10 @@ export const adminService = {
       .limit(limit);
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(log => ({
+      ...log,
+      ip_address: log.ip_address ? String(log.ip_address) : undefined
+    }));
   },
 
   async getLoginAttempts(email?: string, limit: number = 50) {

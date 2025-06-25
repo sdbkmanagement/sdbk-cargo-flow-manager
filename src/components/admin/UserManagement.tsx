@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit, Trash2, UserCheck, UserX, UserMinus } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
 import { adminService } from '@/services/admin';
 import { UserForm } from './UserForm';
 import { ROLE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
@@ -62,6 +62,23 @@ export const UserManagement = () => {
       toast({
         title: "Erreur",
         description: "Impossible de modifier le statut de l'utilisateur.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const resetPasswordMutation = useMutation({
+    mutationFn: (userId: string) => adminService.resetPassword(userId),
+    onSuccess: () => {
+      toast({
+        title: "Mot de passe réinitialisé",
+        description: "Un email de réinitialisation a été envoyé à l'utilisateur."
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de réinitialiser le mot de passe.",
         variant: "destructive"
       });
     }
@@ -127,7 +144,8 @@ export const UserManagement = () => {
                 <DialogHeader>
                   <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Saisissez les informations du nouvel utilisateur
+                    Saisissez les informations du nouvel utilisateur. 
+                    Le mot de passe par défaut sera "password123" et devra être changé lors de la première connexion.
                   </DialogDescription>
                 </DialogHeader>
                 <UserForm onSuccess={handleCreateSuccess} />
@@ -182,6 +200,7 @@ export const UserManagement = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Rôle</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead>Mot de passe</TableHead>
                   <TableHead>Dernière connexion</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -205,6 +224,13 @@ export const UserManagement = () => {
                     </TableCell>
                     <TableCell>{getStatusBadge(user.statut)}</TableCell>
                     <TableCell>
+                      {user.mot_de_passe_change ? (
+                        <Badge variant="outline" className="text-green-600">Changé</Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-orange-600">Par défaut</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
                       {user.derniere_connexion 
                         ? new Date(user.derniere_connexion).toLocaleDateString('fr-FR')
                         : 'Jamais'
@@ -221,6 +247,15 @@ export const UserManagement = () => {
                           }}
                         >
                           <Edit className="h-3 w-3" />
+                        </Button>
+
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => resetPasswordMutation.mutate(user.id)}
+                          disabled={resetPasswordMutation.isPending}
+                        >
+                          <RotateCcw className="h-3 w-3" />
                         </Button>
 
                         {user.statut === 'actif' ? (
