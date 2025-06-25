@@ -52,9 +52,12 @@ export const chargementsService = {
 
   // Créer un nouveau chargement
   async create(chargementData: ChargementInsert): Promise<Chargement> {
+    // Créer un objet avec tous les champs requis, en excluant numero pour laisser le trigger le générer
+    const { numero, ...dataToInsert } = chargementData
+    
     const { data, error } = await supabase
       .from('chargements')
-      .insert([chargementData])
+      .insert([dataToInsert as Database['public']['Tables']['chargements']['Insert']])
       .select()
       .single()
 
