@@ -11,7 +11,8 @@ import {
   BarChart3, 
   Settings,
   UserCheck,
-  MapPin
+  MapPin,
+  BookOpen
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -63,6 +64,12 @@ const navigationItems = [
     icon: UserCheck,
     path: '/hr',
     roles: ['rh', 'admin']
+  },
+  {
+    title: 'Guide d\'utilisation',
+    icon: BookOpen,
+    path: '/guide',
+    roles: ['all']
   },
   {
     title: 'Administration',
