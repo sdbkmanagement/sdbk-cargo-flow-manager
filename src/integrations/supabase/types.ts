@@ -1229,6 +1229,10 @@ export type Database = {
           message: string
         }[]
       }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
       app_permission:
