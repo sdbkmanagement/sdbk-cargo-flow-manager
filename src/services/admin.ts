@@ -31,37 +31,70 @@ export const adminService = {
   },
 
   async createUser(user: Omit<SystemUser, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<SystemUser> {
-    // Créer d'abord le compte dans Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: user.email,
-      password: 'password123', // Mot de passe par défaut
-      options: {
-        data: {
+    try {
+      // Créer d'abord le compte dans Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: user.email,
+        password: 'password123', // Mot de passe par défaut
+        options: {
+          data: {
+            nom: user.nom,
+            prenom: user.prenom,
+            role: user.role
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Erreur lors de la création du compte Auth:', authError);
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error('Aucun utilisateur créé dans Auth');
+      }
+
+      console.log('Utilisateur Auth créé:', authData.user.id);
+
+      // Attendre un peu pour s'assurer que l'utilisateur Auth est bien créé
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Créer l'utilisateur dans notre table avec l'ID exact de Auth
+      const { data, error } = await supabase
+        .from('users')
+        .insert([{
+          id: authData.user.id, // Utiliser l'ID exact de l'utilisateur Auth
           nom: user.nom,
           prenom: user.prenom,
-          role: user.role
+          email: user.email,
+          role: user.role,
+          statut: user.statut,
+          mot_de_passe_change: false
+        }])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Erreur lors de la création dans la table users:', error);
+        // Si l'insertion échoue, on essaie de supprimer l'utilisateur Auth créé
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (cleanupError) {
+          console.error('Erreur lors du nettoyage:', cleanupError);
         }
+        throw error;
       }
-    });
 
-    if (authError) throw authError;
-
-    // Créer l'utilisateur dans notre table
-    const { data, error } = await supabase
-      .from('users')
-      .insert([{
-        ...user,
-        id: authData.user?.id,
-        mot_de_passe_change: false
-      }])
-      .select()
-      .single();
-    
-    if (error) throw error;
-    return {
-      ...data,
-      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
-    };
+      console.log('Utilisateur créé avec succès:', data);
+      
+      return {
+        ...data,
+        statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+      };
+    } catch (error) {
+      console.error('Erreur complète lors de la création:', error);
+      throw error;
+    }
   },
 
   async updateUser(id: string, updates: Partial<SystemUser>): Promise<SystemUser> {
