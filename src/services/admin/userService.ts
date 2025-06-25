@@ -32,16 +32,17 @@ export const userService = {
 
   async createUser(user: Omit<SystemUser, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<SystemUser> {
     try {
-      // Créer d'abord le compte dans Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      console.log('Début de la création utilisateur:', user);
+      
+      // Étape 1: Créer le compte Auth avec une approche différente
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: user.email,
-        password: 'password123', // Mot de passe par défaut
-        options: {
-          data: {
-            nom: user.nom,
-            prenom: user.prenom,
-            role: user.role
-          }
+        password: 'password123', // Mot de passe temporaire
+        email_confirm: true, // Confirmer l'email automatiquement
+        user_metadata: {
+          nom: user.nom,
+          prenom: user.prenom,
+          role: user.role
         }
       });
 
@@ -54,38 +55,35 @@ export const userService = {
         throw new Error('Aucun utilisateur créé dans Auth');
       }
 
-      console.log('Utilisateur Auth créé:', authData.user.id);
+      console.log('Utilisateur Auth créé avec ID:', authData.user.id);
 
-      // Attendre un peu pour s'assurer que l'utilisateur Auth est bien créé
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Étape 2: Créer directement l'utilisateur dans la table avec l'ID Auth
+      const userData = {
+        id: authData.user.id,
+        nom: user.nom,
+        prenom: user.prenom,
+        email: user.email,
+        role: user.role,
+        statut: user.statut,
+        mot_de_passe_change: false
+      };
 
-      // Créer l'utilisateur dans notre table avec l'ID exact de Auth
+      console.log('Données à insérer:', userData);
+
       const { data, error } = await supabase
         .from('users')
-        .insert([{
-          id: authData.user.id, // Utiliser l'ID exact de l'utilisateur Auth
-          nom: user.nom,
-          prenom: user.prenom,
-          email: user.email,
-          role: user.role,
-          statut: user.statut,
-          mot_de_passe_change: false
-        }])
+        .insert([userData])
         .select()
         .single();
       
       if (error) {
-        console.error('Erreur lors de la création dans la table users:', error);
-        // Si l'insertion échoue, on essaie de supprimer l'utilisateur Auth créé
-        try {
-          await supabase.auth.admin.deleteUser(authData.user.id);
-        } catch (cleanupError) {
-          console.error('Erreur lors du nettoyage:', cleanupError);
-        }
+        console.error('Erreur lors de l\'insertion dans users:', error);
+        // Nettoyer l'utilisateur Auth créé en cas d'erreur
+        await supabase.auth.admin.deleteUser(authData.user.id);
         throw error;
       }
 
-      console.log('Utilisateur créé avec succès:', data);
+      console.log('Utilisateur créé avec succès dans users:', data);
       
       return {
         ...data,
