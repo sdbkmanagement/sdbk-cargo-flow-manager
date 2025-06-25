@@ -17,7 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Search, Filter, Download, Eye } from 'lucide-react';
+import { Search, Filter, Download, Eye, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 const getStatutBadgeVariant = (statut: string) => {

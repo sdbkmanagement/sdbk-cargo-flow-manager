@@ -89,15 +89,29 @@ export const ChargementsForm = () => {
 
   const createChargementMutation = useMutation({
     mutationFn: async (data: ChargementFormData) => {
+      if (!selectedMission) {
+        throw new Error('Mission non sélectionnée');
+      }
+
+      const chargementData = {
+        mission_id: data.mission_id,
+        vehicule_id: selectedMission.vehicule_id,
+        chauffeur_id: selectedMission.chauffeur_id,
+        type_chargement: data.type_chargement,
+        volume_poids: data.volume_poids,
+        unite_mesure: data.unite_mesure,
+        date_heure_chargement: data.date_heure_chargement,
+        lieu_chargement: data.lieu_chargement,
+        lieu_livraison: data.lieu_livraison,
+        client_nom: data.client_nom,
+        observations: data.observations || null,
+        numero: `CH-${Date.now()}`,
+        statut: 'charge' as const
+      };
+
       const { data: result, error } = await supabase
         .from('chargements')
-        .insert([{
-          ...data,
-          vehicule_id: selectedMission?.vehicule_id,
-          chauffeur_id: selectedMission?.chauffeur_id,
-          numero: `CH-${Date.now()}`,
-          statut: 'charge'
-        }])
+        .insert([chargementData])
         .select()
         .single();
 
