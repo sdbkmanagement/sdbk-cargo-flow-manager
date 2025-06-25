@@ -14,6 +14,7 @@ import Fleet from "@/pages/Fleet";
 import Validations from "@/pages/Validations";
 import Missions from "@/pages/Missions";
 import Guide from "@/pages/Guide";
+import Cargo from "@/pages/Cargo";
 
 const queryClient = new QueryClient();
 
@@ -74,17 +75,14 @@ const AppContent = () => {
           <Validations />
         </ProtectedRoute>
       } />
+      <Route path="/cargo" element={
+        <ProtectedRoute>
+          <Cargo />
+        </ProtectedRoute>
+      } />
       <Route path="/guide" element={
         <ProtectedRoute>
           <Guide />
-        </ProtectedRoute>
-      } />
-      <Route path="/cargo" element={
-        <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Suivi des chargements</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
         </ProtectedRoute>
       } />
       <Route path="/hr" element={

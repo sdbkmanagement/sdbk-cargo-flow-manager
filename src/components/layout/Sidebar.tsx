@@ -69,7 +69,7 @@ const navigationItems = [
     title: 'Guide d\'utilisation',
     icon: BookOpen,
     path: '/guide',
-    roles: ['all']
+    roles: ['admin']
   },
   {
     title: 'Administration',
