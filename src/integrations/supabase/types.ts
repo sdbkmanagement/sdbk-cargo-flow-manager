@@ -1215,6 +1215,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_user_exists: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_resource_availability: {
         Args: {
           p_vehicule_id: string
