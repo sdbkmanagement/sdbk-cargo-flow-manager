@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User, UserRole } from '@/types';
 
@@ -47,6 +46,40 @@ const demoUsers: User[] = [
     permissions: ['drivers_read', 'drivers_write', 'hr_read', 'hr_write']
   }
 ];
+
+const ROLE_PERMISSIONS = {
+  admin: [
+    'dashboard_read', 'drivers_read', 'drivers_write', 'fleet_read', 'fleet_write',
+    'billing_read', 'billing_write', 'missions_read', 'missions_write', 'validation_read',
+    'validation_write', 'hr_read', 'hr_write', 'cargo_read', 'cargo_write'
+  ],
+  transport: [
+    'dashboard_read', 'drivers_read', 'fleet_read', 'missions_read', 'missions_write',
+    'cargo_read', 'cargo_write'
+  ],
+  obc: [
+    'dashboard_read', 'missions_read', 'missions_write', 'validation_read', 'validation_write',
+    'cargo_read', 'cargo_write'
+  ],
+  maintenance: [
+    'dashboard_read', 'fleet_read', 'fleet_write', 'validation_read', 'validation_write'
+  ],
+  administratif: [
+    'dashboard_read', 'billing_read', 'billing_write', 'validation_read', 'validation_write'
+  ],
+  hsecq: [
+    'dashboard_read', 'validation_read', 'validation_write'
+  ],
+  facturation: [
+    'dashboard_read', 'billing_read', 'billing_write'
+  ],
+  rh: [
+    'dashboard_read', 'drivers_read', 'drivers_write', 'hr_read', 'hr_write'
+  ],
+  direction: [
+    'dashboard_read', 'billing_read', 'fleet_read', 'missions_read', 'drivers_read'
+  ]
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,6 +11,7 @@ import Drivers from "@/pages/Drivers";
 import Billing from "@/pages/Billing";
 import Fleet from "@/pages/Fleet";
 import Validations from "@/pages/Validations";
+import Missions from "@/pages/Missions";
 
 const queryClient = new QueryClient();
 
@@ -64,10 +64,7 @@ const AppContent = () => {
       } />
       <Route path="/missions" element={
         <ProtectedRoute>
-          <div className="p-6">
-            <h1 className="text-2xl font-bold">Planification des missions</h1>
-            <p className="text-muted-foreground mt-2">Module en développement...</p>
-          </div>
+          <Missions />
         </ProtectedRoute>
       } />
       <Route path="/validations" element={
