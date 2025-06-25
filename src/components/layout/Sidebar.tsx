@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { UserMenu } from './UserMenu';
 import { 
   LayoutDashboard,
   Truck, 
@@ -80,13 +81,20 @@ export const Sidebar = () => {
         ))}
       </nav>
 
-      {/* Footer */}
+      {/* User Menu */}
       <div className="p-4 border-t border-gray-200">
-        {!collapsed && (
-          <div className="text-xs text-gray-500 text-center">
-            SDBK Cargo Flow Manager
-            <br />
-            v1.0.0
+        {!collapsed ? (
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-gray-500">
+              SDBK Cargo Flow Manager
+              <br />
+              v1.0.0
+            </div>
+            <UserMenu />
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <UserMenu />
           </div>
         )}
       </div>
