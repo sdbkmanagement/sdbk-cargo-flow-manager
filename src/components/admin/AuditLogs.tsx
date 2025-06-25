@@ -61,7 +61,7 @@ export const AuditLogs = () => {
     );
   };
 
-  const formatDetails = (details: any) => {
+  const formatDetails = (details: any): string => {
     if (!details) return 'Aucun détail';
     
     try {
