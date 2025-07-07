@@ -176,8 +176,7 @@ export const VehicleTable = ({
                   size="sm"
                   onClick={() => handleDeleteClick(vehicle)}
                   title={getDeleteTooltip(vehicle)}
-                  disabled={!canDeleteVehicle(vehicle)}
-                  className={!canDeleteVehicle(vehicle) ? "opacity-50 cursor-not-allowed" : ""}
+                  className={!canDeleteVehicle(vehicle) ? "opacity-50" : ""}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

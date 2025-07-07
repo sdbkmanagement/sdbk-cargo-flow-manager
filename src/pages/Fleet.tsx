@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { SearchInput } from '@/components/fleet/SearchInput';
 import { DocumentUploadSection } from '@/components/fleet/form/DocumentUploadSection';
+import { VehicleMaintenanceHistory } from '@/components/fleet/VehicleMaintenanceHistory';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -254,24 +254,14 @@ const Fleet = () => {
 
       {showMaintenance && selectedVehicle && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Maintenance - {selectedVehicle.numero}</h2>
               <Button variant="outline" onClick={handleCloseMaintenance}>
                 Fermer
               </Button>
             </div>
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                Historique de maintenance pour le véhicule {selectedVehicle.numero} - {selectedVehicle.immatriculation}
-              </p>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <p className="text-blue-800 font-medium">Fonctionnalité en cours de développement</p>
-                <p className="text-blue-600 text-sm mt-1">
-                  L'historique détaillé de maintenance sera bientôt disponible.
-                </p>
-              </div>
-            </div>
+            <VehicleMaintenanceHistory vehicle={selectedVehicle} />
           </div>
         </div>
       )}
