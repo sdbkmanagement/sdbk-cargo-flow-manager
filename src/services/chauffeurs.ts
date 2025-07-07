@@ -72,7 +72,10 @@ export const chauffeursService = {
   async uploadFile(file: File, path: string): Promise<string> {
     const { data, error } = await supabase.storage
       .from('documents')
-      .upload(path, file)
+      .upload(path, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
 
     if (error) {
       console.error('Erreur lors de l\'upload du fichier:', error)
@@ -84,5 +87,27 @@ export const chauffeursService = {
       .getPublicUrl(data.path)
 
     return urlData.publicUrl
+  },
+
+  // Enregistrer les documents uploadés dans l'étape documents
+  async saveDocuments(chauffeurId: string, documents: any[]): Promise<void> {
+    if (documents.length === 0) return;
+
+    const documentRecords = documents.map(doc => ({
+      chauffeur_id: chauffeurId,
+      nom: doc.name,
+      type: doc.type || 'autre',
+      url: doc.url,
+      taille: doc.size
+    }));
+
+    const { error } = await supabase
+      .from('documents')
+      .insert(documentRecords);
+
+    if (error) {
+      console.error('Erreur lors de la sauvegarde des documents:', error);
+      throw error;
+    }
   }
 }

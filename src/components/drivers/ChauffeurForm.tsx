@@ -75,13 +75,27 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
 
   const createChauffeurMutation = useMutation({
     mutationFn: chauffeursService.create,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
-      toast({
-        title: "Chauffeur créé",
-        description: "Le nouveau chauffeur a été ajouté avec succès",
-      });
-      onSuccess();
+    onSuccess: async (createdChauffeur) => {
+      // Sauvegarder les documents après création du chauffeur
+      try {
+        if (uploadedDocuments.length > 0) {
+          await chauffeursService.saveDocuments(createdChauffeur.id, uploadedDocuments);
+        }
+        
+        queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
+        toast({
+          title: "Chauffeur créé",
+          description: "Le nouveau chauffeur a été ajouté avec succès",
+        });
+        onSuccess();
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde des documents:', error);
+        toast({
+          title: "Chauffeur créé",
+          description: "Chauffeur créé mais erreur lors de la sauvegarde des documents",
+          variant: "destructive",
+        });
+      }
     },
     onError: (error) => {
       console.error('Erreur lors de la création:', error);
@@ -144,6 +158,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
   };
 
   const handleDocumentsChange = (files: UploadedFile[]) => {
+    console.log('Documents uploadés:', files);
     setUploadedDocuments(files);
   };
 
@@ -184,7 +199,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
             <DocumentsStep 
               form={form}
               uploadedDocuments={uploadedDocuments}
-              onDocumentsChange={setUploadedDocuments}
+              onDocumentsChange={handleDocumentsChange}
             />
           )}
           

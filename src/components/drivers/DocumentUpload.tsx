@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Upload, File, X, FileText, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { chauffeursService } from '@/services/chauffeurs';
 
 interface UploadedFile {
   id: string;
@@ -28,6 +29,7 @@ export const DocumentUpload = ({
 }: DocumentUploadProps) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -66,10 +68,11 @@ export const DocumentUpload = ({
     return null;
   };
 
-  const handleFileSelect = (selectedFiles: FileList) => {
+  const handleFileSelect = async (selectedFiles: FileList) => {
     const fileArray = Array.from(selectedFiles);
+    setUploading(true);
     
-    fileArray.forEach(file => {
+    for (const file of fileArray) {
       const error = validateFile(file);
       
       if (error) {
@@ -78,35 +81,52 @@ export const DocumentUpload = ({
           description: error,
           variant: "destructive"
         });
-        return;
+        continue;
       }
 
-      // Créer l'URL pour prévisualisation
-      const fileUrl = URL.createObjectURL(file);
-      
-      const newFile: UploadedFile = {
-        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        url: fileUrl
-      };
+      try {
+        // Upload du fichier vers Supabase Storage
+        const tempChauffeurId = 'temp_' + Date.now(); // ID temporaire pour l'upload
+        const fileUrl = await chauffeursService.uploadFile(file, `${tempChauffeurId}/${file.name}`);
+        
+        const newFile: UploadedFile = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          url: fileUrl
+        };
 
-      const updatedFiles = [...files, newFile];
-      setFiles(updatedFiles);
-      onFilesChange(updatedFiles);
+        const updatedFiles = [...files, newFile];
+        setFiles(updatedFiles);
+        onFilesChange(updatedFiles);
 
-      toast({
-        title: "Fichier ajouté",
-        description: `${file.name} a été téléchargé avec succès`,
-      });
-    });
+        toast({
+          title: "Fichier ajouté",
+          description: `${file.name} a été téléchargé avec succès`,
+        });
+      } catch (error) {
+        console.error('Erreur lors de l\'upload:', error);
+        toast({
+          title: "Erreur d'upload",
+          description: `Impossible de télécharger ${file.name}`,
+          variant: "destructive"
+        });
+      }
+    }
+    
+    setUploading(false);
   };
 
   const removeFile = (fileId: string) => {
     const updatedFiles = files.filter(f => f.id !== fileId);
     setFiles(updatedFiles);
     onFilesChange(updatedFiles);
+    
+    toast({
+      title: "Fichier supprimé",
+      description: "Le fichier a été retiré de la liste",
+    });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -152,8 +172,9 @@ export const DocumentUpload = ({
             type="button" 
             variant="outline" 
             onClick={openFileDialog}
+            disabled={uploading}
           >
-            Télécharger les documents
+            {uploading ? 'Téléchargement...' : 'Télécharger les documents'}
           </Button>
           <p className="text-sm text-gray-500">
             ou glissez-déposez vos fichiers ici
@@ -200,6 +221,7 @@ export const DocumentUpload = ({
                   size="sm"
                   onClick={() => removeFile(file.id)}
                   className="text-red-600 hover:text-red-800"
+                  disabled={uploading}
                 >
                   <X className="w-4 h-4" />
                 </Button>
