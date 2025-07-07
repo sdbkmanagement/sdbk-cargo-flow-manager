@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import type { Database } from '@/integrations/supabase/types'
 
@@ -63,13 +62,17 @@ export const missionsService = {
     return data
   },
 
-  // Mettre à jour une mission
+  // Mettre à jour une mission avec gestion des ressources
   async update(id: string, missionData: MissionUpdate): Promise<Mission> {
     const { data, error } = await supabase
       .from('missions')
       .update({ ...missionData, updated_at: new Date().toISOString() })
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        vehicule:vehicules(numero, marque, modele, immatriculation, type_transport),
+        chauffeur:chauffeurs(nom, prenom, telephone)
+      `)
       .single()
 
     if (error) {
@@ -77,7 +80,50 @@ export const missionsService = {
       throw error
     }
 
+    // Si la mission passe au statut "terminee", libérer les ressources
+    if (missionData.statut === 'terminee') {
+      console.log('Mission terminée, libération des ressources...')
+      await this.liberateResources(data.vehicule_id, data.chauffeur_id)
+    }
+
     return data
+  },
+
+  // Libérer les ressources (véhicule et chauffeur)
+  async liberateResources(vehiculeId: string, chauffeurId: string): Promise<void> {
+    try {
+      // Mettre le véhicule en statut "disponible"
+      const { error: vehiculeError } = await supabase
+        .from('vehicules')
+        .update({ 
+          statut: 'disponible',
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', vehiculeId)
+
+      if (vehiculeError) {
+        console.error('Erreur lors de la libération du véhicule:', vehiculeError)
+      } else {
+        console.log('Véhicule libéré avec succès')
+      }
+
+      // Mettre le chauffeur en statut "actif" (disponible)
+      const { error: chauffeurError } = await supabase
+        .from('chauffeurs')
+        .update({ 
+          statut: 'actif',
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', chauffeurId)
+
+      if (chauffeurError) {
+        console.error('Erreur lors de la libération du chauffeur:', chauffeurError)
+      } else {
+        console.log('Chauffeur libéré avec succès')
+      }
+    } catch (error) {
+      console.error('Erreur générale lors de la libération des ressources:', error)
+    }
   },
 
   // Supprimer une mission

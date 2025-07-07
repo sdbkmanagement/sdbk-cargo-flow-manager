@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Search, 
   Filter,
   Edit,
-  Eye,
+  Trash2,
   MapPin,
   Calendar,
   Truck,
@@ -17,6 +19,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { missionsService } from '@/services/missions';
 
 interface MissionsTableProps {
   missions: any[];
@@ -29,6 +32,35 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const deleteMissionMutation = useMutation({
+    mutationFn: missionsService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      toast({
+        title: "Mission supprimée",
+        description: "La mission a été supprimée avec succès",
+      });
+      onRefresh();
+    },
+    onError: (error) => {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la mission",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDeleteMission = (mission: any) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer la mission ${mission.numero} ?`)) {
+      console.log('Suppression de la mission:', mission.id);
+      deleteMissionMutation.mutate(mission.id);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -180,16 +212,20 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
                         variant="ghost"
                         size="sm"
                         onClick={() => onEdit(mission)}
+                        title="Modifier la mission"
                       >
-                        <Eye className="w-4 h-4" />
+                        <Edit className="w-4 h-4" />
                       </Button>
                       {hasWritePermission && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => onEdit(mission)}
+                          onClick={() => handleDeleteMission(mission)}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                          title="Supprimer la mission"
+                          disabled={deleteMissionMutation.isPending}
                         >
-                          <Edit className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       )}
                     </div>
