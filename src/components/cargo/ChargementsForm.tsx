@@ -30,7 +30,11 @@ const chargementSchema = z.object({
 
 type ChargementFormData = z.infer<typeof chargementSchema>;
 
-export const ChargementsForm = () => {
+interface ChargementsFormProps {
+  onSuccess?: () => void;
+}
+
+export const ChargementsForm = ({ onSuccess }: ChargementsFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -126,6 +130,10 @@ export const ChargementsForm = () => {
       reset();
       queryClient.invalidateQueries({ queryKey: ['chargements'] });
       queryClient.invalidateQueries({ queryKey: ['chargements-stats'] });
+      // Call the onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     },
     onError: (error) => {
       toast({
