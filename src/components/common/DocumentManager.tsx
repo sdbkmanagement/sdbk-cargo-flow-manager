@@ -350,10 +350,10 @@ export const DocumentManager = ({
                       <FileText className="w-4 h-4 text-blue-500" />
                       <span className="font-medium">{document.nom}</span>
                       {isExpired(document) && (
-                        <AlertTriangle className="w-4 h-4 text-red-500" title="Document expiré" />
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
                       )}
                       {isExpiring(document) && !isExpired(document) && (
-                        <AlertTriangle className="w-4 h-4 text-orange-500" title="Document expire bientôt" />
+                        <AlertTriangle className="w-4 h-4 text-orange-500" />
                       )}
                     </div>
                   </TableCell>
@@ -392,7 +392,6 @@ export const DocumentManager = ({
                         variant="outline" 
                         size="sm"
                         onClick={() => handleView(document)}
-                        title="Voir le document"
                       >
                         <Eye className="w-4 h-4" />
                       </Button>
@@ -400,7 +399,6 @@ export const DocumentManager = ({
                         variant="outline" 
                         size="sm"
                         onClick={() => handleDownload(document)}
-                        title="Télécharger le document"
                       >
                         <Download className="w-4 h-4" />
                       </Button>
@@ -409,7 +407,6 @@ export const DocumentManager = ({
                           variant="outline" 
                           size="sm"
                           onClick={() => handleDelete(document)}
-                          title="Supprimer le document"
                           className="text-red-600 hover:text-red-800"
                         >
                           <Trash2 className="w-4 h-4" />

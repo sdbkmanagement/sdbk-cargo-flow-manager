@@ -389,8 +389,12 @@ export type Database = {
         Row: {
           chauffeur_id: string | null
           created_at: string | null
+          date_expiration: string | null
+          entity_id: string | null
+          entity_type: string | null
           id: string
           nom: string
+          statut: string | null
           taille: number
           type: string
           url: string
@@ -398,8 +402,12 @@ export type Database = {
         Insert: {
           chauffeur_id?: string | null
           created_at?: string | null
+          date_expiration?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
           nom: string
+          statut?: string | null
           taille: number
           type: string
           url: string
@@ -407,8 +415,12 @@ export type Database = {
         Update: {
           chauffeur_id?: string | null
           created_at?: string | null
+          date_expiration?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
           id?: string
           nom?: string
+          statut?: string | null
           taille?: number
           type?: string
           url?: string
