@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,9 @@ const Fleet = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('list');
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicule | null>(null);
+  const [showDocuments, setShowDocuments] = useState(false);
+  const [showMaintenance, setShowMaintenance] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -56,8 +60,8 @@ const Fleet = () => {
     },
     onError: (error: any) => {
       toast({
-        title: 'Erreur',
-        description: 'Impossible de supprimer le véhicule.',
+        title: 'Erreur de suppression',
+        description: error.message || 'Impossible de supprimer le véhicule.',
         variant: 'destructive',
       });
     },
@@ -72,6 +76,24 @@ const Fleet = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer ce véhicule ?')) {
       deleteMutation.mutate(id);
     }
+  };
+
+  const handleViewDocuments = (vehicle: Vehicule) => {
+    setSelectedVehicle(vehicle);
+    setShowDocuments(true);
+    toast({
+      title: 'Documents du véhicule',
+      description: `Affichage des documents pour ${vehicle.numero}`,
+    });
+  };
+
+  const handleViewMaintenance = (vehicle: Vehicule) => {
+    setSelectedVehicle(vehicle);
+    setShowMaintenance(true);
+    toast({
+      title: 'Maintenance du véhicule',
+      description: `Affichage de la maintenance pour ${vehicle.numero}`,
+    });
   };
 
   const handleFormClose = () => {
@@ -183,6 +205,8 @@ const Fleet = () => {
                 vehicles={filteredVehicles}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onViewDocuments={handleViewDocuments}
+                onViewMaintenance={handleViewMaintenance}
               />
             </TabsContent>
             

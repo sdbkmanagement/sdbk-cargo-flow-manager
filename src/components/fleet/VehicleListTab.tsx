@@ -15,9 +15,17 @@ interface VehicleListTabProps {
   vehicles: Vehicule[];
   onEdit: (vehicule: Vehicule) => void;
   onDelete: (id: string) => void;
+  onViewDocuments?: (vehicule: Vehicule) => void;
+  onViewMaintenance?: (vehicule: Vehicule) => void;
 }
 
-export const VehicleListTab = ({ vehicles, onEdit, onDelete }: VehicleListTabProps) => {
+export const VehicleListTab = ({ 
+  vehicles, 
+  onEdit, 
+  onDelete, 
+  onViewDocuments, 
+  onViewMaintenance 
+}: VehicleListTabProps) => {
   return (
     <Card>
       <CardHeader>
@@ -31,6 +39,8 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete }: VehicleListTabPro
           vehicles={vehicles}
           onEdit={onEdit}
           onDelete={onDelete}
+          onViewDocuments={onViewDocuments}
+          onViewMaintenance={onViewMaintenance}
         />
       </CardContent>
     </Card>

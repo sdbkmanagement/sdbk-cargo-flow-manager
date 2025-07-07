@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import type { Database } from '@/integrations/supabase/types'
 
@@ -60,8 +59,45 @@ export const vehiculesService = {
     return data
   },
 
-  // Supprimer un véhicule
+  // Supprimer un véhicule avec vérifications
   async delete(id: string): Promise<void> {
+    // Vérifier si le véhicule est utilisé dans des missions
+    const { data: missions, error: missionsError } = await supabase
+      .from('missions')
+      .select('id')
+      .eq('vehicule_id', id)
+      .in('statut', ['en_attente', 'en_cours'])
+
+    if (missionsError) {
+      console.error('Erreur lors de la vérification des missions:', missionsError)
+      throw new Error('Impossible de vérifier les missions associées')
+    }
+
+    if (missions && missions.length > 0) {
+      throw new Error('Ce véhicule est assigné à une ou plusieurs missions actives et ne peut pas être supprimé.')
+    }
+
+    // Vérifier si le véhicule a un chauffeur assigné
+    const { data: vehicule, error: vehiculeError } = await supabase
+      .from('vehicules')
+      .select('chauffeur_assigne, statut')
+      .eq('id', id)
+      .single()
+
+    if (vehiculeError) {
+      console.error('Erreur lors de la récupération du véhicule:', vehiculeError)
+      throw new Error('Véhicule introuvable')
+    }
+
+    if (vehicule.chauffeur_assigne) {
+      throw new Error('Ce véhicule est assigné à un chauffeur et ne peut pas être supprimé.')
+    }
+
+    if (vehicule.statut === 'en_mission') {
+      throw new Error('Ce véhicule est actuellement en mission et ne peut pas être supprimé.')
+    }
+
+    // Supprimer le véhicule
     const { error } = await supabase
       .from('vehicules')
       .delete()
@@ -69,6 +105,11 @@ export const vehiculesService = {
 
     if (error) {
       console.error('Erreur lors de la suppression du véhicule:', error)
+      
+      if (error.message.includes('foreign key constraint')) {
+        throw new Error('Ce véhicule ne peut pas être supprimé car il est lié à d\'autres données.')
+      }
+      
       throw error
     }
   },

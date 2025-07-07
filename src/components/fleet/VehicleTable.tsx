@@ -17,9 +17,17 @@ interface VehicleTableProps {
   vehicles: Vehicule[];
   onEdit: (vehicule: Vehicule) => void;
   onDelete: (id: string) => void;
+  onViewDocuments?: (vehicule: Vehicule) => void;
+  onViewMaintenance?: (vehicule: Vehicule) => void;
 }
 
-export const VehicleTable = ({ vehicles, onEdit, onDelete }: VehicleTableProps) => {
+export const VehicleTable = ({ 
+  vehicles, 
+  onEdit, 
+  onDelete, 
+  onViewDocuments, 
+  onViewMaintenance 
+}: VehicleTableProps) => {
   const getStatusBadge = (statut: string) => {
     const variants = {
       'disponible': 'bg-green-100 text-green-800',
@@ -48,6 +56,31 @@ export const VehicleTable = ({ vehicles, onEdit, onDelete }: VehicleTableProps) 
         {type === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
       </Badge>
     );
+  };
+
+  const canDeleteVehicle = (vehicle: Vehicule) => {
+    // Un véhicule peut être supprimé s'il n'est pas en mission ou assigné
+    return vehicle.statut === 'disponible' && !vehicle.chauffeur_assigne;
+  };
+
+  const handleDeleteClick = (vehicle: Vehicule) => {
+    if (!canDeleteVehicle(vehicle)) {
+      let reason = '';
+      if (vehicle.statut === 'en_mission') {
+        reason = 'Ce véhicule est actuellement en mission et ne peut pas être supprimé.';
+      } else if (vehicle.chauffeur_assigne) {
+        reason = 'Ce véhicule est assigné à un chauffeur et ne peut pas être supprimé.';
+      } else if (vehicle.statut === 'maintenance') {
+        reason = 'Ce véhicule est en maintenance et ne peut pas être supprimé.';
+      } else {
+        reason = 'Ce véhicule ne peut pas être supprimé en raison de son statut actuel.';
+      }
+      
+      alert(`Suppression impossible: ${reason}`);
+      return;
+    }
+    
+    onDelete(vehicle.id);
   };
 
   return (
@@ -110,19 +143,33 @@ export const VehicleTable = ({ vehicles, onEdit, onDelete }: VehicleTableProps) 
                   variant="outline" 
                   size="sm"
                   onClick={() => onEdit(vehicle)}
+                  title="Modifier le véhicule"
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onViewDocuments?.(vehicle)}
+                  title="Voir les documents"
+                >
                   <FileText className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => onViewMaintenance?.(vehicle)}
+                  title="Voir la maintenance"
+                >
                   <Wrench className="h-4 w-4" />
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => onDelete(vehicle.id)}
+                  onClick={() => handleDeleteClick(vehicle)}
+                  title={canDeleteVehicle(vehicle) ? "Supprimer le véhicule" : "Suppression impossible"}
+                  disabled={!canDeleteVehicle(vehicle)}
+                  className={!canDeleteVehicle(vehicle) ? "opacity-50 cursor-not-allowed" : ""}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
