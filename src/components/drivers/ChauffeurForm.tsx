@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -51,7 +50,6 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
     }
   });
 
-  // Initialiser les photos existantes
   useEffect(() => {
     if (chauffeur?.photo_url) {
       setProfilePhoto({
@@ -129,6 +127,8 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
   });
 
   const onSubmit = async (data: any) => {
+    console.log('Soumission du formulaire, étape actuelle:', currentStep);
+    
     try {
       const chauffeurData = {
         nom: data.nom,
@@ -163,6 +163,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
   };
 
   const handlePhotoChange = (files: UploadedFile[]) => {
+    console.log('Photo changée:', files);
     if (files.length > 0) {
       setProfilePhoto(files[0]);
     } else {
@@ -171,11 +172,29 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
   };
 
   const handleSignatureChange = (files: UploadedFile[]) => {
+    console.log('Signature changée:', files);
     if (files.length > 0) {
       setSignature(files[0]);
     } else {
       setSignature(null);
     }
+  };
+
+  const handleNext = () => {
+    const nextStep = Math.min(formSteps.length, currentStep + 1);
+    console.log('Navigation vers étape:', nextStep);
+    setCurrentStep(nextStep);
+  };
+
+  const handlePrevious = () => {
+    const prevStep = Math.max(1, currentStep - 1);
+    console.log('Navigation vers étape:', prevStep);
+    setCurrentStep(prevStep);
+  };
+
+  const handleFormSubmit = () => {
+    console.log('Déclenchement de la soumission du formulaire');
+    form.handleSubmit(onSubmit)();
   };
 
   const formValues = form.watch();
@@ -192,7 +211,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
       <StepIndicator steps={formSteps} currentStep={currentStep} />
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-6">
           {currentStep === 1 && <PersonalInfoStep form={form} />}
           
           {currentStep === 2 && (
@@ -216,12 +235,12 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
           <FormNavigation
             currentStep={currentStep}
             totalSteps={formSteps.length}
-            onPrevious={() => setCurrentStep(Math.max(1, currentStep - 1))}
-            onNext={() => setCurrentStep(Math.min(formSteps.length, currentStep + 1))}
-            onSubmit={() => form.handleSubmit(onSubmit)()}
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            onSubmit={handleFormSubmit}
             isSubmitting={createChauffeurMutation.isPending || updateChauffeurMutation.isPending}
           />
-        </form>
+        </div>
       </Form>
     </div>
   );

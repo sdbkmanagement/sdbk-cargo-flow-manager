@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,12 +17,14 @@ import {
   Calendar,
   AlertTriangle,
   Edit,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { ChauffeurDetailDialog } from './ChauffeurDetailDialog';
 import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
 type Chauffeur = Database['public']['Tables']['chauffeurs']['Row'];
@@ -37,11 +38,38 @@ export const ChauffeursList = ({ searchTerm, onSelectChauffeur }: ChauffeursList
   const { hasPermission } = useAuth();
   const [selectedChauffeur, setSelectedChauffeur] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: chauffeurs = [], isLoading, error } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll,
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: chauffeursService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
+      toast({
+        title: "Chauffeur supprimé",
+        description: "Le chauffeur a été supprimé avec succès",
+      });
+    },
+    onError: (error) => {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le chauffeur",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleDelete = (chauffeur: Chauffeur) => {
+    if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${chauffeur.prenom} ${chauffeur.nom} ?`)) {
+      deleteMutation.mutate(chauffeur.id);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -195,13 +223,24 @@ export const ChauffeursList = ({ searchTerm, onSelectChauffeur }: ChauffeursList
                             <FileText className="w-4 h-4" />
                           </Button>
                           {hasPermission('drivers_write') && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => onSelectChauffeur(chauffeur)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => onSelectChauffeur(chauffeur)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(chauffeur)}
+                                className="text-red-600 hover:text-red-800"
+                                disabled={deleteMutation.isPending}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
                           )}
                         </div>
                       </TableCell>
