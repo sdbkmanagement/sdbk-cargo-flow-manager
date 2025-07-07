@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -86,20 +87,12 @@ const Fleet = () => {
     console.log('Affichage des documents pour:', vehicle.numero);
     setSelectedVehicle(vehicle);
     setShowDocuments(true);
-    toast({
-      title: 'Documents du véhicule',
-      description: `Affichage des documents pour ${vehicle.numero}`,
-    });
   };
 
   const handleViewMaintenance = (vehicle: Vehicule) => {
     console.log('Affichage de la maintenance pour:', vehicle.numero);
     setSelectedVehicle(vehicle);
     setShowMaintenance(true);
-    toast({
-      title: 'Maintenance du véhicule',
-      description: `Affichage de la maintenance pour ${vehicle.numero}`,
-    });
   };
 
   const handleFormClose = () => {

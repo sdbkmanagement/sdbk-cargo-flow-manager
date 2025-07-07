@@ -64,13 +64,13 @@ export const VehicleTable = ({
 
   const getDeleteTooltip = (vehicle: Vehicule) => {
     if (vehicle.statut === 'en_mission') {
-      return 'Ce véhicule est actuellement en mission';
+      return 'Suppression impossible : Ce véhicule est actuellement en mission';
     } else if (vehicle.chauffeur_assigne) {
-      return 'Ce véhicule est assigné à un chauffeur';
+      return 'Suppression impossible : Ce véhicule est assigné à un chauffeur';
     } else if (vehicle.statut === 'maintenance') {
-      return 'Ce véhicule est en maintenance';
+      return 'Suppression impossible : Ce véhicule est en maintenance';
     } else if (vehicle.statut === 'validation_requise') {
-      return 'Ce véhicule nécessite une validation';
+      return 'Suppression impossible : Ce véhicule nécessite une validation';
     }
     return 'Supprimer le véhicule';
   };
@@ -78,7 +78,7 @@ export const VehicleTable = ({
   const handleDeleteClick = async (vehicle: Vehicule) => {
     if (!canDeleteVehicle(vehicle)) {
       const message = getDeleteTooltip(vehicle);
-      alert(`Suppression impossible: ${message}`);
+      alert(message);
       return;
     }
     
@@ -86,7 +86,6 @@ export const VehicleTable = ({
       try {
         await onDelete(vehicle.id);
       } catch (error: any) {
-        // Afficher le message d'erreur détaillé
         alert(`Erreur lors de la suppression: ${error.message || 'Une erreur inattendue est survenue'}`);
       }
     }
