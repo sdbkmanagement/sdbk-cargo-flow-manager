@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client'
 import type { Database } from '@/integrations/supabase/types'
+import { documentService } from './documentService'
 
 type Chauffeur = Database['public']['Tables']['chauffeurs']['Row']
 type ChauffeurInsert = Database['public']['Tables']['chauffeurs']['Insert']
@@ -93,21 +94,16 @@ export const chauffeursService = {
   async saveDocuments(chauffeurId: string, documents: any[]): Promise<void> {
     if (documents.length === 0) return;
 
-    const documentRecords = documents.map(doc => ({
-      chauffeur_id: chauffeurId,
-      nom: doc.name,
-      type: doc.type || 'autre',
-      url: doc.url,
-      taille: doc.size
-    }));
-
-    const { error } = await supabase
-      .from('documents')
-      .insert(documentRecords);
-
-    if (error) {
-      console.error('Erreur lors de la sauvegarde des documents:', error);
-      throw error;
+    for (const doc of documents) {
+      await documentService.create({
+        entity_type: 'chauffeur',
+        entity_id: chauffeurId,
+        nom: doc.name,
+        type: doc.type || 'autre',
+        url: doc.url,
+        taille: doc.size,
+        statut: 'valide'
+      });
     }
   }
 }

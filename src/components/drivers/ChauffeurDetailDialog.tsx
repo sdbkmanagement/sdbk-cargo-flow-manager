@@ -23,7 +23,19 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { DocumentManager } from './DocumentManager';
+import { DocumentManager } from '../common/DocumentManager';
+
+// Types de documents spécifiques aux chauffeurs
+const chauffeurDocumentTypes = [
+  { value: 'permis_conduire', label: 'Permis de conduire' },
+  { value: 'visite_medicale', label: 'Visite médicale' },
+  { value: 'formation_adr', label: 'Formation ADR' },
+  { value: 'carte_professionnelle', label: 'Carte professionnelle' },
+  { value: 'carte_identite', label: 'Carte d\'identité' },
+  { value: 'attestation_assurance', label: 'Attestation d\'assurance' },
+  { value: 'contrat_travail', label: 'Contrat de travail' },
+  { value: 'autre', label: 'Autre document' }
+];
 
 interface ChauffeurDetailDialogProps {
   chauffeur: any;
@@ -150,8 +162,11 @@ export const ChauffeurDetailDialog = ({ chauffeur, open, onOpenChange }: Chauffe
 
           {activeTab === 'documents' && (
             <DocumentManager 
-              chauffeurId={chauffeur.id} 
-              chauffeurNom={`${chauffeur.prenom} ${chauffeur.nom}`}
+              entityType="chauffeur"
+              entityId={chauffeur.id} 
+              entityName={`${chauffeur.prenom} ${chauffeur.nom}`}
+              documentTypes={chauffeurDocumentTypes}
+              readonly={!hasPermission('drivers_write')}
             />
           )}
 
