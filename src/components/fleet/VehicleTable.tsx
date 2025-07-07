@@ -59,28 +59,37 @@ export const VehicleTable = ({
   };
 
   const canDeleteVehicle = (vehicle: Vehicule) => {
-    // Un véhicule peut être supprimé s'il n'est pas en mission ou assigné
     return vehicle.statut === 'disponible' && !vehicle.chauffeur_assigne;
   };
 
-  const handleDeleteClick = (vehicle: Vehicule) => {
+  const getDeleteTooltip = (vehicle: Vehicule) => {
+    if (vehicle.statut === 'en_mission') {
+      return 'Ce véhicule est actuellement en mission';
+    } else if (vehicle.chauffeur_assigne) {
+      return 'Ce véhicule est assigné à un chauffeur';
+    } else if (vehicle.statut === 'maintenance') {
+      return 'Ce véhicule est en maintenance';
+    } else if (vehicle.statut === 'validation_requise') {
+      return 'Ce véhicule nécessite une validation';
+    }
+    return 'Supprimer le véhicule';
+  };
+
+  const handleDeleteClick = async (vehicle: Vehicule) => {
     if (!canDeleteVehicle(vehicle)) {
-      let reason = '';
-      if (vehicle.statut === 'en_mission') {
-        reason = 'Ce véhicule est actuellement en mission et ne peut pas être supprimé.';
-      } else if (vehicle.chauffeur_assigne) {
-        reason = 'Ce véhicule est assigné à un chauffeur et ne peut pas être supprimé.';
-      } else if (vehicle.statut === 'maintenance') {
-        reason = 'Ce véhicule est en maintenance et ne peut pas être supprimé.';
-      } else {
-        reason = 'Ce véhicule ne peut pas être supprimé en raison de son statut actuel.';
-      }
-      
-      alert(`Suppression impossible: ${reason}`);
+      const message = getDeleteTooltip(vehicle);
+      alert(`Suppression impossible: ${message}`);
       return;
     }
     
-    onDelete(vehicle.id);
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce véhicule ?')) {
+      try {
+        await onDelete(vehicle.id);
+      } catch (error: any) {
+        // Afficher le message d'erreur détaillé
+        alert(`Erreur lors de la suppression: ${error.message || 'Une erreur inattendue est survenue'}`);
+      }
+    }
   };
 
   return (
@@ -167,7 +176,7 @@ export const VehicleTable = ({
                   variant="outline" 
                   size="sm"
                   onClick={() => handleDeleteClick(vehicle)}
-                  title={canDeleteVehicle(vehicle) ? "Supprimer le véhicule" : "Suppression impossible"}
+                  title={getDeleteTooltip(vehicle)}
                   disabled={!canDeleteVehicle(vehicle)}
                   className={!canDeleteVehicle(vehicle) ? "opacity-50 cursor-not-allowed" : ""}
                 >

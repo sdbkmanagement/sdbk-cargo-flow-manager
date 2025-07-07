@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +11,7 @@ import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { SearchInput } from '@/components/fleet/SearchInput';
+import { DocumentUploadSection } from '@/components/fleet/form/DocumentUploadSection';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -59,6 +59,7 @@ const Fleet = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Erreur de suppression:', error);
       toast({
         title: 'Erreur de suppression',
         description: error.message || 'Impossible de supprimer le véhicule.',
@@ -73,12 +74,16 @@ const Fleet = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce véhicule ?')) {
-      deleteMutation.mutate(id);
+    try {
+      await deleteMutation.mutateAsync(id);
+    } catch (error) {
+      // L'erreur sera gérée par onError de la mutation
+      throw error;
     }
   };
 
   const handleViewDocuments = (vehicle: Vehicule) => {
+    console.log('Affichage des documents pour:', vehicle.numero);
     setSelectedVehicle(vehicle);
     setShowDocuments(true);
     toast({
@@ -88,6 +93,7 @@ const Fleet = () => {
   };
 
   const handleViewMaintenance = (vehicle: Vehicule) => {
+    console.log('Affichage de la maintenance pour:', vehicle.numero);
     setSelectedVehicle(vehicle);
     setShowMaintenance(true);
     toast({
@@ -105,6 +111,16 @@ const Fleet = () => {
     queryClient.invalidateQueries({ queryKey: ['vehicles'] });
     queryClient.invalidateQueries({ queryKey: ['fleet-stats'] });
     handleFormClose();
+  };
+
+  const handleCloseDocuments = () => {
+    setShowDocuments(false);
+    setSelectedVehicle(null);
+  };
+
+  const handleCloseMaintenance = () => {
+    setShowMaintenance(false);
+    setSelectedVehicle(null);
   };
 
   // Filtrage des véhicules
@@ -227,6 +243,44 @@ const Fleet = () => {
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
         />
+      )}
+
+      {showDocuments && selectedVehicle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Documents - {selectedVehicle.numero}</h2>
+              <Button variant="outline" onClick={handleCloseDocuments}>
+                Fermer
+              </Button>
+            </div>
+            <DocumentUploadSection vehicleId={selectedVehicle.id} />
+          </div>
+        </div>
+      )}
+
+      {showMaintenance && selectedVehicle && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Maintenance - {selectedVehicle.numero}</h2>
+              <Button variant="outline" onClick={handleCloseMaintenance}>
+                Fermer
+              </Button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-gray-600">
+                Historique de maintenance pour le véhicule {selectedVehicle.numero} - {selectedVehicle.immatriculation}
+              </p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-blue-800 font-medium">Fonctionnalité en cours de développement</p>
+                <p className="text-blue-600 text-sm mt-1">
+                  L'historique détaillé de maintenance sera bientôt disponible.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
