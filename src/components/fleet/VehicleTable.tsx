@@ -78,7 +78,10 @@ export const VehicleTable = ({
   const handleDeleteClick = async (vehicle: Vehicule) => {
     if (!canDeleteVehicle(vehicle)) {
       const cause = getDeleteTooltip(vehicle);
-      alert(`Suppression impossible : ${cause}`);
+      // Utiliser une alerte personnalisée pour éviter le texte indésirable
+      const message = `Suppression impossible : ${cause}`;
+      console.warn(message);
+      window.alert(message);
       return;
     }
     
@@ -86,7 +89,9 @@ export const VehicleTable = ({
       try {
         await onDelete(vehicle.id);
       } catch (error: any) {
-        alert(`Erreur lors de la suppression: ${error.message || 'Une erreur inattendue est survenue'}`);
+        const errorMessage = `Erreur lors de la suppression: ${error.message || 'Une erreur inattendue est survenue'}`;
+        console.error(errorMessage);
+        window.alert(errorMessage);
       }
     }
   };
