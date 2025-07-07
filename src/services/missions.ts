@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client'
 import type { Database } from '@/integrations/supabase/types'
+import { chargementsService } from './chargements'
 
 type Mission = Database['public']['Tables']['missions']['Row']
 type MissionInsert = Database['public']['Tables']['missions']['Insert']
@@ -84,6 +85,13 @@ export const missionsService = {
     if (missionData.statut === 'terminee') {
       console.log('Mission terminée, libération des ressources...')
       await this.liberateResources(data.vehicule_id, data.chauffeur_id)
+      // Synchroniser les chargements avec le nouveau statut de la mission
+      await chargementsService.synchronizeWithMission(id)
+    }
+
+    // Si la mission est annulée, synchroniser les chargements
+    if (missionData.statut === 'annulee') {
+      await chargementsService.synchronizeWithMission(id)
     }
 
     return data
