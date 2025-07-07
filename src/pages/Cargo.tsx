@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package } from 'lucide-react';
@@ -8,6 +8,13 @@ import { ChargementsForm } from '@/components/cargo/ChargementsForm';
 import { ChargementsTable } from '@/components/cargo/ChargementsTable';
 
 const Cargo = () => {
+  const [activeTab, setActiveTab] = useState('liste');
+
+  const handleChargementCreated = () => {
+    // Rediriger vers la liste après création
+    setActiveTab('liste');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3">
@@ -22,7 +29,7 @@ const Cargo = () => {
 
       <ChargementsStats />
 
-      <Tabs defaultValue="liste" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="liste">Liste des chargements</TabsTrigger>
           <TabsTrigger value="nouveau">Nouveau chargement</TabsTrigger>
@@ -51,7 +58,7 @@ const Cargo = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ChargementsForm />
+              <ChargementsForm onSuccess={handleChargementCreated} />
             </CardContent>
           </Card>
         </TabsContent>

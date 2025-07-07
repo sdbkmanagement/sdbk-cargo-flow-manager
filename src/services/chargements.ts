@@ -107,7 +107,10 @@ export const chargementsService = {
   async updateChargement(id: string, updates: Partial<Chargement>) {
     const { data, error } = await supabase
       .from('chargements')
-      .update(updates)
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString()
+      })
       .eq('id', id)
       .select()
       .single();
@@ -132,12 +135,48 @@ export const chargementsService = {
 
     // Enregistrer l'historique
     await this.createHistorique(id, 'changement_statut', {
-      ancien_statut: data.statut,
       nouveau_statut: statut,
       utilisateur_nom: utilisateur
     });
 
     return data;
+  },
+
+  // Mettre à jour automatiquement le statut selon la mission
+  async synchronizeWithMission(missionId: string) {
+    // Récupérer le statut de la mission
+    const { data: mission } = await supabase
+      .from('missions')
+      .select('statut')
+      .eq('id', missionId)
+      .single();
+
+    if (!mission) return;
+
+    // Déterminer le nouveau statut pour les chargements
+    let nouveauStatut: 'charge' | 'livre' | 'annule' = 'charge';
+    
+    if (mission.statut === 'terminee') {
+      nouveauStatut = 'livre';
+    } else if (mission.statut === 'annulee') {
+      nouveauStatut = 'annule';
+    }
+
+    // Mettre à jour tous les chargements de cette mission
+    const { error } = await supabase
+      .from('chargements')
+      .update({ 
+        statut: nouveauStatut,
+        updated_at: new Date().toISOString()
+      })
+      .eq('mission_id', missionId);
+
+    if (error) {
+      console.error('Erreur lors de la synchronisation des chargements:', error);
+      throw error;
+    }
+
+    console.log(`Chargements de la mission ${missionId} mis à jour vers statut: ${nouveauStatut}`);
   },
 
   // Supprimer un chargement

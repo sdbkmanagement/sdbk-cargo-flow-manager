@@ -14,11 +14,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { chargementsService } from '@/services/chargements';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Search, Filter, Download, Eye, Package } from 'lucide-react';
+import { Search, Filter, Download, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { ChargementActions } from './ChargementActions';
+import { exportChargementsToCSV } from '@/utils/chargementsExport';
 
 const getStatutBadgeVariant = (statut: string) => {
   switch (statut) {
@@ -30,6 +32,19 @@ const getStatutBadgeVariant = (statut: string) => {
       return 'destructive';
     default:
       return 'secondary';
+  }
+};
+
+const getStatutBadgeColor = (statut: string) => {
+  switch (statut) {
+    case 'charge':
+      return 'bg-blue-100 text-blue-800';
+    case 'livre':
+      return 'bg-green-100 text-green-800';
+    case 'annule':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
   }
 };
 
@@ -51,22 +66,9 @@ export const ChargementsTable = () => {
   const [statutFilter, setStatutFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
-  const { data: chargements, isLoading } = useQuery({
+  const { data: chargements, isLoading, refetch } = useQuery({
     queryKey: ['chargements'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('chargements')
-        .select(`
-          *,
-          missions(numero, site_depart, site_arrivee),
-          vehicules(immatriculation, marque, modele),
-          chauffeurs(nom, prenom)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data;
-    }
+    queryFn: () => chargementsService.getChargements()
   });
 
   const filteredChargements = chargements?.filter(chargement => {
@@ -83,11 +85,27 @@ export const ChargementsTable = () => {
   });
 
   const handleExport = () => {
+    if (filteredChargements && filteredChargements.length > 0) {
+      exportChargementsToCSV(filteredChargements);
+      toast({
+        title: "Export réussi",
+        description: "Le fichier CSV a été téléchargé avec succès.",
+      });
+    } else {
+      toast({
+        title: "Aucune donnée",
+        description: "Aucun chargement à exporter.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRefresh = () => {
+    refetch();
     toast({
-      title: "Export en cours",
-      description: "Le fichier sera téléchargé dans quelques instants",
+      title: "Données actualisées",
+      description: "La liste des chargements a été rechargée.",
     });
-    // TODO: Implémenter l'export PDF/Excel
   };
 
   if (isLoading) {
@@ -109,10 +127,15 @@ export const ChargementsTable = () => {
       {/* Filtres */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="w-5 h-5" />
-            <span>Filtres et recherche</span>
-          </CardTitle>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <CardTitle className="flex items-center space-x-2">
+              <Filter className="w-5 h-5" />
+              <span>Filtres et recherche</span>
+            </CardTitle>
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              Actualiser
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -214,14 +237,12 @@ export const ChargementsTable = () => {
                       {format(new Date(chargement.date_heure_chargement), 'dd/MM/yyyy HH:mm', { locale: fr })}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatutBadgeVariant(chargement.statut)}>
+                      <Badge className={getStatutBadgeColor(chargement.statut)}>
                         {getStatutLabel(chargement.statut)}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
-                        <Eye className="w-4 h-4" />
-                      </Button>
+                      <ChargementActions chargement={chargement} />
                     </TableCell>
                   </TableRow>
                 ))}
