@@ -64,21 +64,21 @@ export const VehicleTable = ({
 
   const getDeleteTooltip = (vehicle: Vehicule) => {
     if (vehicle.statut === 'en_mission') {
-      return 'Suppression impossible : Ce véhicule est actuellement en mission';
+      return 'Ce véhicule est actuellement en mission';
     } else if (vehicle.chauffeur_assigne) {
-      return 'Suppression impossible : Ce véhicule est assigné à un chauffeur';
+      return 'Ce véhicule est assigné à un chauffeur';
     } else if (vehicle.statut === 'maintenance') {
-      return 'Suppression impossible : Ce véhicule est en maintenance';
+      return 'Ce véhicule est en maintenance';
     } else if (vehicle.statut === 'validation_requise') {
-      return 'Suppression impossible : Ce véhicule nécessite une validation';
+      return 'Ce véhicule nécessite une validation';
     }
     return 'Supprimer le véhicule';
   };
 
   const handleDeleteClick = async (vehicle: Vehicule) => {
     if (!canDeleteVehicle(vehicle)) {
-      const message = getDeleteTooltip(vehicle);
-      alert(message);
+      const cause = getDeleteTooltip(vehicle);
+      alert(`Suppression impossible : ${cause}`);
       return;
     }
     
