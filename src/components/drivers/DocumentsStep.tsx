@@ -7,8 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { FileText } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
-import { DocumentUpload } from '../DocumentUpload';
-import { typePermisOptions } from './steps';
+import { DocumentUpload } from './DocumentUpload';
+import { typePermisOptions } from './form/steps';
 
 interface UploadedFile {
   id: string;
