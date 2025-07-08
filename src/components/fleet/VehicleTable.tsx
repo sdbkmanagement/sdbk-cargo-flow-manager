@@ -58,6 +58,28 @@ export const VehicleTable = ({
     );
   };
 
+  const getVehicleTypeBadge = (typeVehicule: string) => {
+    return (
+      <Badge variant={typeVehicule === 'tracteur_remorque' ? 'default' : 'outline'}>
+        {typeVehicule === 'tracteur_remorque' ? 'Tracteur + Remorque' : 'Porteur'}
+      </Badge>
+    );
+  };
+
+  const getDisplayImmatriculation = (vehicle: Vehicule) => {
+    if (vehicle.type_vehicule === 'tracteur_remorque') {
+      return `${vehicle.tracteur_immatriculation || 'N/A'} / ${vehicle.remorque_immatriculation || 'N/A'}`;
+    }
+    return vehicle.immatriculation || 'N/A';
+  };
+
+  const getDisplayMarque = (vehicle: Vehicule) => {
+    if (vehicle.type_vehicule === 'tracteur_remorque') {
+      return `${vehicle.tracteur_marque || 'N/A'} ${vehicle.tracteur_modele || ''}`;
+    }
+    return `${vehicle.marque || 'N/A'} ${vehicle.modele || ''}`;
+  };
+
   const canDeleteVehicle = (vehicle: Vehicule) => {
     return vehicle.statut === 'disponible' && !vehicle.chauffeur_assigne;
   };
@@ -102,10 +124,11 @@ export const VehicleTable = ({
         <TableRow>
           <TableHead>Véhicule</TableHead>
           <TableHead>Immatriculation</TableHead>
-          <TableHead>Type</TableHead>
+          <TableHead>Type véhicule</TableHead>
+          <TableHead>Catégorie</TableHead>
+          <TableHead>Base</TableHead>
           <TableHead>Chauffeur</TableHead>
           <TableHead>Statut</TableHead>
-          <TableHead>Prochaine maintenance</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -118,14 +141,26 @@ export const VehicleTable = ({
                 <div>
                   <p className="font-medium">{vehicle.numero}</p>
                   <p className="text-sm text-muted-foreground">
-                    {vehicle.marque} {vehicle.modele}
+                    {getDisplayMarque(vehicle)}
                   </p>
                 </div>
               </div>
             </TableCell>
-            <TableCell>{vehicle.immatriculation}</TableCell>
+            <TableCell className="max-w-xs">
+              <div className="truncate">
+                {getDisplayImmatriculation(vehicle)}
+              </div>
+            </TableCell>
+            <TableCell>
+              {getVehicleTypeBadge(vehicle.type_vehicule || 'porteur')}
+            </TableCell>
             <TableCell>
               {getTransportTypeBadge(vehicle.type_transport)}
+            </TableCell>
+            <TableCell>
+              <span className="text-sm text-muted-foreground">
+                {vehicle.base || 'Non définie'}
+              </span>
             </TableCell>
             <TableCell>
               {vehicle.chauffeur 
@@ -135,20 +170,6 @@ export const VehicleTable = ({
             </TableCell>
             <TableCell>
               {getStatusBadge(vehicle.statut)}
-            </TableCell>
-            <TableCell>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm">
-                  {vehicle.prochaine_maintenance 
-                    ? new Date(vehicle.prochaine_maintenance).toLocaleDateString()
-                    : 'Non définie'
-                  }
-                </span>
-                {vehicle.prochaine_maintenance && 
-                 new Date(vehicle.prochaine_maintenance) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) && (
-                  <AlertTriangle className="h-4 w-4 text-red-500" />
-                )}
-              </div>
             </TableCell>
             <TableCell>
               <div className="flex space-x-2">

@@ -11,6 +11,8 @@ import { SpecificationsFields } from './form/SpecificationsFields';
 import { TransportStatusFields } from './form/TransportStatusFields';
 import { MaintenanceFields } from './form/MaintenanceFields';
 import { DocumentUploadSection } from './form/DocumentUploadSection';
+import { TracteurFields } from './form/TracteurFields';
+import { RemorqueFields } from './form/RemorqueFields';
 import { vehiculesService } from '@/services/vehicules';
 import { chauffeursService } from '@/services/chauffeurs';
 import { useToast } from '@/hooks/use-toast';
@@ -20,12 +22,18 @@ type Vehicule = Database['public']['Tables']['vehicules']['Row'];
 type VehiculeInsert = Database['public']['Tables']['vehicules']['Insert'];
 
 interface FormData {
+  // Champs de base
   numero: string;
+  type_vehicule: 'porteur' | 'tracteur_remorque';
+  type_transport: 'hydrocarbures' | 'bauxite';
+  statut: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise';
+  base: string;
+  integration: string;
+  
+  // Champs pour véhicule porteur
   marque: string;
   modele: string;
   immatriculation: string;
-  type_transport: 'hydrocarbures' | 'bauxite';
-  statut: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise';
   chauffeur_assigne: string;
   capacite_max: string;
   unite_capacite: string;
@@ -37,6 +45,25 @@ interface FormData {
   consommation_moyenne: string;
   derniere_maintenance: string;
   prochaine_maintenance: string;
+  
+  // Champs pour tracteur
+  tracteur_immatriculation: string;
+  tracteur_marque: string;
+  tracteur_modele: string;
+  tracteur_configuration: string;
+  tracteur_numero_chassis: string;
+  tracteur_annee_fabrication: string;
+  tracteur_date_mise_circulation: string;
+  
+  // Champs pour remorque
+  remorque_immatriculation: string;
+  remorque_volume_litres: string;
+  remorque_marque: string;
+  remorque_modele: string;
+  remorque_configuration: string;
+  remorque_numero_chassis: string;
+  remorque_annee_fabrication: string;
+  remorque_date_mise_circulation: string;
 }
 
 interface VehicleFormProps {
@@ -51,6 +78,7 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
 
   const { register, handleSubmit, formState: { errors }, reset, setValue, watch } = useForm<FormData>({
     defaultValues: {
+      type_vehicule: 'porteur',
       statut: 'disponible',
       type_transport: 'hydrocarbures',
     }
@@ -79,11 +107,16 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
     mutationFn: async (data: FormData) => {
       const vehicleData: VehiculeInsert = {
         numero: data.numero,
-        marque: data.marque,
-        modele: data.modele,
-        immatriculation: data.immatriculation,
+        type_vehicule: data.type_vehicule,
         type_transport: data.type_transport,
         statut: data.statut,
+        base: data.base || null,
+        integration: data.integration || null,
+        
+        // Champs pour véhicule porteur
+        marque: data.type_vehicule === 'porteur' ? data.marque : null,
+        modele: data.type_vehicule === 'porteur' ? data.modele : null,
+        immatriculation: data.type_vehicule === 'porteur' ? data.immatriculation : null,
         chauffeur_assigne: data.chauffeur_assigne || null,
         capacite_max: data.capacite_max ? parseFloat(data.capacite_max) : null,
         unite_capacite: data.unite_capacite || null,
@@ -93,6 +126,25 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
         consommation_moyenne: data.consommation_moyenne ? parseFloat(data.consommation_moyenne) : null,
         derniere_maintenance: data.derniere_maintenance || null,
         prochaine_maintenance: data.prochaine_maintenance || null,
+        
+        // Champs pour tracteur
+        tracteur_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_immatriculation : null,
+        tracteur_marque: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_marque : null,
+        tracteur_modele: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_modele : null,
+        tracteur_configuration: data.tracteur_configuration || null,
+        tracteur_numero_chassis: data.tracteur_numero_chassis || null,
+        tracteur_annee_fabrication: data.tracteur_annee_fabrication ? parseInt(data.tracteur_annee_fabrication) : null,
+        tracteur_date_mise_circulation: data.tracteur_date_mise_circulation || null,
+        
+        // Champs pour remorque
+        remorque_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.remorque_immatriculation : null,
+        remorque_volume_litres: data.remorque_volume_litres ? parseFloat(data.remorque_volume_litres) : null,
+        remorque_marque: data.type_vehicule === 'tracteur_remorque' ? data.remorque_marque : null,
+        remorque_modele: data.type_vehicule === 'tracteur_remorque' ? data.remorque_modele : null,
+        remorque_configuration: data.remorque_configuration || null,
+        remorque_numero_chassis: data.remorque_numero_chassis || null,
+        remorque_annee_fabrication: data.remorque_annee_fabrication ? parseInt(data.remorque_annee_fabrication) : null,
+        remorque_date_mise_circulation: data.remorque_date_mise_circulation || null,
       };
 
       if (vehicle) {
@@ -122,6 +174,8 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
     mutation.mutate(data);
   };
 
+  const typeVehicule = watch('type_vehicule');
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -141,14 +195,24 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
             </TabsList>
 
             <TabsContent value="basic">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Informations de base</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <BasicInfoFields register={register} errors={errors} />
-                </CardContent>
-              </Card>
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Informations de base</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <BasicInfoFields register={register} errors={errors} watch={watch} setValue={setValue} />
+                  </CardContent>
+                </Card>
+
+                {/* Sections dynamiques selon le type de véhicule */}
+                {typeVehicule === 'tracteur_remorque' && (
+                  <div className="space-y-6">
+                    <TracteurFields register={register} errors={errors} />
+                    <RemorqueFields register={register} errors={errors} />
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="specs">

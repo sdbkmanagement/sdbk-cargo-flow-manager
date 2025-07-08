@@ -1147,6 +1147,7 @@ export type Database = {
       vehicules: {
         Row: {
           annee_fabrication: number | null
+          base: string | null
           capacite_max: number | null
           chauffeur_assigne: string | null
           consommation_moyenne: number | null
@@ -1154,19 +1155,37 @@ export type Database = {
           derniere_maintenance: string | null
           id: string
           immatriculation: string
+          integration: string | null
           kilometrage: number | null
           marque: string
           modele: string
           numero: string
           numero_chassis: string | null
           prochaine_maintenance: string | null
+          remorque_annee_fabrication: number | null
+          remorque_configuration: string | null
+          remorque_date_mise_circulation: string | null
+          remorque_immatriculation: string | null
+          remorque_marque: string | null
+          remorque_modele: string | null
+          remorque_numero_chassis: string | null
+          remorque_volume_litres: number | null
           statut: string
+          tracteur_annee_fabrication: number | null
+          tracteur_configuration: string | null
+          tracteur_date_mise_circulation: string | null
+          tracteur_immatriculation: string | null
+          tracteur_marque: string | null
+          tracteur_modele: string | null
+          tracteur_numero_chassis: string | null
           type_transport: string
+          type_vehicule: string
           unite_capacite: string | null
           updated_at: string
         }
         Insert: {
           annee_fabrication?: number | null
+          base?: string | null
           capacite_max?: number | null
           chauffeur_assigne?: string | null
           consommation_moyenne?: number | null
@@ -1174,19 +1193,37 @@ export type Database = {
           derniere_maintenance?: string | null
           id?: string
           immatriculation: string
+          integration?: string | null
           kilometrage?: number | null
           marque: string
           modele: string
           numero: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null
+          remorque_annee_fabrication?: number | null
+          remorque_configuration?: string | null
+          remorque_date_mise_circulation?: string | null
+          remorque_immatriculation?: string | null
+          remorque_marque?: string | null
+          remorque_modele?: string | null
+          remorque_numero_chassis?: string | null
+          remorque_volume_litres?: number | null
           statut?: string
+          tracteur_annee_fabrication?: number | null
+          tracteur_configuration?: string | null
+          tracteur_date_mise_circulation?: string | null
+          tracteur_immatriculation?: string | null
+          tracteur_marque?: string | null
+          tracteur_modele?: string | null
+          tracteur_numero_chassis?: string | null
           type_transport: string
+          type_vehicule?: string
           unite_capacite?: string | null
           updated_at?: string
         }
         Update: {
           annee_fabrication?: number | null
+          base?: string | null
           capacite_max?: number | null
           chauffeur_assigne?: string | null
           consommation_moyenne?: number | null
@@ -1194,14 +1231,31 @@ export type Database = {
           derniere_maintenance?: string | null
           id?: string
           immatriculation?: string
+          integration?: string | null
           kilometrage?: number | null
           marque?: string
           modele?: string
           numero?: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null
+          remorque_annee_fabrication?: number | null
+          remorque_configuration?: string | null
+          remorque_date_mise_circulation?: string | null
+          remorque_immatriculation?: string | null
+          remorque_marque?: string | null
+          remorque_modele?: string | null
+          remorque_numero_chassis?: string | null
+          remorque_volume_litres?: number | null
           statut?: string
+          tracteur_annee_fabrication?: number | null
+          tracteur_configuration?: string | null
+          tracteur_date_mise_circulation?: string | null
+          tracteur_immatriculation?: string | null
+          tracteur_marque?: string | null
+          tracteur_modele?: string | null
+          tracteur_numero_chassis?: string | null
           type_transport?: string
+          type_vehicule?: string
           unite_capacite?: string | null
           updated_at?: string
         }

@@ -4,26 +4,6 @@ import { UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface FormData {
-  numero: string;
-  marque: string;
-  modele: string;
-  immatriculation: string;
-  type_transport: 'hydrocarbures' | 'bauxite';
-  statut: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise';
-  chauffeur_assigne: string;
-  capacite_max: string;
-  unite_capacite: string;
-  type_carburant: string;
-  date_mise_service: string;
-  kilometrage: string;
-  annee_fabrication: string;
-  numero_chassis: string;
-  consommation_moyenne: string;
-  derniere_maintenance: string;
-  prochaine_maintenance: string;
-}
-
 interface Chauffeur {
   id: string;
   nom: string;
@@ -31,8 +11,8 @@ interface Chauffeur {
 }
 
 interface TransportStatusFieldsProps {
-  setValue: UseFormSetValue<FormData>;
-  watch: UseFormWatch<FormData>;
+  setValue: UseFormSetValue<any>;
+  watch: UseFormWatch<any>;
   chauffeurs: Chauffeur[];
 }
 

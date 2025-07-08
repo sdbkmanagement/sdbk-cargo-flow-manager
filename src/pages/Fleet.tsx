@@ -11,6 +11,7 @@ import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { SearchInput } from '@/components/fleet/SearchInput';
+import { VehicleFilters } from '@/components/fleet/VehicleFilters';
 import { DocumentUploadSection } from '@/components/fleet/form/DocumentUploadSection';
 import { VehicleMaintenanceHistory } from '@/components/fleet/VehicleMaintenanceHistory';
 import { vehiculesService } from '@/services/vehicules';
@@ -29,6 +30,9 @@ const Fleet = () => {
   const [editingVehicle, setEditingVehicle] = useState<Vehicule | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeVehiculeFilter, setTypeVehiculeFilter] = useState<string>('all');
+  const [categorieFilter, setCategorieFilter] = useState<string>('all');
+  const [baseFilter, setBaseFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('list');
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicule | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
@@ -42,10 +46,15 @@ const Fleet = () => {
     queryFn: vehiculesService.getAll,
   });
 
-  // Récupération des statistiques
+  // Récupération des statistiques et bases
   const { data: stats } = useQuery({
     queryKey: ['fleet-stats'],
     queryFn: vehiculesService.getFleetStats,
+  });
+
+  const { data: bases = [] } = useQuery({
+    queryKey: ['vehicle-bases'],
+    queryFn: vehiculesService.getBases,
   });
 
   // Mutation pour supprimer un véhicule
@@ -120,13 +129,18 @@ const Fleet = () => {
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch = 
       vehicle.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.modele.toLowerCase().includes(searchTerm.toLowerCase());
+      (vehicle.immatriculation && vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.tracteur_immatriculation && vehicle.tracteur_immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.remorque_immatriculation && vehicle.remorque_immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.marque && vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (vehicle.modele && vehicle.modele.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || vehicle.statut === statusFilter;
+    const matchesType = typeVehiculeFilter === 'all' || vehicle.type_vehicule === typeVehiculeFilter;
+    const matchesCategorie = categorieFilter === 'all' || vehicle.type_transport === categorieFilter;
+    const matchesBase = baseFilter === 'all' || vehicle.base === baseFilter;
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesType && matchesCategorie && matchesBase;
   });
 
   if (isLoading) {
@@ -187,19 +201,17 @@ const Fleet = () => {
               placeholder="Rechercher un véhicule (immatriculation, marque...)"
             />
             
-            <div className="flex gap-2">
-              <select 
-                value={statusFilter} 
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border rounded-md bg-white text-sm"
-              >
-                <option value="all">Tous les statuts</option>
-                <option value="disponible">Disponible</option>
-                <option value="en_mission">En mission</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="validation_requise">Validation requise</option>
-              </select>
-            </div>
+            <VehicleFilters
+              typeVehiculeFilter={typeVehiculeFilter}
+              setTypeVehiculeFilter={setTypeVehiculeFilter}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              categorieFilter={categorieFilter}
+              setCategorieFilter={setCategorieFilter}
+              baseFilter={baseFilter}
+              setBaseFilter={setBaseFilter}
+              bases={bases}
+            />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>

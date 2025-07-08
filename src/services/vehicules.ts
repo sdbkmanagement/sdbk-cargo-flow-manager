@@ -166,7 +166,7 @@ export const vehiculesService = {
   async getFleetStats() {
     const { data: vehicules, error } = await supabase
       .from('vehicules')
-      .select('statut, type_transport, prochaine_maintenance')
+      .select('statut, type_transport, type_vehicule, prochaine_maintenance')
 
     if (error) {
       console.error('Erreur lors de la récupération des statistiques:', error)
@@ -180,6 +180,8 @@ export const vehiculesService = {
       maintenance: vehicules?.filter(v => v.statut === 'maintenance').length || 0,
       hydrocarbures: vehicules?.filter(v => v.type_transport === 'hydrocarbures').length || 0,
       bauxite: vehicules?.filter(v => v.type_transport === 'bauxite').length || 0,
+      porteurs: vehicules?.filter(v => v.type_vehicule === 'porteur').length || 0,
+      tracteur_remorques: vehicules?.filter(v => v.type_vehicule === 'tracteur_remorque').length || 0,
       maintenance_urgente: vehicules?.filter(v => 
         v.prochaine_maintenance && 
         new Date(v.prochaine_maintenance) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -187,5 +189,25 @@ export const vehiculesService = {
     }
 
     return stats
+  },
+
+  // Récupérer les bases uniques
+  async getBases(): Promise<string[]> {
+    const { data: vehicules, error } = await supabase
+      .from('vehicules')
+      .select('base')
+
+    if (error) {
+      console.error('Erreur lors de la récupération des bases:', error)
+      throw error
+    }
+
+    const bases = vehicules
+      ?.map(v => v.base)
+      .filter((base): base is string => Boolean(base))
+      .filter((base, index, arr) => arr.indexOf(base) === index)
+      .sort() || []
+
+    return bases
   }
 }

@@ -4,28 +4,8 @@ import { UseFormRegister } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-interface FormData {
-  numero: string;
-  marque: string;
-  modele: string;
-  immatriculation: string;
-  type_transport: 'hydrocarbures' | 'bauxite';
-  statut: 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise';
-  chauffeur_assigne: string;
-  capacite_max: string;
-  unite_capacite: string;
-  type_carburant: string;
-  date_mise_service: string;
-  kilometrage: string;
-  annee_fabrication: string;
-  numero_chassis: string;
-  consommation_moyenne: string;
-  derniere_maintenance: string;
-  prochaine_maintenance: string;
-}
-
 interface MaintenanceFieldsProps {
-  register: UseFormRegister<FormData>;
+  register: UseFormRegister<any>;
 }
 
 export const MaintenanceFields = ({ register }: MaintenanceFieldsProps) => {
