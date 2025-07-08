@@ -1154,11 +1154,11 @@ export type Database = {
           created_at: string
           derniere_maintenance: string | null
           id: string
-          immatriculation: string
+          immatriculation: string | null
           integration: string | null
           kilometrage: number | null
-          marque: string
-          modele: string
+          marque: string | null
+          modele: string | null
           numero: string
           numero_chassis: string | null
           prochaine_maintenance: string | null
@@ -1192,11 +1192,11 @@ export type Database = {
           created_at?: string
           derniere_maintenance?: string | null
           id?: string
-          immatriculation: string
+          immatriculation?: string | null
           integration?: string | null
           kilometrage?: number | null
-          marque: string
-          modele: string
+          marque?: string | null
+          modele?: string | null
           numero: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null
@@ -1230,11 +1230,11 @@ export type Database = {
           created_at?: string
           derniere_maintenance?: string | null
           id?: string
-          immatriculation?: string
+          immatriculation?: string | null
           integration?: string | null
           kilometrage?: number | null
-          marque?: string
-          modele?: string
+          marque?: string | null
+          modele?: string | null
           numero?: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null

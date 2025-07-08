@@ -11,6 +11,7 @@ import { SpecificationsFields } from './form/SpecificationsFields';
 import { TransportStatusFields } from './form/TransportStatusFields';
 import { MaintenanceFields } from './form/MaintenanceFields';
 import { DocumentUploadSection } from './form/DocumentUploadSection';
+import { OperationalFields } from './form/OperationalFields';
 import { TracteurFields } from './form/TracteurFields';
 import { RemorqueFields } from './form/RemorqueFields';
 import { vehiculesService } from '@/services/vehicules';
@@ -222,45 +223,7 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <SpecificationsFields register={register} />
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label htmlFor="type_carburant" className="block text-sm font-medium text-gray-700">
-                        Type de carburant
-                      </label>
-                      <input
-                        id="type_carburant"
-                        {...register('type_carburant')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        placeholder="Diesel, Essence..."
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <label htmlFor="date_mise_service" className="block text-sm font-medium text-gray-700">
-                        Date de mise en service
-                      </label>
-                      <input
-                        id="date_mise_service"
-                        type="date"
-                        {...register('date_mise_service')}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label htmlFor="kilometrage" className="block text-sm font-medium text-gray-700">
-                      Kilométrage actuel
-                    </label>
-                    <input
-                      id="kilometrage"
-                      type="number"
-                      {...register('kilometrage')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                      placeholder="150000"
-                    />
-                  </div>
+                  <OperationalFields register={register} />
                 </CardContent>
               </Card>
             </TabsContent>
