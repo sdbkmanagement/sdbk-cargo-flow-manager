@@ -19,6 +19,7 @@ interface VehicleTableProps {
   onDelete: (id: string) => void;
   onViewDocuments?: (vehicule: Vehicule) => void;
   onViewMaintenance?: (vehicule: Vehicule) => void;
+  onViewPostMissionWorkflow?: (vehicule: Vehicule) => void;
 }
 
 export const VehicleTable = ({ 
@@ -26,7 +27,8 @@ export const VehicleTable = ({
   onEdit, 
   onDelete, 
   onViewDocuments, 
-  onViewMaintenance 
+  onViewMaintenance,
+  onViewPostMissionWorkflow 
 }: VehicleTableProps) => {
   const getStatusBadge = (statut: string) => {
     const variants = {

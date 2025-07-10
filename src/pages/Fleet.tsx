@@ -14,6 +14,7 @@ import { SearchInput } from '@/components/fleet/SearchInput';
 import { VehicleFilters } from '@/components/fleet/VehicleFilters';
 import { DocumentUploadSection } from '@/components/fleet/form/DocumentUploadSection';
 import { VehicleMaintenanceHistory } from '@/components/fleet/VehicleMaintenanceHistory';
+import { PostMissionWorkflow } from '@/components/fleet/PostMissionWorkflow';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -37,6 +38,7 @@ const Fleet = () => {
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicule | null>(null);
   const [showDocuments, setShowDocuments] = useState(false);
   const [showMaintenance, setShowMaintenance] = useState(false);
+  const [showPostMissionWorkflow, setShowPostMissionWorkflow] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -104,6 +106,12 @@ const Fleet = () => {
     setShowMaintenance(true);
   };
 
+  const handleViewPostMissionWorkflow = (vehicle: Vehicule) => {
+    console.log('Affichage du workflow post-mission pour:', vehicle.numero);
+    setSelectedVehicle(vehicle);
+    setShowPostMissionWorkflow(true);
+  };
+
   const handleFormClose = () => {
     setShowForm(false);
     setEditingVehicle(null);
@@ -122,6 +130,11 @@ const Fleet = () => {
 
   const handleCloseMaintenance = () => {
     setShowMaintenance(false);
+    setSelectedVehicle(null);
+  };
+
+  const handleClosePostMissionWorkflow = () => {
+    setShowPostMissionWorkflow(false);
     setSelectedVehicle(null);
   };
 
@@ -219,6 +232,7 @@ const Fleet = () => {
               <TabsTrigger value="list">Liste des véhicules</TabsTrigger>
               <TabsTrigger value="validation">Workflows de validation</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenances</TabsTrigger>
+              <TabsTrigger value="post-mission">Post-mission</TabsTrigger>
             </TabsList>
             
             <TabsContent value="list">
@@ -228,6 +242,7 @@ const Fleet = () => {
                 onDelete={handleDelete}
                 onViewDocuments={handleViewDocuments}
                 onViewMaintenance={handleViewMaintenance}
+                onViewPostMissionWorkflow={handleViewPostMissionWorkflow}
               />
             </TabsContent>
             
@@ -237,6 +252,17 @@ const Fleet = () => {
             
             <TabsContent value="maintenance">
               <MaintenanceTab vehicles={vehicles} />
+            </TabsContent>
+
+            <TabsContent value="post-mission">
+              <div className="space-y-4">
+                <div className="text-center py-8">
+                  <h3 className="text-lg font-medium mb-2">Processus post-mission</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Sélectionnez un véhicule dans la liste pour accéder au workflow post-mission complet
+                  </p>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>
@@ -276,6 +302,16 @@ const Fleet = () => {
             <VehicleMaintenanceHistory vehicle={selectedVehicle} />
           </div>
         </div>
+      )}
+
+      {showPostMissionWorkflow && selectedVehicle && (
+        <PostMissionWorkflow
+          vehicule={selectedVehicle}
+          userRole="admin" // TODO: Récupérer le vrai rôle utilisateur
+          userName="Utilisateur Test" // TODO: Récupérer le vrai nom utilisateur
+          userId="test-user-id" // TODO: Récupérer le vrai ID utilisateur
+          onClose={handleClosePostMissionWorkflow}
+        />
       )}
     </div>
   );

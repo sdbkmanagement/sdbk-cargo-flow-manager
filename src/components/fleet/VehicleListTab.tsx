@@ -17,6 +17,7 @@ interface VehicleListTabProps {
   onDelete: (id: string) => void;
   onViewDocuments?: (vehicule: Vehicule) => void;
   onViewMaintenance?: (vehicule: Vehicule) => void;
+  onViewPostMissionWorkflow?: (vehicule: Vehicule) => void;
 }
 
 export const VehicleListTab = ({ 
@@ -24,7 +25,8 @@ export const VehicleListTab = ({
   onEdit, 
   onDelete, 
   onViewDocuments, 
-  onViewMaintenance 
+  onViewMaintenance,
+  onViewPostMissionWorkflow 
 }: VehicleListTabProps) => {
   return (
     <Card>
@@ -37,10 +39,11 @@ export const VehicleListTab = ({
       <CardContent>
         <VehicleTable 
           vehicles={vehicles}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onViewDocuments={onViewDocuments}
-          onViewMaintenance={onViewMaintenance}
+            onEdit={onEdit}
+            onDelete={onDelete}
+            onViewDocuments={onViewDocuments}
+            onViewMaintenance={onViewMaintenance}
+            onViewPostMissionWorkflow={onViewPostMissionWorkflow}
         />
       </CardContent>
     </Card>
