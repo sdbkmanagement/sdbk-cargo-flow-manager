@@ -199,7 +199,7 @@ export const MaintenanceTab = ({ vehicles }: MaintenanceTabProps) => {
                   </TableCell>
                   <TableCell>{maintenance.garage || '-'}</TableCell>
                   <TableCell>
-                    {maintenance.cout ? `${maintenance.cout}€` : '-'}
+                    {maintenance.cout ? `${maintenance.cout.toLocaleString('fr-FR')} GNF` : '-'}
                   </TableCell>
                   <TableCell>
                     {maintenance.prochaine_maintenance_prevue 
@@ -303,13 +303,13 @@ export const MaintenanceTab = ({ vehicles }: MaintenanceTabProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cout">Coût (€)</Label>
+                <Label htmlFor="cout">Coût (GNF)</Label>
                 <Input
                   id="cout"
                   type="number"
                   step="0.01"
                   {...register('cout')}
-                  placeholder="1250.00"
+                  placeholder="1250000"
                 />
               </div>
             </div>

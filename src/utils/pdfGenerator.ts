@@ -72,7 +72,7 @@ export const generateInvoicePDF = (invoice: any) => {
                     <td>${invoice.mission_numero || '-'}</td>
                     <td>${invoice.chauffeur || '-'}</td>
                     <td>${invoice.vehicule || '-'}</td>
-                    <td>${invoice.montant_ht.toFixed(2)} €</td>
+                    <td>${invoice.montant_ht.toLocaleString('fr-FR')} GNF</td>
                 </tr>
             </tbody>
         </table>
@@ -81,15 +81,15 @@ export const generateInvoicePDF = (invoice: any) => {
             <table>
                 <tr>
                     <td>Sous-total HT:</td>
-                    <td>${invoice.montant_ht.toFixed(2)} €</td>
+                    <td>${invoice.montant_ht.toLocaleString('fr-FR')} GNF</td>
                 </tr>
                 <tr>
                     <td>TVA (18%):</td>
-                    <td>${invoice.montant_tva.toFixed(2)} €</td>
+                    <td>${invoice.montant_tva.toLocaleString('fr-FR')} GNF</td>
                 </tr>
                 <tr class="total-final">
                     <td><strong>Total TTC:</strong></td>
-                    <td><strong>${invoice.montant_ttc.toFixed(2)} €</strong></td>
+                    <td><strong>${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</strong></td>
                 </tr>
             </table>
         </div>
@@ -182,15 +182,15 @@ export const generateQuotePDF = (quote: any) => {
             <table>
                 <tr>
                     <td>Montant HT:</td>
-                    <td>${quote.montant_ht.toFixed(2)} €</td>
+                    <td>${quote.montant_ht.toLocaleString('fr-FR')} GNF</td>
                 </tr>
                 <tr>
                     <td>TVA (18%):</td>
-                    <td>${quote.montant_tva.toFixed(2)} €</td>
+                    <td>${quote.montant_tva.toLocaleString('fr-FR')} GNF</td>
                 </tr>
                 <tr class="total-final">
                     <td><strong>Total TTC:</strong></td>
-                    <td><strong>${quote.montant_ttc.toFixed(2)} €</strong></td>
+                    <td><strong>${quote.montant_ttc.toLocaleString('fr-FR')} GNF</strong></td>
                 </tr>
             </table>
         </div>

@@ -7,9 +7,9 @@ export const exportInvoicesToCSV = (invoices: any[]) => {
     'Mission',
     'Date émission',
     'Date échéance',
-    'Montant HT',
-    'TVA',
-    'Montant TTC',
+    'Montant HT (GNF)',
+    'TVA (GNF)',
+    'Montant TTC (GNF)',
     'Statut',
     'Chauffeur',
     'Véhicule'
@@ -24,9 +24,9 @@ export const exportInvoicesToCSV = (invoices: any[]) => {
       invoice.mission_numero || '',
       new Date(invoice.date_emission).toLocaleDateString('fr-FR'),
       new Date(invoice.date_echeance).toLocaleDateString('fr-FR'),
-      invoice.montant_ht?.toFixed(2) || '0.00',
-      invoice.montant_tva?.toFixed(2) || '0.00',
-      invoice.montant_ttc?.toFixed(2) || '0.00',
+      invoice.montant_ht?.toLocaleString('fr-FR') || '0',
+      invoice.montant_tva?.toLocaleString('fr-FR') || '0',
+      invoice.montant_ttc?.toLocaleString('fr-FR') || '0',
       invoice.statut || '',
       invoice.chauffeur || '',
       invoice.vehicule || ''
@@ -52,9 +52,9 @@ export const exportQuotesToCSV = (quotes: any[]) => {
     'Description',
     'Date création',
     'Date validité',
-    'Montant HT',
-    'TVA',
-    'Montant TTC',
+    'Montant HT (GNF)',
+    'TVA (GNF)',
+    'Montant TTC (GNF)',
     'Statut'
   ];
 
@@ -67,9 +67,9 @@ export const exportQuotesToCSV = (quotes: any[]) => {
       quote.description || '',
       new Date(quote.date_creation).toLocaleDateString('fr-FR'),
       new Date(quote.date_validite).toLocaleDateString('fr-FR'),
-      quote.montant_ht?.toFixed(2) || '0.00',
-      quote.montant_tva?.toFixed(2) || '0.00',
-      quote.montant_ttc?.toFixed(2) || '0.00',
+      quote.montant_ht?.toLocaleString('fr-FR') || '0',
+      quote.montant_tva?.toLocaleString('fr-FR') || '0',
+      quote.montant_ttc?.toLocaleString('fr-FR') || '0',
       quote.statut || ''
     ].map(field => `"${field}"`).join(','))
   ].join('\n');

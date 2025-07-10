@@ -249,7 +249,7 @@ export const PostMissionWorkflow = ({
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="cout_reparation">Coût de la réparation (€)</Label>
+                            <Label htmlFor="cout_reparation">Coût de la réparation (GNF)</Label>
                             <Input
                               id="cout_reparation"
                               type="number"
@@ -298,7 +298,7 @@ export const PostMissionWorkflow = ({
                                 </div>
                                 {maintenance.cout && (
                                   <Badge variant="outline">
-                                    {maintenance.cout}€
+                                    {maintenance.cout?.toLocaleString('fr-FR')} GNF
                                   </Badge>
                                 )}
                               </div>

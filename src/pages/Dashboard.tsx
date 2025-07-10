@@ -205,7 +205,7 @@ const Dashboard = () => {
     },
     {
       title: "CA mensuel",
-      value: `€${(facturesStats?.caMensuel || 0).toLocaleString('fr-FR')}`,
+      value: `${(facturesStats?.caMensuel || 0).toLocaleString('fr-FR')} GNF`,
       description: "Factures payées ce mois",
       icon: DollarSign,
       color: "text-purple-500",

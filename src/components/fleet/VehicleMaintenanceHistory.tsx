@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Calendar, Wrench, AlertTriangle, Euro } from 'lucide-react';
+import { Plus, Calendar, Wrench, AlertTriangle, DollarSign } from 'lucide-react';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
@@ -198,8 +198,8 @@ export const VehicleMaintenanceHistory = ({ vehicle }: VehicleMaintenanceHistory
                     <TableCell>
                       {maintenance.cout ? (
                         <div className="flex items-center gap-1">
-                          <Euro className="h-3 w-3" />
-                          {maintenance.cout}
+                          <DollarSign className="h-3 w-3" />
+                          {maintenance.cout.toLocaleString('fr-FR')} GNF
                         </div>
                       ) : '-'}
                     </TableCell>
@@ -266,13 +266,13 @@ export const VehicleMaintenanceHistory = ({ vehicle }: VehicleMaintenanceHistory
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="cout">Coût (€)</Label>
+                <Label htmlFor="cout">Coût (GNF)</Label>
                 <Input
                   id="cout"
                   type="number"
                   step="0.01"
                   {...register('cout')}
-                  placeholder="1250.00"
+                  placeholder="1250000"
                 />
               </div>
             </div>

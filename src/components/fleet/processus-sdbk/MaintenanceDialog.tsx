@@ -138,14 +138,14 @@ export const MaintenanceDialog = ({ open, onOpenChange, vehiculeId, onSuccess }:
                 </div>
 
                 <div>
-                  <Label htmlFor="cout_reparation">Coût estimé (€)</Label>
+                  <Label htmlFor="cout_reparation">Coût estimé (GNF)</Label>
                   <Input
                     id="cout_reparation"
                     type="number"
                     step="0.01"
                     value={formData.cout_reparation}
                     onChange={(e) => setFormData(prev => ({ ...prev, cout_reparation: e.target.value }))}
-                    placeholder="Ex: 1500.00"
+                    placeholder="Ex: 1500000"
                   />
                 </div>
               </div>
