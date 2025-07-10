@@ -302,20 +302,20 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
                   step="0.01"
                 />
               </div>
-              <div className="col-span-2">
-                <Label>Prix unitaire</Label>
+               <div className="col-span-2">
+                <Label>Prix unitaire (GNF)</Label>
                 <Input
                   type="number"
                   value={line.prixUnitaire}
                   onChange={(e) => updateInvoiceLine(line.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
                   min="0"
-                  step="0.01"
+                  step="1"
                 />
               </div>
               <div className="col-span-2">
-                <Label>Total</Label>
+                <Label>Total (GNF)</Label>
                 <Input
-                  value={line.total.toFixed(2)}
+                  value={line.total.toLocaleString('fr-FR')}
                   readOnly
                   className="bg-gray-50"
                 />
@@ -350,16 +350,16 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
           <div className="space-y-2 max-w-md ml-auto">
             <div className="flex justify-between">
               <span>Sous-total HT:</span>
-              <span className="font-medium">{sousTotal.toFixed(2)} €</span>
+              <span className="font-medium">{sousTotal.toLocaleString('fr-FR')} GNF</span>
             </div>
             <div className="flex justify-between">
               <span>TVA (18%):</span>
-              <span className="font-medium">{tva.toFixed(2)} €</span>
+              <span className="font-medium">{tva.toLocaleString('fr-FR')} GNF</span>
             </div>
             <Separator />
             <div className="flex justify-between text-lg font-bold">
               <span>Total TTC:</span>
-              <span>{total.toFixed(2)} €</span>
+              <span>{total.toLocaleString('fr-FR')} GNF</span>
             </div>
           </div>
         </CardContent>

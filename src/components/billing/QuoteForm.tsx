@@ -134,13 +134,13 @@ export const QuoteForm = ({ onClose, onQuoteCreated }: QuoteFormProps) => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="montantHT">Montant HT *</Label>
+              <Label htmlFor="montantHT">Montant HT (GNF) *</Label>
               <Input
                 id="montantHT"
                 type="number"
-                step="0.01"
+                step="1"
                 {...register('montantHT', { required: 'Le montant HT est requis', min: 0 })}
-                placeholder="0.00"
+                placeholder="0"
               />
               {errors.montantHT && (
                 <p className="text-sm text-red-600">{errors.montantHT.message}</p>

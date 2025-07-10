@@ -69,8 +69,8 @@ export const InvoiceTable = ({
             <TableCell>{invoice.mission_numero || '-'}</TableCell>
             <TableCell>{new Date(invoice.date_emission).toLocaleDateString('fr-FR')}</TableCell>
             <TableCell>{new Date(invoice.date_echeance).toLocaleDateString('fr-FR')}</TableCell>
-            <TableCell>{invoice.montant_ht.toLocaleString('fr-FR')} €</TableCell>
-            <TableCell className="font-medium">{invoice.montant_ttc.toLocaleString('fr-FR')} €</TableCell>
+            <TableCell>{invoice.montant_ht.toLocaleString('fr-FR')} GNF</TableCell>
+            <TableCell className="font-medium">{invoice.montant_ttc.toLocaleString('fr-FR')} GNF</TableCell>
             <TableCell>
               <Badge className={getStatusColor(invoice.statut)}>
                 {getStatusLabel(invoice.statut)}

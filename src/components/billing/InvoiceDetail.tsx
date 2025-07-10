@@ -167,15 +167,15 @@ export const InvoiceDetail = ({ invoiceId, open, onClose, onEdit, onDelete }: In
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-sm text-muted-foreground">Montant HT</div>
-                    <div className="text-lg font-semibold">{invoice.montant_ht.toFixed(2)} €</div>
+                    <div className="text-lg font-semibold">{invoice.montant_ht.toLocaleString('fr-FR')} GNF</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">TVA (18%)</div>
-                    <div className="text-lg font-semibold">{invoice.montant_tva.toFixed(2)} €</div>
+                    <div className="text-lg font-semibold">{invoice.montant_tva.toLocaleString('fr-FR')} GNF</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground">Total TTC</div>
-                    <div className="text-xl font-bold text-primary">{invoice.montant_ttc.toFixed(2)} €</div>
+                    <div className="text-xl font-bold text-primary">{invoice.montant_ttc.toLocaleString('fr-FR')} GNF</div>
                   </div>
                 </div>
               </div>

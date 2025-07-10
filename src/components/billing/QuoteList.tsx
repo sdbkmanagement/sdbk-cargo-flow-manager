@@ -226,8 +226,8 @@ export const QuoteList = () => {
                     <TableCell className="max-w-xs truncate">{quote.description}</TableCell>
                     <TableCell>{new Date(quote.date_creation).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>{new Date(quote.date_validite).toLocaleDateString('fr-FR')}</TableCell>
-                    <TableCell>{quote.montant_ht.toLocaleString('fr-FR')} €</TableCell>
-                    <TableCell className="font-medium">{quote.montant_ttc.toLocaleString('fr-FR')} €</TableCell>
+                    <TableCell>{quote.montant_ht.toLocaleString('fr-FR')} GNF</TableCell>
+                    <TableCell className="font-medium">{quote.montant_ttc.toLocaleString('fr-FR')} GNF</TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(quote.statut)}>
                         {getStatusLabel(quote.statut)}
