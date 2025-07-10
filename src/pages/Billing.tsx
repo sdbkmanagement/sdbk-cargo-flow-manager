@@ -6,6 +6,7 @@ import { BillingDashboard } from '@/components/billing/BillingDashboard';
 import { InvoiceList } from '@/components/billing/InvoiceList';
 import { QuoteList } from '@/components/billing/QuoteList';
 import { PaymentTracking } from '@/components/billing/PaymentTracking';
+import { ExportFactures } from '@/components/billing/ExportFactures';
 import { InvoiceForm } from '@/components/billing/InvoiceForm';
 import { QuoteForm } from '@/components/billing/QuoteForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -72,11 +73,12 @@ const Billing = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
           <TabsTrigger value="invoices">Factures</TabsTrigger>
           <TabsTrigger value="quotes">Devis</TabsTrigger>
           <TabsTrigger value="payments">Suivi paiements</TabsTrigger>
+          <TabsTrigger value="export">Export</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard" className="space-y-6">
@@ -93,6 +95,10 @@ const Billing = () => {
 
         <TabsContent value="payments" className="space-y-6">
           <PaymentTracking />
+        </TabsContent>
+
+        <TabsContent value="export" className="space-y-6">
+          <ExportFactures />
         </TabsContent>
       </Tabs>
     </div>
