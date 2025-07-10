@@ -111,6 +111,114 @@ export type Database = {
           },
         ]
       }
+      bons_livraison: {
+        Row: {
+          chauffeur_id: string
+          client_code: string | null
+          client_nom: string
+          created_at: string
+          date_arrivee_prevue: string | null
+          date_arrivee_reelle: string | null
+          date_chargement_prevue: string | null
+          date_chargement_reelle: string | null
+          date_dechargement: string | null
+          date_depart: string | null
+          date_emission: string
+          destination: string
+          facture: boolean | null
+          id: string
+          manquant_compteur: number | null
+          manquant_cuve: number | null
+          manquant_total: number | null
+          numero: string
+          numero_tournee: string | null
+          produit: string
+          quantite_livree: number | null
+          quantite_prevue: number
+          saisi_par: string | null
+          statut: string
+          transitaire_nom: string | null
+          unite_mesure: string | null
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          chauffeur_id: string
+          client_code?: string | null
+          client_nom: string
+          created_at?: string
+          date_arrivee_prevue?: string | null
+          date_arrivee_reelle?: string | null
+          date_chargement_prevue?: string | null
+          date_chargement_reelle?: string | null
+          date_dechargement?: string | null
+          date_depart?: string | null
+          date_emission: string
+          destination: string
+          facture?: boolean | null
+          id?: string
+          manquant_compteur?: number | null
+          manquant_cuve?: number | null
+          manquant_total?: number | null
+          numero: string
+          numero_tournee?: string | null
+          produit: string
+          quantite_livree?: number | null
+          quantite_prevue: number
+          saisi_par?: string | null
+          statut?: string
+          transitaire_nom?: string | null
+          unite_mesure?: string | null
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          chauffeur_id?: string
+          client_code?: string | null
+          client_nom?: string
+          created_at?: string
+          date_arrivee_prevue?: string | null
+          date_arrivee_reelle?: string | null
+          date_chargement_prevue?: string | null
+          date_chargement_reelle?: string | null
+          date_dechargement?: string | null
+          date_depart?: string | null
+          date_emission?: string
+          destination?: string
+          facture?: boolean | null
+          id?: string
+          manquant_compteur?: number | null
+          manquant_cuve?: number | null
+          manquant_total?: number | null
+          numero?: string
+          numero_tournee?: string | null
+          produit?: string
+          quantite_livree?: number | null
+          quantite_prevue?: number
+          saisi_par?: string | null
+          statut?: string
+          transitaire_nom?: string | null
+          unite_mesure?: string | null
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bons_livraison_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_livraison_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chargements: {
         Row: {
           chauffeur_id: string
@@ -331,6 +439,155 @@ export type Database = {
         }
         Relationships: []
       }
+      controles_hsse: {
+        Row: {
+          absence_danger_visible: boolean | null
+          absence_fuite: boolean | null
+          commentaires: string | null
+          conforme: boolean | null
+          controleur_nom: string | null
+          created_at: string
+          date_controle: string
+          equipements_securite_complets: boolean | null
+          extincteurs_ok: boolean | null
+          gilets_fluorescents_ok: boolean | null
+          id: string
+          points_bloquants: string[] | null
+          proprete_citerne: boolean | null
+          triangle_signalisation_ok: boolean | null
+          trousse_secours_ok: boolean | null
+          vehicule_id: string
+        }
+        Insert: {
+          absence_danger_visible?: boolean | null
+          absence_fuite?: boolean | null
+          commentaires?: string | null
+          conforme?: boolean | null
+          controleur_nom?: string | null
+          created_at?: string
+          date_controle?: string
+          equipements_securite_complets?: boolean | null
+          extincteurs_ok?: boolean | null
+          gilets_fluorescents_ok?: boolean | null
+          id?: string
+          points_bloquants?: string[] | null
+          proprete_citerne?: boolean | null
+          triangle_signalisation_ok?: boolean | null
+          trousse_secours_ok?: boolean | null
+          vehicule_id: string
+        }
+        Update: {
+          absence_danger_visible?: boolean | null
+          absence_fuite?: boolean | null
+          commentaires?: string | null
+          conforme?: boolean | null
+          controleur_nom?: string | null
+          created_at?: string
+          date_controle?: string
+          equipements_securite_complets?: boolean | null
+          extincteurs_ok?: boolean | null
+          gilets_fluorescents_ok?: boolean | null
+          id?: string
+          points_bloquants?: string[] | null
+          proprete_citerne?: boolean | null
+          triangle_signalisation_ok?: boolean | null
+          trousse_secours_ok?: boolean | null
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_hsse_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controles_obc: {
+        Row: {
+          acceleration_excessive: number | null
+          anomalies_techniques: number | null
+          chauffeur_id: string
+          commentaires: string | null
+          conduite_continue_sans_pause: number | null
+          conduite_nuit_non_autorisee: number | null
+          conforme: boolean | null
+          controleur_nom: string | null
+          created_at: string
+          date_controle: string
+          document_safe_to_load_url: string | null
+          exces_vitesse_campagne: number | null
+          exces_vitesse_urbain: number | null
+          freinage_brusque: number | null
+          id: string
+          pause_reglementaire_non_respectee: number | null
+          safe_to_load_valide: boolean | null
+          score_global: number | null
+          temps_conduite_depasse: number | null
+          vehicule_id: string
+        }
+        Insert: {
+          acceleration_excessive?: number | null
+          anomalies_techniques?: number | null
+          chauffeur_id: string
+          commentaires?: string | null
+          conduite_continue_sans_pause?: number | null
+          conduite_nuit_non_autorisee?: number | null
+          conforme?: boolean | null
+          controleur_nom?: string | null
+          created_at?: string
+          date_controle?: string
+          document_safe_to_load_url?: string | null
+          exces_vitesse_campagne?: number | null
+          exces_vitesse_urbain?: number | null
+          freinage_brusque?: number | null
+          id?: string
+          pause_reglementaire_non_respectee?: number | null
+          safe_to_load_valide?: boolean | null
+          score_global?: number | null
+          temps_conduite_depasse?: number | null
+          vehicule_id: string
+        }
+        Update: {
+          acceleration_excessive?: number | null
+          anomalies_techniques?: number | null
+          chauffeur_id?: string
+          commentaires?: string | null
+          conduite_continue_sans_pause?: number | null
+          conduite_nuit_non_autorisee?: number | null
+          conforme?: boolean | null
+          controleur_nom?: string | null
+          created_at?: string
+          date_controle?: string
+          document_safe_to_load_url?: string | null
+          exces_vitesse_campagne?: number | null
+          exces_vitesse_urbain?: number | null
+          freinage_brusque?: number | null
+          id?: string
+          pause_reglementaire_non_respectee?: number | null
+          safe_to_load_valide?: boolean | null
+          score_global?: number | null
+          temps_conduite_depasse?: number | null
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_obc_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controles_obc_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       devis: {
         Row: {
           client_email: string | null
@@ -385,14 +642,75 @@ export type Database = {
         }
         Relationships: []
       }
+      diagnostics_maintenance: {
+        Row: {
+          commentaires: string | null
+          cout_reparation: number | null
+          created_at: string
+          date_diagnostic: string
+          description_panne: string | null
+          duree_reparation_estimee: number | null
+          duree_reparation_reelle: number | null
+          id: string
+          pieces_changees: string[] | null
+          statut: string
+          technicien_nom: string | null
+          type_panne: string | null
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          commentaires?: string | null
+          cout_reparation?: number | null
+          created_at?: string
+          date_diagnostic?: string
+          description_panne?: string | null
+          duree_reparation_estimee?: number | null
+          duree_reparation_reelle?: number | null
+          id?: string
+          pieces_changees?: string[] | null
+          statut?: string
+          technicien_nom?: string | null
+          type_panne?: string | null
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          commentaires?: string | null
+          cout_reparation?: number | null
+          created_at?: string
+          date_diagnostic?: string
+          description_panne?: string | null
+          duree_reparation_estimee?: number | null
+          duree_reparation_reelle?: number | null
+          id?: string
+          pieces_changees?: string[] | null
+          statut?: string
+          technicien_nom?: string | null
+          type_panne?: string | null
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostics_maintenance_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
+          alerte_expiration_envoyee: boolean | null
           chauffeur_id: string | null
           created_at: string | null
           date_expiration: string | null
           entity_id: string | null
           entity_type: string | null
           id: string
+          jours_avant_expiration: number | null
           nom: string
           statut: string | null
           taille: number
@@ -400,12 +718,14 @@ export type Database = {
           url: string
         }
         Insert: {
+          alerte_expiration_envoyee?: boolean | null
           chauffeur_id?: string | null
           created_at?: string | null
           date_expiration?: string | null
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          jours_avant_expiration?: number | null
           nom: string
           statut?: string | null
           taille: number
@@ -413,12 +733,14 @@ export type Database = {
           url: string
         }
         Update: {
+          alerte_expiration_envoyee?: boolean | null
           chauffeur_id?: string | null
           created_at?: string | null
           date_expiration?: string | null
           entity_id?: string | null
           entity_type?: string | null
           id?: string
+          jours_avant_expiration?: number | null
           nom?: string
           statut?: string | null
           taille?: number
@@ -1024,8 +1346,11 @@ export type Database = {
       validation_etapes: {
         Row: {
           commentaire: string | null
+          controle_hsse_id: string | null
+          controle_obc_id: string | null
           created_at: string
           date_validation: string | null
+          diagnostic_maintenance_id: string | null
           etape: string
           id: string
           statut: string
@@ -1036,8 +1361,11 @@ export type Database = {
         }
         Insert: {
           commentaire?: string | null
+          controle_hsse_id?: string | null
+          controle_obc_id?: string | null
           created_at?: string
           date_validation?: string | null
+          diagnostic_maintenance_id?: string | null
           etape: string
           id?: string
           statut?: string
@@ -1048,8 +1376,11 @@ export type Database = {
         }
         Update: {
           commentaire?: string | null
+          controle_hsse_id?: string | null
+          controle_obc_id?: string | null
           created_at?: string
           date_validation?: string | null
+          diagnostic_maintenance_id?: string | null
           etape?: string
           id?: string
           statut?: string
@@ -1059,6 +1390,27 @@ export type Database = {
           workflow_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "validation_etapes_controle_hsse_id_fkey"
+            columns: ["controle_hsse_id"]
+            isOneToOne: false
+            referencedRelation: "controles_hsse"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_etapes_controle_obc_id_fkey"
+            columns: ["controle_obc_id"]
+            isOneToOne: false
+            referencedRelation: "controles_obc"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "validation_etapes_diagnostic_maintenance_id_fkey"
+            columns: ["diagnostic_maintenance_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostics_maintenance"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "validation_etapes_workflow_id_fkey"
             columns: ["workflow_id"]
