@@ -67,7 +67,9 @@ export const ROLES: AppRole[] = [
   'rh',
   'facturation',
   'direction',
-  'admin'
+  'admin',
+  'transitaire',
+  'directeur_exploitation'
 ];
 
 export const PERMISSIONS: AppPermission[] = [
@@ -88,7 +90,9 @@ export const ROLE_LABELS: Record<AppRole, string> = {
   rh: 'Ressources Humaines',
   facturation: 'Facturation',
   direction: 'Direction',
-  admin: 'Admin Système'
+  admin: 'Admin Système',
+  transitaire: 'Transitaire',
+  directeur_exploitation: 'Directeur d\'Exploitation'
 };
 
 export const MODULE_LABELS: Record<string, string> = {

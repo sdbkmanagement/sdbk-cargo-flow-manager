@@ -22,69 +22,82 @@ export const HSSEDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: HSSEDi
   const [controleurNom, setControleurNom] = useState('');
   const [commentaires, setCommentaires] = useState('');
   const [pointsBloquants, setPointsBloquants] = useState('');
-  const [checks, setChecks] = useState({
-    extincteurs_ok: false,
-    trousse_secours_ok: false,
-    triangle_signalisation_ok: false,
-    gilets_fluorescents_ok: false,
-    absence_fuite: false,
-    proprete_citerne: false,
-    absence_danger_visible: false,
-    equipements_securite_complets: false
-  });
-  const { toast } = useToast();
-
+  
+  // Check-liste HSSE détaillée selon les normes de sécurité
   const checklistItems = [
     { 
-      key: 'extincteurs_ok', 
-      label: 'Extincteurs en place et en bon état',
-      description: 'Vérifier la présence et l\'état des extincteurs'
+      category: 'Extincteurs',
+      items: [
+        { key: 'extincteur_emplacement_ok', label: 'Extincteur en place', description: 'Extincteur accessible et dans son emplacement' },
+        { key: 'extincteur_date_validite_ok', label: 'Date de validité OK', description: 'Date de révision non dépassée' },
+        { key: 'extincteur_pression_ok', label: 'Pression conforme', description: 'Manomètre dans la zone verte' }
+      ]
     },
     { 
-      key: 'trousse_secours_ok', 
-      label: 'Trousse de secours complète',
-      description: 'Trousse de premiers secours présente et complète'
+      category: 'Trousse de secours',
+      items: [
+        { key: 'trousse_secours_complete', label: 'Trousse complète', description: 'Tous les éléments présents' },
+        { key: 'trousse_secours_date_ok', label: 'Date de péremption OK', description: 'Aucun produit périmé' }
+      ]
     },
     { 
-      key: 'triangle_signalisation_ok', 
-      label: 'Triangle de signalisation présent',
-      description: 'Triangle de panne en bon état'
+      category: 'Signalisation',
+      items: [
+        { key: 'triangle_signalisation_present', label: 'Triangle présent', description: 'Triangle de panne disponible' },
+        { key: 'triangle_signalisation_etat_ok', label: 'Triangle en bon état', description: 'Pas de dommage visible' }
+      ]
     },
     { 
-      key: 'gilets_fluorescents_ok', 
-      label: 'Gilets fluorescents disponibles',
-      description: 'Gilets haute visibilité pour le chauffeur'
+      category: 'Équipements de protection',
+      items: [
+        { key: 'gilets_nombre_suffisant', label: 'Nombre de gilets suffisant', description: 'Un gilet par personne minimum' },
+        { key: 'gilets_etat_visible', label: 'Gilets haute visibilité', description: 'Bandes réfléchissantes en bon état' }
+      ]
     },
     { 
-      key: 'absence_fuite', 
-      label: 'Absence de fuite détectée',
-      description: 'Aucune fuite de carburant ou fluide'
+      category: 'Contrôle des fuites',
+      items: [
+        { key: 'fuite_carburant_absente', label: 'Pas de fuite carburant', description: 'Aucune trace de carburant au sol' },
+        { key: 'fuite_huile_absente', label: 'Pas de fuite huile', description: 'Aucune trace d\'huile au sol' }
+      ]
     },
     { 
-      key: 'proprete_citerne', 
-      label: 'Propreté de la citerne',
-      description: 'Citerne propre et sans contamination'
+      category: 'Propreté citerne',
+      items: [
+        { key: 'citerne_proprete_exterieure', label: 'Citerne propre extérieurement', description: 'Pas de résidus ou salissures' },
+        { key: 'citerne_proprete_interieure', label: 'Citerne propre intérieurement', description: 'Nettoyage intérieur conforme' }
+      ]
     },
     { 
-      key: 'absence_danger_visible', 
-      label: 'Absence de danger visible',
-      description: 'Aucun élément dangereux apparent'
-    },
-    { 
-      key: 'equipements_securite_complets', 
-      label: 'Équipements de sécurité complets',
-      description: 'Tous les équipements de sécurité requis présents'
+      category: 'Sécurité générale',
+      items: [
+        { key: 'danger_visible_absent', label: 'Absence de danger visible', description: 'Aucun élément dangereux apparent' },
+        { key: 'securite_generale_ok', label: 'Sécurité générale conforme', description: 'Tous les contrôles de sécurité OK' }
+      ]
     }
   ];
+
+  const allCheckItems = checklistItems.flatMap(category => 
+    category.items.map(item => ({ ...item, category: category.category }))
+  );
+
+  const [checks, setChecks] = useState(() => {
+    const initialChecks: Record<string, boolean> = {};
+    allCheckItems.forEach(item => {
+      initialChecks[item.key] = false;
+    });
+    return initialChecks;
+  });
+  const { toast } = useToast();
 
   const isConforme = () => {
     return Object.values(checks).every(check => check);
   };
 
   const getPointsNonConformes = () => {
-    return checklistItems
-      .filter(item => !checks[item.key as keyof typeof checks])
-      .map(item => item.label);
+    return allCheckItems
+      .filter(item => !checks[item.key])
+      .map(item => `${item.category}: ${item.label}`);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,14 +110,31 @@ export const HSSEDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: HSSEDi
 
       const controleData = {
         vehicule_id: vehiculeId,
-        extincteurs_ok: checks.extincteurs_ok,
-        trousse_secours_ok: checks.trousse_secours_ok,
-        triangle_signalisation_ok: checks.triangle_signalisation_ok,
-        gilets_fluorescents_ok: checks.gilets_fluorescents_ok,
-        absence_fuite: checks.absence_fuite,
-        proprete_citerne: checks.proprete_citerne,
-        absence_danger_visible: checks.absence_danger_visible,
-        equipements_securite_complets: checks.equipements_securite_complets,
+        // Nouveaux champs détaillés
+        extincteur_emplacement_ok: checks.extincteur_emplacement_ok || false,
+        extincteur_date_validite_ok: checks.extincteur_date_validite_ok || false,
+        extincteur_pression_ok: checks.extincteur_pression_ok || false,
+        trousse_secours_complete: checks.trousse_secours_complete || false,
+        trousse_secours_date_ok: checks.trousse_secours_date_ok || false,
+        triangle_signalisation_present: checks.triangle_signalisation_present || false,
+        triangle_signalisation_etat_ok: checks.triangle_signalisation_etat_ok || false,
+        gilets_nombre_suffisant: checks.gilets_nombre_suffisant || false,
+        gilets_etat_visible: checks.gilets_etat_visible || false,
+        fuite_carburant_absente: checks.fuite_carburant_absente || false,
+        fuite_huile_absente: checks.fuite_huile_absente || false,
+        citerne_proprete_exterieure: checks.citerne_proprete_exterieure || false,
+        citerne_proprete_interieure: checks.citerne_proprete_interieure || false,
+        danger_visible_absent: checks.danger_visible_absent || false,
+        securite_generale_ok: checks.securite_generale_ok || false,
+        // Champs originaux pour compatibilité
+        extincteurs_ok: checks.extincteur_emplacement_ok && checks.extincteur_date_validite_ok && checks.extincteur_pression_ok,
+        trousse_secours_ok: checks.trousse_secours_complete && checks.trousse_secours_date_ok,
+        triangle_signalisation_ok: checks.triangle_signalisation_present && checks.triangle_signalisation_etat_ok,
+        gilets_fluorescents_ok: checks.gilets_nombre_suffisant && checks.gilets_etat_visible,
+        absence_fuite: checks.fuite_carburant_absente && checks.fuite_huile_absente,
+        proprete_citerne: checks.citerne_proprete_exterieure && checks.citerne_proprete_interieure,
+        absence_danger_visible: checks.danger_visible_absent,
+        equipements_securite_complets: checks.securite_generale_ok,
         conforme,
         points_bloquants: pointsBloquantsArray,
         controleur_nom: controleurNom,
@@ -162,34 +192,44 @@ export const HSSEDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: HSSEDi
               </p>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {checklistItems.map((item) => (
-                  <div key={item.key} className="border rounded p-4">
-                    <div className="flex items-start space-x-3">
-                      <Checkbox
-                        id={item.key}
-                        checked={checks[item.key as keyof typeof checks]}
-                        onCheckedChange={(checked) => 
-                          setChecks(prev => ({ ...prev, [item.key]: !!checked }))
-                        }
-                        className="mt-1"
-                      />
-                      <div className="flex-1">
-                        <label 
-                          htmlFor={item.key}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                          {item.label}
-                        </label>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {item.description}
-                        </p>
-                      </div>
-                      {checks[item.key as keyof typeof checks] ? (
-                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      ) : (
-                        <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
-                      )}
+              <div className="space-y-6">
+                {checklistItems.map((category) => (
+                  <div key={category.category} className="border rounded-lg p-4">
+                    <h4 className="font-semibold text-lg mb-3 text-blue-700">{category.category}</h4>
+                    <div className="space-y-3">
+                      {category.items.map((item) => {
+                        const isChecked = checks[item.key];
+                        return (
+                          <div key={item.key} className={`border rounded p-3 ${isChecked ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
+                            <div className="flex items-start space-x-3">
+                              <Checkbox
+                                id={item.key}
+                                checked={isChecked}
+                                onCheckedChange={(checked) => 
+                                  setChecks(prev => ({ ...prev, [item.key]: !!checked }))
+                                }
+                                className="mt-1"
+                              />
+                              <div className="flex-1">
+                                <label 
+                                  htmlFor={item.key}
+                                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                                >
+                                  {item.label}
+                                </label>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {item.description}
+                                </p>
+                              </div>
+                              {isChecked ? (
+                                <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
+                              ) : (
+                                <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -228,7 +268,7 @@ export const HSSEDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: HSSEDi
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Points vérifiés:</span>
                   <span className="font-bold">
-                    {Object.values(checks).filter(Boolean).length}/{checklistItems.length}
+                    {Object.values(checks).filter(Boolean).length}/{allCheckItems.length}
                   </span>
                 </div>
 

@@ -111,10 +111,113 @@ export type Database = {
           },
         ]
       }
+      affectations_chauffeurs: {
+        Row: {
+          autorise_par: string | null
+          chauffeur_id: string
+          created_at: string
+          date_debut: string
+          date_fin: string | null
+          id: string
+          motif_changement: string | null
+          statut: string
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          autorise_par?: string | null
+          chauffeur_id: string
+          created_at?: string
+          date_debut: string
+          date_fin?: string | null
+          id?: string
+          motif_changement?: string | null
+          statut?: string
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          autorise_par?: string | null
+          chauffeur_id?: string
+          created_at?: string
+          date_debut?: string
+          date_fin?: string | null
+          id?: string
+          motif_changement?: string | null
+          statut?: string
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affectations_chauffeurs_autorise_par_fkey"
+            columns: ["autorise_par"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affectations_chauffeurs_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affectations_chauffeurs_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      associes: {
+        Row: {
+          adresse: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          pourcentage_participation: number | null
+          prenom: string
+          statut: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          pourcentage_participation?: number | null
+          prenom: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          pourcentage_participation?: number | null
+          prenom?: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bons_livraison: {
         Row: {
+          associe_id: string | null
           chauffeur_id: string
+          chiffre_affaire_associe: number | null
           client_code: string | null
+          client_code_total: string | null
           client_nom: string
           created_at: string
           date_arrivee_prevue: string | null
@@ -130,8 +233,11 @@ export type Database = {
           manquant_compteur: number | null
           manquant_cuve: number | null
           manquant_total: number | null
+          montant_facture: number | null
+          montant_total: number | null
           numero: string
           numero_tournee: string | null
+          prix_unitaire: number | null
           produit: string
           quantite_livree: number | null
           quantite_prevue: number
@@ -143,8 +249,11 @@ export type Database = {
           vehicule_id: string
         }
         Insert: {
+          associe_id?: string | null
           chauffeur_id: string
+          chiffre_affaire_associe?: number | null
           client_code?: string | null
+          client_code_total?: string | null
           client_nom: string
           created_at?: string
           date_arrivee_prevue?: string | null
@@ -160,8 +269,11 @@ export type Database = {
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null
+          montant_facture?: number | null
+          montant_total?: number | null
           numero: string
           numero_tournee?: string | null
+          prix_unitaire?: number | null
           produit: string
           quantite_livree?: number | null
           quantite_prevue: number
@@ -173,8 +285,11 @@ export type Database = {
           vehicule_id: string
         }
         Update: {
+          associe_id?: string | null
           chauffeur_id?: string
+          chiffre_affaire_associe?: number | null
           client_code?: string | null
+          client_code_total?: string | null
           client_nom?: string
           created_at?: string
           date_arrivee_prevue?: string | null
@@ -190,8 +305,11 @@ export type Database = {
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null
+          montant_facture?: number | null
+          montant_total?: number | null
           numero?: string
           numero_tournee?: string | null
+          prix_unitaire?: number | null
           produit?: string
           quantite_livree?: number | null
           quantite_prevue?: number
@@ -203,6 +321,13 @@ export type Database = {
           vehicule_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bons_livraison_associe_id_fkey"
+            columns: ["associe_id"]
+            isOneToOne: false
+            referencedRelation: "associes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bons_livraison_chauffeur_id_fkey"
             columns: ["chauffeur_id"]
@@ -439,58 +564,139 @@ export type Database = {
         }
         Relationships: []
       }
+      clients_total: {
+        Row: {
+          adresse: string | null
+          code_client: string
+          contact_nom: string | null
+          created_at: string
+          destination: string
+          id: string
+          nom_client: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          code_client: string
+          contact_nom?: string | null
+          created_at?: string
+          destination: string
+          id?: string
+          nom_client: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          code_client?: string
+          contact_nom?: string | null
+          created_at?: string
+          destination?: string
+          id?: string
+          nom_client?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       controles_hsse: {
         Row: {
           absence_danger_visible: boolean | null
           absence_fuite: boolean | null
+          citerne_proprete_exterieure: boolean | null
+          citerne_proprete_interieure: boolean | null
           commentaires: string | null
           conforme: boolean | null
           controleur_nom: string | null
           created_at: string
+          danger_visible_absent: boolean | null
           date_controle: string
           equipements_securite_complets: boolean | null
+          extincteur_date_validite_ok: boolean | null
+          extincteur_emplacement_ok: boolean | null
+          extincteur_pression_ok: boolean | null
           extincteurs_ok: boolean | null
+          fuite_carburant_absente: boolean | null
+          fuite_huile_absente: boolean | null
+          gilets_etat_visible: boolean | null
           gilets_fluorescents_ok: boolean | null
+          gilets_nombre_suffisant: boolean | null
           id: string
           points_bloquants: string[] | null
           proprete_citerne: boolean | null
+          securite_generale_ok: boolean | null
+          triangle_signalisation_etat_ok: boolean | null
           triangle_signalisation_ok: boolean | null
+          triangle_signalisation_present: boolean | null
+          trousse_secours_complete: boolean | null
+          trousse_secours_date_ok: boolean | null
           trousse_secours_ok: boolean | null
           vehicule_id: string
         }
         Insert: {
           absence_danger_visible?: boolean | null
           absence_fuite?: boolean | null
+          citerne_proprete_exterieure?: boolean | null
+          citerne_proprete_interieure?: boolean | null
           commentaires?: string | null
           conforme?: boolean | null
           controleur_nom?: string | null
           created_at?: string
+          danger_visible_absent?: boolean | null
           date_controle?: string
           equipements_securite_complets?: boolean | null
+          extincteur_date_validite_ok?: boolean | null
+          extincteur_emplacement_ok?: boolean | null
+          extincteur_pression_ok?: boolean | null
           extincteurs_ok?: boolean | null
+          fuite_carburant_absente?: boolean | null
+          fuite_huile_absente?: boolean | null
+          gilets_etat_visible?: boolean | null
           gilets_fluorescents_ok?: boolean | null
+          gilets_nombre_suffisant?: boolean | null
           id?: string
           points_bloquants?: string[] | null
           proprete_citerne?: boolean | null
+          securite_generale_ok?: boolean | null
+          triangle_signalisation_etat_ok?: boolean | null
           triangle_signalisation_ok?: boolean | null
+          triangle_signalisation_present?: boolean | null
+          trousse_secours_complete?: boolean | null
+          trousse_secours_date_ok?: boolean | null
           trousse_secours_ok?: boolean | null
           vehicule_id: string
         }
         Update: {
           absence_danger_visible?: boolean | null
           absence_fuite?: boolean | null
+          citerne_proprete_exterieure?: boolean | null
+          citerne_proprete_interieure?: boolean | null
           commentaires?: string | null
           conforme?: boolean | null
           controleur_nom?: string | null
           created_at?: string
+          danger_visible_absent?: boolean | null
           date_controle?: string
           equipements_securite_complets?: boolean | null
+          extincteur_date_validite_ok?: boolean | null
+          extincteur_emplacement_ok?: boolean | null
+          extincteur_pression_ok?: boolean | null
           extincteurs_ok?: boolean | null
+          fuite_carburant_absente?: boolean | null
+          fuite_huile_absente?: boolean | null
+          gilets_etat_visible?: boolean | null
           gilets_fluorescents_ok?: boolean | null
+          gilets_nombre_suffisant?: boolean | null
           id?: string
           points_bloquants?: string[] | null
           proprete_citerne?: boolean | null
+          securite_generale_ok?: boolean | null
+          triangle_signalisation_etat_ok?: boolean | null
           triangle_signalisation_ok?: boolean | null
+          triangle_signalisation_present?: boolean | null
+          trousse_secours_complete?: boolean | null
+          trousse_secours_date_ok?: boolean | null
           trousse_secours_ok?: boolean | null
           vehicule_id?: string
         }
@@ -510,7 +716,9 @@ export type Database = {
           anomalies_techniques: number | null
           chauffeur_id: string
           commentaires: string | null
+          conduite_continue_4h30: number | null
           conduite_continue_sans_pause: number | null
+          conduite_nuit_22h_6h: number | null
           conduite_nuit_non_autorisee: number | null
           conforme: boolean | null
           controleur_nom: string | null
@@ -521,18 +729,26 @@ export type Database = {
           exces_vitesse_urbain: number | null
           freinage_brusque: number | null
           id: string
+          pause_45min_non_respectee: number | null
           pause_reglementaire_non_respectee: number | null
+          repos_hebdomadaire_45h_non_respecte: number | null
+          repos_journalier_11h_non_respecte: number | null
           safe_to_load_valide: boolean | null
           score_global: number | null
+          temps_conduite_4h30_depasse: number | null
           temps_conduite_depasse: number | null
           vehicule_id: string
+          vitesse_campagne_50_depassements: number | null
+          vitesse_urbain_30_depassements: number | null
         }
         Insert: {
           acceleration_excessive?: number | null
           anomalies_techniques?: number | null
           chauffeur_id: string
           commentaires?: string | null
+          conduite_continue_4h30?: number | null
           conduite_continue_sans_pause?: number | null
+          conduite_nuit_22h_6h?: number | null
           conduite_nuit_non_autorisee?: number | null
           conforme?: boolean | null
           controleur_nom?: string | null
@@ -543,18 +759,26 @@ export type Database = {
           exces_vitesse_urbain?: number | null
           freinage_brusque?: number | null
           id?: string
+          pause_45min_non_respectee?: number | null
           pause_reglementaire_non_respectee?: number | null
+          repos_hebdomadaire_45h_non_respecte?: number | null
+          repos_journalier_11h_non_respecte?: number | null
           safe_to_load_valide?: boolean | null
           score_global?: number | null
+          temps_conduite_4h30_depasse?: number | null
           temps_conduite_depasse?: number | null
           vehicule_id: string
+          vitesse_campagne_50_depassements?: number | null
+          vitesse_urbain_30_depassements?: number | null
         }
         Update: {
           acceleration_excessive?: number | null
           anomalies_techniques?: number | null
           chauffeur_id?: string
           commentaires?: string | null
+          conduite_continue_4h30?: number | null
           conduite_continue_sans_pause?: number | null
+          conduite_nuit_22h_6h?: number | null
           conduite_nuit_non_autorisee?: number | null
           conforme?: boolean | null
           controleur_nom?: string | null
@@ -565,11 +789,17 @@ export type Database = {
           exces_vitesse_urbain?: number | null
           freinage_brusque?: number | null
           id?: string
+          pause_45min_non_respectee?: number | null
           pause_reglementaire_non_respectee?: number | null
+          repos_hebdomadaire_45h_non_respecte?: number | null
+          repos_journalier_11h_non_respecte?: number | null
           safe_to_load_valide?: boolean | null
           score_global?: number | null
+          temps_conduite_4h30_depasse?: number | null
           temps_conduite_depasse?: number | null
           vehicule_id?: string
+          vitesse_campagne_50_depassements?: number | null
+          vitesse_urbain_30_depassements?: number | null
         }
         Relationships: [
           {
@@ -1269,6 +1499,53 @@ export type Database = {
           },
         ]
       }
+      rapports_services: {
+        Row: {
+          cout: number | null
+          created_at: string
+          date_rapport: string
+          duree_intervention: unknown | null
+          id: string
+          observations: string | null
+          service: string
+          statut: string
+          technicien_nom: string | null
+          vehicule_id: string
+        }
+        Insert: {
+          cout?: number | null
+          created_at?: string
+          date_rapport?: string
+          duree_intervention?: unknown | null
+          id?: string
+          observations?: string | null
+          service: string
+          statut: string
+          technicien_nom?: string | null
+          vehicule_id: string
+        }
+        Update: {
+          cout?: number | null
+          created_at?: string
+          date_rapport?: string
+          duree_intervention?: unknown | null
+          id?: string
+          observations?: string | null
+          service?: string
+          statut?: string
+          technicien_nom?: string | null
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rapports_services_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string | null
@@ -1290,6 +1567,36 @@ export type Database = {
           module?: string
           permission?: Database["public"]["Enums"]["app_permission"]
           role?: Database["public"]["Enums"]["app_role"]
+        }
+        Relationships: []
+      }
+      tarifs_destinations: {
+        Row: {
+          created_at: string
+          destination: string
+          distance_km: number | null
+          id: string
+          prix_unitaire_essence: number
+          prix_unitaire_gasoil: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          distance_km?: number | null
+          id?: string
+          prix_unitaire_essence: number
+          prix_unitaire_gasoil: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          distance_km?: number | null
+          id?: string
+          prix_unitaire_essence?: number
+          prix_unitaire_gasoil?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1499,6 +1806,7 @@ export type Database = {
       vehicules: {
         Row: {
           annee_fabrication: number | null
+          associe_id: string | null
           base: string | null
           capacite_max: number | null
           chauffeur_assigne: string | null
@@ -1537,6 +1845,7 @@ export type Database = {
         }
         Insert: {
           annee_fabrication?: number | null
+          associe_id?: string | null
           base?: string | null
           capacite_max?: number | null
           chauffeur_assigne?: string | null
@@ -1575,6 +1884,7 @@ export type Database = {
         }
         Update: {
           annee_fabrication?: number | null
+          associe_id?: string | null
           base?: string | null
           capacite_max?: number | null
           chauffeur_assigne?: string | null
@@ -1612,6 +1922,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vehicules_associe_id_fkey"
+            columns: ["associe_id"]
+            isOneToOne: false
+            referencedRelation: "associes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vehicules_chauffeur_assigne_fkey"
             columns: ["chauffeur_assigne"]
@@ -1679,6 +1996,8 @@ export type Database = {
         | "facturation"
         | "direction"
         | "admin"
+        | "transitaire"
+        | "directeur_exploitation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1824,6 +2143,8 @@ export const Constants = {
         "facturation",
         "direction",
         "admin",
+        "transitaire",
+        "directeur_exploitation",
       ],
     },
   },

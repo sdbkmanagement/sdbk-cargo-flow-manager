@@ -1,6 +1,14 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
+// Types pour les nouvelles entités
+export type Associe = Database["public"]["Tables"]["associes"]["Row"];
+export type AssocieInsert = Database["public"]["Tables"]["associes"]["Insert"];
+export type TarifDestination = Database["public"]["Tables"]["tarifs_destinations"]["Row"];
+export type ClientTotal = Database["public"]["Tables"]["clients_total"]["Row"];
+export type AffectationChauffeur = Database["public"]["Tables"]["affectations_chauffeurs"]["Row"];
+export type RapportService = Database["public"]["Tables"]["rapports_services"]["Row"];
+
 type DiagnosticMaintenance = Database['public']['Tables']['diagnostics_maintenance']['Row'];
 type DiagnosticMaintenanceInsert = Database['public']['Tables']['diagnostics_maintenance']['Insert'];
 type ControleOBC = Database['public']['Tables']['controles_obc']['Row'];
@@ -295,5 +303,209 @@ export const processusSDBKService = {
     });
 
     return statistiques;
+  },
+
+  // === GESTION DES ASSOCIÉS ===
+  async getAssocies(): Promise<Associe[]> {
+    const { data, error } = await supabase
+      .from('associes')
+      .select('*')
+      .order('nom');
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async creerAssocie(associeData: AssocieInsert): Promise<Associe> {
+    const { data, error } = await supabase
+      .from('associes')
+      .insert([associeData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // === GESTION DES TARIFS ===
+  async getTarifs(): Promise<TarifDestination[]> {
+    const { data, error } = await supabase
+      .from('tarifs_destinations')
+      .select('*')
+      .order('destination');
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getTarifByDestination(destination: string): Promise<TarifDestination | null> {
+    const { data, error } = await supabase
+      .from('tarifs_destinations')
+      .select('*')
+      .eq('destination', destination)
+      .single();
+
+    if (error) return null;
+    return data;
+  },
+
+  // === GESTION DES CLIENTS TOTAL ===
+  async getClientsTotal(): Promise<ClientTotal[]> {
+    const { data, error } = await supabase
+      .from('clients_total')
+      .select('*')
+      .order('nom_client');
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getClientByCode(codeClient: string): Promise<ClientTotal | null> {
+    const { data, error } = await supabase
+      .from('clients_total')
+      .select('*')
+      .eq('code_client', codeClient)
+      .single();
+
+    if (error) return null;
+    return data;
+  },
+
+  // === GESTION DES AFFECTATIONS ===
+  async affecter_chauffeur_vehicule(
+    vehiculeId: string, 
+    chauffeurId: string, 
+    motif: string,
+    autorisePar: string
+  ): Promise<AffectationChauffeur> {
+    // Terminer l'affectation précédente s'il y en a une
+    await supabase
+      .from('affectations_chauffeurs')
+      .update({ 
+        statut: 'terminee',
+        date_fin: new Date().toISOString().split('T')[0],
+        motif_changement: motif
+      })
+      .eq('vehicule_id', vehiculeId)
+      .eq('statut', 'active');
+
+    // Créer la nouvelle affectation
+    const { data, error } = await supabase
+      .from('affectations_chauffeurs')
+      .insert([{
+        vehicule_id: vehiculeId,
+        chauffeur_id: chauffeurId,
+        date_debut: new Date().toISOString().split('T')[0],
+        motif_changement: motif,
+        autorise_par: autorisePar,
+        statut: 'active'
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Mettre à jour le véhicule
+    await supabase
+      .from('vehicules')
+      .update({ chauffeur_assigne: chauffeurId })
+      .eq('id', vehiculeId);
+
+    return data;
+  },
+
+  // === FACTURATION AMÉLIORÉE ===
+  async calculerFacturationBL(blId: string): Promise<{
+    prix_unitaire: number;
+    montant_total: number;
+    montant_facture: number;
+  }> {
+    const { data: bl, error } = await supabase
+      .from('bons_livraison')
+      .select('*, vehicules!inner(associe_id)')
+      .eq('id', blId)
+      .single();
+
+    if (error) throw error;
+
+    const tarif = await this.getTarifByDestination(bl.destination);
+    if (!tarif) throw new Error('Tarif non trouvé pour cette destination');
+
+    const prixUnitaire = bl.produit.toLowerCase().includes('essence') 
+      ? tarif.prix_unitaire_essence 
+      : tarif.prix_unitaire_gasoil;
+
+    const quantiteLivree = bl.quantite_livree || bl.quantite_prevue;
+    const montantTotal = quantiteLivree * prixUnitaire;
+    const montantFacture = montantTotal - ((bl.manquant_total || 0) * prixUnitaire);
+
+    // Mettre à jour le BL avec la facturation
+    await supabase
+      .from('bons_livraison')
+      .update({
+        prix_unitaire: prixUnitaire,
+        montant_total: montantTotal,
+        montant_facture: montantFacture,
+        associe_id: bl.vehicules?.associe_id,
+        chiffre_affaire_associe: montantFacture
+      })
+      .eq('id', blId);
+
+    return {
+      prix_unitaire: prixUnitaire,
+      montant_total: montantTotal,
+      montant_facture: montantFacture
+    };
+  },
+
+  // === RAPPORTS PAR SERVICE ===
+  async creerRapportService(serviceData: Omit<RapportService, 'id' | 'created_at'>): Promise<RapportService> {
+    const { data, error } = await supabase
+      .from('rapports_services')
+      .insert([serviceData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  async getRapportsVehicule(vehiculeId: string): Promise<RapportService[]> {
+    const { data, error } = await supabase
+      .from('rapports_services')
+      .select('*')
+      .eq('vehicule_id', vehiculeId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
+  },
+
+  // === CHIFFRE D'AFFAIRES ASSOCIÉS ===
+  async getChiffreAffairesAssocie(associeId: string, dateDebut?: string, dateFin?: string) {
+    let query = supabase
+      .from('bons_livraison')
+      .select('chiffre_affaire_associe, date_emission')
+      .eq('associe_id', associeId)
+      .not('chiffre_affaire_associe', 'is', null);
+
+    if (dateDebut) {
+      query = query.gte('date_emission', dateDebut);
+    }
+    if (dateFin) {
+      query = query.lte('date_emission', dateFin);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const total = data?.reduce((sum, bl) => sum + (bl.chiffre_affaire_associe || 0), 0) || 0;
+    const nombre_missions = data?.length || 0;
+
+    return {
+      total_ca: total,
+      nombre_missions,
+      moyenne_par_mission: nombre_missions > 0 ? total / nombre_missions : 0
+    };
   }
 };

@@ -23,12 +23,12 @@ export const OBCDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: OBCDial
     chauffeur_id: '',
     acceleration_excessive: 0,
     freinage_brusque: 0,
-    exces_vitesse_urbain: 0,
-    exces_vitesse_campagne: 0,
-    temps_conduite_depasse: 0,
-    conduite_continue_sans_pause: 0,
-    conduite_nuit_non_autorisee: 0,
-    pause_reglementaire_non_respectee: 0,
+    vitesse_urbain_30_depassements: 0,
+    vitesse_campagne_50_depassements: 0,
+    temps_conduite_4h30_depasse: 0,
+    conduite_continue_4h30: 0,
+    conduite_nuit_22h_6h: 0,
+    pause_45min_non_respectee: 0,
     anomalies_techniques: 0,
     controleur_nom: '',
     commentaires: ''
@@ -45,16 +45,16 @@ export const OBCDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: OBCDial
   });
   const { toast } = useToast();
 
+  // Les 8 invariants OBC officiels selon les spécifications
   const invariants = [
-    { key: 'acceleration_excessive', label: 'Accélérations excessives', description: 'Nombre d\'accélérations brusques détectées' },
-    { key: 'freinage_brusque', label: 'Freinages brusques', description: 'Nombre de freinages d\'urgence' },
-    { key: 'exces_vitesse_urbain', label: 'Excès vitesse urbain', description: 'Dépassements > 30 km/h en ville' },
-    { key: 'exces_vitesse_campagne', label: 'Excès vitesse campagne', description: 'Dépassements > 50 km/h en campagne' },
-    { key: 'temps_conduite_depasse', label: 'Temps de conduite dépassé', description: 'Dépassements du temps réglementaire' },
-    { key: 'conduite_continue_sans_pause', label: 'Conduite sans pause', description: 'Conduite continue excessive' },
-    { key: 'conduite_nuit_non_autorisee', label: 'Conduite de nuit interdite', description: 'Conduite de nuit non autorisée' },
-    { key: 'pause_reglementaire_non_respectee', label: 'Pause non respectée', description: 'Pauses réglementaires non prises' },
-    { key: 'anomalies_techniques', label: 'Anomalies techniques', description: 'Problèmes techniques détectés' }
+    { key: 'acceleration_excessive', label: '1. Accélérations excessives', description: 'Nombre d\'accélérations brusques détectées par l\'OBC', limite: 5 },
+    { key: 'freinage_brusque', label: '2. Freinages brusques', description: 'Nombre de freinages d\'urgence enregistrés', limite: 3 },
+    { key: 'vitesse_urbain_30_depassements', label: '3. Excès vitesse urbain > 30 km/h', description: 'Dépassements de vitesse en centre urbain', limite: 2 },
+    { key: 'vitesse_campagne_50_depassements', label: '4. Excès vitesse campagne > 50 km/h', description: 'Dépassements de vitesse en rase campagne', limite: 1 },
+    { key: 'temps_conduite_4h30_depasse', label: '5. Temps de conduite > 4h30', description: 'Non-respect du temps de conduite maximal', limite: 0 },
+    { key: 'conduite_continue_4h30', label: '6. Conduite continue > 4h30', description: 'Conduite continue sans pause réglementaire', limite: 0 },
+    { key: 'conduite_nuit_22h_6h', label: '7. Conduite de nuit (22h-6h)', description: 'Conduite de nuit non autorisée', limite: 0 },
+    { key: 'pause_45min_non_respectee', label: '8. Pause 45min non respectée', description: 'Non-respect de la pause obligatoire de 45 minutes', limite: 0 }
   ];
 
   const safeToLoadItems = [
@@ -69,16 +69,29 @@ export const OBCDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: OBCDial
   ];
 
   const calculateScore = () => {
-    const totalViolations = Object.keys(formData)
-      .filter(key => key.includes('_'))
-      .reduce((sum, key) => sum + (formData[key as keyof typeof formData] as number), 0);
-    
-    return Math.max(0, 100 - (totalViolations * 5)); // Chaque violation retire 5 points
+    let score = 100;
+    invariants.forEach(invariant => {
+      const value = formData[invariant.key as keyof typeof formData] as number;
+      if (value > invariant.limite) {
+        score -= (value - invariant.limite) * 10; // Déduction selon dépassement
+      }
+    });
+    return Math.max(0, score);
   };
 
   const isConforme = () => {
-    const score = calculateScore();
-    return score >= 70; // Seuil de conformité à 70%
+    // Vérifier si chaque invariant respecte sa limite
+    return invariants.every(invariant => {
+      const value = formData[invariant.key as keyof typeof formData] as number;
+      return value <= invariant.limite;
+    });
+  };
+
+  const getViolations = () => {
+    return invariants.filter(invariant => {
+      const value = formData[invariant.key as keyof typeof formData] as number;
+      return value > invariant.limite;
+    });
   };
 
   const isSafeToLoadOK = () => {
@@ -99,12 +112,12 @@ export const OBCDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: OBCDial
         chauffeur_id: formData.chauffeur_id,
         acceleration_excessive: formData.acceleration_excessive,
         freinage_brusque: formData.freinage_brusque,
-        exces_vitesse_urbain: formData.exces_vitesse_urbain,
-        exces_vitesse_campagne: formData.exces_vitesse_campagne,
-        temps_conduite_depasse: formData.temps_conduite_depasse,
-        conduite_continue_sans_pause: formData.conduite_continue_sans_pause,
-        conduite_nuit_non_autorisee: formData.conduite_nuit_non_autorisee,
-        pause_reglementaire_non_respectee: formData.pause_reglementaire_non_respectee,
+        vitesse_urbain_30_depassements: formData.vitesse_urbain_30_depassements,
+        vitesse_campagne_50_depassements: formData.vitesse_campagne_50_depassements,
+        temps_conduite_4h30_depasse: formData.temps_conduite_4h30_depasse,
+        conduite_continue_4h30: formData.conduite_continue_4h30,
+        conduite_nuit_22h_6h: formData.conduite_nuit_22h_6h,
+        pause_45min_non_respectee: formData.pause_45min_non_respectee,
         anomalies_techniques: formData.anomalies_techniques,
         score_global: score,
         conforme,
@@ -167,23 +180,46 @@ export const OBCDialog = ({ open, onOpenChange, vehiculeId, onSuccess }: OBCDial
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {invariants.map((invariant) => (
-                  <div key={invariant.key} className="space-y-2">
-                    <Label htmlFor={invariant.key}>{invariant.label}</Label>
-                    <Input
-                      id={invariant.key}
-                      type="number"
-                      min="0"
-                      value={formData[invariant.key as keyof typeof formData]}
-                      onChange={(e) => setFormData(prev => ({ 
-                        ...prev, 
-                        [invariant.key]: parseInt(e.target.value) || 0 
-                      }))}
-                      placeholder="0"
-                    />
-                    <p className="text-xs text-muted-foreground">{invariant.description}</p>
-                  </div>
-                ))}
+                {invariants.map((invariant) => {
+                  const currentValue = formData[invariant.key as keyof typeof formData] as number;
+                  const isViolation = currentValue > invariant.limite;
+                  
+                  return (
+                    <div key={invariant.key} className={`space-y-2 p-3 rounded border ${
+                      isViolation ? 'border-red-200 bg-red-50' : 'border-gray-200'
+                    }`}>
+                      <Label htmlFor={invariant.key} className={isViolation ? 'text-red-700' : ''}>
+                        {invariant.label}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id={invariant.key}
+                          type="number"
+                          min="0"
+                          value={currentValue}
+                          onChange={(e) => setFormData(prev => ({ 
+                            ...prev, 
+                            [invariant.key]: parseInt(e.target.value) || 0 
+                          }))}
+                          placeholder="0"
+                          className={isViolation ? 'border-red-300' : ''}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                          / {invariant.limite} max
+                        </span>
+                        {isViolation && (
+                          <AlertTriangle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{invariant.description}</p>
+                      {isViolation && (
+                        <p className="text-xs text-red-600 font-medium">
+                          ⚠️ Limite dépassée de {currentValue - invariant.limite}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
