@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Calculator, Plus, Trash2 } from 'lucide-react';
+import { Calculator, Plus, Trash2, Fuel } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { billingService } from '@/services/billing';
+import { tarifsHydrocarburesService, TarifHydrocarbure } from '@/services/tarifsHydrocarburesService';
 
 interface InvoiceFormProps {
   onClose: () => void;
@@ -36,16 +37,29 @@ interface InvoiceLine {
   quantite: number;
   prixUnitaire: number;
   total: number;
+  isHydrocarbure?: boolean;
+  lieuDepart?: string;
+  destination?: string;
 }
 
 export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => {
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<InvoiceFormData>();
   const [invoiceLines, setInvoiceLines] = useState<InvoiceLine[]>([
-    { id: '1', description: '', quantite: 1, prixUnitaire: 0, total: 0 }
+    { id: '1', description: '', quantite: 1, prixUnitaire: 0, total: 0, isHydrocarbure: false }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lieuxDepart, setLieuxDepart] = useState<string[]>([]);
+  const [tarifsDisponibles, setTarifsDisponibles] = useState<TarifHydrocarbure[]>([]);
 
   const TVA_RATE = 0.18;
+
+  useEffect(() => {
+    const loadTarifsData = async () => {
+      const lieux = await tarifsHydrocarburesService.getLieuxDepart();
+      setLieuxDepart(lieux);
+    };
+    loadTarifsData();
+  }, []);
 
   const addInvoiceLine = () => {
     const newLine: InvoiceLine = {
@@ -53,7 +67,8 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
       description: '',
       quantite: 1,
       prixUnitaire: 0,
-      total: 0
+      total: 0,
+      isHydrocarbure: false
     };
     setInvoiceLines([...invoiceLines, newLine]);
   };
@@ -62,7 +77,7 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
     setInvoiceLines(invoiceLines.filter(line => line.id !== id));
   };
 
-  const updateInvoiceLine = (id: string, field: keyof InvoiceLine, value: string | number) => {
+  const updateInvoiceLine = (id: string, field: keyof InvoiceLine, value: string | number | boolean) => {
     setInvoiceLines(invoiceLines.map(line => {
       if (line.id === id) {
         const updatedLine = { ...line, [field]: value };
@@ -73,6 +88,39 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
       }
       return line;
     }));
+  };
+
+  const handleHydrocarbureSelection = async (lineId: string, isHydrocarbure: boolean) => {
+    updateInvoiceLine(lineId, 'isHydrocarbure', isHydrocarbure);
+    if (!isHydrocarbure) {
+      updateInvoiceLine(lineId, 'lieuDepart', '');
+      updateInvoiceLine(lineId, 'destination', '');
+      updateInvoiceLine(lineId, 'prixUnitaire', 0);
+    }
+  };
+
+  const handleLieuDepartChange = async (lineId: string, lieuDepart: string) => {
+    updateInvoiceLine(lineId, 'lieuDepart', lieuDepart);
+    updateInvoiceLine(lineId, 'destination', '');
+    updateInvoiceLine(lineId, 'prixUnitaire', 0);
+    
+    if (lieuDepart) {
+      const tarifs = await tarifsHydrocarburesService.getDestinations(lieuDepart);
+      setTarifsDisponibles(tarifs);
+    }
+  };
+
+  const handleDestinationChange = async (lineId: string, destination: string) => {
+    updateInvoiceLine(lineId, 'destination', destination);
+    
+    const line = invoiceLines.find(l => l.id === lineId);
+    if (line?.lieuDepart && destination) {
+      const tarif = await tarifsHydrocarburesService.getTarif(line.lieuDepart, destination);
+      if (tarif) {
+        updateInvoiceLine(lineId, 'prixUnitaire', tarif.tarif_au_litre);
+        updateInvoiceLine(lineId, 'description', `Transport hydrocarbures ${line.lieuDepart} → ${destination}`);
+      }
+    }
   };
 
   const calculateTotals = () => {
@@ -283,55 +331,115 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
         </CardHeader>
         <CardContent className="space-y-4">
           {invoiceLines.map((line, index) => (
-            <div key={line.id} className="grid grid-cols-12 gap-2 items-end">
-              <div className="col-span-5">
-                <Label>Description</Label>
-                <Input
-                  value={line.description}
-                  onChange={(e) => updateInvoiceLine(line.id, 'description', e.target.value)}
-                  placeholder="Description du service/produit"
-                />
+            <div key={line.id} className="border rounded-lg p-4 space-y-4">
+              {/* Option hydrocarbures */}
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={line.isHydrocarbure || false}
+                    onChange={(e) => handleHydrocarbureSelection(line.id, e.target.checked)}
+                    className="rounded"
+                  />
+                  <Fuel className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium">Transport d'hydrocarbures</span>
+                </label>
               </div>
-              <div className="col-span-2">
-                <Label>Quantité</Label>
-                <Input
-                  type="number"
-                  value={line.quantite}
-                  onChange={(e) => updateInvoiceLine(line.id, 'quantite', parseFloat(e.target.value) || 0)}
-                  min="0"
-                  step="0.01"
-                />
-              </div>
-               <div className="col-span-2">
-                <Label>Prix unitaire (GNF)</Label>
-                <Input
-                  type="number"
-                  value={line.prixUnitaire}
-                  onChange={(e) => updateInvoiceLine(line.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
-                  min="0"
-                  step="1"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label>Total (GNF)</Label>
-                <Input
-                  value={line.total.toLocaleString('fr-FR')}
-                  readOnly
-                  className="bg-gray-50"
-                />
-              </div>
-              <div className="col-span-1">
-                {invoiceLines.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeInvoiceLine(line.id)}
-                    className="text-red-600"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+
+              {/* Sélection lieu/destination pour hydrocarbures */}
+              {line.isHydrocarbure && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div>
+                    <Label>Lieu de départ</Label>
+                    <Select value={line.lieuDepart || ''} onValueChange={(value) => handleLieuDepartChange(line.id, value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner le lieu de départ" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {lieuxDepart.map(lieu => (
+                          <SelectItem key={lieu} value={lieu}>{lieu}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Destination</Label>
+                    <Select 
+                      value={line.destination || ''} 
+                      onValueChange={(value) => handleDestinationChange(line.id, value)}
+                      disabled={!line.lieuDepart}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner la destination" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tarifsDisponibles
+                          .filter(t => t.lieu_depart === line.lieuDepart)
+                          .map(tarif => (
+                            <SelectItem key={tarif.destination} value={tarif.destination}>
+                              {tarif.destination} ({tarif.tarif_au_litre.toLocaleString('fr-FR')} GNF/L)
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              {/* Champs de ligne standard */}
+              <div className="grid grid-cols-12 gap-2 items-end">
+                <div className="col-span-5">
+                  <Label>Description</Label>
+                  <Input
+                    value={line.description}
+                    onChange={(e) => updateInvoiceLine(line.id, 'description', e.target.value)}
+                    placeholder={line.isHydrocarbure ? "Auto-généré selon tarif" : "Description du service/produit"}
+                    disabled={line.isHydrocarbure}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Quantité (Litres)</Label>
+                  <Input
+                    type="number"
+                    value={line.quantite}
+                    onChange={(e) => updateInvoiceLine(line.id, 'quantite', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Prix unitaire (GNF/L)</Label>
+                  <Input
+                    type="number"
+                    value={line.prixUnitaire}
+                    onChange={(e) => updateInvoiceLine(line.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
+                    min="0"
+                    step="1"
+                    disabled={line.isHydrocarbure}
+                    className={line.isHydrocarbure ? "bg-blue-50" : ""}
+                  />
+                </div>
+                <div className="col-span-2">
+                  <Label>Total (GNF)</Label>
+                  <Input
+                    value={line.total.toLocaleString('fr-FR')}
+                    readOnly
+                    className="bg-gray-50 font-medium"
+                  />
+                </div>
+                <div className="col-span-1">
+                  {invoiceLines.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeInvoiceLine(line.id)}
+                      className="text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

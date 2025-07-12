@@ -10,7 +10,8 @@ import { ExportFactures } from '@/components/billing/ExportFactures';
 import { InvoiceForm } from '@/components/billing/InvoiceForm';
 import { QuoteForm } from '@/components/billing/QuoteForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Calculator } from 'lucide-react';
+import { Plus, Calculator, Fuel } from 'lucide-react';
+import { TarifsHydrocarburesManagement } from '@/components/billing/TarifsHydrocarburesManagement';
 
 const Billing = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -73,10 +74,14 @@ const Billing = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
           <TabsTrigger value="invoices">Factures</TabsTrigger>
           <TabsTrigger value="quotes">Devis</TabsTrigger>
+          <TabsTrigger value="tarifs" className="flex items-center gap-2">
+            <Fuel className="h-4 w-4" />
+            Tarifs Hydrocarbures
+          </TabsTrigger>
           <TabsTrigger value="payments">Suivi paiements</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
         </TabsList>
@@ -91,6 +96,10 @@ const Billing = () => {
 
         <TabsContent value="quotes" className="space-y-6">
           <QuoteList key={refreshKey} />
+        </TabsContent>
+
+        <TabsContent value="tarifs" className="space-y-6">
+          <TarifsHydrocarburesManagement />
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6">
