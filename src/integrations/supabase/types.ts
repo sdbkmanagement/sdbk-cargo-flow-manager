@@ -935,7 +935,9 @@ export type Database = {
         Row: {
           alerte_expiration_envoyee: boolean | null
           chauffeur_id: string | null
+          commentaire: string | null
           created_at: string | null
+          date_delivrance: string | null
           date_expiration: string | null
           entity_id: string | null
           entity_type: string | null
@@ -950,7 +952,9 @@ export type Database = {
         Insert: {
           alerte_expiration_envoyee?: boolean | null
           chauffeur_id?: string | null
+          commentaire?: string | null
           created_at?: string | null
+          date_delivrance?: string | null
           date_expiration?: string | null
           entity_id?: string | null
           entity_type?: string | null
@@ -965,7 +969,9 @@ export type Database = {
         Update: {
           alerte_expiration_envoyee?: boolean | null
           chauffeur_id?: string | null
+          commentaire?: string | null
           created_at?: string | null
+          date_delivrance?: string | null
           date_expiration?: string | null
           entity_id?: string | null
           entity_type?: string | null
@@ -989,7 +995,9 @@ export type Database = {
       }
       documents_vehicules: {
         Row: {
+          commentaire: string | null
           created_at: string
+          date_delivrance: string | null
           date_expiration: string | null
           id: string
           nom: string
@@ -1000,7 +1008,9 @@ export type Database = {
           vehicule_id: string
         }
         Insert: {
+          commentaire?: string | null
           created_at?: string
+          date_delivrance?: string | null
           date_expiration?: string | null
           id?: string
           nom: string
@@ -1011,7 +1021,9 @@ export type Database = {
           vehicule_id: string
         }
         Update: {
+          commentaire?: string | null
           created_at?: string
+          date_delivrance?: string | null
           date_expiration?: string | null
           id?: string
           nom?: string
@@ -1875,6 +1887,7 @@ export type Database = {
           type_vehicule: string
           unite_capacite: string | null
           updated_at: string
+          validation_requise: boolean | null
         }
         Insert: {
           annee_fabrication?: number | null
@@ -1914,6 +1927,7 @@ export type Database = {
           type_vehicule?: string
           unite_capacite?: string | null
           updated_at?: string
+          validation_requise?: boolean | null
         }
         Update: {
           annee_fabrication?: number | null
@@ -1953,6 +1967,7 @@ export type Database = {
           type_vehicule?: string
           unite_capacite?: string | null
           updated_at?: string
+          validation_requise?: boolean | null
         }
         Relationships: [
           {
@@ -1973,6 +1988,51 @@ export type Database = {
       }
     }
     Views: {
+      alertes_documents_chauffeurs: {
+        Row: {
+          chauffeur_id: string | null
+          chauffeur_nom: string | null
+          date_expiration: string | null
+          document_nom: string | null
+          document_type: string | null
+          id: string | null
+          jours_restants: number | null
+          niveau_alerte: string | null
+          statut: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      alertes_documents_vehicules: {
+        Row: {
+          date_expiration: string | null
+          document_nom: string | null
+          document_type: string | null
+          id: string | null
+          immatriculation: string | null
+          jours_restants: number | null
+          niveau_alerte: string | null
+          statut: string | null
+          vehicule_id: string | null
+          vehicule_numero: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_vehicules_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alertes_rh: {
         Row: {
           date_echeance: string | null
@@ -1991,6 +2051,10 @@ export type Database = {
       admin_user_exists: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      calculer_statut_document: {
+        Args: { date_expiration: string }
+        Returns: string
       }
       check_resource_availability: {
         Args: {

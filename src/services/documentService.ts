@@ -214,5 +214,35 @@ export const documentService = {
     });
 
     return stats;
+  },
+
+  // Récupérer les alertes de documents véhicules
+  async getAlertesVehicules(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('alertes_documents_vehicules')
+      .select('*')
+      .order('date_expiration', { ascending: true });
+
+    if (error) {
+      console.error('Erreur lors de la récupération des alertes véhicules:', error);
+      throw error;
+    }
+
+    return data || [];
+  },
+
+  // Récupérer les alertes de documents chauffeurs
+  async getAlertesChauffeurs(): Promise<any[]> {
+    const { data, error } = await supabase
+      .from('alertes_documents_chauffeurs')
+      .select('*')
+      .order('date_expiration', { ascending: true });
+
+    if (error) {
+      console.error('Erreur lors de la récupération des alertes chauffeurs:', error);
+      throw error;
+    }
+
+    return data || [];
   }
 };

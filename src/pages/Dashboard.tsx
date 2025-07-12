@@ -5,6 +5,7 @@ import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, FileTex
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AlertesDocuments } from '@/components/common/AlertesDocuments';
 
 const StatCard = ({ title, value, description, icon: Icon, color, isLoading }: any) => (
   <Card>
@@ -239,6 +240,9 @@ const Dashboard = () => {
           <StatCard key={index} {...stat} />
         ))}
       </div>
+
+      {/* Alertes documentaires */}
+      <AlertesDocuments />
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Activité récente */}

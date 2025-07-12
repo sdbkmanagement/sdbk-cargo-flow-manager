@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,36 +25,33 @@ import {
   Eye, 
   Download, 
   Trash2, 
-  AlertTriangle,
   Plus
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { documentService } from '@/services/documentService';
+import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
-type Document = Database['public']['Tables']['documents']['Row'];
+type DocumentVehicule = Database['public']['Tables']['documents_vehicules']['Row'];
 
-interface DocumentManagerProps {
-  chauffeurId: string;
-  chauffeurNom: string;
+interface DocumentManagerVehiculeProps {
+  vehiculeId: string;
+  vehiculeNumero: string;
 }
 
 const documentTypes = [
-  { value: 'permis_conduire', label: 'Permis de conduire', requiresExpiration: true },
-  { value: 'visite_medicale', label: 'Visite médicale', requiresExpiration: true },
-  { value: 'formation_adr', label: 'Formation ADR', requiresExpiration: true },
-  { value: 'formation_hse', label: 'Formation HSE', requiresExpiration: true },
-  { value: 'formation_conduite', label: 'Formation conduite', requiresExpiration: true },
-  { value: 'certificat_medical', label: 'Certificat médical', requiresExpiration: true },
-  { value: 'carte_professionnelle', label: 'Carte professionnelle', requiresExpiration: true },
-  { value: 'carte_identite', label: 'Carte d\'identité', requiresExpiration: true },
-  { value: 'attestation_assurance', label: 'Attestation d\'assurance', requiresExpiration: false },
-  { value: 'contrat_travail', label: 'Contrat de travail', requiresExpiration: false },
+  { value: 'carte_grise', label: 'Carte grise', requiresExpiration: false },
+  { value: 'assurance', label: 'Assurance', requiresExpiration: true },
+  { value: 'controle_technique', label: 'Contrôle technique', requiresExpiration: true },
+  { value: 'controle_annuel', label: 'Contrôle annuel', requiresExpiration: true },
+  { value: 'carte_rouge', label: 'Carte rouge', requiresExpiration: true },
+  { value: 'certificat_conformite', label: 'Certificat de conformité', requiresExpiration: false },
+  { value: 'adr', label: 'ADR', requiresExpiration: true },
+  { value: 'visite_periodique', label: 'Visite périodique', requiresExpiration: true },
   { value: 'autre', label: 'Autre document', requiresExpiration: false }
 ];
 
-export const DocumentManager = ({ chauffeurId, chauffeurNom }: DocumentManagerProps) => {
-  const [documents, setDocuments] = useState<Document[]>([]);
+export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: DocumentManagerVehiculeProps) => {
+  const [documents, setDocuments] = useState<DocumentVehicule[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
@@ -69,13 +65,22 @@ export const DocumentManager = ({ chauffeurId, chauffeurNom }: DocumentManagerPr
 
   useEffect(() => {
     loadDocuments();
-  }, [chauffeurId]);
+  }, [vehiculeId]);
 
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      const data = await documentService.getByEntity('chauffeur', chauffeurId);
-      setDocuments(data);
+      const { data, error } = await supabase
+        .from('documents_vehicules')
+        .select('*')
+        .eq('vehicule_id', vehiculeId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      setDocuments(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des documents:', error);
       toast({
@@ -112,20 +117,37 @@ export const DocumentManager = ({ chauffeurId, chauffeurNom }: DocumentManagerPr
       setUploading(true);
       
       // Upload du fichier
-      const fileUrl = await documentService.uploadFile(selectedFile, 'chauffeur', chauffeurId, documentType);
-      
+      const fileName = `vehicule/${vehiculeId}/${documentType}_${Date.now()}_${selectedFile.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, selectedFile);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Récupérer l'URL publique
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(uploadData.path);
+
       // Création de l'enregistrement en base
-      await documentService.create({
-        entity_type: 'chauffeur',
-        entity_id: chauffeurId,
-        nom: documentName,
-        type: documentType,
-        url: fileUrl,
-        taille: selectedFile.size,
-        date_delivrance: dateDelivrance || null,
-        date_expiration: dateExpiration || null,
-        commentaire: commentaire || null
-      });
+      const { error: insertError } = await supabase
+        .from('documents_vehicules')
+        .insert({
+          vehicule_id: vehiculeId,
+          nom: documentName,
+          type: documentType,
+          url: urlData.publicUrl,
+          taille: selectedFile.size,
+          date_delivrance: dateDelivrance || null,
+          date_expiration: dateExpiration || null,
+          commentaire: commentaire || null
+        });
+
+      if (insertError) {
+        throw insertError;
+      }
 
       toast({
         title: 'Document ajouté',
@@ -155,17 +177,29 @@ export const DocumentManager = ({ chauffeurId, chauffeurNom }: DocumentManagerPr
     }
   };
 
-  const handleDelete = async (document: Document) => {
+  const handleDelete = async (document: DocumentVehicule) => {
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
       return;
     }
 
     try {
       // Supprimer le fichier du storage
-      await documentService.deleteFile(document.url);
+      const pathParts = document.url.split('/documents/');
+      const relativePath = pathParts[1] || document.url;
+      
+      await supabase.storage
+        .from('documents')
+        .remove([relativePath]);
       
       // Supprimer l'enregistrement de la base
-      await documentService.delete(document.id);
+      const { error } = await supabase
+        .from('documents_vehicules')
+        .delete()
+        .eq('id', document.id);
+
+      if (error) {
+        throw error;
+      }
       
       toast({
         title: 'Document supprimé',
@@ -183,11 +217,11 @@ export const DocumentManager = ({ chauffeurId, chauffeurNom }: DocumentManagerPr
     }
   };
 
-  const handleView = (document: Document) => {
+  const handleView = (document: DocumentVehicule) => {
     window.open(document.url, '_blank');
   };
 
-  const handleDownload = (document: Document) => {
+  const handleDownload = (document: DocumentVehicule) => {
     const link = window.document.createElement('a');
     link.href = document.url;
     link.download = document.nom;
@@ -247,7 +281,7 @@ export const DocumentManager = ({ chauffeurId, chauffeurNom }: DocumentManagerPr
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center">
             <FileText className="w-5 h-5 mr-2" />
-            Documents de {chauffeurNom}
+            Documents du véhicule {vehiculeNumero}
           </CardTitle>
           <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
             <DialogTrigger asChild>
@@ -407,7 +441,7 @@ export const DocumentManager = ({ chauffeurId, chauffeurNom }: DocumentManagerPr
                     )}
                   </TableCell>
                   <TableCell>
-                    {formatFileSize(document.taille)}
+                    {formatFileSize(document.taille || 0)}
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">

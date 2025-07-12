@@ -97,25 +97,12 @@ export const missionsService = {
     return data
   },
 
-  // Libérer les ressources (véhicule et chauffeur)
+  // Libérer les ressources (véhicule et chauffeur) - OBSOLÈTE
+  // La logique de revalidation est maintenant gérée par les triggers de base de données
   async liberateResources(vehiculeId: string, chauffeurId: string): Promise<void> {
     try {
-      // Mettre le véhicule en statut "disponible"
-      const { error: vehiculeError } = await supabase
-        .from('vehicules')
-        .update({ 
-          statut: 'disponible',
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', vehiculeId)
-
-      if (vehiculeError) {
-        console.error('Erreur lors de la libération du véhicule:', vehiculeError)
-      } else {
-        console.log('Véhicule libéré avec succès')
-      }
-
-      // Mettre le chauffeur en statut "actif" (disponible)
+      // Le véhicule sera automatiquement marqué comme nécessitant une revalidation par le trigger
+      // Seul le chauffeur est libéré ici
       const { error: chauffeurError } = await supabase
         .from('chauffeurs')
         .update({ 
@@ -213,7 +200,7 @@ export const missionsService = {
     return data?.[0] || { vehicule_disponible: false, chauffeur_disponible: false, message: 'Erreur de vérification' }
   },
 
-  // Récupérer les véhicules disponibles pour un type de transport (validés uniquement)
+  // Récupérer les véhicules disponibles pour un type de transport (validés uniquement et sans revalidation requise)
   async getAvailableVehicles(typeTransport: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('vehicules')
@@ -223,6 +210,7 @@ export const missionsService = {
       `)
       .eq('type_transport', typeTransport)
       .eq('statut', 'disponible')
+      .eq('validation_requise', false)
       .eq('validation_workflows.statut_global', 'valide')
       .order('numero')
 
