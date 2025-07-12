@@ -122,7 +122,7 @@ export const AuditLogs = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <span className="text-xs text-gray-600">
+                        <span className="text-xs text-gray-600 font-mono">
                           {formatDetails(log.details)}
                         </span>
                       </TableCell>

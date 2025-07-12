@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Users, Shield, Activity, AlertTriangle } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
+import { AuditLogs } from '@/components/admin/AuditLogs';
 
 const Administration = () => {
   const { user, isAdmin } = useAuth();
@@ -45,15 +46,23 @@ const Administration = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-1">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Utilisateurs & Droits d'accès
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="flex items-center gap-2">
+            <Activity className="h-4 w-4" />
+            Journaux d'audit
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-6">
           <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-6">
+          <AuditLogs />
         </TabsContent>
       </Tabs>
     </div>
