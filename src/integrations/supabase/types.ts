@@ -67,50 +67,6 @@ export type Database = {
           },
         ]
       }
-      admin_audit_log: {
-        Row: {
-          action: string
-          created_at: string | null
-          details: Json | null
-          id: string
-          ip_address: unknown | null
-          target_id: string | null
-          target_type: string
-          user_agent: string | null
-          user_id: string | null
-        }
-        Insert: {
-          action: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          ip_address?: unknown | null
-          target_id?: string | null
-          target_type: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          action?: string
-          created_at?: string | null
-          details?: Json | null
-          id?: string
-          ip_address?: unknown | null
-          target_id?: string | null
-          target_type?: string
-          user_agent?: string | null
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "admin_audit_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       affectations_chauffeurs: {
         Row: {
           autorise_par: string | null
@@ -149,13 +105,6 @@ export type Database = {
           vehicule_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "affectations_chauffeurs_autorise_par_fkey"
-            columns: ["autorise_par"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "affectations_chauffeurs_chauffeur_id_fkey"
             columns: ["chauffeur_id"]
@@ -1318,33 +1267,6 @@ export type Database = {
           },
         ]
       }
-      login_attempts: {
-        Row: {
-          created_at: string | null
-          email: string
-          error_message: string | null
-          id: string
-          ip_address: unknown | null
-          success: boolean
-        }
-        Insert: {
-          created_at?: string | null
-          email: string
-          error_message?: string | null
-          id?: string
-          ip_address?: unknown | null
-          success: boolean
-        }
-        Update: {
-          created_at?: string | null
-          email?: string
-          error_message?: string | null
-          id?: string
-          ip_address?: unknown | null
-          success?: boolean
-        }
-        Relationships: []
-      }
       maintenance_vehicules: {
         Row: {
           cout: number | null
@@ -1558,30 +1480,6 @@ export type Database = {
           },
         ]
       }
-      role_permissions: {
-        Row: {
-          created_at: string | null
-          id: string
-          module: string
-          permission: Database["public"]["Enums"]["app_permission"]
-          role: Database["public"]["Enums"]["app_role"]
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          module: string
-          permission: Database["public"]["Enums"]["app_permission"]
-          role: Database["public"]["Enums"]["app_role"]
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          module?: string
-          permission?: Database["public"]["Enums"]["app_permission"]
-          role?: Database["public"]["Enums"]["app_role"]
-        }
-        Relationships: []
-      }
       tarifs_destinations: {
         Row: {
           created_at: string
@@ -1645,44 +1543,123 @@ export type Database = {
         }
         Relationships: []
       }
+      user_audit_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: unknown | null
+          target_id: string | null
+          target_type: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_type: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          target_id?: string | null
+          target_type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_sessions: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          id: string
+          ip_address: unknown | null
+          session_token: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          ip_address?: unknown | null
+          session_token: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          ip_address?: unknown | null
+          session_token?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           created_at: string | null
           created_by: string | null
-          derniere_connexion: string | null
           email: string
+          first_name: string
           id: string
-          mot_de_passe_change: boolean | null
-          nom: string
-          prenom: string
-          role: Database["public"]["Enums"]["app_role"]
-          statut: string
+          last_login: string | null
+          last_name: string
+          password_hash: string
+          roles: Database["public"]["Enums"]["user_role"][]
+          status: string
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           created_by?: string | null
-          derniere_connexion?: string | null
           email: string
+          first_name: string
           id?: string
-          mot_de_passe_change?: boolean | null
-          nom: string
-          prenom: string
-          role?: Database["public"]["Enums"]["app_role"]
-          statut?: string
+          last_login?: string | null
+          last_name: string
+          password_hash: string
+          roles?: Database["public"]["Enums"]["user_role"][]
+          status?: string
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           created_by?: string | null
-          derniere_connexion?: string | null
           email?: string
+          first_name?: string
           id?: string
-          mot_de_passe_change?: boolean | null
-          nom?: string
-          prenom?: string
-          role?: Database["public"]["Enums"]["app_role"]
-          statut?: string
+          last_login?: string | null
+          last_name?: string
+          password_hash?: string
+          roles?: Database["public"]["Enums"]["user_role"][]
+          status?: string
           updated_at?: string | null
         }
         Relationships: [
@@ -2074,27 +2051,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_user: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_permission:
-        | "read"
-        | "write"
-        | "delete"
-        | "validate"
-        | "export"
-        | "admin"
-      app_role:
+      user_role:
+        | "transport"
         | "maintenance"
-        | "administratif"
         | "hsecq"
         | "obc"
-        | "transport"
         | "rh"
         | "facturation"
         | "direction"
+        | "administratif"
         | "admin"
-        | "transitaire"
-        | "directeur_exploitation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2222,26 +2194,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_permission: [
-        "read",
-        "write",
-        "delete",
-        "validate",
-        "export",
-        "admin",
-      ],
-      app_role: [
+      user_role: [
+        "transport",
         "maintenance",
-        "administratif",
         "hsecq",
         "obc",
-        "transport",
         "rh",
         "facturation",
         "direction",
+        "administratif",
         "admin",
-        "transitaire",
-        "directeur_exploitation",
       ],
     },
   },

@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
 import { adminService } from '@/services/admin';
 import { ROLES, ROLE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -22,6 +20,7 @@ interface UserFormData {
   email: string;
   nom: string;
   prenom: string;
+  password?: string;
   role: AppRole;
   statut: 'actif' | 'inactif' | 'suspendu';
 }
@@ -42,12 +41,12 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   const createMutation = useMutation({
     mutationFn: (data: UserFormData) => adminService.createUser({
       ...data,
-      mot_de_passe_change: false
+      password: data.password!
     }),
     onSuccess: () => {
       toast({
         title: "Utilisateur créé",
-        description: "Le nouvel utilisateur a été créé avec succès. L'utilisateur devra créer son compte de connexion séparément."
+        description: "Le nouvel utilisateur a été créé avec succès."
       });
       onSuccess();
     },
@@ -91,15 +90,6 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {!isEdit && (
-        <Alert>
-          <InfoIcon className="h-4 w-4" />
-          <AlertDescription>
-            Après la création de l'utilisateur, celui-ci devra créer son compte de connexion en utilisant la même adresse email.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <Card>
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,11 +130,33 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                   }
                 })}
                 placeholder="email@sdbk.com"
+                disabled={isEdit}
               />
               {errors.email && (
                 <p className="text-sm text-red-600">{errors.email.message}</p>
               )}
             </div>
+
+            {!isEdit && (
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="password">Mot de passe *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  {...register('password', { 
+                    required: 'Le mot de passe est requis',
+                    minLength: {
+                      value: 6,
+                      message: 'Le mot de passe doit contenir au moins 6 caractères'
+                    }
+                  })}
+                  placeholder="Saisissez le mot de passe"
+                />
+                {errors.password && (
+                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="role">Rôle *</Label>

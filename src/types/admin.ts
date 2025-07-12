@@ -11,8 +11,6 @@ export interface SystemUser {
   prenom: string;
   role: AppRole;
   statut: 'actif' | 'inactif' | 'suspendu';
-  derniere_connexion?: string;
-  mot_de_passe_change: boolean;
   created_at: string;
   updated_at: string;
   created_by?: string;

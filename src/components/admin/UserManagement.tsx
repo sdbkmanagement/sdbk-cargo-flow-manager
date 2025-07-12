@@ -144,8 +144,7 @@ export const UserManagement = () => {
                 <DialogHeader>
                   <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Saisissez les informations du nouvel utilisateur. 
-                    Le mot de passe par défaut sera "password123" et devra être changé lors de la première connexion.
+                    Saisissez les informations du nouvel utilisateur.
                   </DialogDescription>
                 </DialogHeader>
                 <UserForm onSuccess={handleCreateSuccess} />
@@ -200,8 +199,6 @@ export const UserManagement = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Rôle</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead>Mot de passe</TableHead>
-                  <TableHead>Dernière connexion</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -223,19 +220,6 @@ export const UserManagement = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>{getStatusBadge(user.statut)}</TableCell>
-                    <TableCell>
-                      {user.mot_de_passe_change ? (
-                        <Badge variant="outline" className="text-green-600">Changé</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-orange-600">Par défaut</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.derniere_connexion 
-                        ? new Date(user.derniere_connexion).toLocaleDateString('fr-FR')
-                        : 'Jamais'
-                      }
-                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Button 

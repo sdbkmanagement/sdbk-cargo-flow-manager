@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { CheckCircle, XCircle, Clock, MessageSquare, History } from 'lucide-react';
 import { validationService, type ValidationWorkflowWithEtapes, type EtapeType, type StatutEtape } from '@/services/validation';
 import { useToast } from '@/hooks/use-toast';
+import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 
 interface ValidationWorkflowCardProps {
   vehiculeId: string;
@@ -23,13 +24,6 @@ const ETAPE_LABELS = {
   obc: 'OBC (Opérations)'
 };
 
-const ETAPE_PERMISSIONS = {
-  maintenance: ['maintenance', 'admin', 'direction'],
-  administratif: ['administratif', 'admin', 'direction'],
-  hsecq: ['hsecq', 'admin', 'direction'],
-  obc: ['obc', 'admin', 'direction']
-};
-
 export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 'admin' }: ValidationWorkflowCardProps) => {
   const [workflow, setWorkflow] = useState<ValidationWorkflowWithEtapes | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,6 +31,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   const [commentaire, setCommentaire] = useState('');
   const [showCommentDialog, setShowCommentDialog] = useState<{show: boolean, etapeId: string, action: StatutEtape} | null>(null);
   const { toast } = useToast();
+  const { canValidateEtape, getUserRole, getUserName } = useValidationPermissions();
 
   useEffect(() => {
     loadWorkflow();
@@ -62,12 +57,24 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   const handleValidation = async (etapeId: string, statut: StatutEtape, commentaireText?: string) => {
     try {
       setActionLoading(etapeId);
+      
+      // Vérifier les permissions avant de procéder
+      const etape = workflow?.etapes.find(e => e.id === etapeId);
+      if (!etape || !canValidateEtape(etape.etape)) {
+        toast({
+          title: 'Accès refusé',
+          description: 'Vous n\'avez pas l\'autorisation de valider cette étape.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       await validationService.updateEtapeStatut(
         etapeId, 
         statut, 
-        commentaireText,
-        'Utilisateur', // TODO: Récupérer le vrai nom utilisateur
-        userRole
+        commentaireText || '',
+        getUserName(),
+        getUserRole()
       );
       
       toast({
@@ -114,10 +121,6 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
     }
   };
 
-  const canValidateEtape = (etape: EtapeType) => {
-    return ETAPE_PERMISSIONS[etape]?.includes(userRole) || false;
-  };
-
   if (loading) {
     return (
       <Card>
@@ -159,7 +162,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                   {getStatutBadge(etape.statut as StatutEtape)}
                 </div>
                 
-                {canValidateEtape(etape.etape as EtapeType) && etape.statut === 'en_attente' && (
+                {canValidateEtape(etape.etape) && etape.statut === 'en_attente' && (
                   <div className="flex gap-2">
                     <Button
                       size="sm"
@@ -182,6 +185,12 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                       Rejeter
                     </Button>
                   </div>
+                )}
+
+                {!canValidateEtape(etape.etape) && etape.statut === 'en_attente' && (
+                  <Badge variant="outline" className="text-gray-500">
+                    Accès limité à {ETAPE_LABELS[etape.etape as EtapeType]}
+                  </Badge>
                 )}
               </div>
               

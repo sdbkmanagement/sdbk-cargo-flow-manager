@@ -30,22 +30,39 @@ export const userService = {
     } : null;
   },
 
-  async createUser(user: Omit<SystemUser, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<SystemUser> {
+  async createUser(user: Omit<SystemUser, 'id' | 'created_at' | 'updated_at' | 'created_by'> & { password: string }): Promise<SystemUser> {
     try {
       console.log('Début de la création utilisateur:', user);
       
-      // Insérer directement l'utilisateur dans la table users
-      // L'utilisateur devra créer son compte Auth séparément
+      // Créer d'abord l'utilisateur dans Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: user.email,
+        password: user.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (authError) {
+        console.error('Erreur lors de la création dans Auth:', authError);
+        throw authError;
+      }
+
+      if (!authData.user) {
+        throw new Error('Erreur lors de la création du compte utilisateur');
+      }
+
+      // Insérer les informations supplémentaires dans la table users
       const userData = {
+        id: authData.user.id,
         nom: user.nom,
         prenom: user.prenom,
         email: user.email,
         role: user.role,
-        statut: user.statut,
-        mot_de_passe_change: false
+        statut: user.statut
       };
 
-      console.log('Données à insérer:', userData);
+      console.log('Données à insérer dans users:', userData);
 
       const { data, error } = await supabase
         .from('users')
@@ -55,10 +72,12 @@ export const userService = {
       
       if (error) {
         console.error('Erreur lors de l\'insertion dans users:', error);
+        // Nettoyer l'utilisateur Auth si l'insertion échoue
+        await supabase.auth.admin.deleteUser(authData.user.id);
         throw error;
       }
 
-      console.log('Utilisateur créé avec succès dans users:', data);
+      console.log('Utilisateur créé avec succès:', data);
       
       return {
         ...data,
@@ -86,12 +105,17 @@ export const userService = {
   },
 
   async deleteUser(id: string): Promise<void> {
-    const { error } = await supabase
+    // Supprimer d'abord de la table users
+    const { error: userError } = await supabase
       .from('users')
       .delete()
       .eq('id', id);
     
-    if (error) throw error;
+    if (userError) throw userError;
+
+    // Puis supprimer de Auth
+    const { error: authError } = await supabase.auth.admin.deleteUser(id);
+    if (authError) throw authError;
   },
 
   async toggleUserStatus(id: string, statut: 'actif' | 'inactif' | 'suspendu'): Promise<SystemUser> {
@@ -99,7 +123,7 @@ export const userService = {
   },
 
   async resetPassword(userId: string): Promise<void> {
-    // Réinitialiser le mot de passe dans Auth
+    // Récupérer l'email de l'utilisateur
     const { data: user } = await supabase
       .from('users')
       .select('email')
@@ -113,8 +137,5 @@ export const userService = {
     });
 
     if (error) throw error;
-
-    // Marquer que le mot de passe doit être changé
-    await this.updateUser(userId, { mot_de_passe_change: false });
   }
 };
