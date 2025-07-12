@@ -34,6 +34,22 @@ export const AuditLogs = () => {
     }
   };
 
+  const formatDetails = (details: any): string => {
+    if (!details) return 'Aucun détail';
+    
+    try {
+      if (typeof details === 'string') {
+        return details;
+      }
+      if (typeof details === 'object') {
+        return JSON.stringify(details, null, 2);
+      }
+      return String(details);
+    } catch {
+      return 'Détails non formatables';
+    }
+  };
+
   if (userLogsLoading || sessionsLoading) {
     return <div>Chargement des journaux d'audit...</div>;
   }
@@ -107,7 +123,7 @@ export const AuditLogs = () => {
                       </TableCell>
                       <TableCell>
                         <span className="text-xs text-gray-600">
-                          Target: {log.target_id || 'N/A'}
+                          {formatDetails(log.details)}
                         </span>
                       </TableCell>
                     </TableRow>
