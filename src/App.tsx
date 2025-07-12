@@ -1,48 +1,76 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { LoginForm } from "@/components/auth/LoginForm";
-import Fleet from "./pages/Fleet";
-import Drivers from "./pages/Drivers";
-import Missions from "./pages/Missions";
-import Cargo from "./pages/Cargo";
-import Billing from "./pages/Billing";
-import Validations from "./pages/Validations";
-import RH from "./pages/RH";
-import Dashboard from "./pages/Dashboard";
-import Guide from "./pages/Guide";
-import NotFound from "./pages/NotFound";
-import Administration from "./pages/Administration";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Loader2 } from 'lucide-react';
 
-const queryClient = new QueryClient();
+// Pages
+import Dashboard from '@/pages/Dashboard';
+import Fleet from '@/pages/Fleet';
+import Drivers from '@/pages/Drivers';
+import Missions from '@/pages/Missions';
+import Cargo from '@/pages/Cargo';
+import Billing from '@/pages/Billing';
+import Validations from '@/pages/Validations';
+import RH from '@/pages/RH';
+import Administration from '@/pages/Administration';
+import Guide from '@/pages/Guide';
+import NotFound from '@/pages/NotFound';
 
-// Composant pour protéger les routes
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-  
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   if (!user) {
     return <LoginForm />;
   }
-  
-  return <>{children}</>;
-};
 
-// Layout principal avec sidebar
-const MainLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
-          {children}
-        </div>
+      <main className="flex-1 p-6 overflow-auto">
+        {children}
       </main>
     </div>
+  );
+};
+
+const AppRoutes = () => {
+  return (
+    <Routes>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/fleet" element={<ProtectedRoute><Fleet /></ProtectedRoute>} />
+      <Route path="/drivers" element={<ProtectedRoute><Drivers /></ProtectedRoute>} />
+      <Route path="/missions" element={<ProtectedRoute><Missions /></ProtectedRoute>} />
+      <Route path="/cargo" element={<ProtectedRoute><Cargo /></ProtectedRoute>} />
+      <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+      <Route path="/validations" element={<ProtectedRoute><Validations /></ProtectedRoute>} />
+      <Route path="/rh" element={<ProtectedRoute><RH /></ProtectedRoute>} />
+      <Route path="/administration" element={<ProtectedRoute><Administration /></ProtectedRoute>} />
+      <Route path="/guide" element={<ProtectedRoute><Guide /></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
 
@@ -50,106 +78,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
+        <Router>
+          <AppRoutes />
           <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Redirection automatique vers le tableau de bord */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              
-              {/* Routes protégées avec layout */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Dashboard />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/fleet" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Fleet />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/drivers" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Drivers />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/missions" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Missions />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/cargo" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Cargo />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/billing" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Billing />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/validations" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Validations />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/rh" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <RH />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/administration" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Administration />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/guide" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Guide />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              {/* Route pour les pages non trouvées */}
-              <Route path="*" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <NotFound />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+        </Router>
       </AuthProvider>
     </QueryClientProvider>
   );

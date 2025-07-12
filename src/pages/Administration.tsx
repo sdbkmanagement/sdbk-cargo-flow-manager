@@ -6,16 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Users, Shield, Activity, AlertTriangle } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
-import { RolePermissionManagement } from '@/components/admin/RolePermissionManagement';
-import { AuditLogs } from '@/components/admin/AuditLogs';
-import { AdminStats } from '@/components/admin/AdminStats';
 
 const Administration = () => {
-  const { user, hasRole } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const { user, isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState('users');
 
   // Vérifier si l'utilisateur est admin
-  if (!hasRole('admin')) {
+  if (!isAdmin()) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="w-full max-w-md">
@@ -23,7 +20,7 @@ const Administration = () => {
             <AlertTriangle className="h-12 w-12 text-orange-500 mx-auto mb-4" />
             <CardTitle>Accès non autorisé</CardTitle>
             <CardDescription>
-              Vous devez avoir le rôle "Admin Système" pour accéder à cette section.
+              Vous devez avoir le rôle "Administrateur" pour accéder à cette section.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -39,48 +36,24 @@ const Administration = () => {
             Administration & Gestion des accès
           </h1>
           <p className="text-gray-600 mt-2">
-            Gestion des utilisateurs, rôles, permissions et sécurité du système
+            Gestion des utilisateurs, rôles et permissions du système
           </p>
         </div>
         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-          Admin Système
+          Administrateur
         </Badge>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Vue d'ensemble
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-1">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Utilisateurs
-          </TabsTrigger>
-          <TabsTrigger value="roles" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Rôles & Permissions
-          </TabsTrigger>
-          <TabsTrigger value="audit" className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Audit & Logs
+            Utilisateurs & Droits d'accès
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <AdminStats />
-        </TabsContent>
-
         <TabsContent value="users" className="space-y-6">
           <UserManagement />
-        </TabsContent>
-
-        <TabsContent value="roles" className="space-y-6">
-          <RolePermissionManagement />
-        </TabsContent>
-
-        <TabsContent value="audit" className="space-y-6">
-          <AuditLogs />
         </TabsContent>
       </Tabs>
     </div>

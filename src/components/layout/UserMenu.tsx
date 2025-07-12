@@ -12,13 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, User, Settings } from 'lucide-react';
+import { ROLE_LABELS } from '@/types/user';
 
 export const UserMenu = () => {
   const { user, logout } = useAuth();
 
   if (!user) return null;
 
-  const initials = `${user.prenom.charAt(0)}${user.nom.charAt(0)}`.toUpperCase();
+  const initials = `${user.first_name.charAt(0)}${user.last_name.charAt(0)}`.toUpperCase();
+  const primaryRole = user.roles[0];
 
   return (
     <DropdownMenu>
@@ -35,13 +37,14 @@ export const UserMenu = () => {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user.prenom} {user.nom}
+              {user.first_name} {user.last_name}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
-            <p className="text-xs leading-none text-muted-foreground capitalize">
-              {user.role}
+            <p className="text-xs leading-none text-muted-foreground">
+              {ROLE_LABELS[primaryRole]}
+              {user.roles.length > 1 && ` +${user.roles.length - 1}`}
             </p>
           </div>
         </DropdownMenuLabel>

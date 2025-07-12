@@ -9,31 +9,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
-import { adminService } from '@/services/admin';
+import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw, Shield } from 'lucide-react';
+import { userService } from '@/services/userService';
 import { UserForm } from './UserForm';
-import { ROLE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
+import { ROLE_LABELS, type User, type UserRole } from '@/types/user';
 import { toast } from '@/hooks/use-toast';
 
 export const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
   const { data: users = [], isLoading } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: () => adminService.getUsers(),
+    queryKey: ['users'],
+    queryFn: () => userService.getUsers(),
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (userId: string) => adminService.deleteUser(userId),
+    mutationFn: (userId: string) => userService.deleteUser(userId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "Utilisateur supprimé",
         description: "L'utilisateur a été supprimé avec succès."
@@ -49,10 +49,10 @@ export const UserManagement = () => {
   });
 
   const toggleStatusMutation = useMutation({
-    mutationFn: ({ userId, status }: { userId: string; status: SystemUser['statut'] }) => 
-      adminService.toggleUserStatus(userId, status),
+    mutationFn: ({ userId, status }: { userId: string; status: 'active' | 'inactive' }) => 
+      userService.toggleUserStatus(userId, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({
         title: "Statut modifié",
         description: "Le statut de l'utilisateur a été modifié avec succès."
@@ -68,11 +68,12 @@ export const UserManagement = () => {
   });
 
   const resetPasswordMutation = useMutation({
-    mutationFn: (userId: string) => adminService.resetPassword(userId),
+    mutationFn: ({ userId, newPassword }: { userId: string; newPassword: string }) => 
+      userService.resetPassword(userId, newPassword),
     onSuccess: () => {
       toast({
         title: "Mot de passe réinitialisé",
-        description: "Un email de réinitialisation a été envoyé à l'utilisateur."
+        description: "Le mot de passe a été réinitialisé avec succès."
       });
     },
     onError: () => {
@@ -85,37 +86,59 @@ export const UserManagement = () => {
   });
 
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = user.first_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         user.last_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || user.statut === statusFilter;
+    const matchesRole = roleFilter === 'all' || user.roles.includes(roleFilter as UserRole);
+    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
     
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const getStatusBadge = (statut: SystemUser['statut']) => {
-    switch (statut) {
-      case 'actif':
+  const getStatusBadge = (status: 'active' | 'inactive') => {
+    switch (status) {
+      case 'active':
         return <Badge className="bg-green-100 text-green-700 border-green-200">Actif</Badge>;
-      case 'inactif':
+      case 'inactive':
         return <Badge className="bg-red-100 text-red-700 border-red-200">Inactif</Badge>;
-      case 'suspendu':
-        return <Badge className="bg-orange-100 text-orange-700 border-orange-200">Suspendu</Badge>;
       default:
-        return <Badge variant="secondary">{statut}</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
+  };
+
+  const getRoleBadges = (roles: UserRole[]) => {
+    return roles.map(role => {
+      const isValidationRole = ['maintenance', 'administratif', 'hsecq', 'obc'].includes(role);
+      return (
+        <Badge 
+          key={role} 
+          variant={role === 'admin' ? 'default' : 'outline'}
+          className={`mr-1 ${
+            role === 'admin' ? 'bg-blue-600 text-white' : 
+            isValidationRole ? 'bg-purple-100 text-purple-700 border-purple-200' : ''
+          }`}
+        >
+          {isValidationRole && <Shield className="h-3 w-3 mr-1" />}
+          {ROLE_LABELS[role]}
+        </Badge>
+      );
+    });
+  };
+
+  const handleResetPassword = (userId: string) => {
+    const newPassword = `temp${Math.random().toString(36).substring(2, 8)}`;
+    resetPasswordMutation.mutate({ userId, newPassword });
   };
 
   const handleCreateSuccess = () => {
     setIsCreateDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    queryClient.invalidateQueries({ queryKey: ['users'] });
   };
 
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     setSelectedUser(null);
-    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    queryClient.invalidateQueries({ queryKey: ['users'] });
   };
 
   if (isLoading) {
@@ -128,24 +151,24 @@ export const UserManagement = () => {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Gestion des Utilisateurs</CardTitle>
+              <CardTitle>Gestion des Utilisateurs & Droits d'accès</CardTitle>
               <CardDescription>
-                Créer, modifier et gérer les comptes utilisateurs du système
+                Créer et gérer les comptes utilisateurs avec attribution des rôles métiers
               </CardDescription>
             </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
                   <Plus className="h-4 w-4 mr-2" />
-                  Nouvel utilisateur
+                  Créer un utilisateur
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Saisissez les informations du nouvel utilisateur. 
-                    Le mot de passe par défaut sera "password123" et devra être changé lors de la première connexion.
+                    Saisissez les informations et définissez les rôles métiers. 
+                    Le compte sera immédiatement actif après création.
                   </DialogDescription>
                 </DialogHeader>
                 <UserForm onSuccess={handleCreateSuccess} />
@@ -184,9 +207,8 @@ export const UserManagement = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="actif">Actif</SelectItem>
-                <SelectItem value="inactif">Inactif</SelectItem>
-                <SelectItem value="suspendu">Suspendu</SelectItem>
+                <SelectItem value="active">Actif</SelectItem>
+                <SelectItem value="inactive">Inactif</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -198,9 +220,8 @@ export const UserManagement = () => {
                 <TableRow>
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Rôle</TableHead>
+                  <TableHead>Rôles</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead>Mot de passe</TableHead>
                   <TableHead>Dernière connexion</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -210,7 +231,7 @@ export const UserManagement = () => {
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{user.prenom} {user.nom}</div>
+                        <div className="font-medium">{user.first_name} {user.last_name}</div>
                         <div className="text-sm text-muted-foreground">
                           Créé le {new Date(user.created_at).toLocaleDateString('fr-FR')}
                         </div>
@@ -218,21 +239,14 @@ export const UserManagement = () => {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {ROLE_LABELS[user.role]}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {getRoleBadges(user.roles)}
+                      </div>
                     </TableCell>
-                    <TableCell>{getStatusBadge(user.statut)}</TableCell>
+                    <TableCell>{getStatusBadge(user.status)}</TableCell>
                     <TableCell>
-                      {user.mot_de_passe_change ? (
-                        <Badge variant="outline" className="text-green-600">Changé</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-orange-600">Par défaut</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {user.derniere_connexion 
-                        ? new Date(user.derniere_connexion).toLocaleDateString('fr-FR')
+                      {user.last_login 
+                        ? new Date(user.last_login).toLocaleDateString('fr-FR')
                         : 'Jamais'
                       }
                     </TableCell>
@@ -252,17 +266,17 @@ export const UserManagement = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => resetPasswordMutation.mutate(user.id)}
+                          onClick={() => handleResetPassword(user.id)}
                           disabled={resetPasswordMutation.isPending}
                         >
                           <RotateCcw className="h-3 w-3" />
                         </Button>
 
-                        {user.statut === 'actif' ? (
+                        {user.status === 'active' ? (
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'inactif' })}
+                            onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'inactive' })}
                           >
                             <UserX className="h-3 w-3" />
                           </Button>
@@ -270,7 +284,7 @@ export const UserManagement = () => {
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'actif' })}
+                            onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'active' })}
                           >
                             <UserCheck className="h-3 w-3" />
                           </Button>
@@ -286,7 +300,7 @@ export const UserManagement = () => {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Supprimer l'utilisateur</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Êtes-vous sûr de vouloir supprimer l'utilisateur "{user.prenom} {user.nom}" ? 
+                                Êtes-vous sûr de vouloir supprimer l'utilisateur "{user.first_name} {user.last_name}" ? 
                                 Cette action est irréversible.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
@@ -323,7 +337,7 @@ export const UserManagement = () => {
           <DialogHeader>
             <DialogTitle>Modifier l'utilisateur</DialogTitle>
             <DialogDescription>
-              Modifiez les informations de l'utilisateur
+              Modifiez les informations et rôles de l'utilisateur
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
