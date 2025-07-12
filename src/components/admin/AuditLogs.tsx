@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { adminService } from '@/services/admin';
 import { Activity, User, Calendar } from 'lucide-react';
+import { getActionBadge, formatDetails } from '@/components/admin/audit/auditUtils';
 
 export const AuditLogs = () => {
   const [logType, setLogType] = useState<string>('user_logs');
@@ -20,35 +21,6 @@ export const AuditLogs = () => {
     queryKey: ['user-sessions'],
     queryFn: () => adminService.getUserSessions(50),
   });
-
-  const getActionBadge = (action: string) => {
-    switch (action) {
-      case 'CREATE_USER':
-        return <Badge className="bg-green-100 text-green-700">Créer</Badge>;
-      case 'UPDATE_USER':
-        return <Badge className="bg-blue-100 text-blue-700">Modifier</Badge>;
-      case 'DELETE_USER':
-        return <Badge className="bg-red-100 text-red-700">Supprimer</Badge>;
-      default:
-        return <Badge variant="outline">{action}</Badge>;
-    }
-  };
-
-  const formatDetails = (details: any): string => {
-    if (!details) return 'Aucun détail';
-    
-    try {
-      if (typeof details === 'string') {
-        return details;
-      }
-      if (typeof details === 'object') {
-        return JSON.stringify(details, null, 2);
-      }
-      return String(details);
-    } catch {
-      return 'Détails non formatables';
-    }
-  };
 
   if (userLogsLoading || sessionsLoading) {
     return <div>Chargement des journaux d'audit...</div>;
