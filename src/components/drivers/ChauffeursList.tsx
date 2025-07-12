@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,16 +25,16 @@ export const ChauffeursList = ({ searchTerm, onSelectChauffeur }: ChauffeursList
 
   const { data: chauffeurs = [], isLoading, error } = useQuery({
     queryKey: ['chauffeurs'],
-    queryFn: chauffeursService.getChauffeurs,
+    queryFn: chauffeursService.getAll,
   });
 
   // Filtrer les chauffeurs selon le terme de recherche
-  const filteredChauffeurs = chauffeurs.filter(chauffeur =>
+  const filteredChauffeurs = Array.isArray(chauffeurs) ? chauffeurs.filter(chauffeur =>
     chauffeur.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
     chauffeur.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
     chauffeur.telephone.includes(searchTerm) ||
     (chauffeur.email && chauffeur.email.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ) : [];
 
   const getStatutBadge = (statut: string) => {
     switch (statut) {

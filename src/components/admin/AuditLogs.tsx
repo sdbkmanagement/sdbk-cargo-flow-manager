@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { auditService } from '@/services/admin/auditService';
+import { adminService } from '@/services/admin';
 import { Activity, User, Calendar } from 'lucide-react';
 
 export const AuditLogs = () => {
@@ -13,12 +13,12 @@ export const AuditLogs = () => {
 
   const { data: userLogs = [], isLoading: userLogsLoading } = useQuery({
     queryKey: ['user-audit-logs'],
-    queryFn: () => auditService.getUserAuditLogs(100),
+    queryFn: () => adminService.getUserAuditLogs(100),
   });
 
   const { data: userSessions = [], isLoading: sessionsLoading } = useQuery({
     queryKey: ['user-sessions'],
-    queryFn: () => auditService.getUserSessions(50),
+    queryFn: () => adminService.getUserSessions(50),
   });
 
   const getActionBadge = (action: string) => {
@@ -94,18 +94,20 @@ export const AuditLogs = () => {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-gray-400" />
-                          {new Date(log.created_at).toLocaleDateString('fr-FR', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          <span className="text-sm">
+                            {new Date(log.created_at).toLocaleDateString('fr-FR', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs text-gray-600">
-                          Target: {log.target_id}
+                          Target: {log.target_id || 'N/A'}
                         </span>
                       </TableCell>
                     </TableRow>
@@ -137,7 +139,7 @@ export const AuditLogs = () => {
                         </div>
                       </TableCell>
                       <TableCell>
-                        {session.ip_address || 'Non disponible'}
+                        <span className="text-sm">{session.ip_address || 'Non disponible'}</span>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs text-gray-600 max-w-[200px] truncate block">
@@ -145,22 +147,26 @@ export const AuditLogs = () => {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {new Date(session.created_at).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        <span className="text-sm">
+                          {new Date(session.created_at).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        {new Date(session.expires_at).toLocaleDateString('fr-FR', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        <span className="text-sm">
+                          {new Date(session.expires_at).toLocaleDateString('fr-FR', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
                       </TableCell>
                     </TableRow>
                   ))}

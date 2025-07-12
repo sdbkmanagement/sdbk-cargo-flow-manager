@@ -1,7 +1,10 @@
 
-import { Chauffeur, Formation, Document } from './index';
+import { Chauffeur as BaseChauffeur, Formation, Document } from './index';
 
-export interface ChauffeurDetaille extends Chauffeur {
+// Export the base Chauffeur type
+export type Chauffeur = BaseChauffeur;
+
+export interface ChauffeurDetaille extends BaseChauffeur {
   dateNaissance: Date;
   adresse: string;
   ville: string;

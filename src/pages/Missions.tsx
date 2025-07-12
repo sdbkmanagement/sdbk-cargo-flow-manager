@@ -13,6 +13,14 @@ const Missions = () => {
   // Vérifier les permissions d'écriture
   const hasWritePermission = hasRole('transport') || hasRole('admin') || hasRole('direction');
 
+  const handleSuccess = () => {
+    setActiveTab('liste');
+  };
+
+  const handleCancel = () => {
+    setActiveTab('liste');
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -24,7 +32,16 @@ const Missions = () => {
         </div>
       </div>
 
-      <MissionsStats />
+      <MissionsStats 
+        total={0}
+        en_attente={0}
+        en_cours={0}
+        terminees={0}
+        annulees={0}
+        volumeTotal={0}
+        chiffreAffaire={0}
+        tauxUtilisation={0}
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
@@ -35,12 +52,20 @@ const Missions = () => {
         </TabsList>
 
         <TabsContent value="liste" className="space-y-6">
-          <MissionsTable />
+          <MissionsTable 
+            missions={[]}
+            onEdit={() => {}}
+            hasWritePermission={hasWritePermission}
+            onRefresh={() => {}}
+          />
         </TabsContent>
 
         {hasWritePermission && (
           <TabsContent value="nouvelle" className="space-y-6">
-            <MissionForm onSuccess={() => setActiveTab('liste')} />
+            <MissionForm 
+              onSuccess={handleSuccess}
+              onCancel={handleCancel}
+            />
           </TabsContent>
         )}
       </Tabs>
