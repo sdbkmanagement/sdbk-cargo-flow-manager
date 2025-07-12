@@ -1,8 +1,5 @@
 
-import { Database } from '@/integrations/supabase/types';
-
-// Use the actual database type directly
-export type Chauffeur = Database['public']['Tables']['chauffeurs']['Row'];
+import { Chauffeur, Formation, Document } from './index';
 
 export interface ChauffeurDetaille extends Chauffeur {
   dateNaissance: Date;

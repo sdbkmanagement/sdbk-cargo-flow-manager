@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { SystemUser, UserRole } from '@/types/admin';
+import type { SystemUser } from '@/types/admin';
 
 export const userService = {
   async getUsers(): Promise<SystemUser[]> {
@@ -10,7 +10,10 @@ export const userService = {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(user => ({
+      ...user,
+      statut: user.statut as 'actif' | 'inactif' | 'suspendu'
+    }));
   },
 
   async getUserById(id: string): Promise<SystemUser | null> {
@@ -21,26 +24,25 @@ export const userService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return data ? {
+      ...data,
+      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+    } : null;
   },
 
-  async createUser(user: {
-    first_name: string;
-    last_name: string;
-    email: string;
-    roles: UserRole[];
-    status: 'active' | 'inactive';
-  }): Promise<SystemUser> {
+  async createUser(user: Omit<SystemUser, 'id' | 'created_at' | 'updated_at' | 'created_by'>): Promise<SystemUser> {
     try {
       console.log('Début de la création utilisateur:', user);
       
+      // Insérer directement l'utilisateur dans la table users
+      // L'utilisateur devra créer son compte Auth séparément
       const userData = {
-        first_name: user.first_name,
-        last_name: user.last_name,
+        nom: user.nom,
+        prenom: user.prenom,
         email: user.email,
-        roles: user.roles,
-        status: user.status,
-        password_hash: 'temp_hash' // Will be updated when user sets password
+        role: user.role,
+        statut: user.statut,
+        mot_de_passe_change: false
       };
 
       console.log('Données à insérer:', userData);
@@ -57,7 +59,11 @@ export const userService = {
       }
 
       console.log('Utilisateur créé avec succès dans users:', data);
-      return data;
+      
+      return {
+        ...data,
+        statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+      };
     } catch (error) {
       console.error('Erreur complète lors de la création:', error);
       throw error;
@@ -73,7 +79,10 @@ export const userService = {
       .single();
     
     if (error) throw error;
-    return data;
+    return {
+      ...data,
+      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+    };
   },
 
   async deleteUser(id: string): Promise<void> {
@@ -85,12 +94,12 @@ export const userService = {
     if (error) throw error;
   },
 
-  async toggleUserStatus(id: string, status: 'active' | 'inactive'): Promise<SystemUser> {
-    return this.updateUser(id, { status });
+  async toggleUserStatus(id: string, statut: 'actif' | 'inactif' | 'suspendu'): Promise<SystemUser> {
+    return this.updateUser(id, { statut });
   },
 
   async resetPassword(userId: string): Promise<void> {
-    // Get user email
+    // Réinitialiser le mot de passe dans Auth
     const { data: user } = await supabase
       .from('users')
       .select('email')
@@ -104,5 +113,8 @@ export const userService = {
     });
 
     if (error) throw error;
+
+    // Marquer que le mot de passe doit être changé
+    await this.updateUser(userId, { mot_de_passe_change: false });
   }
 };

@@ -1,87 +1,86 @@
-
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authService } from '@/services/auth';
-import type { User, LoginCredentials, AuthUser } from '@/types/user';
-import { toast } from '@/hooks/use-toast';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { User, UserRole } from '@/types';
 
 interface AuthContextType {
-  user: AuthUser | null;
-  loading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => Promise<void>;
-  hasRole: (role: string) => boolean;
-  isAdmin: () => boolean;
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  hasPermission: (permission: string) => boolean;
+  hasRole: (role: UserRole) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Mise à jour des utilisateurs demo avec la nouvelle structure
+const demoUsers: User[] = [
+  {
+    id: '1',
+    nom: 'Admin',
+    prenom: 'Système',
+    email: 'admin@sdbk.com',
+    role: 'admin',
+    permissions: ['all'] // Admin a tous les droits
+  },
+  {
+    id: '2',
+    nom: 'Martin',
+    prenom: 'Sophie',
+    email: 'maintenance@sdbk.com',
+    role: 'maintenance',
+    permissions: ['fleet_read', 'fleet_write', 'validation_maintenance']
+  },
+  {
+    id: '3',
+    nom: 'Bernard',
+    prenom: 'Pierre',
+    email: 'transport@sdbk.com',
+    role: 'transport',
+    permissions: ['missions_read', 'missions_write', 'drivers_read', 'drivers_write']
+  },
+  {
+    id: '4',
+    nom: 'Diallo',
+    prenom: 'Fatou',
+    email: 'rh@sdbk.com',
+    role: 'rh',
+    permissions: ['drivers_read', 'drivers_write', 'hr_read', 'hr_write']
+  }
+];
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    checkCurrentUser();
-  }, []);
-
-  const checkCurrentUser = async () => {
-    try {
-      const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
-    } catch (error) {
-      console.error('Erreur lors de la vérification de session:', error);
-    } finally {
-      setLoading(false);
+  const login = async (email: string, password: string) => {
+    // Simulation de connexion
+    const foundUser = demoUsers.find(u => u.email === email);
+    if (foundUser && password === 'demo123') {
+      setUser(foundUser);
+    } else {
+      throw new Error('Identifiants invalides');
     }
   };
 
-  const login = async (credentials: LoginCredentials) => {
-    try {
-      const authUser = await authService.login(credentials);
-      setUser(authUser);
-      toast({
-        title: "Connexion réussie",
-        description: `Bienvenue ${authUser.first_name} ${authUser.last_name}`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Erreur de connexion",
-        description: error.message || "Identifiants invalides",
-        variant: "destructive",
-      });
-      throw error;
+  const logout = () => {
+    setUser(null);
+  };
+
+  const hasPermission = (permission: string) => {
+    if (!user) return false;
+    // L'admin a tous les droits
+    if (user.role === 'admin' || user.permissions.includes('all')) {
+      return true;
     }
+    return user.permissions.includes(permission);
   };
 
-  const logout = async () => {
-    try {
-      await authService.logout();
-      setUser(null);
-      toast({
-        title: "Déconnexion",
-        description: "Vous avez été déconnecté avec succès",
-      });
-    } catch (error) {
-      console.error('Erreur lors de la déconnexion:', error);
-    }
-  };
-
-  const hasRole = (role: string) => {
-    return authService.hasRole(user, role);
-  };
-
-  const isAdmin = () => {
-    return authService.isAdmin(user);
+  const hasRole = (role: UserRole) => {
+    if (!user) return false;
+    // L'admin peut accéder à tous les rôles
+    return user.role === role || user.role === 'admin';
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      login, 
-      logout, 
-      hasRole, 
-      isAdmin 
-    }}>
+    <AuthContext.Provider value={{ user, login, logout, hasPermission, hasRole }}>
       {children}
     </AuthContext.Provider>
   );

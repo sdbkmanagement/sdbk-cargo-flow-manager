@@ -5,22 +5,20 @@ export const statsService = {
   async getUserStats() {
     const { data: users, error } = await supabase
       .from('users')
-      .select('status, roles');
+      .select('statut, role');
     
     if (error) throw error;
 
     const stats = {
       total: users.length,
-      actifs: users.filter(u => u.status === 'active').length,
-      inactifs: users.filter(u => u.status === 'inactive').length,
-      suspendus: 0, // No suspended status in new schema
+      actifs: users.filter(u => u.statut === 'actif').length,
+      inactifs: users.filter(u => u.statut === 'inactif').length,
+      suspendus: users.filter(u => u.statut === 'suspendu').length,
       byRole: {} as Record<string, number>
     };
 
     users.forEach(user => {
-      user.roles.forEach(role => {
-        stats.byRole[role] = (stats.byRole[role] || 0) + 1;
-      });
+      stats.byRole[user.role] = (stats.byRole[user.role] || 0) + 1;
     });
 
     return stats;

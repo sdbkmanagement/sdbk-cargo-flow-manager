@@ -1,98 +1,116 @@
 
-// Use the actual database types
 import { Database } from '@/integrations/supabase/types';
 
-export type UserRole = Database['public']['Enums']['user_role'];
-export type SystemUser = Database['public']['Tables']['users']['Row'];
-export type AuthUser = {
+export type AppRole = Database['public']['Enums']['app_role'];
+export type AppPermission = Database['public']['Enums']['app_permission'];
+
+export interface SystemUser {
   id: string;
   email: string;
-  roles: UserRole[];
-  status: 'active' | 'inactive';
-  first_name: string;
-  last_name: string;
-  last_login?: string;
+  nom: string;
+  prenom: string;
+  role: AppRole;
+  statut: 'actif' | 'inactif' | 'suspendu';
+  derniere_connexion?: string;
+  mot_de_passe_change: boolean;
   created_at: string;
-};
-
-export const ROLES: UserRole[] = ['admin', 'transport', 'maintenance', 'rh', 'facturation', 'hsecq', 'obc', 'administratif', 'direction'];
-
-export const ROLE_LABELS: Record<UserRole, string> = {
-  admin: 'Administrateur',
-  transport: 'Transport',
-  maintenance: 'Maintenance',
-  rh: 'Ressources Humaines',
-  facturation: 'Facturation',
-  hsecq: 'HSECQ',
-  obc: 'OBC',
-  administratif: 'Administratif',
-  direction: 'Direction'
-};
-
-export const MODULES = ['transport', 'maintenance', 'rh', 'facturation', 'hsecq', 'obc', 'administratif'] as const;
-export const MODULE_LABELS: Record<string, string> = {
-  transport: 'Transport',
-  maintenance: 'Maintenance', 
-  rh: 'Ressources Humaines',
-  facturation: 'Facturation',
-  hsecq: 'HSECQ',
-  obc: 'OBC',
-  administratif: 'Administratif'
-};
-
-export const PERMISSIONS = ['read', 'write', 'delete', 'admin'] as const;
-export type AppPermission = typeof PERMISSIONS[number];
-export const PERMISSION_LABELS: Record<AppPermission, string> = {
-  read: 'Lecture',
-  write: 'Écriture', 
-  delete: 'Suppression',
-  admin: 'Administration'
-};
-
-export type AppRole = UserRole;
+  updated_at: string;
+  created_by?: string;
+}
 
 export interface RolePermission {
   id: string;
   role: AppRole;
   module: string;
   permission: AppPermission;
+  created_at: string;
 }
 
 export interface AdminAuditLog {
   id: string;
-  user_id: string;
+  user_id?: string;
   action: string;
   target_type: string;
-  target_id: string;
+  target_id?: string;
   details?: any;
-  created_at: string;
   ip_address?: string;
+  user_agent?: string;
+  created_at: string;
 }
 
 export interface LoginAttempt {
   id: string;
   email: string;
-  success: boolean;
   ip_address?: string;
+  success: boolean;
   error_message?: string;
   created_at: string;
 }
 
-export interface AuditLog {
-  id: string;
-  user_id: string;
-  action: string;
-  target_type: string;
-  target_id: string;
-  details?: any;
-  created_at: string;
-}
+export const MODULES = [
+  'fleet',
+  'missions', 
+  'drivers',
+  'cargo',
+  'billing',
+  'validations',
+  'rh',
+  'admin'
+] as const;
 
-export interface UserSession {
-  id: string;
-  user_id: string;
-  ip_address?: string;
-  user_agent?: string;
-  created_at: string;
-  expires_at: string;
-}
+export const ROLES: AppRole[] = [
+  'maintenance',
+  'administratif',
+  'hsecq', 
+  'obc',
+  'transport',
+  'rh',
+  'facturation',
+  'direction',
+  'admin',
+  'transitaire',
+  'directeur_exploitation'
+];
+
+export const PERMISSIONS: AppPermission[] = [
+  'read',
+  'write',
+  'delete',
+  'validate',
+  'export',
+  'admin'
+];
+
+export const ROLE_LABELS: Record<AppRole, string> = {
+  maintenance: 'Maintenance',
+  administratif: 'Administratif',
+  hsecq: 'HSECQ',
+  obc: 'OBC (Opérations)',
+  transport: 'Transport',
+  rh: 'Ressources Humaines',
+  facturation: 'Facturation',
+  direction: 'Direction',
+  admin: 'Admin Système',
+  transitaire: 'Transitaire',
+  directeur_exploitation: 'Directeur d\'Exploitation'
+};
+
+export const MODULE_LABELS: Record<string, string> = {
+  fleet: 'Flotte',
+  missions: 'Missions',
+  drivers: 'Chauffeurs',
+  cargo: 'Chargements',
+  billing: 'Facturation',
+  validations: 'Validations',
+  rh: 'Ressources Humaines',
+  admin: 'Administration'
+};
+
+export const PERMISSION_LABELS: Record<AppPermission, string> = {
+  read: 'Lecture',
+  write: 'Écriture',
+  delete: 'Suppression',
+  validate: 'Validation',
+  export: 'Export',
+  admin: 'Administration'
+};

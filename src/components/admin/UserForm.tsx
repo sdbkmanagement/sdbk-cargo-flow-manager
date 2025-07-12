@@ -5,27 +5,25 @@ import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { InfoIcon, Shield } from 'lucide-react';
-import { userService } from '@/services/userService';
-import { ROLE_LABELS, VALIDATION_ROLES, type User, type UserRole, type CreateUserData, type UpdateUserData } from '@/types/user';
+import { InfoIcon } from 'lucide-react';
+import { adminService } from '@/services/admin';
+import { ROLES, ROLE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 
 interface UserFormProps {
-  user?: User;
+  user?: SystemUser;
   onSuccess: () => void;
 }
 
 interface UserFormData {
-  first_name: string;
-  last_name: string;
   email: string;
-  password?: string;
-  roles: UserRole[];
-  status: 'active' | 'inactive';
+  nom: string;
+  prenom: string;
+  role: AppRole;
+  statut: 'actif' | 'inactif' | 'suspendu';
 }
 
 export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
@@ -33,21 +31,23 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   
   const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<UserFormData>({
     defaultValues: {
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
       email: user?.email || '',
-      password: '',
-      roles: user?.roles || [],
-      status: user?.status || 'active'
+      nom: user?.nom || '',
+      prenom: user?.prenom || '',
+      role: user?.role || 'transport',
+      statut: user?.statut || 'actif'
     }
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateUserData) => userService.createUser(data),
+    mutationFn: (data: UserFormData) => adminService.createUser({
+      ...data,
+      mot_de_passe_change: false
+    }),
     onSuccess: () => {
       toast({
         title: "Utilisateur créé",
-        description: "Le nouvel utilisateur a été créé avec succès. Il peut maintenant se connecter."
+        description: "Le nouvel utilisateur a été créé avec succès. L'utilisateur devra créer son compte de connexion séparément."
       });
       onSuccess();
     },
@@ -61,7 +61,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateUserData) => userService.updateUser(user!.id, data),
+    mutationFn: (data: UserFormData) => adminService.updateUser(user!.id, data),
     onSuccess: () => {
       toast({
         title: "Utilisateur modifié",
@@ -80,52 +80,14 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const onSubmit = (data: UserFormData) => {
     if (isEdit) {
-      const updateData: UpdateUserData = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        roles: data.roles,
-        status: data.status
-      };
-      if (data.password && data.password.trim()) {
-        updateData.password = data.password;
-      }
-      updateMutation.mutate(updateData);
+      updateMutation.mutate(data);
     } else {
-      if (!data.password || data.password.length < 6) {
-        toast({
-          title: "Erreur",
-          description: "Le mot de passe doit contenir au moins 6 caractères.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const createData: CreateUserData = {
-        first_name: data.first_name,
-        last_name: data.last_name,
-        email: data.email,
-        password: data.password,
-        roles: data.roles,
-        status: data.status
-      };
-      createMutation.mutate(createData);
+      createMutation.mutate(data);
     }
   };
 
-  const watchedRoles = watch('roles');
-  const watchedStatus = watch('status');
-
-  const handleRoleChange = (role: UserRole, checked: boolean) => {
-    const currentRoles = watchedRoles || [];
-    if (checked) {
-      setValue('roles', [...currentRoles, role]);
-    } else {
-      setValue('roles', currentRoles.filter(r => r !== role));
-    }
-  };
-
-  const isValidationRole = (role: UserRole) => VALIDATION_ROLES.includes(role);
+  const watchedRole = watch('role');
+  const watchedStatut = watch('statut');
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -133,38 +95,35 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
         <Alert>
           <InfoIcon className="h-4 w-4" />
           <AlertDescription>
-            Le compte sera immédiatement actif après création. L'utilisateur pourra se connecter avec l'email et le mot de passe définis.
+            Après la création de l'utilisateur, celui-ci devra créer son compte de connexion en utilisant la même adresse email.
           </AlertDescription>
         </Alert>
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle>Informations personnelles</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="first_name">Prénom *</Label>
+              <Label htmlFor="prenom">Prénom *</Label>
               <Input
-                id="first_name"
-                {...register('first_name', { required: 'Le prénom est requis' })}
-                placeholder="Prénom"
+                id="prenom"
+                {...register('prenom', { required: 'Le prénom est requis' })}
+                placeholder="Prénom de l'utilisateur"
               />
-              {errors.first_name && (
-                <p className="text-sm text-red-600">{errors.first_name.message}</p>
+              {errors.prenom && (
+                <p className="text-sm text-red-600">{errors.prenom.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="last_name">Nom *</Label>
+              <Label htmlFor="nom">Nom *</Label>
               <Input
-                id="last_name"
-                {...register('last_name', { required: 'Le nom est requis' })}
-                placeholder="Nom"
+                id="nom"
+                {...register('nom', { required: 'Le nom est requis' })}
+                placeholder="Nom de l'utilisateur"
               />
-              {errors.last_name && (
-                <p className="text-sm text-red-600">{errors.last_name.message}</p>
+              {errors.nom && (
+                <p className="text-sm text-red-600">{errors.nom.message}</p>
               )}
             </div>
 
@@ -187,78 +146,42 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
               )}
             </div>
 
-            <div className="space-y-2 md:col-span-2">
-              <Label htmlFor="password">
-                {isEdit ? 'Nouveau mot de passe (laisser vide pour ne pas changer)' : 'Mot de passe *'}
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                {...register('password', { 
-                  required: isEdit ? false : 'Le mot de passe est requis',
-                  minLength: {
-                    value: 6,
-                    message: 'Le mot de passe doit contenir au moins 6 caractères'
-                  }
-                })}
-                placeholder="••••••••"
-              />
-              {errors.password && (
-                <p className="text-sm text-red-600">{errors.password.message}</p>
-              )}
+            <div className="space-y-2">
+              <Label htmlFor="role">Rôle *</Label>
+              <Select 
+                value={watchedRole} 
+                onValueChange={(value: AppRole) => setValue('role', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un rôle" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="status">Statut *</Label>
+              <Label htmlFor="statut">Statut *</Label>
               <Select 
-                value={watchedStatus} 
-                onValueChange={(value: 'active' | 'inactive') => setValue('status', value)}
+                value={watchedStatut} 
+                onValueChange={(value: 'actif' | 'inactif' | 'suspendu') => setValue('statut', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un statut" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Actif</SelectItem>
-                  <SelectItem value="inactive">Inactif</SelectItem>
+                  <SelectItem value="actif">Actif</SelectItem>
+                  <SelectItem value="inactif">Inactif</SelectItem>
+                  <SelectItem value="suspendu">Suspendu</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Rôles métiers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(ROLE_LABELS).map(([role, label]) => (
-              <div key={role} className="flex items-center space-x-2">
-                <Checkbox
-                  id={role}
-                  checked={watchedRoles?.includes(role as UserRole) || false}
-                  onCheckedChange={(checked) => handleRoleChange(role as UserRole, checked as boolean)}
-                />
-                <Label htmlFor={role} className="flex items-center gap-2">
-                  {isValidationRole(role as UserRole) && <Shield className="h-4 w-4 text-purple-600" />}
-                  <span className={role === 'admin' ? 'font-semibold text-blue-600' : ''}>
-                    {label}
-                  </span>
-                  {role === 'admin' && <span className="text-xs text-blue-500">(Droits complets)</span>}
-                  {isValidationRole(role as UserRole) && <span className="text-xs text-purple-500">(Validation)</span>}
-                </Label>
-              </div>
-            ))}
-          </div>
-          
-          <Alert className="mt-4">
-            <Shield className="h-4 w-4" />
-            <AlertDescription>
-              Les rôles avec l'icône bouclier (Maintenance, Administratif, HSECQ, OBC) 
-              donnent accès au workflow de validation interservices.
-            </AlertDescription>
-          </Alert>
         </CardContent>
       </Card>
 

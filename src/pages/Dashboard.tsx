@@ -1,214 +1,355 @@
 
 import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Users, Truck, Calendar, AlertTriangle, CheckCircle, Clock, XCircle } from 'lucide-react';
-import { ROLE_LABELS } from '@/types/user';
+import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, FileText, BarChart3 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { AlertesDocuments } from '@/components/common/AlertesDocuments';
+
+const StatCard = ({ title, value, description, icon: Icon, color, isLoading }: any) => (
+  <Card>
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      <Icon className={`h-4 w-4 ${color}`} />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">
+        {isLoading ? (
+          <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+        ) : (
+          value
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">{description}</p>
+    </CardContent>
+  </Card>
+);
 
 const Dashboard = () => {
   const { user } = useAuth();
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold mb-2">Chargement...</h2>
-        </div>
-      </div>
-    );
-  }
+  // Fetch vehicules stats
+  const { data: vehiculesStats, isLoading: vehiculesLoading } = useQuery({
+    queryKey: ['dashboard-vehicules'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicules')
+        .select('statut');
+      
+      if (error) throw error;
+      
+      const total = data?.length || 0;
+      const actifs = data?.filter(v => v.statut === 'disponible' || v.statut === 'en_mission').length || 0;
+      
+      return { total, actifs };
+    }
+  });
 
-  // Statistiques simulées pour l'exemple
-  const stats = {
-    vehicules: { total: 15, disponibles: 12, maintenance: 2, mission: 1 },
-    chauffeurs: { total: 18, actifs: 16, repos: 2 },
-    missions: { en_cours: 5, en_attente: 3, terminees: 12 },
-    validations: { en_attente: 4, validees: 8, rejetees: 1 }
-  };
+  // Fetch chauffeurs stats
+  const { data: chauffeursStats, isLoading: chauffeursLoading } = useQuery({
+    queryKey: ['dashboard-chauffeurs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chauffeurs')
+        .select('statut');
+      
+      if (error) throw error;
+      
+      const disponibles = data?.filter(c => c.statut === 'actif').length || 0;
+      
+      return { disponibles };
+    }
+  });
+
+  // Fetch missions stats
+  const { data: missionsStats, isLoading: missionsLoading } = useQuery({
+    queryKey: ['dashboard-missions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('missions')
+        .select('statut');
+      
+      if (error) throw error;
+      
+      const enCours = data?.filter(m => m.statut === 'en_cours').length || 0;
+      
+      return { enCours };
+    }
+  });
+
+  // Fetch validations stats
+  const { data: validationsStats, isLoading: validationsLoading } = useQuery({
+    queryKey: ['dashboard-validations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('validation_workflows')
+        .select('statut_global');
+      
+      if (error) throw error;
+      
+      const enAttente = data?.filter(v => v.statut_global === 'en_validation').length || 0;
+      
+      return { enAttente };
+    }
+  });
+
+  // Fetch factures stats
+  const { data: facturesStats, isLoading: facturesLoading } = useQuery({
+    queryKey: ['dashboard-factures'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('factures')
+        .select('montant_ttc, statut, created_at');
+      
+      if (error) throw error;
+      
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+      
+      const caMensuel = data?.filter(f => {
+        const factureDate = new Date(f.created_at);
+        return factureDate.getMonth() === currentMonth && 
+               factureDate.getFullYear() === currentYear &&
+               f.statut === 'payee';
+      }).reduce((sum, f) => sum + (f.montant_ttc || 0), 0) || 0;
+      
+      const totalFactures = data?.length || 0;
+      const tauxConformite = totalFactures > 0 ? 
+        Math.round((data?.filter(f => f.statut === 'payee').length / totalFactures) * 100) : 0;
+      
+      return { caMensuel, tauxConformite };
+    }
+  });
+
+  // Fetch recent activities
+  const { data: recentActivities } = useQuery({
+    queryKey: ['dashboard-activities'],
+    queryFn: async () => {
+      const [missionsHist, validationsHist] = await Promise.all([
+        supabase
+          .from('missions_historique')
+          .select('action, details, created_at')
+          .order('created_at', { ascending: false })
+          .limit(2),
+        supabase
+          .from('validation_historique')
+          .select('etape, nouveau_statut, created_at')
+          .order('created_at', { ascending: false })
+          .limit(2)
+      ]);
+
+      const activities = [];
+      
+      if (missionsHist.data) {
+        activities.push(...missionsHist.data.map(h => ({
+          type: 'mission',
+          message: h.details || `Mission ${h.action}`,
+          time: new Date(h.created_at).toLocaleString('fr-FR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit'
+          })
+        })));
+      }
+      
+      if (validationsHist.data) {
+        activities.push(...validationsHist.data.map(h => ({
+          type: 'validation',
+          message: `Validation ${h.etape} : ${h.nouveau_statut}`,
+          time: new Date(h.created_at).toLocaleString('fr-FR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            day: '2-digit',
+            month: '2-digit'
+          })
+        })));
+      }
+
+      return activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 4);
+    }
+  });
+
+  const stats = [
+    {
+      title: "Véhicules actifs",
+      value: `${vehiculesStats?.actifs || 0}`,
+      description: `Sur ${vehiculesStats?.total || 0} véhicules total`,
+      icon: Truck,
+      color: "text-blue-500",
+      isLoading: vehiculesLoading
+    },
+    {
+      title: "Chauffeurs disponibles",
+      value: `${chauffeursStats?.disponibles || 0}`,
+      description: "Prêts pour missions",
+      icon: Users,
+      color: "text-green-500",
+      isLoading: chauffeursLoading
+    },
+    {
+      title: "Missions en cours",
+      value: `${missionsStats?.enCours || 0}`,
+      description: "En cours de livraison",
+      icon: Calendar,
+      color: "text-orange-500",
+      isLoading: missionsLoading
+    },
+    {
+      title: "Validations en attente",
+      value: `${validationsStats?.enAttente || 0}`,
+      description: "Nécessitent une action",
+      icon: AlertTriangle,
+      color: "text-red-500",
+      isLoading: validationsLoading
+    },
+    {
+      title: "CA mensuel",
+      value: `${(facturesStats?.caMensuel || 0).toLocaleString('fr-FR')} GNF`,
+      description: "Factures payées ce mois",
+      icon: DollarSign,
+      color: "text-purple-500",
+      isLoading: facturesLoading
+    },
+    {
+      title: "Taux de conformité",
+      value: `${facturesStats?.tauxConformite || 0}%`,
+      description: "Factures payées",
+      icon: CheckCircle,
+      color: "text-green-500",
+      isLoading: facturesLoading
+    }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* En-tête avec informations utilisateur */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Tableau de bord
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Bienvenue {user.first_name} {user.last_name} - {ROLE_LABELS[user.roles[0]]}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {user.roles.map(role => (
-            <Badge 
-              key={role} 
-              variant={role === 'admin' ? 'default' : 'outline'}
-              className={role === 'admin' ? 'bg-blue-600 text-white' : ''}
-            >
-              {ROLE_LABELS[role]}
-            </Badge>
-          ))}
-        </div>
+      {/* En-tête de bienvenue */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Bienvenue dans SDBK Cargo Flow Manager
+        </h1>
+        <p className="text-gray-600">
+          Bonjour {user?.prenom} {user?.nom}, vous êtes connecté en tant que {user?.role}
+        </p>
       </div>
 
-      {/* Cartes de statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Véhicules */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Véhicules</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.vehicules.total}</div>
-            <div className="flex gap-4 mt-2 text-xs">
-              <span className="text-green-600">{stats.vehicules.disponibles} disponibles</span>
-              <span className="text-orange-600">{stats.vehicules.maintenance} maintenance</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Chauffeurs */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Chauffeurs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.chauffeurs.total}</div>
-            <div className="flex gap-4 mt-2 text-xs">
-              <span className="text-green-600">{stats.chauffeurs.actifs} actifs</span>
-              <span className="text-gray-600">{stats.chauffeurs.repos} repos</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Missions */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Missions</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.missions.en_cours}</div>
-            <div className="flex gap-4 mt-2 text-xs">
-              <span className="text-blue-600">{stats.missions.en_attente} en attente</span>
-              <span className="text-green-600">{stats.missions.terminees} terminées</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Validations */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Validations</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.validations.en_attente}</div>
-            <div className="flex gap-4 mt-2 text-xs">
-              <span className="text-green-600">{stats.validations.validees} validées</span>
-              <span className="text-red-600">{stats.validations.rejetees} rejetées</span>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Statistiques principales */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {stats.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
       </div>
 
-      {/* Alertes et actions rapides selon les rôles */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Mes tâches */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Mes tâches</CardTitle>
-            <CardDescription>
-              Actions en attente selon vos rôles
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {user.roles.includes('maintenance') && (
-              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="font-medium text-orange-900">2 validations maintenance</p>
-                  <p className="text-sm text-orange-700">Véhicules en attente de contrôle technique</p>
-                </div>
-              </div>
-            )}
-            
-            {user.roles.includes('administratif') && (
-              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                <Clock className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium text-blue-900">1 validation administrative</p>
-                  <p className="text-sm text-blue-700">Documents en attente de vérification</p>
-                </div>
-              </div>
-            )}
-            
-            {user.roles.includes('hsecq') && (
-              <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium text-green-900">1 contrôle HSECQ</p>
-                  <p className="text-sm text-green-700">Vérification sécurité et environnement</p>
-                </div>
-              </div>
-            )}
+      {/* Alertes documentaires */}
+      <AlertesDocuments />
 
-            {user.roles.includes('obc') && (
-              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                <Truck className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="font-medium text-purple-900">Aucune validation OBC</p>
-                  <p className="text-sm text-purple-700">Toutes les validations sont à jour</p>
-                </div>
-              </div>
-            )}
-
-            {!user.roles.some(role => ['maintenance', 'administratif', 'hsecq', 'obc'].includes(role)) && (
-              <div className="text-center py-4 text-gray-500">
-                <p>Aucune tâche de validation en attente</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-4 md:grid-cols-2">
         {/* Activité récente */}
         <Card>
           <CardHeader>
             <CardTitle>Activité récente</CardTitle>
-            <CardDescription>
-              Dernières actions dans le système
-            </CardDescription>
+            <CardDescription>Les dernières actions dans le système</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Mission M2025-001-003 terminée</p>
-                <p className="text-xs text-gray-500">Il y a 2 heures</p>
+            {recentActivities?.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <div key={index} className="flex items-center space-x-4">
+                  <div className={`w-2 h-2 rounded-full ${
+                    activity.type === 'mission' ? 'bg-blue-500' :
+                    activity.type === 'validation' ? 'bg-green-500' : 'bg-orange-500'
+                  }`} />
+                  <div className="flex-1">
+                    <p className="text-sm">{activity.message}</p>
+                    <p className="text-xs text-muted-foreground">Le {activity.time}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground">Aucune activité récente</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Alertes importantes */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Alertes importantes</CardTitle>
+            <CardDescription>Actions requises et notifications</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {validationsStats?.enAttente > 0 && (
+              <div className="p-4 border-l-4 border-orange-500 bg-orange-50">
+                <p className="text-sm font-medium">Validations en attente</p>
+                <p className="text-sm text-gray-600">
+                  {validationsStats.enAttente} véhicule(s) en attente de validation
+                </p>
+              </div>
+            )}
+            {missionsStats?.enCours > 0 && (
+              <div className="p-4 border-l-4 border-blue-500 bg-blue-50">
+                <p className="text-sm font-medium">Missions en cours</p>
+                <p className="text-sm text-gray-600">
+                  {missionsStats.enCours} mission(s) en cours de livraison
+                </p>
+              </div>
+            )}
+            
+            {/* Alertes système basées sur le contenu d'origine */}
+            <div className="space-y-3">
+              <div className="flex items-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Maintenance programmée</p>
+                  <p className="text-xs text-muted-foreground">Véhicule TRK-001 - Échéance dans 2 jours</p>
+                </div>
+              </div>
+              <div className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Nouvelle mission</p>
+                  <p className="text-xs text-muted-foreground">Transport vers Dakar - À affecter</p>
+                </div>
+              </div>
+              <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Formation terminée</p>
+                  <p className="text-xs text-muted-foreground">3 chauffeurs certifiés HSE</p>
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-4 w-4 text-orange-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Véhicule V-015 en maintenance</p>
-                <p className="text-xs text-gray-500">Il y a 4 heures</p>
+            {(!validationsStats?.enAttente && !missionsStats?.enCours) && (
+              <div className="p-4 border-l-4 border-green-500 bg-green-50">
+                <p className="text-sm font-medium">Système opérationnel</p>
+                <p className="text-sm text-gray-600">Aucune alerte critique détectée</p>
               </div>
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Users className="h-4 w-4 text-blue-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Nouveau chauffeur ajouté</p>
-                <p className="text-xs text-gray-500">Hier</p>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
+
+      {/* Accès rapide */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Accès rapide</CardTitle>
+          <CardDescription>
+            Fonctionnalités disponibles selon votre rôle
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {user?.role === 'admin' && (
+              <p className="text-sm text-green-600 font-medium">
+                ✓ Accès administrateur - Tous les modules disponibles
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Utilisez la navigation latérale pour accéder aux différents modules du système SDBK.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
