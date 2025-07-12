@@ -163,7 +163,7 @@ export const missionsService = {
     return data || []
   },
 
-  // Vérifier la disponibilité des ressources
+  // Vérifier la disponibilité des ressources (avec validation workflow)
   async checkResourceAvailability(
     vehiculeId: string,
     chauffeurId: string,
@@ -171,6 +171,32 @@ export const missionsService = {
     dateFin: string,
     missionId?: string
   ) {
+    // D'abord vérifier la validation du véhicule
+    const { data: validationData, error: validationError } = await supabase
+      .from('validation_workflows')
+      .select('statut_global')
+      .eq('vehicule_id', vehiculeId)
+      .single()
+
+    if (validationError && validationError.code !== 'PGRST116') {
+      console.error('Erreur lors de la vérification du workflow de validation:', validationError)
+      return { 
+        vehicule_disponible: false, 
+        chauffeur_disponible: false, 
+        message: 'Erreur lors de la vérification de la validation du véhicule' 
+      }
+    }
+
+    // Si pas de workflow ou workflow non validé, refuser l'assignation
+    if (!validationData || validationData.statut_global !== 'valide') {
+      return {
+        vehicule_disponible: false,
+        chauffeur_disponible: false,
+        message: 'Le véhicule doit être validé avant d\'être assigné à une mission'
+      }
+    }
+
+    // Ensuite vérifier la disponibilité standard
     const { data, error } = await supabase.rpc('check_resource_availability', {
       p_vehicule_id: vehiculeId,
       p_chauffeur_id: chauffeurId,
@@ -187,13 +213,17 @@ export const missionsService = {
     return data?.[0] || { vehicule_disponible: false, chauffeur_disponible: false, message: 'Erreur de vérification' }
   },
 
-  // Récupérer les véhicules disponibles pour un type de transport
+  // Récupérer les véhicules disponibles pour un type de transport (validés uniquement)
   async getAvailableVehicles(typeTransport: string): Promise<any[]> {
     const { data, error } = await supabase
       .from('vehicules')
-      .select('*')
+      .select(`
+        *,
+        validation_workflows!inner(statut_global)
+      `)
       .eq('type_transport', typeTransport)
       .eq('statut', 'disponible')
+      .eq('validation_workflows.statut_global', 'valide')
       .order('numero')
 
     if (error) {

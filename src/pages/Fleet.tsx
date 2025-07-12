@@ -9,7 +9,7 @@ import { FleetStats } from '@/components/fleet/FleetStats';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
-import { ValidationTab } from '@/components/fleet/ValidationTab';
+
 import { SearchInput } from '@/components/fleet/SearchInput';
 import { VehicleFilters } from '@/components/fleet/VehicleFilters';
 import { DocumentUploadSection } from '@/components/fleet/form/DocumentUploadSection';
@@ -250,7 +250,6 @@ const Fleet = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="list">Liste des véhicules</TabsTrigger>
-              <TabsTrigger value="validation">Workflows de validation</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenances</TabsTrigger>
               <TabsTrigger value="post-mission">Post-mission</TabsTrigger>
             </TabsList>
@@ -266,9 +265,6 @@ const Fleet = () => {
               />
             </TabsContent>
             
-            <TabsContent value="validation">
-              <ValidationTab vehicles={vehicles} />
-            </TabsContent>
             
             <TabsContent value="maintenance">
               <MaintenanceTab vehicles={vehicles} />
