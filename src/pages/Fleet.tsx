@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Download } from 'lucide-react';
+import { Plus, FileText, Download, Upload } from 'lucide-react';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
@@ -15,6 +15,7 @@ import { VehicleFilters } from '@/components/fleet/VehicleFilters';
 import { DocumentUploadSection } from '@/components/fleet/form/DocumentUploadSection';
 import { VehicleMaintenanceHistory } from '@/components/fleet/VehicleMaintenanceHistory';
 import { PostMissionWorkflow } from '@/components/fleet/PostMissionWorkflow';
+import { VehicleImport } from '@/components/fleet/VehicleImport';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
@@ -39,6 +40,7 @@ const Fleet = () => {
   const [showDocuments, setShowDocuments] = useState(false);
   const [showMaintenance, setShowMaintenance] = useState(false);
   const [showPostMissionWorkflow, setShowPostMissionWorkflow] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -92,6 +94,10 @@ const Fleet = () => {
       // L'erreur sera gérée par onError de la mutation
       throw error;
     }
+  };
+
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['vehicles'] });
   };
 
   const handleViewDocuments = (vehicle: Vehicule) => {
@@ -180,10 +186,24 @@ const Fleet = () => {
 
   return (
     <div className="space-y-6">
-      <FleetHeader 
-        onAddVehicle={() => setShowForm(true)}
-        vehicleCount={vehicles.length}
-      />
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Gestion de la flotte</h1>
+          <p className="text-gray-600 mt-1">
+            {vehicles.length} véhicule{vehicles.length > 1 ? 's' : ''} au total
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            Importer Excel
+          </Button>
+          <Button onClick={() => setShowForm(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nouveau véhicule
+          </Button>
+        </div>
+      </div>
 
       {stats && <FleetStats stats={stats} />}
 
@@ -311,6 +331,13 @@ const Fleet = () => {
           userName="Utilisateur Test" // TODO: Récupérer le vrai nom utilisateur
           userId="test-user-id" // TODO: Récupérer le vrai ID utilisateur
           onClose={handleClosePostMissionWorkflow}
+        />
+      )}
+
+      {showImport && (
+        <VehicleImport
+          onClose={() => setShowImport(false)}
+          onSuccess={handleImportSuccess}
         />
       )}
     </div>

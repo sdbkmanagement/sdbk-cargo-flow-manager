@@ -1,19 +1,22 @@
 
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Upload } from 'lucide-react';
 import { DriversStats } from '@/components/drivers/DriversStats';
 import { DriversTabNavigation } from '@/components/drivers/DriversTabNavigation';
 import { DriversTabContent } from '@/components/drivers/DriversTabContent';
 import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { DriversImport } from '@/components/drivers/DriversImport';
 
 const Drivers = () => {
   const { hasPermission } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('liste');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChauffeur, setSelectedChauffeur] = useState(null);
+  const [showImport, setShowImport] = useState(false);
 
   const { data: chauffeurs = [], isLoading } = useQuery({
     queryKey: ['chauffeurs'],
@@ -72,6 +75,10 @@ const Drivers = () => {
     setActiveTab('liste');
   };
 
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
+  };
+
   if (!hasPermission('drivers_read')) {
     return (
       <div className="p-6">
@@ -103,13 +110,22 @@ const Drivers = () => {
           </p>
         </div>
         {hasPermission('drivers_write') && (
-          <Button 
-            onClick={handleNewChauffeur}
-            className="bg-orange-500 hover:bg-orange-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouveau chauffeur
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setShowImport(true)}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Importer Excel
+            </Button>
+            <Button 
+              onClick={handleNewChauffeur}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nouveau chauffeur
+            </Button>
+          </div>
         )}
       </div>
 
@@ -134,6 +150,13 @@ const Drivers = () => {
           onBackToList={handleBackToList}
         />
       </div>
+
+      {showImport && (
+        <DriversImport
+          onClose={() => setShowImport(false)}
+          onSuccess={handleImportSuccess}
+        />
+      )}
     </div>
   );
 };

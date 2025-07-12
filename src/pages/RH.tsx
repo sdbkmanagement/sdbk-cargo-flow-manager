@@ -13,9 +13,10 @@ import {
   AlertTriangle,
   FileText,
   Search,
-  Download
+  Download,
+  Upload
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { EmployeForm } from '@/components/rh/EmployeForm';
 import { EmployesList } from '@/components/rh/EmployesList';
@@ -23,11 +24,14 @@ import { AbsencesList } from '@/components/rh/AbsencesList';
 import { FormationsList } from '@/components/rh/FormationsList';
 import { AlertesRH } from '@/components/rh/AlertesRH';
 import { RHStats } from '@/components/rh/RHStats';
+import { EmployeesImport } from '@/components/rh/EmployeesImport';
 
 const RH = () => {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedService, setSelectedService] = useState('tous');
   const [showEmployeForm, setShowEmployeForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   // Fetch employés
   const { data: employes, isLoading: employesLoading, refetch: refetchEmployes } = useQuery({
@@ -73,6 +77,10 @@ const RH = () => {
     console.log('Export Excel des données RH');
   };
 
+  const handleImportSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['employes'] });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -86,6 +94,10 @@ const RH = () => {
           <Button onClick={exportToExcel} variant="outline">
             <Download className="w-4 h-4 mr-2" />
             Export Excel
+          </Button>
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="w-4 h-4 mr-2" />
+            Importer Excel
           </Button>
           <Button onClick={() => setShowEmployeForm(true)}>
             <UserPlus className="w-4 h-4 mr-2" />
@@ -199,6 +211,13 @@ const RH = () => {
             setShowEmployeForm(false);
             refetchEmployes();
           }}
+        />
+      )}
+
+      {showImport && (
+        <EmployeesImport
+          onClose={() => setShowImport(false)}
+          onSuccess={handleImportSuccess}
         />
       )}
     </div>
