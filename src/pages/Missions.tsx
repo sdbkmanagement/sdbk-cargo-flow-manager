@@ -1,112 +1,49 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { MissionsStats } from '@/components/missions/MissionsStats';
+import { useAuth } from '@/contexts/AuthContext';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MissionsTable } from '@/components/missions/MissionsTable';
 import { MissionForm } from '@/components/missions/MissionForm';
-import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
-import { missionsService } from '@/services/missions';
+import { MissionsStats } from '@/components/missions/MissionsStats';
 
 const Missions = () => {
-  const { hasPermission } = useAuth();
-  const [showForm, setShowForm] = useState(false);
-  const [selectedMission, setSelectedMission] = useState(null);
+  const { user, hasRole } = useAuth();
+  const [activeTab, setActiveTab] = useState('liste');
 
-  const { data: missions = [], isLoading, refetch } = useQuery({
-    queryKey: ['missions'],
-    queryFn: missionsService.getAll,
-    refetchInterval: 30000,
-  });
-
-  const { data: stats } = useQuery({
-    queryKey: ['missions-stats'],
-    queryFn: missionsService.getStats,
-    refetchInterval: 60000,
-  });
-
-  const handleCreateMission = () => {
-    setSelectedMission(null);
-    setShowForm(true);
-  };
-
-  const handleEditMission = (mission: any) => {
-    setSelectedMission(mission);
-    setShowForm(true);
-  };
-
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    setSelectedMission(null);
-    refetch();
-  };
-
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setSelectedMission(null);
-  };
-
-  if (!hasPermission('missions_read')) {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Accès non autorisé</h1>
-          <p className="text-gray-600 mt-2">Vous n'avez pas les permissions pour accéder à ce module.</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return (
-      <div className="p-6">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p>Chargement des missions...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (showForm) {
-    return (
-      <MissionForm
-        mission={selectedMission}
-        onSuccess={handleFormSuccess}
-        onCancel={handleFormCancel}
-      />
-    );
-  }
+  // Vérifier les permissions d'écriture
+  const hasWritePermission = hasRole('transport') || hasRole('admin') || hasRole('direction');
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Planification des missions</h1>
-          <p className="text-gray-600 mt-1">
-            Gestion et planification des missions de transport
+          <h1 className="text-3xl font-bold text-gray-900">Gestion des Missions</h1>
+          <p className="text-gray-600 mt-2">
+            Planification et suivi des missions de transport
           </p>
         </div>
-        {hasPermission('missions_write') && (
-          <Button 
-            onClick={handleCreateMission}
-            className="bg-orange-500 hover:bg-orange-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouvelle mission
-          </Button>
-        )}
       </div>
 
-      {stats && <MissionsStats {...stats} />}
+      <MissionsStats />
 
-      <MissionsTable
-        missions={missions}
-        onEdit={handleEditMission}
-        hasWritePermission={hasPermission('missions_write')}
-        onRefresh={refetch}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="liste">Liste des missions</TabsTrigger>
+          {hasWritePermission && (
+            <TabsTrigger value="nouvelle">Nouvelle mission</TabsTrigger>
+          )}
+        </TabsList>
+
+        <TabsContent value="liste" className="space-y-6">
+          <MissionsTable />
+        </TabsContent>
+
+        {hasWritePermission && (
+          <TabsContent value="nouvelle" className="space-y-6">
+            <MissionForm onSuccess={() => setActiveTab('liste')} />
+          </TabsContent>
+        )}
+      </Tabs>
     </div>
   );
 };
