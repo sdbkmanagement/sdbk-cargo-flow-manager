@@ -14,7 +14,10 @@ class UserService {
       .order('created_at', { ascending: false });
     
     if (error) throw error;
-    return data || [];
+    return (data || []).map(user => ({
+      ...user,
+      status: user.status as 'active' | 'inactive'
+    }));
   }
 
   /**
@@ -28,7 +31,10 @@ class UserService {
       .single();
     
     if (error) throw error;
-    return data;
+    return data ? {
+      ...data,
+      status: data.status as 'active' | 'inactive'
+    } : null;
   }
 
   /**
@@ -54,7 +60,10 @@ class UserService {
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        status: data.status as 'active' | 'inactive'
+      };
     } catch (error) {
       console.error('Erreur lors de la création utilisateur:', error);
       throw error;
@@ -83,7 +92,10 @@ class UserService {
         .single();
 
       if (error) throw error;
-      return data;
+      return {
+        ...data,
+        status: data.status as 'active' | 'inactive'
+      };
     } catch (error) {
       console.error('Erreur lors de la mise à jour utilisateur:', error);
       throw error;

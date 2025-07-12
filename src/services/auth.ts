@@ -56,6 +56,7 @@ class AuthService {
 
       const authUser: AuthUser = {
         ...user,
+        status: user.status as 'active' | 'inactive',
         session_token: sessionToken,
         expires_at: expiresAt
       };
@@ -134,6 +135,7 @@ class AuthService {
 
       return {
         ...user,
+        status: user.status as 'active' | 'inactive',
         session_token: session.session_token,
         expires_at: session.expires_at
       };

@@ -58,6 +58,26 @@ export interface RolePermission {
   permission: AppPermission;
 }
 
+export interface AdminAuditLog {
+  id: string;
+  user_id: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  details?: any;
+  created_at: string;
+  ip_address?: string;
+}
+
+export interface LoginAttempt {
+  id: string;
+  email: string;
+  success: boolean;
+  ip_address?: string;
+  error_message?: string;
+  created_at: string;
+}
+
 export interface AuditLog {
   id: string;
   user_id: string;
