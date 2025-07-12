@@ -49,13 +49,15 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lieuxDepart, setLieuxDepart] = useState<string[]>([]);
-  const [tarifsDisponibles, setTarifsDisponibles] = useState<TarifHydrocarbure[]>([]);
+  const [tarifsDisponibles, setTarifsDisponibles] = useState<Record<string, TarifHydrocarbure[]>>({});
 
   const TVA_RATE = 0.18;
 
   useEffect(() => {
     const loadTarifsData = async () => {
+      console.log('Chargement des lieux de départ...');
       const lieux = await tarifsHydrocarburesService.getLieuxDepart();
+      console.log('Lieux de départ chargés:', lieux);
       setLieuxDepart(lieux);
     };
     loadTarifsData();
@@ -91,31 +93,48 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
   };
 
   const handleHydrocarbureSelection = async (lineId: string, isHydrocarbure: boolean) => {
+    console.log('Sélection hydrocarbures:', lineId, isHydrocarbure);
     updateInvoiceLine(lineId, 'isHydrocarbure', isHydrocarbure);
     if (!isHydrocarbure) {
+      console.log('Désactivation hydrocarbures pour ligne:', lineId);
       updateInvoiceLine(lineId, 'lieuDepart', '');
       updateInvoiceLine(lineId, 'destination', '');
       updateInvoiceLine(lineId, 'prixUnitaire', 0);
+      updateInvoiceLine(lineId, 'description', '');
+      // Nettoyer les tarifs pour cette ligne
+      setTarifsDisponibles(prev => {
+        const updated = { ...prev };
+        delete updated[lineId];
+        return updated;
+      });
     }
   };
 
   const handleLieuDepartChange = async (lineId: string, lieuDepart: string) => {
+    console.log('Changement lieu de départ:', lineId, lieuDepart);
     updateInvoiceLine(lineId, 'lieuDepart', lieuDepart);
     updateInvoiceLine(lineId, 'destination', '');
     updateInvoiceLine(lineId, 'prixUnitaire', 0);
     
     if (lieuDepart) {
       const tarifs = await tarifsHydrocarburesService.getDestinations(lieuDepart);
-      setTarifsDisponibles(tarifs);
+      console.log('Tarifs pour', lieuDepart, ':', tarifs);
+      setTarifsDisponibles(prev => ({
+        ...prev,
+        [lineId]: tarifs
+      }));
     }
   };
 
   const handleDestinationChange = async (lineId: string, destination: string) => {
+    console.log('Changement destination:', lineId, destination);
     updateInvoiceLine(lineId, 'destination', destination);
     
     const line = invoiceLines.find(l => l.id === lineId);
     if (line?.lieuDepart && destination) {
+      console.log('Recherche tarif pour:', line.lieuDepart, '→', destination);
       const tarif = await tarifsHydrocarburesService.getTarif(line.lieuDepart, destination);
+      console.log('Tarif trouvé:', tarif);
       if (tarif) {
         updateInvoiceLine(lineId, 'prixUnitaire', tarif.tarif_au_litre);
         updateInvoiceLine(lineId, 'description', `Transport hydrocarbures ${line.lieuDepart} → ${destination}`);
@@ -352,12 +371,14 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
                   <div>
                     <Label>Lieu de départ</Label>
                     <Select value={line.lieuDepart || ''} onValueChange={(value) => handleLieuDepartChange(line.id, value)}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Sélectionner le lieu de départ" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-50 bg-white shadow-lg border">
                         {lieuxDepart.map(lieu => (
-                          <SelectItem key={lieu} value={lieu}>{lieu}</SelectItem>
+                          <SelectItem key={lieu} value={lieu} className="hover:bg-gray-100">
+                            {lieu}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -372,9 +393,8 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner la destination" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {tarifsDisponibles
-                          .filter(t => t.lieu_depart === line.lieuDepart)
+                      <SelectContent className="z-50 bg-white">
+                        {(tarifsDisponibles[line.id] || [])
                           .map(tarif => (
                             <SelectItem key={tarif.destination} value={tarif.destination}>
                               {tarif.destination} ({tarif.tarif_au_litre.toLocaleString('fr-FR')} GNF/L)
