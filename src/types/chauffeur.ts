@@ -1,10 +1,10 @@
 
-import { Chauffeur as BaseChauffeur, Formation, Document } from './index';
+import { Database } from '@/integrations/supabase/types';
 
-// Export the base Chauffeur type
-export type Chauffeur = BaseChauffeur;
+// Use the actual database type directly
+export type Chauffeur = Database['public']['Tables']['chauffeurs']['Row'];
 
-export interface ChauffeurDetaille extends BaseChauffeur {
+export interface ChauffeurDetaille extends Chauffeur {
   dateNaissance: Date;
   adresse: string;
   ville: string;

@@ -38,9 +38,9 @@ const Missions = () => {
         en_cours={0}
         terminees={0}
         annulees={0}
-        volumeTotal={0}
-        chiffreAffaire={0}
-        tauxUtilisation={0}
+        volume_total={0}
+        chiffre_affaire={0}
+        taux_utilisation={0}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
