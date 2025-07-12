@@ -4,11 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Shield, Activity, AlertTriangle } from 'lucide-react';
+import { Users, Shield, Activity, AlertTriangle, Calculator } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RolePermissionManagement } from '@/components/admin/RolePermissionManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { AdminStats } from '@/components/admin/AdminStats';
+import { TarifsHydrocarburesManagement } from '@/components/admin/TarifsHydrocarburesManagement';
 
 const Administration = () => {
   const { user, hasRole } = useAuth();
@@ -48,7 +49,7 @@ const Administration = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Vue d'ensemble
@@ -60,6 +61,10 @@ const Administration = () => {
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Rôles & Permissions
+          </TabsTrigger>
+          <TabsTrigger value="tarifs" className="flex items-center gap-2">
+            <Calculator className="h-4 w-4" />
+            Tarifs Hydrocarbures
           </TabsTrigger>
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
@@ -77,6 +82,10 @@ const Administration = () => {
 
         <TabsContent value="roles" className="space-y-6">
           <RolePermissionManagement />
+        </TabsContent>
+
+        <TabsContent value="tarifs" className="space-y-6">
+          <TarifsHydrocarburesManagement />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6">

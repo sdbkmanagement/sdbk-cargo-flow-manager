@@ -1600,6 +1600,39 @@ export type Database = {
         }
         Relationships: []
       }
+      tarifs_hydrocarbures: {
+        Row: {
+          created_at: string
+          destination: string
+          id: string
+          lieu_depart: string
+          numero_ordre: number
+          observations: string | null
+          tarif_au_litre: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          id?: string
+          lieu_depart: string
+          numero_ordre: number
+          observations?: string | null
+          tarif_au_litre: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          id?: string
+          lieu_depart?: string
+          numero_ordre?: number
+          observations?: string | null
+          tarif_au_litre?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           created_at: string | null
