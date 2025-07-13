@@ -1,6 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { AdminAuditLog } from '@/types/admin';
+import type { AdminAuditLog, LoginAttempt } from '@/types/admin';
 
 export const auditService = {
   async getAuditLogs(limit: number = 100): Promise<AdminAuditLog[]> {
