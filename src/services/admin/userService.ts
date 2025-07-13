@@ -59,6 +59,18 @@ export const userService = {
     statut: 'actif' | 'inactif' | 'suspendu';
     password?: string;
   }): Promise<SystemUser> {
+    console.log('Creating user with data:', userData);
+    
+    // Vérifier le rôle de l'utilisateur connecté pour diagnostic
+    const { data: currentUser } = await supabase.auth.getUser();
+    console.log('Current user:', currentUser.user?.id);
+    
+    // Test de la fonction is_admin
+    const { data: isAdminResult, error: isAdminError } = await supabase
+      .rpc('is_admin');
+    
+    console.log('is_admin() result:', isAdminResult, 'error:', isAdminError);
+
     // Convert to database format
     const dbUser = {
       email: userData.email,
@@ -69,13 +81,20 @@ export const userService = {
       password_hash: userData.password || 'temporary_password_hash'
     };
 
+    console.log('Inserting user with database format:', dbUser);
+
     const { data, error } = await supabase
       .from('users')
       .insert([dbUser])
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Database error during user creation:', error);
+      throw error;
+    }
+    
+    console.log('User created successfully:', data);
     
     return {
       id: data.id,

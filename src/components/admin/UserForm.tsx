@@ -39,14 +39,24 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: UserFormData) => adminService.createUser({
-      email: data.email,
-      nom: data.nom,
-      prenom: data.prenom,
-      role: data.role as any,
-      statut: data.statut,
-      password: data.password!
-    }),
+    mutationFn: async (data: UserFormData) => {
+      console.log('UserForm: Starting user creation with data:', data);
+      try {
+        const result = await adminService.createUser({
+          email: data.email,
+          nom: data.nom,
+          prenom: data.prenom,
+          role: data.role as any,
+          statut: data.statut,
+          password: data.password!
+        });
+        console.log('UserForm: User creation successful:', result);
+        return result;
+      } catch (error) {
+        console.error('UserForm: User creation failed:', error);
+        throw error;
+      }
+    },
     onSuccess: () => {
       toast({
         title: "Utilisateur créé",
@@ -55,9 +65,22 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
       onSuccess();
     },
     onError: (error: any) => {
+      console.error('UserForm: Creation error:', error);
+      let errorMessage = "Impossible de créer l'utilisateur.";
+      
+      if (error.message) {
+        if (error.message.includes('row-level security')) {
+          errorMessage = "Erreur de permissions : Vous n'avez pas les droits pour créer un utilisateur.";
+        } else if (error.message.includes('duplicate key')) {
+          errorMessage = "Un utilisateur avec cet email existe déjà.";
+        } else {
+          errorMessage = `Erreur : ${error.message}`;
+        }
+      }
+      
       toast({
-        title: "Erreur",
-        description: error.message || "Impossible de créer l'utilisateur.",
+        title: "Erreur de création",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -92,9 +115,18 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   });
 
   const onSubmit = (data: UserFormData) => {
+    console.log('UserForm: Form submitted with data:', data);
     if (isEdit) {
       updateMutation.mutate(data);
     } else {
+      if (!data.password || data.password.trim() === '') {
+        toast({
+          title: "Erreur de validation",
+          description: "Le mot de passe est requis pour créer un nouvel utilisateur.",
+          variant: "destructive"
+        });
+        return;
+      }
       createMutation.mutate(data);
     }
   };
