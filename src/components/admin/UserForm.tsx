@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
@@ -6,13 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
 import { ROLES, ROLE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-type UserRole = Database['public']['Enums']['user_role'];
+import { userService } from '@/services/admin/userService';
 
 interface UserFormProps {
   user?: SystemUser;
@@ -27,25 +25,6 @@ interface UserFormData {
   role: string;
   statut: 'actif' | 'inactif' | 'suspendu';
 }
-
-// Fonction helper pour mapper les rôles vers les types de base de données
-const mapRoleToDbType = (role: string): UserRole => {
-  const roleMapping: Record<string, UserRole> = {
-    'maintenance': 'maintenance',
-    'administratif': 'administratif',
-    'hsecq': 'hsecq',
-    'obc': 'obc',
-    'transport': 'transport',
-    'rh': 'rh',
-    'facturation': 'facturation',
-    'direction': 'direction',
-    'admin': 'admin',
-    'transitaire': 'transport', // Fallback vers transport
-    'directeur_exploitation': 'direction' // Fallback vers direction
-  };
-  
-  return roleMapping[role] || 'transport';
-};
 
 export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   const isEdit = !!user;
@@ -62,55 +41,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
-      console.log('Creating user with Supabase Auth:', data);
-      
-      if (!data.password) {
-        throw new Error('Le mot de passe est requis');
-      }
-
-      const mappedRole = mapRoleToDbType(data.role);
-
-      // 1. Créer l'utilisateur via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: data.email,
-        password: data.password,
-        user_metadata: {
-          first_name: data.prenom,
-          last_name: data.nom
-        },
-        email_confirm: true
-      });
-
-      if (authError) {
-        throw new Error(`Impossible de créer le compte: ${authError.message}`);
-      }
-
-      if (!authData.user) {
-        throw new Error('Aucun utilisateur créé');
-      }
-
-      // 2. Attendre que le trigger fonctionne
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // 3. Mettre à jour le rôle
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          roles: [mappedRole],
-          first_name: data.prenom,
-          last_name: data.nom,
-          status: data.statut === 'actif' ? 'active' : 'inactive',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', authData.user.id);
-
-      if (updateError) {
-        // Nettoyer l'utilisateur auth en cas d'erreur
-        await supabase.auth.admin.deleteUser(authData.user.id);
-        throw new Error(`Erreur de configuration: ${updateError.message}`);
-      }
-
-      return authData.user;
+      console.log('Creating user:', data);
+      return userService.createUser(data);
     },
     onSuccess: () => {
       toast({
@@ -131,20 +63,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const updateMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
-      const mappedRole = mapRoleToDbType(data.role);
-      
-      const { error } = await supabase
-        .from('users')
-        .update({
-          first_name: data.prenom,
-          last_name: data.nom,
-          roles: [mappedRole],
-          status: data.statut === 'actif' ? 'active' : 'inactive',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user!.id);
-
-      if (error) throw error;
+      return userService.updateUser(user!.id, data);
     },
     onSuccess: () => {
       toast({
@@ -235,7 +154,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
             {!isEdit && (
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="password">Mot de passe personnalisé *</Label>
+                <Label htmlFor="password">Mot de passe *</Label>
                 <Input
                   id="password"
                   type="password"
@@ -252,9 +171,6 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                 {errors.password && (
                   <p className="text-sm text-red-600">{errors.password.message}</p>
                 )}
-                <p className="text-xs text-gray-500">
-                  Choisissez un mot de passe personnalisé pour cet utilisateur
-                </p>
               </div>
             )}
 
@@ -298,10 +214,10 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
           </div>
 
           {!isEdit && (
-            <div className="mt-4 p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-800">
-                <strong>Authentification sécurisée :</strong> L'utilisateur pourra se connecter 
-                immédiatement avec son email et le mot de passe que vous avez défini.
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Note :</strong> L'utilisateur pourra se connecter avec l'email et le mot de passe définis.
+                Un profil sera automatiquement créé dans le système.
               </p>
             </div>
           )}

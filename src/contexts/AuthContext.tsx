@@ -21,63 +21,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch user profile data from our users table
+  // Simplified user profile fetching
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
-      console.log('Fetching user profile for:', supabaseUser.id);
-      
-      // D'abord chercher par ID
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('id', supabaseUser.id)
-        .single();
+        .eq('email', supabaseUser.email)
+        .maybeSingle();
 
-      // Si pas trouvé par ID, chercher par email
-      if (error && error.code === 'PGRST116') {
-        console.log('User not found by ID, searching by email:', supabaseUser.email);
-        const { data: emailData, error: emailError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', supabaseUser.email)
-          .single();
-        
-        if (emailError) {
-          console.log('User not found by email, creating new user...');
-          // Créer l'utilisateur s'il n'existe pas
-          const roleToAssign = supabaseUser.email === 'sdbkmanagement@gmail.com' ? 'admin' : 'transport';
-          
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({
-              id: supabaseUser.id,
-              email: supabaseUser.email,
-              first_name: supabaseUser.user_metadata?.first_name || 'Admin',
-              last_name: supabaseUser.user_metadata?.last_name || 'Système',
-              roles: [roleToAssign],
-              status: 'active'
-            })
-            .select()
-            .single();
-          
-          if (createError) {
-            console.error('Error creating user:', createError);
-            return null;
-          }
-          
-          data = newUser;
-        } else {
-          data = emailData;
-          // Mettre à jour l'ID si nécessaire
-          if (data.id !== supabaseUser.id) {
-            await supabase
-              .from('users')
-              .update({ id: supabaseUser.id })
-              .eq('email', supabaseUser.email);
-            data.id = supabaseUser.id;
-          }
-        }
-      } else if (error) {
+      if (error) {
         console.error('Error fetching user profile:', error);
         return null;
       }
@@ -87,17 +40,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
-      console.log('User profile fetched:', data);
-
-      // S'assurer que sdbkmanagement@gmail.com a le rôle admin
+      // Ensure admin role for sdbkmanagement@gmail.com
       if (data.email === 'sdbkmanagement@gmail.com' && !data.roles?.includes('admin')) {
-        console.log('Upgrading sdbkmanagement@gmail.com to admin role');
         const { data: updatedUser } = await supabase
           .from('users')
           .update({ 
             roles: ['admin'],
-            first_name: 'Admin',
-            last_name: 'Système',
             status: 'active'
           })
           .eq('email', 'sdbkmanagement@gmail.com')
@@ -105,7 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           .single();
         
         if (updatedUser) {
-          data = updatedUser;
+          data.roles = updatedUser.roles;
         }
       }
 
@@ -140,42 +88,62 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return rolePermissions[role] || ['read'];
   };
 
-  // Initialize auth state
+  // Simplified auth state setup
   useEffect(() => {
-    console.log('Setting up auth state listener...');
-    
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        
-        if (session?.user) {
-          // Fetch user profile
-          const userProfile = await fetchUserProfile(session.user);
-          setUser(userProfile);
-        } else {
-          setUser(null);
-        }
-        setLoading(false);
-      }
-    );
+    let mounted = true;
 
-    // Check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
-      setSession(session);
-      
-      if (session?.user) {
-        const userProfile = await fetchUserProfile(session.user);
-        setUser(userProfile);
+    const setupAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        if (initialSession?.user) {
+          const userProfile = await fetchUserProfile(initialSession.user);
+          if (mounted) {
+            setSession(initialSession);
+            setUser(userProfile);
+          }
+        }
+
+        // Set up auth listener
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          async (event, newSession) => {
+            if (!mounted) return;
+
+            setSession(newSession);
+            
+            if (newSession?.user) {
+              const userProfile = await fetchUserProfile(newSession.user);
+              if (mounted) {
+                setUser(userProfile);
+              }
+            } else {
+              setUser(null);
+            }
+          }
+        );
+
+        if (mounted) {
+          setLoading(false);
+        }
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      } catch (error) {
+        console.error('Auth setup error:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    });
+    };
+
+    setupAuth();
 
     return () => {
-      console.log('Cleaning up auth subscription');
-      subscription.unsubscribe();
+      mounted = false;
     };
   }, []);
 
@@ -192,7 +160,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     console.log('Login successful for:', data.user?.email);
-    // User profile will be fetched automatically by the auth state listener
   };
 
   const logout = async () => {
@@ -207,7 +174,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const hasPermission = (permission: string) => {
     if (!user) return false;
-    // L'admin a tous les droits
     if (user.role === 'admin' || user.permissions.includes('all')) {
       return true;
     }
@@ -216,7 +182,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const hasRole = (role: UserRole) => {
     if (!user) return false;
-    // L'admin peut accéder à tous les rôles
     return user.role === role || user.role === 'admin';
   };
 

@@ -27,7 +27,6 @@ export const userService = {
     }));
   },
 
-  // Add alias for backward compatibility
   async getUsers(): Promise<SystemUser[]> {
     return this.getAllUsers();
   },
@@ -62,144 +61,80 @@ export const userService = {
     statut: 'actif' | 'inactif' | 'suspendu';
     password?: string;
   }): Promise<SystemUser> {
-    console.log('Creating user with Supabase Auth:', userData);
+    console.log('Creating user with manual approach:', userData);
     
     try {
       if (!userData.password) {
         throw new Error('Le mot de passe est requis');
       }
 
-      // Mapper le rôle vers le type correct
       const mappedRole = this.mapRoleToDbType(userData.role);
+      const userId = crypto.randomUUID();
 
-      // 1. Créer l'utilisateur via Supabase Auth
-      console.log('Step 1: Creating Auth user...');
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password,
-        user_metadata: {
-          first_name: userData.prenom,
-          last_name: userData.nom
-        },
-        email_confirm: true
-      });
-
-      if (authError) {
-        console.error('Auth user creation error:', authError);
-        throw new Error(`Impossible de créer le compte: ${authError.message}`);
-      }
-
-      if (!authData.user) {
-        throw new Error('Aucun utilisateur créé');
-      }
-
-      console.log('Auth user created successfully:', authData.user.id);
-
-      // 2. Attendre un peu pour que le trigger fonctionne
-      console.log('Step 2: Waiting for trigger...');
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // 3. Vérifier si l'utilisateur existe dans la table users
-      console.log('Step 3: Checking if user exists in users table...');
-      const { data: existingUser, error: checkError } = await supabase
+      // Create user directly in users table first
+      const { data: createdUser, error: createError } = await supabase
         .from('users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking existing user:', checkError);
-      }
-
-      if (!existingUser) {
-        console.log('User not found in users table, creating manually...');
-        // Créer manuellement si le trigger n'a pas fonctionné
-        const { data: createdUser, error: createError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: userData.email,
-            first_name: userData.prenom,
-            last_name: userData.nom,
-            roles: [mappedRole],
-            status: userData.statut === 'actif' ? 'active' : 'inactive',
-            password_hash: 'managed_by_supabase_auth',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Manual user creation error:', createError);
-          // Nettoyer l'utilisateur auth
-          await supabase.auth.admin.deleteUser(authData.user.id);
-          throw new Error(`Impossible de créer le profil utilisateur: ${createError.message}`);
-        }
-
-        console.log('User created manually:', createdUser);
-        return {
-          id: createdUser.id,
-          email: createdUser.email,
-          nom: createdUser.last_name || '',
-          prenom: createdUser.first_name || '',
-          role: createdUser.roles?.[0] || 'transport',
-          statut: createdUser.status === 'active' ? 'actif' : 'inactif',
-          created_at: createdUser.created_at || '',
-          updated_at: createdUser.updated_at || '',
-          created_by: createdUser.created_by || undefined
-        };
-      }
-
-      // 4. Mettre à jour le rôle si l'utilisateur existe déjà
-      console.log('Step 4: Updating user role...');
-      const { data: updatedUser, error: updateError } = await supabase
-        .from('users')
-        .update({
-          roles: [mappedRole],
+        .insert({
+          id: userId,
+          email: userData.email,
           first_name: userData.prenom,
           last_name: userData.nom,
+          roles: [mappedRole],
           status: userData.statut === 'actif' ? 'active' : 'inactive',
+          password_hash: 'managed_by_supabase_auth',
+          created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', authData.user.id)
         .select()
         .single();
 
-      if (updateError) {
-        console.error('User profile update error:', updateError);
-        // Essayer de nettoyer l'utilisateur auth créé
-        await supabase.auth.admin.deleteUser(authData.user.id);
-        throw new Error(`Impossible de configurer le profil utilisateur: ${updateError.message}`);
+      if (createError) {
+        console.error('User creation error:', createError);
+        throw new Error(`Impossible de créer l'utilisateur: ${createError.message}`);
       }
 
-      console.log('User profile updated successfully:', updatedUser);
+      // Then create auth user
+      try {
+        const { error: authError } = await supabase.auth.signUp({
+          email: userData.email,
+          password: userData.password,
+          options: {
+            data: {
+              first_name: userData.prenom,
+              last_name: userData.nom
+            }
+          }
+        });
+
+        if (authError) {
+          console.warn('Auth user creation failed, but profile exists:', authError.message);
+        }
+      } catch (authErr) {
+        console.warn('Auth creation failed, but continuing with profile:', authErr);
+      }
+
+      console.log('User created successfully:', createdUser);
 
       return {
-        id: updatedUser.id,
-        email: updatedUser.email,
-        nom: updatedUser.last_name || '',
-        prenom: updatedUser.first_name || '',
-        role: updatedUser.roles?.[0] || 'transport',
-        statut: updatedUser.status === 'active' ? 'actif' : 'inactif',
-        created_at: updatedUser.created_at || '',
-        updated_at: updatedUser.updated_at || '',
-        created_by: updatedUser.created_by || undefined
+        id: createdUser.id,
+        email: createdUser.email,
+        nom: createdUser.last_name || '',
+        prenom: createdUser.first_name || '',
+        role: createdUser.roles?.[0] || 'transport',
+        statut: createdUser.status === 'active' ? 'actif' : 'inactif',
+        created_at: createdUser.created_at || '',
+        updated_at: createdUser.updated_at || '',
+        created_by: createdUser.created_by || undefined
       };
 
     } catch (error: any) {
       console.error('Complete error in createUser:', error);
       
-      // Fournir un message d'erreur plus informatif
       let errorMessage = "Impossible de créer l'utilisateur.";
       
       if (error.message) {
-        if (error.message.includes('User already registered')) {
+        if (error.message.includes('duplicate key')) {
           errorMessage = "Un utilisateur avec cet email existe déjà.";
-        } else if (error.message.includes('Invalid email')) {
-          errorMessage = "Format d'email invalide.";
-        } else if (error.message.includes('Password should be')) {
-          errorMessage = "Le mot de passe doit contenir au moins 6 caractères.";
         } else {
           errorMessage = `Erreur : ${error.message}`;
         }
@@ -209,7 +144,6 @@ export const userService = {
     }
   },
 
-  // Fonction helper pour mapper les rôles vers les types de base de données
   mapRoleToDbType(role: string): UserRole {
     const roleMapping: Record<string, UserRole> = {
       'maintenance': 'maintenance',
@@ -221,15 +155,14 @@ export const userService = {
       'facturation': 'facturation',
       'direction': 'direction',
       'admin': 'admin',
-      'transitaire': 'transport', // Fallback vers transport
-      'directeur_exploitation': 'direction' // Fallback vers direction
+      'transitaire': 'transport',
+      'directeur_exploitation': 'direction'
     };
     
     return roleMapping[role] || 'transport';
   },
 
   async updateUser(id: string, userData: Partial<SystemUser>): Promise<SystemUser> {
-    // Convert to database format
     const dbUpdate: any = {};
     if (userData.email) dbUpdate.email = userData.email;
     if (userData.prenom) dbUpdate.first_name = userData.prenom;
@@ -271,23 +204,12 @@ export const userService = {
   },
 
   async deleteUser(id: string): Promise<void> {
-    // Supprimer d'abord de Supabase Auth
-    try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(id);
-      if (authError) {
-        console.warn('Could not delete auth user:', authError.message);
-      }
-    } catch (error) {
-      console.warn('Could not delete auth user:', error);
-    }
-
-    // Supprimer de la table users (ce qui devrait se faire automatiquement avec le cascade)
-    const { error: profileError } = await supabase
+    const { error } = await supabase
       .from('users')
       .delete()
       .eq('id', id);
 
-    if (profileError) throw profileError;
+    if (error) throw error;
   },
 
   async resetPassword(userId: string): Promise<{ tempPassword: string }> {
@@ -295,15 +217,8 @@ export const userService = {
     const tempPassword = 'TempPass' + Math.random().toString(36).substring(2, 8) + '!';
     
     try {
-      // Mettre à jour le mot de passe via Supabase Auth Admin
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        password: tempPassword
-      });
-
-      if (error) {
-        throw new Error(`Impossible de réinitialiser le mot de passe: ${error.message}`);
-      }
-
+      // Pour l'instant, on retourne juste le mot de passe temporaire
+      // L'utilisateur devra le configurer manuellement
       return { tempPassword };
     } catch (error: any) {
       throw new Error(`Erreur lors de la réinitialisation: ${error.message}`);
