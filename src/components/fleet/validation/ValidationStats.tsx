@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle, XCircle, Clock, BarChart3 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw } from 'lucide-react';
 import { validationService } from '@/services/validation';
 
 export const ValidationStats = () => {
@@ -14,13 +15,10 @@ export const ValidationStats = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
   const loadStats = async () => {
     try {
       setLoading(true);
+      console.log('Chargement des statistiques de validation');
       const data = await validationService.getStatistiquesGlobales();
       setStats(data);
     } catch (error) {
@@ -30,13 +28,22 @@ export const ValidationStats = () => {
     }
   };
 
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const handleRefresh = () => {
+    validationService.clearCache();
+    loadStats();
+  };
+
   if (loading) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-            <span className="ml-2">Chargement...</span>
+            <span className="ml-2">Chargement des statistiques...</span>
           </div>
         </CardContent>
       </Card>
@@ -49,7 +56,12 @@ export const ValidationStats = () => {
         <CardTitle className="text-sm font-medium">
           Statut des Validations
         </CardTitle>
-        <BarChart3 className="h-4 w-4 text-muted-foreground" />
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <Button onClick={handleRefresh} variant="ghost" size="sm">
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">

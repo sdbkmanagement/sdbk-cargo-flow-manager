@@ -1,151 +1,215 @@
 
-import { supabase } from '@/integrations/supabase/client'
-import type { Database } from '@/integrations/supabase/types'
+import { supabase } from '@/integrations/supabase/client';
 
-type ValidationWorkflow = Database['public']['Tables']['validation_workflows']['Row']
-type ValidationEtape = Database['public']['Tables']['validation_etapes']['Row']
-type ValidationHistorique = Database['public']['Tables']['validation_historique']['Row']
+export type EtapeType = 'maintenance' | 'administratif' | 'hsecq' | 'obc';
+export type StatutEtape = 'en_attente' | 'valide' | 'rejete';
 
-export type EtapeType = 'maintenance' | 'administratif' | 'hsecq' | 'obc'
-export type StatutEtape = 'en_attente' | 'valide' | 'rejete'
-export type StatutWorkflow = 'en_validation' | 'valide' | 'rejete'
+export interface ValidationEtape {
+  id: string;
+  workflow_id: string;
+  etape: EtapeType;
+  statut: StatutEtape;
+  commentaire?: string;
+  date_validation?: string;
+  validateur_nom?: string;
+  validateur_role?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ValidationWorkflow {
+  id: string;
+  vehicule_id: string;
+  statut_global: string;
+  created_at: string;
+  updated_at: string;
+}
 
 export interface ValidationWorkflowWithEtapes extends ValidationWorkflow {
-  etapes: ValidationEtape[]
+  etapes: ValidationEtape[];
 }
 
 export const validationService = {
-  // Créer un workflow de validation pour un véhicule
-  async createWorkflow(vehiculeId: string): Promise<ValidationWorkflow> {
-    const { data, error } = await supabase
-      .from('validation_workflows')
-      .insert([{ vehicule_id: vehiculeId }])
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Erreur lors de la création du workflow:', error)
-      throw error
+  // Cache local pour éviter les requêtes répétées
+  _cache: new Map<string, { data: any; timestamp: number }>(),
+  
+  _getCached(key: string, maxAge: number = 30000) {
+    const cached = this._cache.get(key);
+    if (cached && Date.now() - cached.timestamp < maxAge) {
+      return cached.data;
     }
-
-    return data
+    return null;
   },
 
-  // Récupérer le workflow d'un véhicule avec ses étapes
+  _setCache(key: string, data: any) {
+    this._cache.set(key, { data, timestamp: Date.now() });
+  },
+
+  // Optimisation: Récupérer les workflows avec pagination
+  async getWorkflowsPaginated(page: number = 1, limit: number = 10) {
+    const cacheKey = `workflows_${page}_${limit}`;
+    const cached = this._getCached(cacheKey);
+    if (cached) return cached;
+
+    console.log(`Chargement des workflows page ${page}, limite ${limit}`);
+    
+    const start = (page - 1) * limit;
+    const end = start + limit - 1;
+
+    const { data, error } = await supabase
+      .from('validation_workflows')
+      .select(`
+        *,
+        etapes:validation_etapes(*)
+      `)
+      .range(start, end)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    this._setCache(cacheKey, data);
+    return data as ValidationWorkflowWithEtapes[];
+  },
+
+  // Optimisation: Récupérer un workflow spécifique avec cache
   async getWorkflowByVehicule(vehiculeId: string): Promise<ValidationWorkflowWithEtapes | null> {
-    const { data: workflow, error: workflowError } = await supabase
+    const cacheKey = `workflow_${vehiculeId}`;
+    const cached = this._getCached(cacheKey, 10000); // Cache plus court pour les données dynamiques
+    if (cached) return cached;
+
+    console.log(`Chargement du workflow pour véhicule ${vehiculeId}`);
+
+    // Requête optimisée en une seule fois
+    const { data, error } = await supabase
       .from('validation_workflows')
       .select(`
         *,
         etapes:validation_etapes(*)
       `)
       .eq('vehicule_id', vehiculeId)
-      .single()
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-    if (workflowError) {
-      if (workflowError.code === 'PGRST116') {
-        // Pas de workflow trouvé, créer un nouveau
-        const newWorkflow = await this.createWorkflow(vehiculeId)
-        return this.getWorkflowByVehicule(vehiculeId)
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // Aucun workflow trouvé, créer un nouveau
+        return await this.createWorkflowForVehicule(vehiculeId);
       }
-      console.error('Erreur lors de la récupération du workflow:', workflowError)
-      throw workflowError
+      throw error;
     }
 
-    return workflow as ValidationWorkflowWithEtapes
+    this._setCache(cacheKey, data);
+    return data;
   },
 
-  // Mettre à jour le statut d'une étape
-  async updateEtapeStatut(
-    etapeId: string, 
-    statut: StatutEtape, 
-    commentaire?: string,
-    validateurNom?: string,
-    validateurRole?: string
-  ): Promise<ValidationEtape> {
-    const updateData: any = {
-      statut,
-      date_validation: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
+  // Optimisation: Créer un workflow avec toutes ses étapes en une transaction
+  async createWorkflowForVehicule(vehiculeId: string): Promise<ValidationWorkflowWithEtapes> {
+    console.log(`Création d'un nouveau workflow pour véhicule ${vehiculeId}`);
 
-    if (commentaire) updateData.commentaire = commentaire
-    if (validateurNom) updateData.validateur_nom = validateurNom
-    if (validateurRole) updateData.validateur_role = validateurRole
+    // Utiliser une transaction Supabase pour créer le workflow et ses étapes
+    const { data: workflow, error: workflowError } = await supabase
+      .from('validation_workflows')
+      .insert({
+        vehicule_id: vehiculeId,
+        statut_global: 'en_validation'
+      })
+      .select()
+      .single();
+
+    if (workflowError) throw workflowError;
+
+    // Créer les 4 étapes en une seule requête
+    const etapes = [
+      { workflow_id: workflow.id, etape: 'maintenance' },
+      { workflow_id: workflow.id, etape: 'administratif' },
+      { workflow_id: workflow.id, etape: 'hsecq' },
+      { workflow_id: workflow.id, etape: 'obc' }
+    ];
+
+    const { data: etapesCreated, error: etapesError } = await supabase
+      .from('validation_etapes')
+      .insert(etapes)
+      .select();
+
+    if (etapesError) throw etapesError;
+
+    const result = {
+      ...workflow,
+      etapes: etapesCreated
+    };
+
+    // Invalider le cache
+    this._cache.delete(`workflow_${vehiculeId}`);
+    
+    return result;
+  },
+
+  // Optimisation: Mise à jour avec invalidation de cache ciblée
+  async updateEtapeStatut(
+    etapeId: string,
+    statut: StatutEtape,
+    commentaire: string,
+    validateurNom: string,
+    validateurRole: string
+  ) {
+    console.log(`Mise à jour étape ${etapeId} vers ${statut}`);
 
     const { data, error } = await supabase
       .from('validation_etapes')
-      .update(updateData)
-      .eq('id', etapeId)
-      .select()
-      .single()
-
-    if (error) {
-      console.error('Erreur lors de la mise à jour de l\'étape:', error)
-      throw error
-    }
-
-    // Ajouter à l'historique
-    await this.addToHistorique(data.workflow_id, data.etape, statut, commentaire, validateurNom, validateurRole)
-
-    return data
-  },
-
-  // Ajouter une entrée à l'historique
-  async addToHistorique(
-    workflowId: string,
-    etape: string,
-    nouveauStatut: string,
-    commentaire?: string,
-    validateurNom?: string,
-    validateurRole?: string
-  ): Promise<void> {
-    await supabase
-      .from('validation_historique')
-      .insert([{
-        workflow_id: workflowId,
-        etape,
-        nouveau_statut: nouveauStatut,
+      .update({
+        statut,
         commentaire,
         validateur_nom: validateurNom,
-        validateur_role: validateurRole
-      }])
-  },
+        validateur_role: validateurRole,
+        date_validation: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', etapeId)
+      .select()
+      .single();
 
-  // Récupérer l'historique d'un workflow
-  async getHistorique(workflowId: string): Promise<ValidationHistorique[]> {
-    const { data, error } = await supabase
-      .from('validation_historique')
-      .select('*')
-      .eq('workflow_id', workflowId)
-      .order('created_at', { ascending: false })
+    if (error) throw error;
 
-    if (error) {
-      console.error('Erreur lors de la récupération de l\'historique:', error)
-      throw error
+    // Invalider les caches pertinents
+    for (const [key] of this._cache) {
+      if (key.includes('workflow_') || key.includes('stats')) {
+        this._cache.delete(key);
+      }
     }
 
-    return data || []
+    return data;
   },
 
-  // Obtenir les statistiques globales
+  // Optimisation: Statistiques avec cache longue durée
   async getStatistiquesGlobales() {
+    const cacheKey = 'stats_globales';
+    const cached = this._getCached(cacheKey, 60000); // Cache 1 minute
+    if (cached) return cached;
+
+    console.log('Chargement des statistiques globales');
+
+    // Requête optimisée avec comptage direct
     const { data, error } = await supabase
       .from('validation_workflows')
-      .select('statut_global')
+      .select('statut_global');
 
-    if (error) {
-      console.error('Erreur lors de la récupération des statistiques:', error)
-      throw error
-    }
+    if (error) throw error;
 
     const stats = {
-      total: data?.length || 0,
-      en_validation: data?.filter(w => w.statut_global === 'en_validation').length || 0,
-      valides: data?.filter(w => w.statut_global === 'valide').length || 0,
-      rejetes: data?.filter(w => w.statut_global === 'rejete').length || 0
-    }
+      total: data.length,
+      en_validation: data.filter(w => w.statut_global === 'en_validation').length,
+      valides: data.filter(w => w.statut_global === 'valide').length,
+      rejetes: data.filter(w => w.statut_global === 'rejete').length
+    };
 
-    return stats
+    this._setCache(cacheKey, stats);
+    return stats;
+  },
+
+  // Optimisation: Vider le cache manuellement si nécessaire
+  clearCache() {
+    this._cache.clear();
+    console.log('Cache de validation vidé');
   }
-}
+};

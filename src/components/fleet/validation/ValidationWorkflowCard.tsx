@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, XCircle, Clock, MessageSquare, History } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, MessageSquare, RefreshCw } from 'lucide-react';
 import { validationService, type ValidationWorkflowWithEtapes, type EtapeType, type StatutEtape } from '@/services/validation';
 import { useToast } from '@/hooks/use-toast';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
@@ -14,7 +14,7 @@ import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 interface ValidationWorkflowCardProps {
   vehiculeId: string;
   vehiculeNumero: string;
-  userRole?: string; // Pour déterminer les permissions
+  userRole?: string;
 }
 
 const ETAPE_LABELS = {
@@ -33,13 +33,10 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   const { toast } = useToast();
   const { canValidateEtape, getUserRole, getUserName } = useValidationPermissions();
 
-  useEffect(() => {
-    loadWorkflow();
-  }, [vehiculeId]);
-
   const loadWorkflow = async () => {
     try {
       setLoading(true);
+      console.log(`Chargement workflow pour véhicule ${vehiculeId}`);
       const data = await validationService.getWorkflowByVehicule(vehiculeId);
       setWorkflow(data);
     } catch (error) {
@@ -54,11 +51,14 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
     }
   };
 
+  useEffect(() => {
+    loadWorkflow();
+  }, [vehiculeId]);
+
   const handleValidation = async (etapeId: string, statut: StatutEtape, commentaireText?: string) => {
     try {
       setActionLoading(etapeId);
       
-      // Vérifier les permissions avant de procéder
       const etape = workflow?.etapes.find(e => e.id === etapeId);
       if (!etape || !canValidateEtape(etape.etape)) {
         toast({
@@ -82,7 +82,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         description: `L'étape a été ${statut === 'valide' ? 'validée' : 'rejetée'} avec succès`,
       });
       
-      await loadWorkflow(); // Recharger pour voir les changements
+      await loadWorkflow();
       setShowCommentDialog(null);
       setCommentaire('');
     } catch (error) {
@@ -138,7 +138,13 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
     return (
       <Card>
         <CardContent className="p-6">
-          <p className="text-red-500">Erreur lors du chargement du workflow</p>
+          <div className="text-center">
+            <p className="text-red-500 mb-4">Erreur lors du chargement du workflow</p>
+            <Button onClick={loadWorkflow} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Réessayer
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
@@ -149,7 +155,12 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg">Workflow de Validation - {vehiculeNumero}</CardTitle>
-          {getStatutGlobalBadge(workflow.statut_global)}
+          <div className="flex items-center gap-2">
+            {getStatutGlobalBadge(workflow.statut_global)}
+            <Button onClick={loadWorkflow} variant="ghost" size="sm">
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
