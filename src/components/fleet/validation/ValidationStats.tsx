@@ -1,5 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,37 +8,19 @@ import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw } from 'lucide-react'
 import { validationService } from '@/services/validation';
 
 export const ValidationStats = () => {
-  const [stats, setStats] = useState({
-    total: 0,
-    en_validation: 0,
-    valides: 0,
-    rejetes: 0
+  const { data: stats, isLoading, refetch } = useQuery({
+    queryKey: ['validation-stats'],
+    queryFn: validationService.getStatistiquesGlobales,
+    staleTime: 30000, // Cache 30 secondes
+    gcTime: 60000, // Keep in cache for 1 minute
   });
-  const [loading, setLoading] = useState(true);
-
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      console.log('Chargement des statistiques de validation');
-      const data = await validationService.getStatistiquesGlobales();
-      setStats(data);
-    } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadStats();
-  }, []);
 
   const handleRefresh = () => {
-    validationService.clearCache();
-    loadStats();
+    validationService.clearCache('stats');
+    refetch();
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -50,8 +33,10 @@ export const ValidationStats = () => {
     );
   }
 
+  const statsData = stats || { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
+
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">
           Statut des Validations
@@ -64,48 +49,48 @@ export const ValidationStats = () => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600">Total</span>
-            <Badge variant="outline">{stats.total}</Badge>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="text-center p-3 bg-gray-50 rounded-lg">
+            <div className="text-2xl font-bold text-gray-900">{statsData.total}</div>
+            <div className="text-sm text-gray-600">Total</div>
           </div>
           
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+          <div className="text-center p-3 bg-green-50 rounded-lg">
+            <div className="flex items-center justify-center gap-1 mb-1">
               <CheckCircle className="w-4 h-4 text-green-500" />
-              <span className="text-sm text-gray-600">Validés</span>
+              <div className="text-2xl font-bold text-green-800">{statsData.valides}</div>
             </div>
-            <Badge className="bg-green-100 text-green-800">{stats.valides}</Badge>
+            <div className="text-sm text-green-600">Validés</div>
           </div>
           
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+          <div className="text-center p-3 bg-yellow-50 rounded-lg">
+            <div className="flex items-center justify-center gap-1 mb-1">
               <Clock className="w-4 h-4 text-yellow-500" />
-              <span className="text-sm text-gray-600">En validation</span>
+              <div className="text-2xl font-bold text-yellow-800">{statsData.en_validation}</div>
             </div>
-            <Badge className="bg-yellow-100 text-yellow-800">{stats.en_validation}</Badge>
+            <div className="text-sm text-yellow-600">En validation</div>
           </div>
           
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
+          <div className="text-center p-3 bg-red-50 rounded-lg">
+            <div className="flex items-center justify-center gap-1 mb-1">
               <XCircle className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-gray-600">Rejetés</span>
+              <div className="text-2xl font-bold text-red-800">{statsData.rejetes}</div>
             </div>
-            <Badge className="bg-red-100 text-red-800">{stats.rejetes}</Badge>
+            <div className="text-sm text-red-600">Rejetés</div>
           </div>
         </div>
         
-        {stats.total > 0 && (
+        {statsData.total > 0 && (
           <div className="mt-4 pt-3 border-t">
-            <div className="text-xs text-gray-500 mb-2">Progression</div>
+            <div className="flex justify-between text-xs text-gray-500 mb-2">
+              <span>Progression</span>
+              <span>{Math.round((statsData.valides / statsData.total) * 100)}% validés</span>
+            </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div 
-                className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${(stats.valides / stats.total) * 100}%` }}
+                className="bg-green-500 h-2 rounded-full transition-all duration-500" 
+                style={{ width: `${(statsData.valides / statsData.total) * 100}%` }}
               />
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {Math.round((stats.valides / stats.total) * 100)}% validés
             </div>
           </div>
         )}

@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { CheckCircle, XCircle, Clock, MessageSquare, RefreshCw } from 'lucide-react';
 import { validationService, type ValidationWorkflowWithEtapes, type EtapeType, type StatutEtape } from '@/services/validation';
@@ -36,7 +36,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   const loadWorkflow = async () => {
     try {
       setLoading(true);
-      console.log(`Chargement workflow pour véhicule ${vehiculeId}`);
+      console.log(`Chargement optimisé workflow pour véhicule ${vehiculeId}`);
       const data = await validationService.getWorkflowByVehicule(vehiculeId);
       setWorkflow(data);
     } catch (error) {
@@ -82,6 +82,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         description: `L'étape a été ${statut === 'valide' ? 'validée' : 'rejetée'} avec succès`,
       });
       
+      // Recharger seulement ce workflow
       await loadWorkflow();
       setShowCommentDialog(null);
       setCommentaire('');
@@ -127,7 +128,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-            <span className="ml-2">Chargement du workflow...</span>
+            <span className="ml-2">Chargement workflow...</span>
           </div>
         </CardContent>
       </Card>
@@ -151,10 +152,10 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   }
 
   return (
-    <Card>
+    <Card className="transition-all duration-200 hover:shadow-md">
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">Workflow de Validation - {vehiculeNumero}</CardTitle>
+          <CardTitle className="text-lg">Workflow - {vehiculeNumero}</CardTitle>
           <div className="flex items-center gap-2">
             {getStatutGlobalBadge(workflow.statut_global)}
             <Button onClick={loadWorkflow} variant="ghost" size="sm">
@@ -164,9 +165,9 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {workflow.etapes.map((etape) => (
-            <div key={etape.id} className="border rounded-lg p-4">
+            <div key={etape.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-3">
                   <h4 className="font-medium">{ETAPE_LABELS[etape.etape as EtapeType]}</h4>
@@ -200,13 +201,13 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
 
                 {!canValidateEtape(etape.etape) && etape.statut === 'en_attente' && (
                   <Badge variant="outline" className="text-gray-500">
-                    Accès limité à {ETAPE_LABELS[etape.etape as EtapeType]}
+                    Accès limité
                   </Badge>
                 )}
               </div>
               
               {etape.commentaire && (
-                <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                <div className="mt-2 p-2 bg-white rounded text-sm border">
                   <div className="flex items-start gap-2">
                     <MessageSquare className="w-4 h-4 mt-0.5 text-gray-500" />
                     <div>
