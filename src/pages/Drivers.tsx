@@ -1,14 +1,13 @@
 
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload } from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { DriversStats } from '@/components/drivers/DriversStats';
 import { DriversTabNavigation } from '@/components/drivers/DriversTabNavigation';
 import { DriversTabContent } from '@/components/drivers/DriversTabContent';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
-import { DriversImport } from '@/components/drivers/DriversImport';
 
 const Drivers = () => {
   const { hasPermission } = useAuth();
@@ -16,12 +15,14 @@ const Drivers = () => {
   const [activeTab, setActiveTab] = useState('liste');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChauffeur, setSelectedChauffeur] = useState(null);
-  const [showImport, setShowImport] = useState(false);
 
-  const { data: chauffeurs = [], isLoading } = useQuery({
+  const { data: chauffeurs = [], isLoading, error, isError } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll,
-    refetchInterval: 30000,
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
   });
 
   const stats = useMemo(() => {
@@ -64,19 +65,12 @@ const Drivers = () => {
   const handleFormSuccess = () => {
     setSelectedChauffeur(null);
     setActiveTab('liste');
+    queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
   };
 
   const handleNewChauffeur = () => {
     setSelectedChauffeur(null);
     setActiveTab('nouveau');
-  };
-
-  const handleBackToList = () => {
-    setActiveTab('liste');
-  };
-
-  const handleImportSuccess = () => {
-    queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
   };
 
   if (!hasPermission('drivers_read')) {
@@ -92,9 +86,29 @@ const Drivers = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Chargement...</h1>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <p className="text-lg font-medium">Chargement des chauffeurs...</p>
+          <p className="text-sm text-gray-500 mt-2">Connexion à la base de données</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-red-600 mb-2">Erreur de chargement</h2>
+          <p className="text-gray-600 mb-4">Impossible de charger les données des chauffeurs</p>
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['chauffeurs'] })}
+            variant="outline"
+          >
+            Réessayer
+          </Button>
         </div>
       </div>
     );
@@ -110,22 +124,13 @@ const Drivers = () => {
           </p>
         </div>
         {hasPermission('drivers_write') && (
-          <div className="flex gap-2">
-            <Button 
-              variant="outline"
-              onClick={() => setShowImport(true)}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Importer Excel
-            </Button>
-            <Button 
-              onClick={handleNewChauffeur}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nouveau chauffeur
-            </Button>
-          </div>
+          <Button 
+            onClick={handleNewChauffeur}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouveau chauffeur
+          </Button>
         )}
       </div>
 
@@ -147,16 +152,9 @@ const Drivers = () => {
           onSearchChange={setSearchTerm}
           onSelectChauffeur={handleSelectChauffeur}
           onFormSuccess={handleFormSuccess}
-          onBackToList={handleBackToList}
+          onBackToList={() => setActiveTab('liste')}
         />
       </div>
-
-      {showImport && (
-        <DriversImport
-          onClose={() => setShowImport(false)}
-          onSuccess={handleImportSuccess}
-        />
-      )}
     </div>
   );
 };

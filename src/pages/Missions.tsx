@@ -1,29 +1,34 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { MissionsStats } from '@/components/missions/MissionsStats';
 import { MissionsTable } from '@/components/missions/MissionsTable';
 import { MissionForm } from '@/components/missions/MissionForm';
 import { useAuth } from '@/contexts/AuthContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
 
 const Missions = () => {
   const { hasPermission } = useAuth();
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [selectedMission, setSelectedMission] = useState(null);
 
-  const { data: missions = [], isLoading, refetch } = useQuery({
+  const { data: missions = [], isLoading, error, isError } = useQuery({
     queryKey: ['missions'],
     queryFn: missionsService.getAll,
-    refetchInterval: 30000,
+    retry: 3,
+    retryDelay: 1000,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
   });
 
   const { data: stats } = useQuery({
     queryKey: ['missions-stats'],
     queryFn: missionsService.getStats,
-    refetchInterval: 60000,
+    retry: 2,
+    enabled: !isError,
   });
 
   const handleCreateMission = () => {
@@ -39,7 +44,8 @@ const Missions = () => {
   const handleFormSuccess = () => {
     setShowForm(false);
     setSelectedMission(null);
-    refetch();
+    queryClient.invalidateQueries({ queryKey: ['missions'] });
+    queryClient.invalidateQueries({ queryKey: ['missions-stats'] });
   };
 
   const handleFormCancel = () => {
@@ -60,10 +66,29 @@ const Missions = () => {
 
   if (isLoading) {
     return (
-      <div className="p-6">
+      <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p>Chargement des missions...</p>
+          <p className="text-lg font-medium">Chargement des missions...</p>
+          <p className="text-sm text-gray-500 mt-2">Connexion à la base de données</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-red-600 mb-2">Erreur de chargement</h2>
+          <p className="text-gray-600 mb-4">Impossible de charger les données des missions</p>
+          <Button 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
+            variant="outline"
+          >
+            Réessayer
+          </Button>
         </div>
       </div>
     );
@@ -105,7 +130,7 @@ const Missions = () => {
         missions={missions}
         onEdit={handleEditMission}
         hasWritePermission={hasPermission('missions_write')}
-        onRefresh={refetch}
+        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
       />
     </div>
   );
