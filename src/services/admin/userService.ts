@@ -24,6 +24,11 @@ export const userService = {
     }));
   },
 
+  // Add alias for backward compatibility
+  async getUsers(): Promise<SystemUser[]> {
+    return this.getAllUsers();
+  },
+
   async getUserById(id: string): Promise<SystemUser | null> {
     const { data, error } = await supabase
       .from('users')
@@ -114,6 +119,17 @@ export const userService = {
       updated_at: data.updated_at || '',
       created_by: data.created_by || undefined
     };
+  },
+
+  async toggleUserStatus(userId: string, status: SystemUser['statut']): Promise<void> {
+    const dbStatus = status === 'actif' ? 'active' : 'inactive';
+    
+    const { error } = await supabase
+      .from('users')
+      .update({ status: dbStatus })
+      .eq('id', userId);
+
+    if (error) throw error;
   },
 
   async deleteUser(id: string): Promise<void> {
