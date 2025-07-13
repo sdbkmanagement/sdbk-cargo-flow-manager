@@ -61,8 +61,6 @@ export const userService = {
   }): Promise<SystemUser> {
     console.log('Creating user with data:', userData);
     
-    // Pour contourner temporairement le problème RLS, 
-    // nous utilisons une approche directe
     try {
       // Convert to database format
       const dbUser = {
@@ -79,41 +77,19 @@ export const userService = {
 
       console.log('Inserting user with database format:', dbUser);
 
-      // Utiliser une requête RPC pour contourner les problèmes RLS
-      const { data, error } = await supabase.rpc('create_user_as_admin', {
-        user_data: dbUser
-      });
+      // Insertion directe dans la table users
+      const { data, error } = await supabase
+        .from('users')
+        .insert([dbUser])
+        .select()
+        .single();
 
       if (error) {
-        console.error('RPC error:', error);
-        // Si la RPC échoue, essayer l'insertion directe
-        const { data: insertData, error: insertError } = await supabase
-          .from('users')
-          .insert([dbUser])
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error('Direct insert error:', insertError);
-          throw insertError;
-        }
-        
-        console.log('Direct insert successful:', insertData);
-        
-        return {
-          id: insertData.id,
-          email: insertData.email,
-          nom: insertData.last_name || '',
-          prenom: insertData.first_name || '',
-          role: insertData.roles?.[0] || 'transport',
-          statut: insertData.status === 'active' ? 'actif' : 'inactif',
-          created_at: insertData.created_at || '',
-          updated_at: insertData.updated_at || '',
-          created_by: insertData.created_by || undefined
-        };
+        console.error('Insert error:', error);
+        throw error;
       }
       
-      console.log('User created via RPC successfully:', data);
+      console.log('User created successfully:', data);
       
       return {
         id: data.id,
