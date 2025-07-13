@@ -1,27 +1,38 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, FileText, BarChart3 } from 'lucide-react';
+import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, FileText, BarChart3, TrendingUp, Clock, MapPin, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertesDocuments } from '@/components/common/AlertesDocuments';
 
-const StatCard = ({ title, value, description, icon: Icon, color, isLoading }: any) => (
-  <Card>
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium">{title}</CardTitle>
-      <Icon className={`h-4 w-4 ${color}`} />
+const StatCard = ({ title, value, description, icon: Icon, color, bgColor, isLoading, trend }: any) => (
+  <Card className="brand-card hover:scale-105 transition-all duration-300 border-l-4 border-l-brand-gold">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+      <CardTitle className="text-sm font-medium text-brand-secondaryText">{title}</CardTitle>
+      <div className={`p-3 rounded-lg ${bgColor} shadow-soft`}>
+        <Icon className={`h-5 w-5 ${color}`} />
+      </div>
     </CardHeader>
     <CardContent>
-      <div className="text-2xl font-bold">
-        {isLoading ? (
-          <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
-        ) : (
-          value
+      <div className="flex items-end justify-between">
+        <div>
+          <div className="text-3xl font-bold text-brand-darkText mb-1">
+            {isLoading ? (
+              <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
+            ) : (
+              value
+            )}
+          </div>
+          <p className="text-xs text-brand-secondaryText">{description}</p>
+        </div>
+        {trend && (
+          <div className="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
+            <TrendingUp className="h-3 w-3 mr-1" />
+            {trend}
+          </div>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">{description}</p>
     </CardContent>
   </Card>
 );
@@ -177,23 +188,28 @@ const Dashboard = () => {
       value: `${vehiculesStats?.actifs || 0}`,
       description: `Sur ${vehiculesStats?.total || 0} véhicules total`,
       icon: Truck,
-      color: "text-blue-500",
-      isLoading: vehiculesLoading
+      color: "text-brand-blue",
+      bgColor: "bg-blue-50",
+      isLoading: vehiculesLoading,
+      trend: "+12%"
     },
     {
       title: "Chauffeurs disponibles",
       value: `${chauffeursStats?.disponibles || 0}`,
       description: "Prêts pour missions",
       icon: Users,
-      color: "text-green-500",
-      isLoading: chauffeursLoading
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      isLoading: chauffeursLoading,
+      trend: "+5%"
     },
     {
       title: "Missions en cours",
       value: `${missionsStats?.enCours || 0}`,
       description: "En cours de livraison",
       icon: Calendar,
-      color: "text-orange-500",
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
       isLoading: missionsLoading
     },
     {
@@ -201,7 +217,8 @@ const Dashboard = () => {
       value: `${validationsStats?.enAttente || 0}`,
       description: "Nécessitent une action",
       icon: AlertTriangle,
-      color: "text-red-500",
+      color: "text-red-600",
+      bgColor: "bg-red-50",
       isLoading: validationsLoading
     },
     {
@@ -209,144 +226,211 @@ const Dashboard = () => {
       value: `${(facturesStats?.caMensuel || 0).toLocaleString('fr-FR')} GNF`,
       description: "Factures payées ce mois",
       icon: DollarSign,
-      color: "text-purple-500",
-      isLoading: facturesLoading
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+      isLoading: facturesLoading,
+      trend: "+23%"
     },
     {
       title: "Taux de conformité",
       value: `${facturesStats?.tauxConformite || 0}%`,
       description: "Factures payées",
       icon: CheckCircle,
-      color: "text-green-500",
-      isLoading: facturesLoading
+      color: "text-green-600",
+      bgColor: "bg-green-50",
+      isLoading: facturesLoading,
+      trend: "+8%"
     }
   ];
 
   return (
-    <div className="space-y-6">
-      {/* En-tête de bienvenue */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          Bienvenue dans SDBK Cargo Flow Manager
-        </h1>
-        <p className="text-gray-600">
-          Bonjour {user?.prenom} {user?.nom}, vous êtes connecté en tant que {user?.role}
-        </p>
+    <div className="space-y-8 animate-fade-in">
+      {/* En-tête de bienvenue modernisé */}
+      <div className="relative bg-gradient-to-r from-brand-blue via-blue-700 to-blue-800 rounded-2xl p-8 text-white shadow-elegant overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/10 rounded-full -translate-y-32 translate-x-32" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" />
+        <div className="relative z-10">
+          <h1 className="text-4xl font-bold mb-3">
+            Bienvenue dans SDBK Cargo Flow Manager
+          </h1>
+          <p className="text-blue-100 text-lg">
+            Bonjour <span className="text-brand-gold font-medium">{user?.prenom} {user?.nom}</span>, 
+            vous êtes connecté en tant que <span className="text-brand-gold font-medium capitalize">{user?.role}</span>
+          </p>
+          <div className="mt-4 flex items-center space-x-4 text-sm text-blue-200">
+            <div className="flex items-center">
+              <Clock className="h-4 w-4 mr-1" />
+              {new Date().toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Statistiques principales */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Statistiques principales avec grid responsive */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
+          <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
+            <StatCard {...stat} />
+          </div>
         ))}
       </div>
 
       {/* Alertes documentaires */}
       <AlertesDocuments />
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Activité récente */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Activité récente</CardTitle>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Activité récente modernisée */}
+        <Card className="brand-card">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-brand-darkText">
+              <div className="p-2 bg-blue-50 rounded-lg">
+                <BarChart3 className="h-5 w-5 text-brand-blue" />
+              </div>
+              Activité récente
+            </CardTitle>
             <CardDescription>Les dernières actions dans le système</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {recentActivities?.length > 0 ? (
               recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center space-x-4">
-                  <div className={`w-2 h-2 rounded-full ${
-                    activity.type === 'mission' ? 'bg-blue-500' :
+                <div key={index} className="flex items-start space-x-4 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <div className={`w-2 h-2 rounded-full mt-2 ${
+                    activity.type === 'mission' ? 'bg-brand-blue' :
                     activity.type === 'validation' ? 'bg-green-500' : 'bg-orange-500'
                   }`} />
-                  <div className="flex-1">
-                    <p className="text-sm">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground">Le {activity.time}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-brand-darkText">{activity.message}</p>
+                    <p className="text-xs text-brand-secondaryText mt-1">Le {activity.time}</p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-4">
-                <p className="text-sm text-muted-foreground">Aucune activité récente</p>
+              <div className="text-center py-8">
+                <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-brand-secondaryText">Aucune activité récente</p>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Alertes importantes */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Alertes importantes</CardTitle>
+        {/* Alertes importantes modernisées */}
+        <Card className="brand-card">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-2 text-brand-darkText">
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <AlertTriangle className="h-5 w-5 text-orange-600" />
+              </div>
+              Alertes importantes
+            </CardTitle>
             <CardDescription>Actions requises et notifications</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {validationsStats?.enAttente > 0 && (
-              <div className="p-4 border-l-4 border-orange-500 bg-orange-50">
-                <p className="text-sm font-medium">Validations en attente</p>
-                <p className="text-sm text-gray-600">
+              <div className="p-4 border-l-4 border-orange-500 bg-orange-50 rounded-r-lg">
+                <div className="flex items-center">
+                  <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
+                  <p className="text-sm font-medium text-orange-800">Validations en attente</p>
+                </div>
+                <p className="text-sm text-orange-700 mt-1">
                   {validationsStats.enAttente} véhicule(s) en attente de validation
                 </p>
               </div>
             )}
             {missionsStats?.enCours > 0 && (
-              <div className="p-4 border-l-4 border-blue-500 bg-blue-50">
-                <p className="text-sm font-medium">Missions en cours</p>
-                <p className="text-sm text-gray-600">
+              <div className="p-4 border-l-4 border-brand-blue bg-blue-50 rounded-r-lg">
+                <div className="flex items-center">
+                  <Calendar className="h-5 w-5 text-brand-blue mr-2" />
+                  <p className="text-sm font-medium text-blue-800">Missions en cours</p>
+                </div>
+                <p className="text-sm text-blue-700 mt-1">
                   {missionsStats.enCours} mission(s) en cours de livraison
                 </p>
               </div>
             )}
             
-            {/* Alertes système basées sur le contenu d'origine */}
+            {/* Alertes système avec design moderne */}
             <div className="space-y-3">
-              <div className="flex items-center p-3 bg-orange-50 rounded-lg border border-orange-200">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Maintenance programmée</p>
-                  <p className="text-xs text-muted-foreground">Véhicule TRK-001 - Échéance dans 2 jours</p>
+              <div className="flex items-start p-4 bg-orange-50 rounded-lg border border-orange-200 hover:shadow-md transition-shadow">
+                <div className="p-1 bg-orange-100 rounded-full mr-3 mt-0.5">
+                  <Truck className="h-4 w-4 text-orange-600" />
                 </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-orange-800">Maintenance programmée</p>
+                  <p className="text-xs text-orange-600 mt-1">Véhicule TRK-001 - Échéance dans 2 jours</p>
+                </div>
+                <span className="brand-status-badge status-warning">Urgent</span>
               </div>
-              <div className="flex items-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Nouvelle mission</p>
-                  <p className="text-xs text-muted-foreground">Transport vers Dakar - À affecter</p>
+              
+              <div className="flex items-start p-4 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-md transition-shadow">
+                <div className="p-1 bg-blue-100 rounded-full mr-3 mt-0.5">
+                  <MapPin className="h-4 w-4 text-brand-blue" />
                 </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-blue-800">Nouvelle mission</p>
+                  <p className="text-xs text-blue-600 mt-1">Transport vers Dakar - À affecter</p>
+                </div>
+                <span className="brand-status-badge status-info">Nouveau</span>
               </div>
-              <div className="flex items-center p-3 bg-green-50 rounded-lg border border-green-200">
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Formation terminée</p>
-                  <p className="text-xs text-muted-foreground">3 chauffeurs certifiés HSE</p>
+              
+              <div className="flex items-start p-4 bg-green-50 rounded-lg border border-green-200 hover:shadow-md transition-shadow">
+                <div className="p-1 bg-green-100 rounded-full mr-3 mt-0.5">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
                 </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-green-800">Formation terminée</p>
+                  <p className="text-xs text-green-600 mt-1">3 chauffeurs certifiés HSE</p>
+                </div>
+                <span className="brand-status-badge status-success">Terminé</span>
               </div>
             </div>
             
             {(!validationsStats?.enAttente && !missionsStats?.enCours) && (
-              <div className="p-4 border-l-4 border-green-500 bg-green-50">
-                <p className="text-sm font-medium">Système opérationnel</p>
-                <p className="text-sm text-gray-600">Aucune alerte critique détectée</p>
+              <div className="p-4 border-l-4 border-green-500 bg-green-50 rounded-r-lg">
+                <div className="flex items-center">
+                  <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
+                  <p className="text-sm font-medium text-green-800">Système opérationnel</p>
+                </div>
+                <p className="text-sm text-green-700 mt-1">Aucune alerte critique détectée</p>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Accès rapide */}
-      <Card>
+      {/* Accès rapide modernisé */}
+      <Card className="brand-card">
         <CardHeader>
-          <CardTitle>Accès rapide</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-brand-darkText">
+            <div className="p-2 bg-brand-gold/20 rounded-lg">
+              <Shield className="h-5 w-5 text-brand-gold" />
+            </div>
+            Accès rapide
+          </CardTitle>
           <CardDescription>
             Fonctionnalités disponibles selon votre rôle
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {user?.role === 'admin' && (
-              <p className="text-sm text-green-600 font-medium">
-                ✓ Accès administrateur - Tous les modules disponibles
-              </p>
+              <div className="flex items-center p-4 bg-green-50 rounded-lg border border-green-200">
+                <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
+                <div>
+                  <p className="text-sm font-medium text-green-800">Accès administrateur</p>
+                  <p className="text-xs text-green-600">Tous les modules disponibles</p>
+                </div>
+              </div>
             )}
-            <p className="text-xs text-muted-foreground">
-              Utilisez la navigation latérale pour accéder aux différents modules du système SDBK.
-            </p>
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-brand-secondaryText">
+                Utilisez la navigation latérale pour accéder aux différents modules du système SDBK.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>

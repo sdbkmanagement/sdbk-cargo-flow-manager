@@ -21,7 +21,7 @@ import Administration from "./pages/Administration";
 import DocumentStock from "./pages/DocumentStock";
 import Guide from "./pages/Guide";
 import NotFound from "./pages/NotFound";
-import { Loader2 } from "lucide-react";
+import { Loader2, Zap } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -32,9 +32,19 @@ const AppLayout = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-        <span className="ml-2 text-lg">Chargement...</span>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-blue via-blue-700 to-blue-800">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center shadow-brand-glow animate-pulse">
+              <Zap className="h-8 w-8 text-brand-darkText" />
+            </div>
+            <Loader2 className="h-6 w-6 animate-spin text-white absolute -top-1 -right-1" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-white">SDBK Transport Manager</h2>
+            <p className="text-blue-200">Chargement en cours...</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -47,15 +57,41 @@ const AppLayout = () => {
   console.log('User authenticated, showing app layout');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-brand-lightGrey flex">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow-sm border-b">
+        <header className="bg-white shadow-soft border-b border-gray-100">
           <div className="flex items-center justify-between px-6 py-4">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              SDBK Transport Manager
-            </h1>
-            <UserMenu />
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <h1 className="text-xl font-semibold text-brand-darkText">
+                  SDBK Transport Manager
+                </h1>
+              </div>
+              <div className="hidden md:flex items-center space-x-2 text-sm text-brand-secondaryText">
+                <span>•</span>
+                <span>Système opérationnel</span>
+              </div>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:block text-right">
+                <p className="text-sm font-medium text-brand-darkText">
+                  {new Date().toLocaleDateString('fr-FR', { 
+                    weekday: 'short',
+                    day: 'numeric',
+                    month: 'short'
+                  })}
+                </p>
+                <p className="text-xs text-brand-secondaryText">
+                  {new Date().toLocaleTimeString('fr-FR', { 
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              <UserMenu />
+            </div>
           </div>
         </header>
         <main className="flex-1 p-6 overflow-auto">
