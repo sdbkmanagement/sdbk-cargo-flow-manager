@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, FileText, BarChart3, TrendingUp, Clock, MapPin, Shield } from 'lucide-react';
+import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, BarChart3, TrendingUp, Clock, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,103 +41,77 @@ const StatCard = ({ title, value, description, icon: Icon, color, bgColor, isLoa
 const Dashboard = () => {
   const { user } = useAuth();
 
-  // Fetch vehicules stats
-  const { data: vehiculesStats, isLoading: vehiculesLoading } = useQuery({
-    queryKey: ['dashboard-vehicules'],
+  // Requête unique pour toutes les statistiques au lieu de requêtes séparées
+  const { data: dashboardStats, isLoading } = useQuery({
+    queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('vehicules')
-        .select('statut');
+      console.log('Fetching dashboard stats...');
       
-      if (error) throw error;
-      
-      const total = data?.length || 0;
-      const actifs = data?.filter(v => v.statut === 'disponible' || v.statut === 'en_mission').length || 0;
-      
-      return { total, actifs };
-    }
-  });
+      const [
+        vehiculesRes,
+        chauffeursRes,
+        missionsRes,
+        validationsRes,
+        facturesRes
+      ] = await Promise.all([
+        supabase.from('vehicules').select('statut'),
+        supabase.from('chauffeurs').select('statut'),
+        supabase.from('missions').select('statut'),
+        supabase.from('validation_workflows').select('statut_global'),
+        supabase.from('factures').select('montant_ttc, statut, created_at')
+      ]);
 
-  // Fetch chauffeurs stats
-  const { data: chauffeursStats, isLoading: chauffeursLoading } = useQuery({
-    queryKey: ['dashboard-chauffeurs'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('chauffeurs')
-        .select('statut');
-      
-      if (error) throw error;
-      
-      const disponibles = data?.filter(c => c.statut === 'actif').length || 0;
-      
-      return { disponibles };
-    }
-  });
+      const vehicules = vehiculesRes.data || [];
+      const chauffeurs = chauffeursRes.data || [];
+      const missions = missionsRes.data || [];
+      const validations = validationsRes.data || [];
+      const factures = facturesRes.data || [];
 
-  // Fetch missions stats
-  const { data: missionsStats, isLoading: missionsLoading } = useQuery({
-    queryKey: ['dashboard-missions'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('missions')
-        .select('statut');
-      
-      if (error) throw error;
-      
-      const enCours = data?.filter(m => m.statut === 'en_cours').length || 0;
-      
-      return { enCours };
-    }
-  });
-
-  // Fetch validations stats
-  const { data: validationsStats, isLoading: validationsLoading } = useQuery({
-    queryKey: ['dashboard-validations'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('validation_workflows')
-        .select('statut_global');
-      
-      if (error) throw error;
-      
-      const enAttente = data?.filter(v => v.statut_global === 'en_validation').length || 0;
-      
-      return { enAttente };
-    }
-  });
-
-  // Fetch factures stats
-  const { data: facturesStats, isLoading: facturesLoading } = useQuery({
-    queryKey: ['dashboard-factures'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('factures')
-        .select('montant_ttc, statut, created_at');
-      
-      if (error) throw error;
-      
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
       
-      const caMensuel = data?.filter(f => {
+      const caMensuel = factures.filter(f => {
         const factureDate = new Date(f.created_at);
         return factureDate.getMonth() === currentMonth && 
                factureDate.getFullYear() === currentYear &&
                f.statut === 'payee';
-      }).reduce((sum, f) => sum + (f.montant_ttc || 0), 0) || 0;
+      }).reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
       
-      const totalFactures = data?.length || 0;
-      const tauxConformite = totalFactures > 0 ? 
-        Math.round((data?.filter(f => f.statut === 'payee').length / totalFactures) * 100) : 0;
-      
-      return { caMensuel, tauxConformite };
-    }
+      const tauxConformite = factures.length > 0 ? 
+        Math.round((factures.filter(f => f.statut === 'payee').length / factures.length) * 100) : 0;
+
+      console.log('Dashboard stats loaded successfully');
+
+      return {
+        vehicules: {
+          total: vehicules.length,
+          actifs: vehicules.filter(v => v.statut === 'disponible' || v.statut === 'en_mission').length
+        },
+        chauffeurs: {
+          disponibles: chauffeurs.filter(c => c.statut === 'actif').length
+        },
+        missions: {
+          enCours: missions.filter(m => m.statut === 'en_cours').length
+        },
+        validations: {
+          enAttente: validations.filter(v => v.statut_global === 'en_validation').length
+        },
+        factures: {
+          caMensuel,
+          tauxConformite
+        }
+      };
+    },
+    staleTime: 5 * 60 * 1000, // Cache pendant 5 minutes
+    cacheTime: 10 * 60 * 1000 // Garde en cache 10 minutes
   });
 
-  // Fetch recent activities
+  // Requête simplifiée pour les activités récentes
   const { data: recentActivities } = useQuery({
     queryKey: ['dashboard-activities'],
     queryFn: async () => {
+      console.log('Fetching recent activities...');
+      
       const [missionsHist, validationsHist] = await Promise.all([
         supabase
           .from('missions_historique')
@@ -179,66 +154,67 @@ const Dashboard = () => {
       }
 
       return activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 4);
-    }
+    },
+    staleTime: 2 * 60 * 1000 // Cache pendant 2 minutes
   });
 
   const stats = [
     {
       title: "Véhicules actifs",
-      value: `${vehiculesStats?.actifs || 0}`,
-      description: `Sur ${vehiculesStats?.total || 0} véhicules total`,
+      value: `${dashboardStats?.vehicules?.actifs || 0}`,
+      description: `Sur ${dashboardStats?.vehicules?.total || 0} véhicules total`,
       icon: Truck,
       color: "text-brand-blue",
       bgColor: "bg-blue-50",
-      isLoading: vehiculesLoading,
+      isLoading,
       trend: "+12%"
     },
     {
       title: "Chauffeurs disponibles",
-      value: `${chauffeursStats?.disponibles || 0}`,
+      value: `${dashboardStats?.chauffeurs?.disponibles || 0}`,
       description: "Prêts pour missions",
       icon: Users,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      isLoading: chauffeursLoading,
+      isLoading,
       trend: "+5%"
     },
     {
       title: "Missions en cours",
-      value: `${missionsStats?.enCours || 0}`,
+      value: `${dashboardStats?.missions?.enCours || 0}`,
       description: "En cours de livraison",
       icon: Calendar,
       color: "text-orange-600",
       bgColor: "bg-orange-50",
-      isLoading: missionsLoading
+      isLoading
     },
     {
       title: "Validations en attente",
-      value: `${validationsStats?.enAttente || 0}`,
+      value: `${dashboardStats?.validations?.enAttente || 0}`,
       description: "Nécessitent une action",
       icon: AlertTriangle,
       color: "text-red-600",
       bgColor: "bg-red-50",
-      isLoading: validationsLoading
+      isLoading
     },
     {
       title: "CA mensuel",
-      value: `${(facturesStats?.caMensuel || 0).toLocaleString('fr-FR')} GNF`,
+      value: `${(dashboardStats?.factures?.caMensuel || 0).toLocaleString('fr-FR')} GNF`,
       description: "Factures payées ce mois",
       icon: DollarSign,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
-      isLoading: facturesLoading,
+      isLoading,
       trend: "+23%"
     },
     {
       title: "Taux de conformité",
-      value: `${facturesStats?.tauxConformite || 0}%`,
+      value: `${dashboardStats?.factures?.tauxConformite || 0}%`,
       description: "Factures payées",
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-50",
-      isLoading: facturesLoading,
+      isLoading,
       trend: "+8%"
     }
   ];
@@ -330,66 +306,30 @@ const Dashboard = () => {
             <CardDescription>Actions requises et notifications</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {validationsStats?.enAttente > 0 && (
+            {dashboardStats?.validations?.enAttente > 0 && (
               <div className="p-4 border-l-4 border-orange-500 bg-orange-50 rounded-r-lg">
                 <div className="flex items-center">
                   <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
                   <p className="text-sm font-medium text-orange-800">Validations en attente</p>
                 </div>
                 <p className="text-sm text-orange-700 mt-1">
-                  {validationsStats.enAttente} véhicule(s) en attente de validation
+                  {dashboardStats.validations.enAttente} véhicule(s) en attente de validation
                 </p>
               </div>
             )}
-            {missionsStats?.enCours > 0 && (
+            {dashboardStats?.missions?.enCours > 0 && (
               <div className="p-4 border-l-4 border-brand-blue bg-blue-50 rounded-r-lg">
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 text-brand-blue mr-2" />
                   <p className="text-sm font-medium text-blue-800">Missions en cours</p>
                 </div>
                 <p className="text-sm text-blue-700 mt-1">
-                  {missionsStats.enCours} mission(s) en cours de livraison
+                  {dashboardStats.missions.enCours} mission(s) en cours de livraison
                 </p>
               </div>
             )}
             
-            {/* Alertes système avec design moderne */}
-            <div className="space-y-3">
-              <div className="flex items-start p-4 bg-orange-50 rounded-lg border border-orange-200 hover:shadow-md transition-shadow">
-                <div className="p-1 bg-orange-100 rounded-full mr-3 mt-0.5">
-                  <Truck className="h-4 w-4 text-orange-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-orange-800">Maintenance programmée</p>
-                  <p className="text-xs text-orange-600 mt-1">Véhicule TRK-001 - Échéance dans 2 jours</p>
-                </div>
-                <span className="brand-status-badge status-warning">Urgent</span>
-              </div>
-              
-              <div className="flex items-start p-4 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-md transition-shadow">
-                <div className="p-1 bg-blue-100 rounded-full mr-3 mt-0.5">
-                  <MapPin className="h-4 w-4 text-brand-blue" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-blue-800">Nouvelle mission</p>
-                  <p className="text-xs text-blue-600 mt-1">Transport vers Dakar - À affecter</p>
-                </div>
-                <span className="brand-status-badge status-info">Nouveau</span>
-              </div>
-              
-              <div className="flex items-start p-4 bg-green-50 rounded-lg border border-green-200 hover:shadow-md transition-shadow">
-                <div className="p-1 bg-green-100 rounded-full mr-3 mt-0.5">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-green-800">Formation terminée</p>
-                  <p className="text-xs text-green-600 mt-1">3 chauffeurs certifiés HSE</p>
-                </div>
-                <span className="brand-status-badge status-success">Terminé</span>
-              </div>
-            </div>
-            
-            {(!validationsStats?.enAttente && !missionsStats?.enCours) && (
+            {(!dashboardStats?.validations?.enAttente && !dashboardStats?.missions?.enCours) && (
               <div className="p-4 border-l-4 border-green-500 bg-green-50 rounded-r-lg">
                 <div className="flex items-center">
                   <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
