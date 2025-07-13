@@ -96,6 +96,39 @@ export const chauffeursService = {
     }
   },
 
+  // Sauvegarder les documents d'un chauffeur
+  async saveDocuments(chauffeurId: string, documents: any[]): Promise<void> {
+    try {
+      // Supprimer les anciens documents
+      await supabase
+        .from('documents')
+        .delete()
+        .eq('entity_id', chauffeurId)
+        .eq('entity_type', 'chauffeur');
+
+      // Ajouter les nouveaux documents
+      if (documents.length > 0) {
+        const documentsToInsert = documents.map(doc => ({
+          ...doc,
+          entity_id: chauffeurId,
+          entity_type: 'chauffeur'
+        }));
+
+        const { error } = await supabase
+          .from('documents')
+          .insert(documentsToInsert);
+
+        if (error) {
+          console.error('Erreur sauvegarde documents:', error)
+          throw error
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des documents:', error)
+      throw error
+    }
+  },
+
   // Upload d'un fichier
   async uploadFile(file: File, path: string): Promise<string> {
     try {

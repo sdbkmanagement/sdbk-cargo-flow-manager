@@ -22,7 +22,7 @@ const Cargo = () => {
     retry: 3,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const { data: stats } = useQuery({
@@ -98,7 +98,7 @@ const Cargo = () => {
   if (showForm) {
     return (
       <ChargementsForm
-        chargement={selectedChargement}
+        initialData={selectedChargement}
         onSuccess={handleFormSuccess}
         onCancel={handleFormCancel}
       />
@@ -125,10 +125,20 @@ const Cargo = () => {
         )}
       </div>
 
-      {stats && <ChargementsStats {...stats} />}
+      {stats && (
+        <ChargementsStats
+          totalChargements={stats.totalChargements}
+          chargementsLivres={stats.chargementsLivres}
+          chargementsEnCours={stats.chargementsEnCours}
+          chargementsAnnules={stats.chargementsAnnules}
+          hydrocarbures={stats.hydrocarbures}
+          bauxite={stats.bauxite}
+          volumeTotal={stats.volumeTotal}
+        />
+      )}
 
       <ChargementsTable
-        chargements={chargements}
+        data={chargements}
         onEdit={handleEditChargement}
         hasWritePermission={hasPermission('cargo_write')}
         onRefresh={() => queryClient.invalidateQueries({ queryKey: ['chargements'] })}

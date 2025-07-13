@@ -22,7 +22,7 @@ const Drivers = () => {
     retry: 3,
     retryDelay: 1000,
     staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const stats = useMemo(() => {

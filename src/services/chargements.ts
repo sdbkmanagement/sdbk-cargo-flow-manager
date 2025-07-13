@@ -120,6 +120,31 @@ export const chargementsService = {
     }
   },
 
+  // Mettre à jour le statut d'un chargement
+  async updateStatut(id: string, statut: 'charge' | 'livre' | 'annule') {
+    try {
+      const { data, error } = await supabase
+        .from('chargements')
+        .update({ 
+          statut, 
+          updated_at: new Date().toISOString() 
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur mise à jour statut chargement:', error)
+        throw error
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error)
+      throw error
+    }
+  },
+
   // Récupérer les statistiques
   async getStatistiques() {
     try {

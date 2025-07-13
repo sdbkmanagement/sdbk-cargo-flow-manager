@@ -5,6 +5,8 @@ import type { Database } from '@/integrations/supabase/types'
 type Vehicule = Database['public']['Tables']['vehicules']['Row']
 type VehiculeInsert = Database['public']['Tables']['vehicules']['Insert']
 type VehiculeUpdate = Database['public']['Tables']['vehicules']['Update']
+type MaintenanceVehicule = Database['public']['Tables']['maintenance_vehicules']['Row']
+type MaintenanceVehiculeInsert = Database['public']['Tables']['maintenance_vehicules']['Insert']
 
 export const vehiculesService = {
   // Récupérer tous les véhicules avec timeout
@@ -96,6 +98,69 @@ export const vehiculesService = {
     }
   },
 
+  // Récupérer les maintenances d'un véhicule
+  async getMaintenance(vehiculeId: string): Promise<MaintenanceVehicule[]> {
+    try {
+      const { data, error } = await supabase
+        .from('maintenance_vehicules')
+        .select('*')
+        .eq('vehicule_id', vehiculeId)
+        .order('date_maintenance', { ascending: false });
+
+      if (error) {
+        console.error('Erreur récupération maintenances:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Erreur lors de la récupération des maintenances:', error)
+      return []
+    }
+  },
+
+  // Ajouter une maintenance
+  async addMaintenance(maintenanceData: MaintenanceVehiculeInsert): Promise<MaintenanceVehicule | null> {
+    try {
+      const { data, error } = await supabase
+        .from('maintenance_vehicules')
+        .insert([maintenanceData])
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Erreur ajout maintenance:', error)
+        throw error
+      }
+
+      return data
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la maintenance:', error)
+      throw error
+    }
+  },
+
+  // Récupérer les documents d'un véhicule
+  async getDocuments(vehiculeId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('documents_vehicules')
+        .select('*')
+        .eq('vehicule_id', vehiculeId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur récupération documents:', error)
+        return []
+      }
+
+      return data || []
+    } catch (error) {
+      console.error('Erreur lors de la récupération des documents:', error)
+      return []
+    }
+  },
+
   // Récupérer les statistiques de la flotte
   async getFleetStats() {
     try {
@@ -172,6 +237,32 @@ export const vehiculesService = {
     } catch (error) {
       console.error('Erreur récupération bases:', error)
       return []
+    }
+  },
+
+  // Upload d'un fichier
+  async uploadFile(file: File, path: string): Promise<string> {
+    try {
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .upload(path, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Erreur upload fichier:', error)
+        throw error
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(data.path)
+
+      return urlData.publicUrl
+    } catch (error) {
+      console.error('Erreur lors de l\'upload du fichier:', error)
+      throw error
     }
   }
 }
