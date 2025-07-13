@@ -9,10 +9,31 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { RolePermissionManagement } from '@/components/admin/RolePermissionManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { AdminStats } from '@/components/admin/AdminStats';
+import { CreateAdminButton } from '@/components/admin/CreateAdminButton';
 
 const Administration = () => {
   const { user, hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Si aucun utilisateur connecté, afficher le bouton de création admin
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <Shield className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+            <CardTitle>Configuration initiale</CardTitle>
+            <CardDescription>
+              Créez votre premier compte administrateur pour commencer à utiliser le système.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="text-center">
+            <CreateAdminButton />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Vérifier si l'utilisateur est admin
   if (!hasRole('admin')) {
