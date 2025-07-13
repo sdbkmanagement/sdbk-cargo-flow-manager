@@ -29,82 +29,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserWithRole | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const createDefaultUser = (authUser: User): UserWithRole => {
+    // Vérifier si c'est l'admin par défaut
+    if (authUser.email === 'sdbkmanagement@gmail.com') {
+      return {
+        id: authUser.id,
+        nom: 'Admin',
+        prenom: 'SDBK',
+        email: authUser.email,
+        role: 'admin',
+        permissions: ['all']
+      };
+    }
+
+    // Utilisateur par défaut
+    return {
+      id: authUser.id,
+      nom: 'Utilisateur',
+      prenom: 'Nouveau',
+      email: authUser.email,
+      role: 'transport',
+      permissions: []
+    };
+  };
+
   const loadUser = async (authUser: User) => {
     try {
       console.log('Loading user data for:', authUser.email);
       
-      // Vérifier si c'est l'admin par défaut
-      if (authUser.email === 'sdbkmanagement@gmail.com') {
-        const userWithRole: UserWithRole = {
-          id: authUser.id,
-          nom: 'Admin',
-          prenom: 'SDBK',
-          email: authUser.email,
-          role: 'admin',
-          permissions: ['all']
-        };
-        console.log('Admin user loaded:', userWithRole);
-        setUser(userWithRole);
-        return;
-      }
-
-      // Essayer de charger depuis la table users
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', authUser.email)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error loading user data:', error);
-        // Si erreur, créer un utilisateur par défaut
-        const defaultUser: UserWithRole = {
-          id: authUser.id,
-          nom: 'Utilisateur',
-          prenom: 'Nouveau',
-          email: authUser.email,
-          role: 'transport',
-          permissions: []
-        };
-        setUser(defaultUser);
-        return;
-      }
-
-      if (data) {
-        const userWithRole: UserWithRole = {
-          id: data.id,
-          nom: data.last_name || 'Nom',
-          prenom: data.first_name || 'Prénom',
-          email: data.email,
-          role: (data.roles?.[0] as UserRole) || 'transport',
-          permissions: data.roles?.includes('admin') ? ['all'] : []
-        };
-
-        console.log('User loaded successfully:', userWithRole);
-        setUser(userWithRole);
-      } else {
-        // Créer un utilisateur par défaut si pas trouvé
-        const defaultUser: UserWithRole = {
-          id: authUser.id,
-          nom: 'Utilisateur',
-          prenom: 'Nouveau',
-          email: authUser.email,
-          role: 'transport',
-          permissions: []
-        };
-        setUser(defaultUser);
-      }
+      // Créer directement l'utilisateur par défaut pour éviter les blocages
+      const defaultUser = createDefaultUser(authUser);
+      setUser(defaultUser);
+      console.log('User loaded:', defaultUser);
+      
     } catch (error) {
       console.error('Error in loadUser:', error);
-      // En cas d'erreur, créer un utilisateur par défaut
-      const defaultUser: UserWithRole = {
-        id: authUser.id,
-        nom: 'Utilisateur',
-        prenom: 'Nouveau',
-        email: authUser.email,
-        role: 'transport',
-        permissions: []
-      };
+      // En cas d'erreur, créer quand même un utilisateur par défaut
+      const defaultUser = createDefaultUser(authUser);
       setUser(defaultUser);
     }
   };
@@ -116,15 +77,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         console.log('Initializing auth...');
         
-        const { data: { session } } = await supabase.auth.getSession();
+        // Définir un timeout pour éviter les blocages infinis
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth timeout')), 5000)
+        );
+        
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
         
         if (session?.user && mounted) {
           await loadUser(session.user);
+        } else if (mounted) {
+          console.log('No active session found');
         }
       } catch (error) {
         console.error('Error during auth initialization:', error);
       } finally {
         if (mounted) {
+          console.log('Auth initialization completed, setting loading to false');
           setLoading(false);
         }
       }

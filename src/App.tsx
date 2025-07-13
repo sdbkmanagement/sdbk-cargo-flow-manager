@@ -22,26 +22,15 @@ import DocumentStock from "./pages/DocumentStock";
 import Guide from "./pages/Guide";
 import NotFound from "./pages/NotFound";
 import { Loader2, Zap } from "lucide-react";
-import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
 const AppLayout = () => {
   const { user, loading } = useAuth();
-  const [minimumLoadingTime, setMinimumLoadingTime] = useState(true);
-
-  // Assurer un temps de chargement minimum pour éviter les flashs
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setMinimumLoadingTime(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
   console.log('AppLayout - User:', user, 'Loading:', loading);
 
-  if (loading || minimumLoadingTime) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-brand-blue via-blue-700 to-blue-800">
         <div className="text-center space-y-4">
@@ -53,7 +42,7 @@ const AppLayout = () => {
           </div>
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-white">SDBK Transport Manager</h2>
-            <p className="text-blue-200">Chargement en cours...</p>
+            <p className="text-blue-200">Initialisation...</p>
             <div className="w-48 bg-blue-700/30 rounded-full h-2 mx-auto">
               <div className="bg-brand-gold h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
             </div>
