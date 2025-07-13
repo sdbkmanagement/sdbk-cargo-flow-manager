@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck } from 'lucide-react';
+import { Truck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loading: authLoading } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,16 +25,40 @@ export const LoginForm = () => {
         title: "Connexion réussie",
         description: "Bienvenue dans SDBK Transport Manager",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login error:', error);
+      let errorMessage = "Identifiants invalides";
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Email ou mot de passe incorrect";
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = "Veuillez confirmer votre email avant de vous connecter";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Erreur de connexion",
-        description: "Identifiants invalides",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+        <Card className="w-full max-w-md">
+          <CardContent className="flex items-center justify-center p-8">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+            <span className="ml-2 text-lg">Chargement...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
@@ -59,8 +83,9 @@ export const LoginForm = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@sdbk.com"
+                placeholder="votre-email@sdbk.com"
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -72,20 +97,30 @@ export const LoginForm = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
+                disabled={isLoading}
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Connexion...' : 'Se connecter'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Connexion...
+                </>
+              ) : (
+                'Se connecter'
+              )}
             </Button>
           </form>
           
           <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-            <p className="text-sm font-medium mb-2">Comptes de démonstration :</p>
+            <p className="text-sm font-medium mb-2">Pour tester :</p>
             <div className="space-y-1 text-xs">
-              <p><strong>Admin :</strong> admin@sdbk.com</p>
-              <p><strong>Maintenance :</strong> maintenance@sdbk.com</p>
-              <p><strong>Transport :</strong> transport@sdbk.com</p>
-              <p className="text-slate-500 mt-2">Mot de passe : demo123</p>
+              <p className="text-slate-600">
+                Créez un compte admin via l'interface d'administration
+              </p>
+              <p className="text-slate-600">
+                ou utilisez le dashboard Supabase pour créer votre premier utilisateur
+              </p>
             </div>
           </div>
         </CardContent>

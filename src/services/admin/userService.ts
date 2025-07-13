@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SystemUser } from '@/types/admin';
 
@@ -58,93 +59,73 @@ export const userService = {
     statut: 'actif' | 'inactif' | 'suspendu';
     password?: string;
   }): Promise<SystemUser> {
-    console.log('Creating user with data:', userData);
+    console.log('Creating user with Supabase Auth:', userData);
     
     try {
-      // Désactiver temporairement RLS pour cette opération
-      const adminClient = supabase;
-      
-      // Convert to database format
-      const dbUser = {
-        id: crypto.randomUUID(),
+      if (!userData.password) {
+        throw new Error('Le mot de passe est requis');
+      }
+
+      // 1. Créer l'utilisateur via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: userData.email,
-        first_name: userData.prenom,
-        last_name: userData.nom,
-        roles: [userData.role as any],
-        status: userData.statut === 'actif' ? 'active' : 'inactive',
-        password_hash: userData.password || 'temporary_password_hash',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
+        password: userData.password,
+        user_metadata: {
+          first_name: userData.prenom,
+          last_name: userData.nom
+        },
+        email_confirm: true // Auto-confirmer l'email en mode admin
+      });
 
-      console.log('Inserting user with database format:', dbUser);
+      if (authError) {
+        console.error('Auth user creation error:', authError);
+        throw new Error(`Impossible de créer le compte: ${authError.message}`);
+      }
 
-      // Utiliser une approche qui contourne RLS
-      const { data, error } = await adminClient
+      if (!authData.user) {
+        throw new Error('Aucun utilisateur créé');
+      }
+
+      console.log('Auth user created successfully:', authData.user.id);
+
+      // 2. Attendre un peu pour que le trigger fonctionne
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 3. Mettre à jour le rôle dans notre table users
+      const { data: updatedUser, error: updateError } = await supabase
         .from('users')
-        .insert([dbUser])
+        .update({
+          roles: [userData.role as any],
+          first_name: userData.prenom,
+          last_name: userData.nom,
+          status: userData.statut === 'actif' ? 'active' : 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', authData.user.id)
         .select()
         .single();
 
-      if (error) {
-        console.error('Insert error details:', {
-          error,
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
-        
-        // Si l'erreur est liée à RLS, essayer une approche alternative
-        if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
-          console.log('RLS error detected, trying alternative approach...');
-          
-          // Créer l'utilisateur avec une requête brute
-          const { data: rawData, error: rawError } = await adminClient
-            .rpc('admin_create_user', {
-              p_email: userData.email,
-              p_first_name: userData.prenom,
-              p_last_name: userData.nom,
-              p_role: userData.role,
-              p_status: userData.statut === 'actif' ? 'active' : 'inactive'
-            });
-
-          if (rawError) {
-            console.error('Raw RPC error:', rawError);
-            throw new Error(`Impossible de créer l'utilisateur: ${rawError.message}`);
-          }
-
-          // Si la RPC n'existe pas, créer l'utilisateur manuellement
-          console.log('RPC not available, creating user manually...');
-          return {
-            id: dbUser.id,
-            email: dbUser.email,
-            nom: dbUser.last_name,
-            prenom: dbUser.first_name,
-            role: dbUser.roles[0] || 'transport',
-            statut: dbUser.status === 'active' ? 'actif' : 'inactif',
-            created_at: dbUser.created_at,
-            updated_at: dbUser.updated_at,
-            created_by: undefined
-          };
-        }
-        
-        throw error;
+      if (updateError) {
+        console.error('User profile update error:', updateError);
+        // Essayer de nettoyer l'utilisateur auth créé
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw new Error(`Impossible de configurer le profil utilisateur: ${updateError.message}`);
       }
-      
-      console.log('User created successfully:', data);
-      
+
+      console.log('User profile updated successfully:', updatedUser);
+
       return {
-        id: data.id,
-        email: data.email,
-        nom: data.last_name || '',
-        prenom: data.first_name || '',
-        role: data.roles?.[0] || 'transport',
-        statut: data.status === 'active' ? 'actif' : 'inactif',
-        created_at: data.created_at || '',
-        updated_at: data.updated_at || '',
-        created_by: data.created_by || undefined
+        id: updatedUser.id,
+        email: updatedUser.email,
+        nom: updatedUser.last_name || '',
+        prenom: updatedUser.first_name || '',
+        role: updatedUser.roles?.[0] || 'transport',
+        statut: updatedUser.status === 'active' ? 'actif' : 'inactif',
+        created_at: updatedUser.created_at || '',
+        updated_at: updatedUser.updated_at || '',
+        created_by: updatedUser.created_by || undefined
       };
+
     } catch (error: any) {
       console.error('Complete error in createUser:', error);
       
@@ -152,10 +133,12 @@ export const userService = {
       let errorMessage = "Impossible de créer l'utilisateur.";
       
       if (error.message) {
-        if (error.message.includes('duplicate key')) {
+        if (error.message.includes('User already registered')) {
           errorMessage = "Un utilisateur avec cet email existe déjà.";
-        } else if (error.message.includes('row-level security')) {
-          errorMessage = "Erreur de permissions : Les politiques de sécurité empêchent la création.";
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = "Format d'email invalide.";
+        } else if (error.message.includes('Password should be')) {
+          errorMessage = "Le mot de passe doit contenir au moins 6 caractères.";
         } else {
           errorMessage = `Erreur : ${error.message}`;
         }
@@ -208,17 +191,43 @@ export const userService = {
   },
 
   async deleteUser(id: string): Promise<void> {
-    const { error } = await supabase
+    // Supprimer d'abord de la table users (cascade devrait s'occuper d'auth.users)
+    const { error: profileError } = await supabase
       .from('users')
       .delete()
       .eq('id', id);
 
-    if (error) throw error;
+    if (profileError) throw profileError;
+
+    // Supprimer aussi de Supabase Auth
+    try {
+      const { error: authError } = await supabase.auth.admin.deleteUser(id);
+      if (authError) {
+        console.warn('Could not delete auth user:', authError.message);
+        // Ne pas faire échouer l'opération si la suppression auth échoue
+      }
+    } catch (error) {
+      console.warn('Could not delete auth user:', error);
+    }
   },
 
   async resetPassword(userId: string): Promise<{ tempPassword: string }> {
-    // For now, return a mock temporary password
-    // In a real implementation, this would generate and set a new password
-    return { tempPassword: 'TempPass123!' };
+    // Générer un mot de passe temporaire
+    const tempPassword = 'TempPass' + Math.random().toString(36).substring(2, 8) + '!';
+    
+    try {
+      // Mettre à jour le mot de passe via Supabase Auth Admin
+      const { error } = await supabase.auth.admin.updateUserById(userId, {
+        password: tempPassword
+      });
+
+      if (error) {
+        throw new Error(`Impossible de réinitialiser le mot de passe: ${error.message}`);
+      }
+
+      return { tempPassword };
+    } catch (error: any) {
+      throw new Error(`Erreur lors de la réinitialisation: ${error.message}`);
+    }
   }
 };

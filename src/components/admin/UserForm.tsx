@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { adminService } from '@/services/admin';
 import { ROLES, ROLE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
 
 interface UserFormProps {
   user?: SystemUser;
@@ -40,7 +41,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
-      console.log('UserForm: Starting user creation with data:', data);
+      console.log('UserForm: Starting user creation with Supabase Auth:', data);
       try {
         const result = await adminService.createUser({
           email: data.email,
@@ -60,27 +61,15 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
     onSuccess: () => {
       toast({
         title: "Utilisateur créé",
-        description: "Le nouvel utilisateur a été créé avec succès."
+        description: "Le nouvel utilisateur a été créé avec succès via Supabase Auth."
       });
       onSuccess();
     },
     onError: (error: any) => {
       console.error('UserForm: Creation error:', error);
-      let errorMessage = "Impossible de créer l'utilisateur.";
-      
-      if (error.message) {
-        if (error.message.includes('row-level security')) {
-          errorMessage = "Erreur de permissions : Vous n'avez pas les droits pour créer un utilisateur.";
-        } else if (error.message.includes('duplicate key')) {
-          errorMessage = "Un utilisateur avec cet email existe déjà.";
-        } else {
-          errorMessage = `Erreur : ${error.message}`;
-        }
-      }
-      
       toast({
         title: "Erreur de création",
-        description: errorMessage,
+        description: error.message || "Impossible de créer l'utilisateur.",
         variant: "destructive"
       });
     }
@@ -133,6 +122,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const watchedRole = watch('role');
   const watchedStatut = watch('statut');
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -145,6 +135,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                 id="prenom"
                 {...register('prenom', { required: 'Le prénom est requis' })}
                 placeholder="Prénom de l'utilisateur"
+                disabled={isLoading}
               />
               {errors.prenom && (
                 <p className="text-sm text-red-600">{errors.prenom.message}</p>
@@ -157,6 +148,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                 id="nom"
                 {...register('nom', { required: 'Le nom est requis' })}
                 placeholder="Nom de l'utilisateur"
+                disabled={isLoading}
               />
               {errors.nom && (
                 <p className="text-sm text-red-600">{errors.nom.message}</p>
@@ -176,7 +168,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                   }
                 })}
                 placeholder="email@sdbk.com"
-                disabled={isEdit}
+                disabled={isEdit || isLoading}
               />
               {errors.email && (
                 <p className="text-sm text-red-600">{errors.email.message}</p>
@@ -196,11 +188,15 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                       message: 'Le mot de passe doit contenir au moins 6 caractères'
                     }
                   })}
-                  placeholder="Saisissez le mot de passe"
+                  placeholder="Saisissez le mot de passe (min. 6 caractères)"
+                  disabled={isLoading}
                 />
                 {errors.password && (
                   <p className="text-sm text-red-600">{errors.password.message}</p>
                 )}
+                <p className="text-xs text-gray-500">
+                  L'utilisateur pourra changer son mot de passe après sa première connexion
+                </p>
               </div>
             )}
 
@@ -209,6 +205,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
               <Select 
                 value={watchedRole} 
                 onValueChange={(value: string) => setValue('role', value)}
+                disabled={isLoading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un rôle" />
@@ -228,6 +225,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
               <Select 
                 value={watchedStatut} 
                 onValueChange={(value: 'actif' | 'inactif' | 'suspendu') => setValue('statut', value)}
+                disabled={isLoading}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un statut" />
@@ -240,15 +238,33 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
               </Select>
             </div>
           </div>
+
+          {!isEdit && (
+            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Authentification Supabase :</strong> Un compte sera créé automatiquement 
+                avec l'email et le mot de passe fournis. L'utilisateur pourra se connecter 
+                immédiatement après la création.
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <div className="flex justify-end gap-3">
         <Button 
           type="submit" 
-          disabled={createMutation.isPending || updateMutation.isPending}
+          disabled={isLoading}
+          className="min-w-[120px]"
         >
-          {createMutation.isPending || updateMutation.isPending ? 'Traitement...' : (isEdit ? 'Modifier' : 'Créer')}
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {isEdit ? 'Modification...' : 'Création...'}
+            </>
+          ) : (
+            isEdit ? 'Modifier' : 'Créer'
+          )}
         </Button>
       </div>
     </form>

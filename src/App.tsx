@@ -6,153 +6,108 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { UserMenu } from "@/components/layout/UserMenu";
 import { LoginForm } from "@/components/auth/LoginForm";
+import Index from "./pages/Index";
+import Dashboard from "./pages/Dashboard";
 import Fleet from "./pages/Fleet";
 import Drivers from "./pages/Drivers";
 import Missions from "./pages/Missions";
 import Cargo from "./pages/Cargo";
 import Billing from "./pages/Billing";
-import Validations from "./pages/Validations";
 import RH from "./pages/RH";
-import Dashboard from "./pages/Dashboard";
+import Validations from "./pages/Validations";
+import Administration from "./pages/Administration";
+import DocumentStock from "./pages/DocumentStock";
 import Guide from "./pages/Guide";
 import NotFound from "./pages/NotFound";
-import Administration from "./pages/Administration";
+import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-// Composant pour protéger les routes
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-  
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <span className="ml-2 text-lg">Chargement...</span>
+      </div>
+    );
+  }
+
   if (!user) {
     return <LoginForm />;
   }
-  
+
   return <>{children}</>;
 };
 
-// Layout principal avec sidebar
-const MainLayout = ({ children }: { children: React.ReactNode }) => {
+const AppLayout = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+        <span className="ml-2 text-lg">Chargement...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginForm />;
+  }
+
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
-        <div className="p-6">
-          {children}
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col">
+        <header className="bg-white shadow-sm border-b">
+          <div className="flex items-center justify-between px-6 py-4">
+            <h1 className="text-2xl font-semibold text-gray-900">
+              SDBK Transport Manager
+            </h1>
+            <UserMenu />
+          </div>
+        </header>
+        <main className="flex-1 p-6 overflow-auto">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/fleet" element={<Fleet />} />
+            <Route path="/drivers" element={<Drivers />} />
+            <Route path="/missions" element={<Missions />} />
+            <Route path="/cargo" element={<Cargo />} />
+            <Route path="/billing" element={<Billing />} />
+            <Route path="/rh" element={<RH />} />
+            <Route path="/validations" element={<Validations />} />
+            <Route path="/administration" element={<Administration />} />
+            <Route path="/documents" element={<DocumentStock />} />
+            <Route path="/guide" element={<Guide />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </main>
+      </div>
     </div>
   );
 };
 
-function App() {
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
+      <TooltipProvider>
+        <AuthProvider>
           <BrowserRouter>
-            <Routes>
-              {/* Redirection automatique vers le tableau de bord */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              
-              {/* Routes protégées avec layout */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Dashboard />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/fleet" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Fleet />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/drivers" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Drivers />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/missions" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Missions />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/cargo" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Cargo />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/billing" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Billing />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/validations" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Validations />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/rh" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <RH />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/administration" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Administration />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/guide" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Guide />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-              
-              {/* Route pour les pages non trouvées */}
-              <Route path="*" element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <NotFound />
-                  </MainLayout>
-                </ProtectedRoute>
-              } />
-            </Routes>
+            <AppLayout />
+            <Toaster />
+            <Sonner />
           </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </TooltipProvider>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;

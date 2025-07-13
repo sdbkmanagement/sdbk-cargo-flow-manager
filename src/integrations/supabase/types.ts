@@ -2088,6 +2088,16 @@ export type Database = {
       }
     }
     Functions: {
+      admin_create_user_with_auth: {
+        Args: {
+          p_email: string
+          p_password: string
+          p_first_name: string
+          p_last_name: string
+          p_role: string
+        }
+        Returns: Json
+      }
       admin_user_exists: {
         Args: Record<PropertyKey, never>
         Returns: boolean
