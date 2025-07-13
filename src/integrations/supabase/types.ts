@@ -1637,15 +1637,7 @@ export type Database = {
           target_type?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_audit_log_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_sessions: {
         Row: {
@@ -1675,15 +1667,7 @@ export type Database = {
           user_agent?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_sessions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       users: {
         Row: {
@@ -1703,11 +1687,11 @@ export type Database = {
           created_at?: string | null
           created_by?: string | null
           email: string
-          first_name: string
+          first_name?: string
           id?: string
           last_login?: string | null
-          last_name: string
-          password_hash: string
+          last_name?: string
+          password_hash?: string
           roles?: Database["public"]["Enums"]["user_role"][]
           status?: string
           updated_at?: string | null
@@ -1725,15 +1709,7 @@ export type Database = {
           status?: string
           updated_at?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "users_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       validation_etapes: {
         Row: {
@@ -2141,15 +2117,17 @@ export type Database = {
     }
     Enums: {
       user_role:
+        | "admin"
         | "transport"
         | "maintenance"
+        | "rh"
+        | "administratif"
         | "hsecq"
         | "obc"
-        | "rh"
         | "facturation"
         | "direction"
-        | "administratif"
-        | "admin"
+        | "transitaire"
+        | "directeur_exploitation"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2278,15 +2256,17 @@ export const Constants = {
   public: {
     Enums: {
       user_role: [
+        "admin",
         "transport",
         "maintenance",
+        "rh",
+        "administratif",
         "hsecq",
         "obc",
-        "rh",
         "facturation",
         "direction",
-        "administratif",
-        "admin",
+        "transitaire",
+        "directeur_exploitation",
       ],
     },
   },
