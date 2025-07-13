@@ -1,4 +1,3 @@
-
 export type UserRole = 
   | 'maintenance' 
   | 'administratif' 
@@ -8,7 +7,9 @@ export type UserRole =
   | 'facturation' 
   | 'rh' 
   | 'direction' 
-  | 'admin';
+  | 'admin'
+  | 'transitaire'
+  | 'directeur_exploitation';
 
 export interface User {
   id: string;
