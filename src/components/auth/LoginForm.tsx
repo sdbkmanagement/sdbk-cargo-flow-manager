@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { CreateAdminButton } from '@/components/admin/CreateAdminButton';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -112,11 +113,22 @@ export const LoginForm = () => {
             </Button>
           </form>
           
+          {/* Bouton de création de compte admin temporaire */}
+          <div className="mt-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-lg">
+            <h3 className="text-sm font-medium text-red-800 mb-2">
+              Première connexion ?
+            </h3>
+            <p className="text-xs text-red-700 mb-3">
+              Si c'est votre première utilisation, créez d'abord un compte administrateur.
+            </p>
+            <CreateAdminButton />
+          </div>
+          
           <div className="mt-6 p-4 bg-slate-50 rounded-lg">
             <p className="text-sm font-medium mb-2">Pour tester :</p>
             <div className="space-y-1 text-xs">
               <p className="text-slate-600">
-                Créez un compte admin via l'interface d'administration
+                Créez un compte admin via le bouton ci-dessus
               </p>
               <p className="text-slate-600">
                 ou utilisez le dashboard Supabase pour créer votre premier utilisateur
