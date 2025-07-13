@@ -11,8 +11,15 @@ export const userService = {
     
     if (error) throw error;
     return (data || []).map(user => ({
-      ...user,
-      statut: user.statut as 'actif' | 'inactif' | 'suspendu'
+      id: user.id,
+      email: user.email,
+      nom: user.nom || user.last_name || '',
+      prenom: user.prenom || user.first_name || '',
+      role: user.role || 'transport',
+      statut: user.statut || user.status || 'actif',
+      created_at: user.created_at || '',
+      updated_at: user.updated_at || '',
+      created_by: user.created_by
     }));
   },
 
@@ -25,8 +32,15 @@ export const userService = {
     
     if (error) throw error;
     return data ? {
-      ...data,
-      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+      id: data.id,
+      email: data.email,
+      nom: data.nom || data.last_name || '',
+      prenom: data.prenom || data.first_name || '',
+      role: data.role || 'transport',
+      statut: data.statut || data.status || 'actif',
+      created_at: data.created_at || '',
+      updated_at: data.updated_at || '',
+      created_by: data.created_by
     } : null;
   },
 
@@ -59,7 +73,10 @@ export const userService = {
         prenom: user.prenom,
         email: user.email,
         role: user.role,
-        statut: user.statut
+        statut: user.statut,
+        first_name: user.prenom,
+        last_name: user.nom,
+        password_hash: 'managed_by_auth'
       };
 
       console.log('Données à insérer dans users:', userData);
@@ -80,8 +97,15 @@ export const userService = {
       console.log('Utilisateur créé avec succès:', data);
       
       return {
-        ...data,
-        statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+        id: data.id,
+        email: data.email,
+        nom: data.nom || data.last_name || '',
+        prenom: data.prenom || data.first_name || '',
+        role: data.role || 'transport',
+        statut: data.statut || data.status || 'actif',
+        created_at: data.created_at || '',
+        updated_at: data.updated_at || '',
+        created_by: data.created_by
       };
     } catch (error) {
       console.error('Erreur complète lors de la création:', error);
@@ -90,17 +114,34 @@ export const userService = {
   },
 
   async updateUser(id: string, updates: Partial<SystemUser>): Promise<SystemUser> {
+    const updateData = {
+      nom: updates.nom,
+      prenom: updates.prenom,
+      role: updates.role,
+      statut: updates.statut,
+      first_name: updates.prenom,
+      last_name: updates.nom,
+      status: updates.statut
+    };
+
     const { data, error } = await supabase
       .from('users')
-      .update(updates)
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
     return {
-      ...data,
-      statut: data.statut as 'actif' | 'inactif' | 'suspendu'
+      id: data.id,
+      email: data.email,
+      nom: data.nom || data.last_name || '',
+      prenom: data.prenom || data.first_name || '',
+      role: data.role || 'transport',
+      statut: data.statut || data.status || 'actif',
+      created_at: data.created_at || '',
+      updated_at: data.updated_at || '',
+      created_by: data.created_by
     };
   },
 

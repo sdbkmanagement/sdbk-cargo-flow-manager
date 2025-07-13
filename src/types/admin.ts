@@ -1,15 +1,15 @@
 
 import { Database } from '@/integrations/supabase/types';
 
-export type AppRole = Database['public']['Enums']['app_role'];
-export type AppPermission = Database['public']['Enums']['app_permission'];
+export type AppRole = 'maintenance' | 'administratif' | 'hsecq' | 'obc' | 'transport' | 'rh' | 'facturation' | 'direction' | 'admin' | 'transitaire' | 'directeur_exploitation';
+export type AppPermission = 'read' | 'write' | 'delete' | 'validate' | 'export' | 'admin';
 
 export interface SystemUser {
   id: string;
   email: string;
   nom: string;
   prenom: string;
-  role: AppRole;
+  role: string;
   statut: 'actif' | 'inactif' | 'suspendu';
   created_at: string;
   updated_at: string;
@@ -18,9 +18,9 @@ export interface SystemUser {
 
 export interface RolePermission {
   id: string;
-  role: AppRole;
+  role: string;
   module: string;
-  permission: AppPermission;
+  permission: string;
   created_at: string;
 }
 
@@ -56,7 +56,7 @@ export const MODULES = [
   'admin'
 ] as const;
 
-export const ROLES: AppRole[] = [
+export const ROLES: string[] = [
   'maintenance',
   'administratif',
   'hsecq', 
@@ -70,7 +70,7 @@ export const ROLES: AppRole[] = [
   'directeur_exploitation'
 ];
 
-export const PERMISSIONS: AppPermission[] = [
+export const PERMISSIONS: string[] = [
   'read',
   'write',
   'delete',
@@ -79,7 +79,7 @@ export const PERMISSIONS: AppPermission[] = [
   'admin'
 ];
 
-export const ROLE_LABELS: Record<AppRole, string> = {
+export const ROLE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
   administratif: 'Administratif',
   hsecq: 'HSECQ',
@@ -104,7 +104,7 @@ export const MODULE_LABELS: Record<string, string> = {
   admin: 'Administration'
 };
 
-export const PERMISSION_LABELS: Record<AppPermission, string> = {
+export const PERMISSION_LABELS: Record<string, string> = {
   read: 'Lecture',
   write: 'Écriture',
   delete: 'Suppression',

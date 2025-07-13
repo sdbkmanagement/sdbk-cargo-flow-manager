@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { adminService } from '@/services/admin';
-import { ROLES, ROLE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
+import { ROLES, ROLE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 
 interface UserFormProps {
@@ -21,7 +21,7 @@ interface UserFormData {
   nom: string;
   prenom: string;
   password?: string;
-  role: AppRole;
+  role: string;
   statut: 'actif' | 'inactif' | 'suspendu';
 }
 
@@ -40,7 +40,11 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const createMutation = useMutation({
     mutationFn: (data: UserFormData) => adminService.createUser({
-      ...data,
+      email: data.email,
+      nom: data.nom,
+      prenom: data.prenom,
+      role: data.role as any,
+      statut: data.statut,
       password: data.password!
     }),
     onSuccess: () => {
@@ -60,7 +64,17 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: UserFormData) => adminService.updateUser(user!.id, data),
+    mutationFn: (data: UserFormData) => adminService.updateUser(user!.id, {
+      nom: data.nom,
+      prenom: data.prenom,
+      role: data.role as any,
+      statut: data.statut,
+      email: data.email,
+      id: user!.id,
+      created_at: user!.created_at,
+      updated_at: user!.updated_at,
+      created_by: user!.created_by
+    }),
     onSuccess: () => {
       toast({
         title: "Utilisateur modifié",
@@ -162,7 +176,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
               <Label htmlFor="role">Rôle *</Label>
               <Select 
                 value={watchedRole} 
-                onValueChange={(value: AppRole) => setValue('role', value)}
+                onValueChange={(value: string) => setValue('role', value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un rôle" />
@@ -170,7 +184,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                 <SelectContent>
                   {ROLES.map((role) => (
                     <SelectItem key={role} value={role}>
-                      {ROLE_LABELS[role]}
+                      {ROLE_LABELS[role as keyof typeof ROLE_LABELS] || role}
                     </SelectItem>
                   ))}
                 </SelectContent>

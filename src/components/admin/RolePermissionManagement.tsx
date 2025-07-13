@@ -9,11 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Shield, Save } from 'lucide-react';
 import { adminService } from '@/services/admin';
-import { ROLES, ROLE_LABELS, MODULES, MODULE_LABELS, PERMISSIONS, PERMISSION_LABELS, type AppRole, type AppPermission } from '@/types/admin';
+import { ROLES, ROLE_LABELS, MODULES, MODULE_LABELS, PERMISSIONS, PERMISSION_LABELS } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 
 export const RolePermissionManagement = () => {
-  const [selectedRole, setSelectedRole] = useState<AppRole>('transport');
+  const [selectedRole, setSelectedRole] = useState<string>('transport');
   const queryClient = useQueryClient();
 
   const { data: allPermissions = [], isLoading } = useQuery({
@@ -29,9 +29,9 @@ export const RolePermissionManagement = () => {
 
   const updatePermissionsMutation = useMutation({
     mutationFn: ({ role, module, permissions }: { 
-      role: AppRole; 
+      role: string; 
       module: string; 
-      permissions: AppPermission[] 
+      permissions: string[] 
     }) => adminService.updateRolePermissions(role, module, permissions),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
@@ -49,15 +49,15 @@ export const RolePermissionManagement = () => {
     }
   });
 
-  const getPermissionsForModule = (module: string): AppPermission[] => {
+  const getPermissionsForModule = (module: string): string[] => {
     return rolePermissions
       .filter(p => p.module === module)
       .map(p => p.permission);
   };
 
-  const handlePermissionChange = (module: string, permission: AppPermission, checked: boolean) => {
+  const handlePermissionChange = (module: string, permission: string, checked: boolean) => {
     const currentPermissions = getPermissionsForModule(module);
-    let newPermissions: AppPermission[];
+    let newPermissions: string[];
 
     if (checked) {
       newPermissions = [...currentPermissions, permission];
@@ -72,8 +72,8 @@ export const RolePermissionManagement = () => {
     });
   };
 
-  const getRoleColor = (role: AppRole) => {
-    const colors = {
+  const getRoleColor = (role: string) => {
+    const colors: Record<string, string> = {
       admin: 'bg-red-100 text-red-700 border-red-200',
       direction: 'bg-purple-100 text-purple-700 border-purple-200',
       transport: 'bg-blue-100 text-blue-700 border-blue-200',
@@ -111,7 +111,7 @@ export const RolePermissionManagement = () => {
                 <label className="text-sm font-medium mb-2 block">
                   Sélectionner un rôle à configurer :
                 </label>
-                <Select value={selectedRole} onValueChange={(value: AppRole) => setSelectedRole(value)}>
+                <Select value={selectedRole} onValueChange={(value: string) => setSelectedRole(value)}>
                   <SelectTrigger className="w-full max-w-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -120,7 +120,7 @@ export const RolePermissionManagement = () => {
                       <SelectItem key={role} value={role}>
                         <div className="flex items-center gap-2">
                           <Badge className={getRoleColor(role)}>
-                            {ROLE_LABELS[role]}
+                            {ROLE_LABELS[role] || role}
                           </Badge>
                         </div>
                       </SelectItem>
@@ -140,7 +140,7 @@ export const RolePermissionManagement = () => {
                       <TableHead key={permission} className="text-center min-w-[120px]">
                         <div className="flex flex-col items-center gap-1">
                           <Badge variant="outline" className="text-xs">
-                            {PERMISSION_LABELS[permission]}
+                            {PERMISSION_LABELS[permission] || permission}
                           </Badge>
                         </div>
                       </TableHead>
@@ -156,7 +156,7 @@ export const RolePermissionManagement = () => {
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <Badge variant="secondary">
-                              {MODULE_LABELS[module]}
+                              {MODULE_LABELS[module] || module}
                             </Badge>
                           </div>
                         </TableCell>
@@ -182,7 +182,7 @@ export const RolePermissionManagement = () => {
             <Card className="bg-slate-50">
               <CardHeader>
                 <CardTitle className="text-lg">
-                  Résumé des permissions - {ROLE_LABELS[selectedRole]}
+                  Résumé des permissions - {ROLE_LABELS[selectedRole] || selectedRole}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -195,7 +195,7 @@ export const RolePermissionManagement = () => {
                     return (
                       <div key={module} className="space-y-2">
                         <h4 className="font-medium text-sm">
-                          {MODULE_LABELS[module]}
+                          {MODULE_LABELS[module] || module}
                         </h4>
                         <div className="flex flex-wrap gap-1">
                           {modulePermissions.map(permission => (
@@ -204,7 +204,7 @@ export const RolePermissionManagement = () => {
                               variant="outline" 
                               className="text-xs"
                             >
-                              {PERMISSION_LABELS[permission]}
+                              {PERMISSION_LABELS[permission] || permission}
                             </Badge>
                           ))}
                         </div>

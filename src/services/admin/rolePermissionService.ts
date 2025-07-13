@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Service simplifié pour les rôles et permissions
 export const rolePermissionService = {
   async getUserRole(): Promise<string | null> {
     try {
@@ -30,6 +29,51 @@ export const rolePermissionService = {
     } catch (error) {
       console.error('Erreur lors de la vérification du rôle:', error);
       return false;
+    }
+  },
+
+  async getRolePermissions() {
+    const { data, error } = await supabase
+      .from('role_permissions')
+      .select('*')
+      .order('role', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async getPermissionsByRole(role: string) {
+    const { data, error } = await supabase
+      .from('role_permissions')
+      .select('*')
+      .eq('role', role)
+      .order('module', { ascending: true });
+    
+    if (error) throw error;
+    return data || [];
+  },
+
+  async updateRolePermissions(role: string, module: string, permissions: string[]) {
+    // Supprimer les permissions existantes pour ce rôle et module
+    await supabase
+      .from('role_permissions')
+      .delete()
+      .eq('role', role)
+      .eq('module', module);
+
+    // Insérer les nouvelles permissions
+    if (permissions.length > 0) {
+      const permissionsData = permissions.map(permission => ({
+        role,
+        module,
+        permission
+      }));
+
+      const { error } = await supabase
+        .from('role_permissions')
+        .insert(permissionsData);
+
+      if (error) throw error;
     }
   }
 };
