@@ -1,5 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { SystemUser } from '@/types/admin';
+import type { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 export const userService = {
   async getAllUsers(): Promise<SystemUser[]> {
@@ -65,6 +69,9 @@ export const userService = {
         throw new Error('Le mot de passe est requis');
       }
 
+      // Mapper le rôle vers le type correct
+      const mappedRole = this.mapRoleToDbType(userData.role);
+
       // 1. Créer l'utilisateur via Supabase Auth
       console.log('Step 1: Creating Auth user...');
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -114,7 +121,7 @@ export const userService = {
             email: userData.email,
             first_name: userData.prenom,
             last_name: userData.nom,
-            roles: [userData.role],
+            roles: [mappedRole],
             status: userData.statut === 'actif' ? 'active' : 'inactive',
             password_hash: 'managed_by_supabase_auth',
             created_at: new Date().toISOString(),
@@ -149,7 +156,7 @@ export const userService = {
       const { data: updatedUser, error: updateError } = await supabase
         .from('users')
         .update({
-          roles: [userData.role],
+          roles: [mappedRole],
           first_name: userData.prenom,
           last_name: userData.nom,
           status: userData.statut === 'actif' ? 'active' : 'inactive',
@@ -202,13 +209,32 @@ export const userService = {
     }
   },
 
+  // Fonction helper pour mapper les rôles vers les types de base de données
+  mapRoleToDbType(role: string): UserRole {
+    const roleMapping: Record<string, UserRole> = {
+      'maintenance': 'maintenance',
+      'administratif': 'administratif',
+      'hsecq': 'hsecq',
+      'obc': 'obc',
+      'transport': 'transport',
+      'rh': 'rh',
+      'facturation': 'facturation',
+      'direction': 'direction',
+      'admin': 'admin',
+      'transitaire': 'transport', // Fallback vers transport
+      'directeur_exploitation': 'direction' // Fallback vers direction
+    };
+    
+    return roleMapping[role] || 'transport';
+  },
+
   async updateUser(id: string, userData: Partial<SystemUser>): Promise<SystemUser> {
     // Convert to database format
     const dbUpdate: any = {};
     if (userData.email) dbUpdate.email = userData.email;
     if (userData.prenom) dbUpdate.first_name = userData.prenom;
     if (userData.nom) dbUpdate.last_name = userData.nom;
-    if (userData.role) dbUpdate.roles = [userData.role as any];
+    if (userData.role) dbUpdate.roles = [this.mapRoleToDbType(userData.role)];
     if (userData.statut) dbUpdate.status = userData.statut === 'actif' ? 'active' : 'inactive';
 
     const { data, error } = await supabase

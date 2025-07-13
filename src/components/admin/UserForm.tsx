@@ -26,6 +26,25 @@ interface UserFormData {
   statut: 'actif' | 'inactif' | 'suspendu';
 }
 
+// Fonction helper pour mapper les rôles vers les types de base de données
+const mapRoleToDbType = (role: string) => {
+  const roleMapping: Record<string, string> = {
+    'maintenance': 'maintenance',
+    'administratif': 'administratif',
+    'hsecq': 'hsecq',
+    'obc': 'obc',
+    'transport': 'transport',
+    'rh': 'rh',
+    'facturation': 'facturation',
+    'direction': 'direction',
+    'admin': 'admin',
+    'transitaire': 'transport', // Fallback vers transport
+    'directeur_exploitation': 'direction' // Fallback vers direction
+  };
+  
+  return roleMapping[role] || 'transport';
+};
+
 export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   const isEdit = !!user;
   
@@ -46,6 +65,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
       if (!data.password) {
         throw new Error('Le mot de passe est requis');
       }
+
+      const mappedRole = mapRoleToDbType(data.role);
 
       // 1. Créer l'utilisateur via Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -73,7 +94,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
       const { error: updateError } = await supabase
         .from('users')
         .update({
-          roles: [data.role as any],
+          roles: [mappedRole],
           first_name: data.prenom,
           last_name: data.nom,
           status: data.statut === 'actif' ? 'active' : 'inactive',
@@ -108,12 +129,14 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const updateMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
+      const mappedRole = mapRoleToDbType(data.role);
+      
       const { error } = await supabase
         .from('users')
         .update({
           first_name: data.prenom,
           last_name: data.nom,
-          roles: [data.role as any],
+          roles: [mappedRole],
           status: data.statut === 'actif' ? 'active' : 'inactive',
           updated_at: new Date().toISOString()
         })
