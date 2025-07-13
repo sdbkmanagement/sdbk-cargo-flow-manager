@@ -124,7 +124,19 @@ const Missions = () => {
         )}
       </div>
 
-      {stats && <MissionsStats {...stats} />}
+      {stats && (
+        <MissionsStats
+          total={stats.total}
+          en_attente={stats.en_attente}
+          en_cours={stats.en_cours}
+          terminees={stats.terminees}
+          annulees={stats.annulees}
+          ce_mois={stats.ce_mois || 0}
+          hydrocarbures={stats.hydrocarbures}
+          bauxite={stats.bauxite}
+          volume_total={stats.volume_total || 0}
+        />
+      )}
 
       <MissionsTable
         missions={missions}

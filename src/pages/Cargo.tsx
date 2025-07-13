@@ -98,7 +98,6 @@ const Cargo = () => {
   if (showForm) {
     return (
       <ChargementsForm
-        initialData={selectedChargement}
         onSuccess={handleFormSuccess}
         onCancel={handleFormCancel}
       />

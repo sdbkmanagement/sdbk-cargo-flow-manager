@@ -114,7 +114,7 @@ export const missionsService = {
   async getStats() {
     try {
       const { data: missions, error } = await Promise.race([
-        supabase.from('missions').select('statut, type_transport'),
+        supabase.from('missions').select('statut, type_transport, volume_poids, created_at'),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Timeout')), 5000)
         )
@@ -128,10 +128,15 @@ export const missionsService = {
           en_cours: 0,
           terminees: 0,
           annulees: 0,
+          ce_mois: 0,
           hydrocarbures: 0,
-          bauxite: 0
+          bauxite: 0,
+          volume_total: 0
         }
       }
+
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
 
       const stats = {
         total: missions?.length || 0,
@@ -139,8 +144,13 @@ export const missionsService = {
         en_cours: missions?.filter(m => m.statut === 'en_cours').length || 0,
         terminees: missions?.filter(m => m.statut === 'terminee').length || 0,
         annulees: missions?.filter(m => m.statut === 'annulee').length || 0,
+        ce_mois: missions?.filter(m => {
+          const createdDate = new Date(m.created_at);
+          return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
+        }).length || 0,
         hydrocarbures: missions?.filter(m => m.type_transport === 'hydrocarbures').length || 0,
-        bauxite: missions?.filter(m => m.type_transport === 'bauxite').length || 0
+        bauxite: missions?.filter(m => m.type_transport === 'bauxite').length || 0,
+        volume_total: missions?.reduce((sum, m) => sum + (m.volume_poids || 0), 0) || 0
       };
 
       return stats;
@@ -152,8 +162,10 @@ export const missionsService = {
         en_cours: 0,
         terminees: 0,
         annulees: 0,
+        ce_mois: 0,
         hydrocarbures: 0,
-        bauxite: 0
+        bauxite: 0,
+        volume_total: 0
       }
     }
   },
@@ -208,8 +220,7 @@ export const missionsService = {
         .from('missions')
         .select('*')
         .or(`vehicule_id.eq.${vehiculeId},chauffeur_id.eq.${chauffeurId}`)
-        .in('statut', ['en_attente', 'en_cours'])
-        .overlaps('date_heure_depart', 'date_heure_arrivee_prevue', dateDebut, dateFin);
+        .in('statut', ['en_attente', 'en_cours']);
 
       if (error) {
         console.error('Erreur vérification disponibilité:', error)
@@ -220,10 +231,19 @@ export const missionsService = {
         }
       }
 
+      const hasConflict = conflits?.some(mission => {
+        const missionStart = new Date(mission.date_heure_depart);
+        const missionEnd = new Date(mission.date_heure_arrivee_prevue);
+        const requestStart = new Date(dateDebut);
+        const requestEnd = new Date(dateFin);
+        
+        return (requestStart < missionEnd && requestEnd > missionStart);
+      });
+
       return {
-        vehicule_disponible: !conflits?.some(c => c.vehicule_id === vehiculeId),
-        chauffeur_disponible: !conflits?.some(c => c.chauffeur_id === chauffeurId),
-        message: conflits?.length ? 'Conflit de planning détecté' : 'Ressources disponibles'
+        vehicule_disponible: !conflits?.some(c => c.vehicule_id === vehiculeId && hasConflict),
+        chauffeur_disponible: !conflits?.some(c => c.chauffeur_id === chauffeurId && hasConflict),
+        message: hasConflict ? 'Conflit de planning détecté' : 'Ressources disponibles'
       };
     } catch (error) {
       console.error('Erreur lors de la vérification de disponibilité:', error)

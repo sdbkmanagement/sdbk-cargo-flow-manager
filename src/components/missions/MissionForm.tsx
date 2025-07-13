@@ -38,12 +38,10 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   const [availabilityCheck, setAvailabilityCheck] = useState(null);
 
-  // Récupérer les véhicules disponibles selon le type de transport
+  // Récupérer les véhicules disponibles
   const { data: vehicules = [] } = useQuery({
-    queryKey: ['available-vehicles', formData.type_transport],
-    queryFn: () => formData.type_transport ? 
-      missionsService.getAvailableVehicles(formData.type_transport) : Promise.resolve([]),
-    enabled: !!formData.type_transport
+    queryKey: ['available-vehicules'],
+    queryFn: missionsService.getAvailableVehicules
   });
 
   // Récupérer les chauffeurs actifs
@@ -86,8 +84,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           formData.vehicule_id,
           formData.chauffeur_id,
           formData.date_heure_depart,
-          formData.date_heure_arrivee_prevue,
-          mission?.id
+          formData.date_heure_arrivee_prevue
         );
         setAvailabilityCheck(result);
       } catch (error) {
