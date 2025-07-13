@@ -25,28 +25,11 @@ import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-        <span className="ml-2 text-lg">Chargement...</span>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginForm />;
-  }
-
-  return <>{children}</>;
-};
-
 const AppLayout = () => {
   const { user, loading } = useAuth();
 
+  console.log('AppLayout - User:', user, 'Loading:', loading);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -57,8 +40,11 @@ const AppLayout = () => {
   }
 
   if (!user) {
+    console.log('No user found, showing login form');
     return <LoginForm />;
   }
+
+  console.log('User authenticated, showing app layout');
 
   return (
     <div className="min-h-screen bg-gray-50 flex">

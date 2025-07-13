@@ -25,13 +25,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
       console.log('Fetching user profile for:', supabaseUser.id);
-      const { data, error } = await supabase
+      
+      // D'abord chercher par ID
+      let { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', supabaseUser.id)
         .single();
 
-      if (error) {
+      // Si pas trouvé par ID, chercher par email
+      if (error && error.code === 'PGRST116') {
+        console.log('User not found by ID, searching by email:', supabaseUser.email);
+        const { data: emailData, error: emailError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', supabaseUser.email)
+          .single();
+        
+        if (emailError) {
+          console.log('User not found by email, creating new user...');
+          // Créer l'utilisateur s'il n'existe pas
+          const roleToAssign = supabaseUser.email === 'sdbkmanagement@gmail.com' ? 'admin' : 'transport';
+          
+          const { data: newUser, error: createError } = await supabase
+            .from('users')
+            .insert({
+              id: supabaseUser.id,
+              email: supabaseUser.email,
+              first_name: supabaseUser.user_metadata?.first_name || 'Admin',
+              last_name: supabaseUser.user_metadata?.last_name || 'Système',
+              roles: [roleToAssign],
+              status: 'active'
+            })
+            .select()
+            .single();
+          
+          if (createError) {
+            console.error('Error creating user:', createError);
+            return null;
+          }
+          
+          data = newUser;
+        } else {
+          data = emailData;
+          // Mettre à jour l'ID si nécessaire
+          if (data.id !== supabaseUser.id) {
+            await supabase
+              .from('users')
+              .update({ id: supabaseUser.id })
+              .eq('email', supabaseUser.email);
+            data.id = supabaseUser.id;
+          }
+        }
+      } else if (error) {
         console.error('Error fetching user profile:', error);
         return null;
       }
@@ -42,6 +88,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       console.log('User profile fetched:', data);
+
+      // S'assurer que sdbkmanagement@gmail.com a le rôle admin
+      if (data.email === 'sdbkmanagement@gmail.com' && !data.roles?.includes('admin')) {
+        console.log('Upgrading sdbkmanagement@gmail.com to admin role');
+        const { data: updatedUser } = await supabase
+          .from('users')
+          .update({ 
+            roles: ['admin'],
+            first_name: 'Admin',
+            last_name: 'Système',
+            status: 'active'
+          })
+          .eq('email', 'sdbkmanagement@gmail.com')
+          .select()
+          .single();
+        
+        if (updatedUser) {
+          data = updatedUser;
+        }
+      }
 
       return {
         id: data.id,
@@ -85,32 +151,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         
         if (session?.user) {
-          // Defer the profile fetch to avoid blocking the auth state change
-          setTimeout(async () => {
-            const userProfile = await fetchUserProfile(session.user);
-            setUser(userProfile);
-            setLoading(false);
-          }, 0);
+          // Fetch user profile
+          const userProfile = await fetchUserProfile(session.user);
+          setUser(userProfile);
         } else {
           setUser(null);
-          setLoading(false);
         }
+        setLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Initial session check:', session?.user?.email);
       setSession(session);
       
       if (session?.user) {
-        fetchUserProfile(session.user).then(userProfile => {
-          setUser(userProfile);
-          setLoading(false);
-        });
-      } else {
-        setLoading(false);
+        const userProfile = await fetchUserProfile(session.user);
+        setUser(userProfile);
       }
+      setLoading(false);
     });
 
     return () => {
