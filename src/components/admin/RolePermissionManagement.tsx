@@ -12,6 +12,14 @@ import { adminService } from '@/services/admin';
 import { ROLES, ROLE_LABELS, MODULES, MODULE_LABELS, PERMISSIONS, PERMISSION_LABELS } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 
+interface RolePermission {
+  id: string;
+  role: string;
+  module: string;
+  permission: string;
+  created_at: string;
+}
+
 export const RolePermissionManagement = () => {
   const [selectedRole, setSelectedRole] = useState<string>('transport');
   const queryClient = useQueryClient();
@@ -50,7 +58,7 @@ export const RolePermissionManagement = () => {
   });
 
   const getPermissionsForModule = (module: string): string[] => {
-    return rolePermissions
+    return (rolePermissions as RolePermission[])
       .filter(p => p.module === module)
       .map(p => p.permission);
   };
@@ -213,7 +221,7 @@ export const RolePermissionManagement = () => {
                   })}
                 </div>
                 
-                {rolePermissions.length === 0 && (
+                {(rolePermissions as RolePermission[]).length === 0 && (
                   <p className="text-sm text-muted-foreground">
                     Aucune permission configurée pour ce rôle.
                   </p>
