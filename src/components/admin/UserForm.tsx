@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
@@ -11,6 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { ROLES, ROLE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import type { Database } from '@/integrations/supabase/types';
+
+type UserRole = Database['public']['Enums']['user_role'];
 
 interface UserFormProps {
   user?: SystemUser;
@@ -27,8 +29,8 @@ interface UserFormData {
 }
 
 // Fonction helper pour mapper les rôles vers les types de base de données
-const mapRoleToDbType = (role: string) => {
-  const roleMapping: Record<string, string> = {
+const mapRoleToDbType = (role: string): UserRole => {
+  const roleMapping: Record<string, UserRole> = {
     'maintenance': 'maintenance',
     'administratif': 'administratif',
     'hsecq': 'hsecq',
