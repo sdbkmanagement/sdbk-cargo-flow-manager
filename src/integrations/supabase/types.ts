@@ -2120,6 +2120,16 @@ export type Database = {
           message: string
         }[]
       }
+      create_user_with_role: {
+        Args: {
+          p_email: string
+          p_first_name: string
+          p_last_name: string
+          p_role: string
+          p_user_id?: string
+        }
+        Returns: Json
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

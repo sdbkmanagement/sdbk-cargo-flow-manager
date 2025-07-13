@@ -74,7 +74,7 @@ export const userService = {
           first_name: userData.prenom,
           last_name: userData.nom
         },
-        email_confirm: true // Auto-confirmer l'email en mode admin
+        email_confirm: true
       });
 
       if (authError) {
@@ -191,24 +191,23 @@ export const userService = {
   },
 
   async deleteUser(id: string): Promise<void> {
-    // Supprimer d'abord de la table users (cascade devrait s'occuper d'auth.users)
+    // Supprimer d'abord de Supabase Auth
+    try {
+      const { error: authError } = await supabase.auth.admin.deleteUser(id);
+      if (authError) {
+        console.warn('Could not delete auth user:', authError.message);
+      }
+    } catch (error) {
+      console.warn('Could not delete auth user:', error);
+    }
+
+    // Supprimer de la table users (ce qui devrait se faire automatiquement avec le cascade)
     const { error: profileError } = await supabase
       .from('users')
       .delete()
       .eq('id', id);
 
     if (profileError) throw profileError;
-
-    // Supprimer aussi de Supabase Auth
-    try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(id);
-      if (authError) {
-        console.warn('Could not delete auth user:', authError.message);
-        // Ne pas faire échouer l'opération si la suppression auth échoue
-      }
-    } catch (error) {
-      console.warn('Could not delete auth user:', error);
-    }
   },
 
   async resetPassword(userId: string): Promise<{ tempPassword: string }> {

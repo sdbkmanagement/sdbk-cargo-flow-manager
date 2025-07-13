@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { adminService } from '@/services/admin';
+import { supabase } from '@/integrations/supabase/client';
 import { ROLES, ROLE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
@@ -41,32 +41,63 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const createMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
-      console.log('UserForm: Starting user creation with Supabase Auth:', data);
-      try {
-        const result = await adminService.createUser({
-          email: data.email,
-          nom: data.nom,
-          prenom: data.prenom,
-          role: data.role as any,
-          statut: data.statut,
-          password: data.password!
-        });
-        console.log('UserForm: User creation successful:', result);
-        return result;
-      } catch (error) {
-        console.error('UserForm: User creation failed:', error);
-        throw error;
+      console.log('Creating user with Supabase Auth:', data);
+      
+      if (!data.password) {
+        throw new Error('Le mot de passe est requis');
       }
+
+      // 1. Créer l'utilisateur via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: data.email,
+        password: data.password,
+        user_metadata: {
+          first_name: data.prenom,
+          last_name: data.nom
+        },
+        email_confirm: true
+      });
+
+      if (authError) {
+        throw new Error(`Impossible de créer le compte: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('Aucun utilisateur créé');
+      }
+
+      // 2. Attendre que le trigger fonctionne
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // 3. Mettre à jour le rôle
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          roles: [data.role as any],
+          first_name: data.prenom,
+          last_name: data.nom,
+          status: data.statut === 'actif' ? 'active' : 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', authData.user.id);
+
+      if (updateError) {
+        // Nettoyer l'utilisateur auth en cas d'erreur
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw new Error(`Erreur de configuration: ${updateError.message}`);
+      }
+
+      return authData.user;
     },
     onSuccess: () => {
       toast({
         title: "Utilisateur créé",
-        description: "Le nouvel utilisateur a été créé avec succès via Supabase Auth."
+        description: "Le nouvel utilisateur a été créé avec succès."
       });
       onSuccess();
     },
     onError: (error: any) => {
-      console.error('UserForm: Creation error:', error);
+      console.error('Creation error:', error);
       toast({
         title: "Erreur de création",
         description: error.message || "Impossible de créer l'utilisateur.",
@@ -76,17 +107,20 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: UserFormData) => adminService.updateUser(user!.id, {
-      nom: data.nom,
-      prenom: data.prenom,
-      role: data.role as any,
-      statut: data.statut,
-      email: data.email,
-      id: user!.id,
-      created_at: user!.created_at,
-      updated_at: user!.updated_at,
-      created_by: user!.created_by
-    }),
+    mutationFn: async (data: UserFormData) => {
+      const { error } = await supabase
+        .from('users')
+        .update({
+          first_name: data.prenom,
+          last_name: data.nom,
+          roles: [data.role as any],
+          status: data.statut === 'actif' ? 'active' : 'inactive',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user!.id);
+
+      if (error) throw error;
+    },
     onSuccess: () => {
       toast({
         title: "Utilisateur modifié",
@@ -104,7 +138,6 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   });
 
   const onSubmit = (data: UserFormData) => {
-    console.log('UserForm: Form submitted with data:', data);
     if (isEdit) {
       updateMutation.mutate(data);
     } else {
@@ -177,7 +210,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
             {!isEdit && (
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="password">Mot de passe *</Label>
+                <Label htmlFor="password">Mot de passe personnalisé *</Label>
                 <Input
                   id="password"
                   type="password"
@@ -188,14 +221,14 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
                       message: 'Le mot de passe doit contenir au moins 6 caractères'
                     }
                   })}
-                  placeholder="Saisissez le mot de passe (min. 6 caractères)"
+                  placeholder="Saisissez un mot de passe sécurisé (min. 6 caractères)"
                   disabled={isLoading}
                 />
                 {errors.password && (
                   <p className="text-sm text-red-600">{errors.password.message}</p>
                 )}
                 <p className="text-xs text-gray-500">
-                  L'utilisateur pourra changer son mot de passe après sa première connexion
+                  Choisissez un mot de passe personnalisé pour cet utilisateur
                 </p>
               </div>
             )}
@@ -240,11 +273,10 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
           </div>
 
           {!isEdit && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Authentification Supabase :</strong> Un compte sera créé automatiquement 
-                avec l'email et le mot de passe fournis. L'utilisateur pourra se connecter 
-                immédiatement après la création.
+            <div className="mt-4 p-4 bg-green-50 rounded-lg">
+              <p className="text-sm text-green-800">
+                <strong>Authentification sécurisée :</strong> L'utilisateur pourra se connecter 
+                immédiatement avec son email et le mot de passe que vous avez défini.
               </p>
             </div>
           )}
