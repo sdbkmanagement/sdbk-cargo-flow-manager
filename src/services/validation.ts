@@ -67,8 +67,25 @@ export const validationService = {
 
     if (error) throw error;
     
-    this._setCache(cacheKey, data);
-    return data as ValidationWorkflowWithEtapes[];
+    // Transformer les données pour correspondre aux types
+    const transformedData = data?.map(workflow => ({
+      ...workflow,
+      etapes: workflow.etapes?.map((etape: any) => ({
+        id: etape.id,
+        workflow_id: etape.workflow_id,
+        etape: etape.etape as EtapeType,
+        statut: etape.statut as StatutEtape,
+        commentaire: etape.commentaire,
+        date_validation: etape.date_validation,
+        validateur_nom: etape.validateur_nom,
+        validateur_role: etape.validateur_role,
+        created_at: etape.created_at,
+        updated_at: etape.updated_at
+      })) || []
+    })) as ValidationWorkflowWithEtapes[];
+    
+    this._setCache(cacheKey, transformedData);
+    return transformedData;
   },
 
   // Optimisation: Récupérer un workflow spécifique avec cache
@@ -99,8 +116,25 @@ export const validationService = {
       throw error;
     }
 
-    this._setCache(cacheKey, data);
-    return data;
+    // Transformer les données pour correspondre aux types
+    const transformedData = {
+      ...data,
+      etapes: data.etapes?.map((etape: any) => ({
+        id: etape.id,
+        workflow_id: etape.workflow_id,
+        etape: etape.etape as EtapeType,
+        statut: etape.statut as StatutEtape,
+        commentaire: etape.commentaire,
+        date_validation: etape.date_validation,
+        validateur_nom: etape.validateur_nom,
+        validateur_role: etape.validateur_role,
+        created_at: etape.created_at,
+        updated_at: etape.updated_at
+      })) || []
+    } as ValidationWorkflowWithEtapes;
+
+    this._setCache(cacheKey, transformedData);
+    return transformedData;
   },
 
   // Optimisation: Créer un workflow avec toutes ses étapes en une transaction
@@ -136,8 +170,19 @@ export const validationService = {
 
     const result = {
       ...workflow,
-      etapes: etapesCreated
-    };
+      etapes: etapesCreated?.map((etape: any) => ({
+        id: etape.id,
+        workflow_id: etape.workflow_id,
+        etape: etape.etape as EtapeType,
+        statut: etape.statut as StatutEtape,
+        commentaire: etape.commentaire,
+        date_validation: etape.date_validation,
+        validateur_nom: etape.validateur_nom,
+        validateur_role: etape.validateur_role,
+        created_at: etape.created_at,
+        updated_at: etape.updated_at
+      })) || []
+    } as ValidationWorkflowWithEtapes;
 
     // Invalider le cache
     this._cache.delete(`workflow_${vehiculeId}`);
@@ -179,6 +224,21 @@ export const validationService = {
     }
 
     return data;
+  },
+
+  // Nouvelle méthode pour récupérer l'historique des validations
+  async getHistorique(workflowId: string) {
+    console.log(`Chargement de l'historique pour workflow ${workflowId}`);
+
+    const { data, error } = await supabase
+      .from('validation_historique')
+      .select('*')
+      .eq('workflow_id', workflowId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    
+    return data || [];
   },
 
   // Optimisation: Statistiques avec cache longue durée
