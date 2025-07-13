@@ -11,21 +11,22 @@ export const CreateAdminButton = () => {
   const handleCreateAdmin = async () => {
     setIsCreating(true);
     try {
-      console.log('Creating admin user with Supabase Auth...');
+      console.log('Creating admin user via standard signup...');
       
-      // Créer l'utilisateur via Supabase Auth Admin
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // 1. Créer l'utilisateur via la méthode standard de signup
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: 'sdbkmanagement@gmail.com',
         password: 'Admin@2025',
-        user_metadata: {
-          first_name: 'Admin',
-          last_name: 'Système'
-        },
-        email_confirm: true // Auto-confirmer l'email
+        options: {
+          data: {
+            first_name: 'Admin',
+            last_name: 'Système'
+          }
+        }
       });
 
       if (authError) {
-        console.error('Auth user creation error:', authError);
+        console.error('Signup error:', authError);
         throw new Error(`Erreur de création: ${authError.message}`);
       }
 
@@ -33,66 +34,31 @@ export const CreateAdminButton = () => {
         throw new Error('Aucun utilisateur créé');
       }
 
-      console.log('Admin user created successfully:', authData.user.id);
+      console.log('User created successfully via signup:', authData.user.id);
 
-      // Attendre un peu pour que le trigger fonctionne
+      // 2. Attendre un peu pour que le trigger fonctionne
       console.log('Waiting for trigger to execute...');
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Vérifier si l'utilisateur existe dans la table users
-      console.log('Checking if user exists in users table...');
-      const { data: existingUser, error: checkError } = await supabase
+      // 3. Mettre à jour le rôle en admin directement dans la base
+      console.log('Updating user role to admin...');
+      const { error: updateError } = await supabase
         .from('users')
-        .select('*')
-        .eq('id', authData.user.id)
-        .maybeSingle();
+        .update({
+          roles: ['admin'],
+          first_name: 'Admin',
+          last_name: 'Système',
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('email', 'sdbkmanagement@gmail.com');
 
-      if (checkError) {
-        console.error('Error checking existing user:', checkError);
+      if (updateError) {
+        console.error('User profile update error:', updateError);
+        throw new Error(`Erreur de mise à jour du profil: ${updateError.message}`);
       }
 
-      if (!existingUser) {
-        console.log('User not found, creating manually...');
-        // Créer manuellement si le trigger n'a pas fonctionné
-        const { error: createError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: 'sdbkmanagement@gmail.com',
-            first_name: 'Admin',
-            last_name: 'Système',
-            roles: ['admin'],
-            status: 'active',
-            password_hash: 'managed_by_supabase_auth',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (createError) {
-          console.error('Manual user creation error:', createError);
-          throw new Error(`Erreur de création manuelle: ${createError.message}`);
-        }
-        console.log('User created manually');
-      } else {
-        console.log('User found, updating role...');
-        // Mettre à jour le rôle en admin
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({
-            roles: ['admin'],
-            first_name: 'Admin',
-            last_name: 'Système',
-            status: 'active',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', authData.user.id);
-
-        if (updateError) {
-          console.error('User profile update error:', updateError);
-          throw new Error(`Erreur de mise à jour du profil: ${updateError.message}`);
-        }
-        console.log('User role updated to admin');
-      }
+      console.log('User role updated to admin successfully');
 
       toast({
         title: "Compte admin créé avec succès !",
@@ -101,9 +67,26 @@ export const CreateAdminButton = () => {
 
     } catch (error: any) {
       console.error('Complete error in createAdmin:', error);
+      
+      let errorMessage = "Impossible de créer le compte admin.";
+      
+      if (error.message) {
+        if (error.message.includes('User already registered')) {
+          errorMessage = "Un compte avec cet email existe déjà. Essayez de vous connecter directement.";
+        } else if (error.message.includes('Invalid email')) {
+          errorMessage = "Format d'email invalide.";
+        } else if (error.message.includes('Password should be')) {
+          errorMessage = "Le mot de passe doit contenir au moins 6 caractères.";
+        } else if (error.message.includes('Email not confirmed')) {
+          errorMessage = "Email non confirmé. Vérifiez votre boîte mail ou contactez l'administrateur.";
+        } else {
+          errorMessage = `Erreur : ${error.message}`;
+        }
+      }
+      
       toast({
         title: "Erreur de création",
-        description: error.message || "Impossible de créer le compte admin.",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
