@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, BarChart3, TrendingUp, Clock, Shield } from 'lucide-react';
@@ -103,7 +102,7 @@ const Dashboard = () => {
       };
     },
     staleTime: 5 * 60 * 1000, // Cache pendant 5 minutes
-    cacheTime: 10 * 60 * 1000 // Garde en cache 10 minutes
+    gcTime: 10 * 60 * 1000 // Garde en cache 10 minutes (remplace cacheTime)
   });
 
   // Requête simplifiée pour les activités récentes

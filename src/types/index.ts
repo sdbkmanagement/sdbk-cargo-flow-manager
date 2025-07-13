@@ -21,6 +21,15 @@ export interface User {
   avatar?: string;
 }
 
+export interface UserWithRole {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  role: UserRole;
+  permissions: string[];
+}
+
 export interface Vehicle {
   id: string;
   numero: string;

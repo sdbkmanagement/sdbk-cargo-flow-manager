@@ -9,6 +9,10 @@ interface AuthContextType {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  hasPermission: (permission: string) => boolean;
+  hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -134,8 +138,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(null);
   };
 
+  // Alias pour la compatibilité
+  const login = signIn;
+  const logout = signOut;
+
+  const hasPermission = (permission: string): boolean => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    return user.permissions.includes(permission) || user.permissions.includes('all');
+  };
+
+  const hasRole = (role: string): boolean => {
+    if (!user) return false;
+    return user.role === role || user.role === 'admin';
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      signIn, 
+      signOut, 
+      login, 
+      logout, 
+      hasPermission, 
+      hasRole 
+    }}>
       {children}
     </AuthContext.Provider>
   );
