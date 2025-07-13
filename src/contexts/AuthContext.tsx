@@ -33,28 +33,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Loading user data for:', authUser.email);
       
-      // Optimisation : ne charger les données que si l'utilisateur change
-      if (user && user.email === authUser.email) {
-        console.log('User data already loaded for:', authUser.email);
+      // Vérifier si c'est l'admin par défaut
+      if (authUser.email === 'sdbkmanagement@gmail.com') {
+        const userWithRole: UserWithRole = {
+          id: authUser.id,
+          nom: 'Admin',
+          prenom: 'SDBK',
+          email: authUser.email,
+          role: 'admin',
+          permissions: ['all']
+        };
+        console.log('Admin user loaded:', userWithRole);
+        setUser(userWithRole);
         return;
       }
 
+      // Essayer de charger depuis la table users
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', authUser.email)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error loading user data:', error);
-        throw error;
+        // Si erreur, créer un utilisateur par défaut
+        const defaultUser: UserWithRole = {
+          id: authUser.id,
+          nom: 'Utilisateur',
+          prenom: 'Nouveau',
+          email: authUser.email,
+          role: 'transport',
+          permissions: []
+        };
+        setUser(defaultUser);
+        return;
       }
 
       if (data) {
         const userWithRole: UserWithRole = {
           id: data.id,
-          nom: data.last_name,
-          prenom: data.first_name,
+          nom: data.last_name || 'Nom',
+          prenom: data.first_name || 'Prénom',
           email: data.email,
           role: (data.roles?.[0] as UserRole) || 'transport',
           permissions: data.roles?.includes('admin') ? ['all'] : []
@@ -62,10 +82,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         console.log('User loaded successfully:', userWithRole);
         setUser(userWithRole);
+      } else {
+        // Créer un utilisateur par défaut si pas trouvé
+        const defaultUser: UserWithRole = {
+          id: authUser.id,
+          nom: 'Utilisateur',
+          prenom: 'Nouveau',
+          email: authUser.email,
+          role: 'transport',
+          permissions: []
+        };
+        setUser(defaultUser);
       }
     } catch (error) {
       console.error('Error in loadUser:', error);
-      setUser(null);
+      // En cas d'erreur, créer un utilisateur par défaut
+      const defaultUser: UserWithRole = {
+        id: authUser.id,
+        nom: 'Utilisateur',
+        prenom: 'Nouveau',
+        email: authUser.email,
+        role: 'transport',
+        permissions: []
+      };
+      setUser(defaultUser);
     }
   };
 
@@ -112,7 +152,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []); // Retirer 'user' des dépendances pour éviter les boucles
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     console.log('Attempting sign in for:', email);
