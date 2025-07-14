@@ -20,12 +20,12 @@ export const InvoiceTable = ({
   onDownloadPDF, 
   onDeleteClick 
 }: InvoiceTableProps) => {
-  const getStatusColor = (status: string) => {
+  const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'paye': return 'bg-green-100 text-green-800';
-      case 'en_attente': return 'bg-yellow-100 text-yellow-800';
-      case 'en_retard': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'paye': return 'success';
+      case 'en_attente': return 'warning';
+      case 'en_retard': return 'error';
+      default: return 'secondary';
     }
   };
 
@@ -72,7 +72,7 @@ export const InvoiceTable = ({
             <TableCell>{invoice.montant_ht.toLocaleString('fr-FR')} GNF</TableCell>
             <TableCell className="font-medium">{invoice.montant_ttc.toLocaleString('fr-FR')} GNF</TableCell>
             <TableCell>
-              <Badge className={getStatusColor(invoice.statut)}>
+              <Badge variant={getStatusVariant(invoice.statut) as any}>
                 {getStatusLabel(invoice.statut)}
               </Badge>
             </TableCell>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -25,13 +24,13 @@ export const VehicleTable = ({
 }: VehicleTableProps) => {
   const getStatusBadge = (statut: string) => {
     const statusConfig = {
-      'disponible': { variant: 'default' as const, label: 'Disponible' },
-      'en_mission': { variant: 'secondary' as const, label: 'En mission' },
-      'maintenance': { variant: 'destructive' as const, label: 'Maintenance' },
-      'validation_requise': { variant: 'outline' as const, label: 'Validation requise' }
+      'disponible': { variant: 'available' as const, label: 'Disponible' },
+      'en_mission': { variant: 'mission' as const, label: 'En mission' },
+      'maintenance': { variant: 'maintenance' as const, label: 'Maintenance' },
+      'validation_requise': { variant: 'pending' as const, label: 'Validation requise' }
     };
     
-    const config = statusConfig[statut as keyof typeof statusConfig] || { variant: 'default' as const, label: statut };
+    const config = statusConfig[statut as keyof typeof statusConfig] || { variant: 'secondary' as const, label: statut };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 

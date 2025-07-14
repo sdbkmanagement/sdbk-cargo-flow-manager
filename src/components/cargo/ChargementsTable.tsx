@@ -30,26 +30,13 @@ interface ChargementsTableProps {
 const getStatutBadgeVariant = (statut: string) => {
   switch (statut) {
     case 'charge':
-      return 'default';
+      return 'info';
     case 'livre':
-      return 'default';
+      return 'success';
     case 'annule':
-      return 'destructive';
+      return 'error';
     default:
       return 'secondary';
-  }
-};
-
-const getStatutBadgeColor = (statut: string) => {
-  switch (statut) {
-    case 'charge':
-      return 'bg-blue-100 text-blue-800';
-    case 'livre':
-      return 'bg-green-100 text-green-800';
-    case 'annule':
-      return 'bg-red-100 text-red-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
   }
 };
 
@@ -232,7 +219,7 @@ export const ChargementsTable = ({ data, onEdit, hasWritePermission, onRefresh, 
                       {format(new Date(chargement.date_heure_chargement), 'dd/MM/yyyy HH:mm', { locale: fr })}
                     </TableCell>
                     <TableCell>
-                      <Badge className={getStatutBadgeColor(chargement.statut)}>
+                      <Badge variant={getStatutBadgeVariant(chargement.statut) as any}>
                         {getStatutLabel(chargement.statut)}
                       </Badge>
                     </TableCell>

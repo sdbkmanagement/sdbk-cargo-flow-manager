@@ -15,14 +15,14 @@ export const ValidationStatusBadge = ({ statut, size = 'md' }: ValidationStatusB
   switch (statut) {
     case 'valide':
       return (
-        <Badge className="bg-green-500 text-white border-green-500 px-2 py-1">
+        <Badge variant="success" className="px-2 py-1">
           <CheckCircle className={`${iconSize} mr-1`} />
           V
         </Badge>
       );
     case 'rejete':
       return (
-        <Badge className="bg-red-500 text-white border-red-500 px-2 py-1">
+        <Badge variant="error" className="px-2 py-1">
           <XCircle className={`${iconSize} mr-1`} />
           R
         </Badge>
@@ -30,7 +30,7 @@ export const ValidationStatusBadge = ({ statut, size = 'md' }: ValidationStatusB
     case 'en_attente':
     default:
       return (
-        <Badge className="bg-yellow-500 text-white border-yellow-500 px-2 py-1">
+        <Badge variant="warning" className="px-2 py-1">
           <Clock className={`${iconSize} mr-1`} />
           E
         </Badge>
