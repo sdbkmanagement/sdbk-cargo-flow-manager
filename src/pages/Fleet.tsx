@@ -11,12 +11,12 @@ import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
 import { SearchInput } from '@/components/fleet/SearchInput';
 import { VehicleFilters } from '@/components/fleet/VehicleFilters';
-import { vehiculesService } from '@/services/vehicules';
+import vehiculesService, { type Vehicule, type FleetStatsData } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 
 const Fleet = () => {
   const [showForm, setShowForm] = useState(false);
-  const [editingVehicle, setEditingVehicle] = useState(null);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicule | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeVehiculeFilter, setTypeVehiculeFilter] = useState('all');
@@ -52,7 +52,7 @@ const Fleet = () => {
     enabled: !isError,
   });
 
-  const handleEdit = (vehicle: any) => {
+  const handleEdit = (vehicle: Vehicule) => {
     setEditingVehicle(vehicle);
     setShowForm(true);
   };
@@ -73,7 +73,7 @@ const Fleet = () => {
   };
 
   // Filtrage des véhicules
-  const filteredVehicles = vehicles.filter(vehicle => {
+  const filteredVehicles = vehicles.filter((vehicle: Vehicule) => {
     const matchesSearch = 
       vehicle.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.immatriculation?.toLowerCase().includes(searchTerm.toLowerCase()) ||

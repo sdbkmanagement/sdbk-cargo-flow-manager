@@ -6,25 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { ValidationWorkflowCard } from '@/components/fleet/validation/ValidationWorkflowCard';
 import { ValidationStats } from '@/components/fleet/validation/ValidationStats';
-import { vehiculesService } from '@/services/vehicules';
+import vehiculesService, { type Vehicule } from '@/services/vehicules';
 import { validationService } from '@/services/validation';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
-
-type Vehicule = {
-  id: string;
-  numero: string;
-  immatriculation?: string;
-  tracteur_immatriculation?: string;
-  marque?: string;
-  modele?: string;
-  type_transport: string;
-  statut: string;
-  chauffeur?: {
-    nom: string;
-    prenom: string;
-  } | null;
-};
 
 const Validations = () => {
   const [searchTerm, setSearchTerm] = useState('');

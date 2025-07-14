@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,12 +9,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Wrench, AlertTriangle, Calendar, Truck } from 'lucide-react';
-import { vehiculesService } from '@/services/vehicules';
+import vehiculesService, { type Vehicule } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import type { Database } from '@/integrations/supabase/types';
 
-type Vehicule = Database['public']['Tables']['vehicules']['Row'];
 type MaintenanceVehicule = Database['public']['Tables']['maintenance_vehicules']['Row'];
 
 interface MaintenanceTabProps {

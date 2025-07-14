@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExcelImport } from '@/components/common/ExcelImport';
-import { vehiculesService } from '@/services/vehicules';
+import vehiculesService from '@/services/vehicules';
 
 interface VehicleImportProps {
   onClose: () => void;

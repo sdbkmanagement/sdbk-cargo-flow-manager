@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -14,12 +13,11 @@ import { DocumentUploadSection } from './form/DocumentUploadSection';
 import { OperationalFields } from './form/OperationalFields';
 import { TracteurFields } from './form/TracteurFields';
 import { RemorqueFields } from './form/RemorqueFields';
-import { vehiculesService } from '@/services/vehicules';
+import vehiculesService, { type Vehicule } from '@/services/vehicules';
 import { chauffeursService } from '@/services/chauffeurs';
 import { useToast } from '@/hooks/use-toast';
 import type { Database } from '@/integrations/supabase/types';
 
-type Vehicule = Database['public']['Tables']['vehicules']['Row'];
 type VehiculeInsert = Database['public']['Tables']['vehicules']['Insert'];
 
 interface FormData {

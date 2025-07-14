@@ -45,12 +45,21 @@ export interface Vehicule {
   remorque_date_mise_circulation?: string;
 }
 
+export interface FleetStatsData {
+  total: number;
+  disponibles: number;
+  en_mission: number;
+  maintenance: number;
+  validation_requise: number;
+  bases: Array<{ nom: string; count: number }>;
+  types_transport: Array<{ nom: string; count: number }>;
+}
+
 const vehiculesService = {
   async getAll(): Promise<Vehicule[]> {
     try {
       console.log('Chargement des véhicules...');
       
-      // Requête simplifiée avec timeout
       const { data, error } = await supabase
         .from('vehicules')
         .select('*')
@@ -151,11 +160,11 @@ const vehiculesService = {
 
   async getForValidation(): Promise<Vehicule[]> {
     try {
-      console.log('Chargement optimisé des véhicules pour validation');
+      console.log('Chargement des véhicules pour validation');
       
       const { data, error } = await supabase
         .from('vehicules')
-        .select('id, numero, marque, modele, immatriculation, statut, validation_requise, type_transport')
+        .select('*')
         .eq('validation_requise', true)
         .order('updated_at', { ascending: false })
         .limit(50);
@@ -170,7 +179,140 @@ const vehiculesService = {
       console.error('Erreur véhicules validation:', error);
       return [];
     }
+  },
+
+  async getFleetStats(): Promise<FleetStatsData> {
+    try {
+      const { data: vehicles, error } = await supabase
+        .from('vehicules')
+        .select('statut, base, type_transport');
+
+      if (error) {
+        console.error('Erreur lors du chargement des stats:', error);
+        return {
+          total: 0,
+          disponibles: 0,
+          en_mission: 0,
+          maintenance: 0,
+          validation_requise: 0,
+          bases: [],
+          types_transport: []
+        };
+      }
+
+      const total = vehicles?.length || 0;
+      const disponibles = vehicles?.filter(v => v.statut === 'disponible').length || 0;
+      const en_mission = vehicles?.filter(v => v.statut === 'en_mission').length || 0;
+      const maintenance = vehicles?.filter(v => v.statut === 'maintenance').length || 0;
+      const validation_requise = vehicles?.filter(v => v.statut === 'validation_requise').length || 0;
+
+      // Calcul des statistiques par base
+      const basesCount = vehicles?.reduce((acc: { [key: string]: number }, vehicle) => {
+        if (vehicle.base) {
+          acc[vehicle.base] = (acc[vehicle.base] || 0) + 1;
+        }
+        return acc;
+      }, {}) || {};
+
+      const bases = Object.entries(basesCount).map(([nom, count]) => ({
+        nom,
+        count: count as number
+      }));
+
+      // Calcul des statistiques par type de transport
+      const typesCount = vehicles?.reduce((acc: { [key: string]: number }, vehicle) => {
+        acc[vehicle.type_transport] = (acc[vehicle.type_transport] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      const types_transport = Object.entries(typesCount).map(([nom, count]) => ({
+        nom,
+        count: count as number
+      }));
+
+      return {
+        total,
+        disponibles,
+        en_mission,
+        maintenance,
+        validation_requise,
+        bases,
+        types_transport
+      };
+    } catch (error) {
+      console.error('Erreur lors du calcul des stats:', error);
+      return {
+        total: 0,
+        disponibles: 0,
+        en_mission: 0,
+        maintenance: 0,
+        validation_requise: 0,
+        bases: [],
+        types_transport: []
+      };
+    }
+  },
+
+  async getBases(): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('vehicules')
+        .select('base')
+        .not('base', 'is', null);
+
+      if (error) {
+        console.error('Erreur lors du chargement des bases:', error);
+        return [];
+      }
+
+      const bases = [...new Set(data?.map(v => v.base).filter(Boolean) || [])];
+      return bases;
+    } catch (error) {
+      console.error('Erreur lors du chargement des bases:', error);
+      return [];
+    }
+  },
+
+  async getMaintenance(vehiculeId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('maintenance_vehicules')
+        .select('*')
+        .eq('vehicule_id', vehiculeId)
+        .order('date_maintenance', { ascending: false });
+
+      if (error) {
+        console.error('Erreur lors du chargement de la maintenance:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Erreur lors du chargement de la maintenance:', error);
+      return [];
+    }
+  },
+
+  async addMaintenance(maintenanceData: any) {
+    try {
+      const { data, error } = await supabase
+        .from('maintenance_vehicules')
+        .insert([maintenanceData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur lors de l\'ajout de la maintenance:', error);
+        throw error;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la maintenance:', error);
+      throw error;
+    }
   }
 };
 
+export { vehiculesService };
 export default vehiculesService;
