@@ -36,8 +36,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const fetchUserData = async (supabaseUserId: string, email: string) => {
+    try {
+      console.log('🔍 Récupération des données utilisateur pour:', email);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('status', 'active')
+        .single();
+
+      if (error) {
+        console.error('❌ Erreur lors de la récupération des données utilisateur:', error);
+        return null;
+      }
+
+      if (data) {
+        console.log('✅ Données utilisateur récupérées:', data);
+        
+        const authUser: AuthUser = {
+          id: supabaseUserId,
+          email: data.email,
+          nom: data.last_name || '',
+          prenom: data.first_name || '',
+          role: data.roles?.[0] || 'transport',
+          roles: data.roles || ['transport'],
+          module_permissions: data.module_permissions || ['dashboard'],
+          permissions: ['read', 'write']
+        };
+
+        // Donner tous les accès aux admins
+        if (authUser.roles?.includes('admin')) {
+          authUser.module_permissions = ['fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin', 'dashboard'];
+          authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
+        }
+
+        return authUser;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('❌ Exception lors de la récupération des données utilisateur:', error);
+      return null;
+    }
+  };
+
   const login = async (email: string, password: string) => {
-    console.log('🔐 Connexion pour:', email);
+    console.log('🔐 Tentative de connexion pour:', email);
     setLoading(true);
     
     try {
@@ -53,22 +99,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        console.log('✅ Connexion réussie');
-        // Créer un utilisateur avec les données de base et permissions par défaut
-        const authUser: AuthUser = {
-          id: data.user.id,
-          email: data.user.email || '',
-          nom: '',
-          prenom: '',
-          role: 'transport',
-          roles: ['transport'],
-          module_permissions: ['dashboard', 'missions', 'drivers', 'fleet', 'cargo', 'billing', 'rh', 'validations'],
-          permissions: ['read', 'write']
-        };
+        console.log('✅ Connexion Supabase réussie, récupération des données...');
         
-        setUser(authUser);
-        setLoading(false);
-        return { success: true };
+        // Récupérer les données utilisateur depuis la base
+        const userData = await fetchUserData(data.user.id, data.user.email || '');
+        
+        if (userData) {
+          console.log('✅ Utilisateur connecté:', userData);
+          setUser(userData);
+          setLoading(false);
+          return { success: true };
+        } else {
+          console.error('❌ Impossible de récupérer les données utilisateur');
+          setLoading(false);
+          return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
+        }
       }
 
       setLoading(false);
@@ -96,7 +141,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return false;
     
     // L'admin a toutes les permissions
-    if (user.role === 'admin' || user.roles?.includes('admin')) return true;
+    if (user.roles?.includes('admin')) return true;
     
     // Vérifier les permissions spécifiques
     const userPermissions = user.permissions || [];

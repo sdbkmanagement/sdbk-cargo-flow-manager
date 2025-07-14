@@ -14,6 +14,9 @@ const Administration = () => {
   const { user, hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
 
+  console.log('🔧 Administration - User:', user);
+  console.log('🔧 Administration - Has admin role:', hasRole('admin'));
+
   // Si aucun utilisateur connecté, afficher le bouton de création admin
   if (!user) {
     return (
@@ -36,6 +39,8 @@ const Administration = () => {
 
   // Vérifier si l'utilisateur est admin
   if (!hasRole('admin')) {
+    console.log('❌ Accès refusé - Rôles utilisateur:', user.roles);
+    
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="w-full max-w-md">
@@ -44,6 +49,12 @@ const Administration = () => {
             <CardTitle>Accès non autorisé</CardTitle>
             <CardDescription>
               Vous devez avoir le rôle "Admin Système" pour accéder à cette section.
+              <br />
+              <span className="text-sm text-gray-500 mt-2 block">
+                Utilisateur connecté: {user.email}
+                <br />
+                Rôles actuels: {user.roles?.join(', ') || user.role}
+              </span>
             </CardDescription>
           </CardHeader>
         </Card>
