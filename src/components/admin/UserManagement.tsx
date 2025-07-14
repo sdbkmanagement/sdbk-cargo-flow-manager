@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
-import { adminService } from '@/services/admin';
+import { userService } from '@/services/admin/userService';
 import { OptimizedUserForm } from './OptimizedUserForm';
 import { ROLE_LABELS, MODULE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -25,15 +25,23 @@ export const UserManagement = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: () => adminService.getUsers(),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+  console.log('🔧 UserManagement - État des dialogs:', { 
+    isCreateDialogOpen, 
+    isEditDialogOpen,
+    selectedUser: selectedUser?.id
   });
 
+  const { data: users = [], isLoading, error } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: () => userService.getUsers(),
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  console.log('🔧 UserManagement - Users loaded:', users.length, 'Error:', error);
+
   const deleteUserMutation = useMutation({
-    mutationFn: (userId: string) => adminService.deleteUser(userId),
+    mutationFn: (userId: string) => userService.deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast({
@@ -41,10 +49,11 @@ export const UserManagement = () => {
         description: "L'utilisateur a été supprimé avec succès."
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('🔧 Delete user error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'utilisateur.",
+        description: error.message || "Impossible de supprimer l'utilisateur.",
         variant: "destructive"
       });
     }
@@ -52,7 +61,7 @@ export const UserManagement = () => {
 
   const toggleStatusMutation = useMutation({
     mutationFn: ({ userId, status }: { userId: string; status: SystemUser['statut'] }) => 
-      adminService.toggleUserStatus(userId, status),
+      userService.toggleUserStatus(userId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast({
@@ -60,27 +69,29 @@ export const UserManagement = () => {
         description: "Le statut de l'utilisateur a été modifié avec succès."
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('🔧 Toggle status error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de modifier le statut de l'utilisateur.",
+        description: error.message || "Impossible de modifier le statut de l'utilisateur.",
         variant: "destructive"
       });
     }
   });
 
   const resetPasswordMutation = useMutation({
-    mutationFn: (userId: string) => adminService.resetPassword(userId),
+    mutationFn: (userId: string) => userService.resetPassword(userId),
     onSuccess: () => {
       toast({
         title: "Mot de passe réinitialisé",
         description: "Un email de réinitialisation a été envoyé à l'utilisateur."
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('🔧 Reset password error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de réinitialiser le mot de passe.",
+        description: error.message || "Impossible de réinitialiser le mot de passe.",
         variant: "destructive"
       });
     }
@@ -133,12 +144,21 @@ export const UserManagement = () => {
   };
 
   const handleCreateSuccess = () => {
+    console.log('🔧 handleCreateSuccess appelé');
+    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     setIsCreateDialogOpen(false);
   };
 
   const handleEditSuccess = () => {
+    console.log('🔧 handleEditSuccess appelé');
+    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     setIsEditDialogOpen(false);
     setSelectedUser(null);
+  };
+
+  const handleCreateClick = () => {
+    console.log('🔧 Bouton Nouvel utilisateur cliqué');
+    setIsCreateDialogOpen(true);
   };
 
   if (isLoading) {
@@ -147,6 +167,17 @@ export const UserManagement = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p>Chargement des utilisateurs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <p className="text-red-600">Erreur lors du chargement des utilisateurs</p>
+          <p className="text-sm text-gray-500 mt-2">{(error as Error).message}</p>
         </div>
       </div>
     );
@@ -163,23 +194,10 @@ export const UserManagement = () => {
                 Gérez les comptes utilisateurs, leurs rôles et permissions
               </CardDescription>
             </div>
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nouvel utilisateur
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
-                  <DialogDescription>
-                    Configurez les rôles et permissions pour le nouvel utilisateur.
-                  </DialogDescription>
-                </DialogHeader>
-                <OptimizedUserForm onSuccess={handleCreateSuccess} />
-              </DialogContent>
-            </Dialog>
+            <Button onClick={handleCreateClick} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Nouvel utilisateur
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -347,7 +365,20 @@ export const UserManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog d'édition optimisé */}
+      {/* Dialog de création */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
+            <DialogDescription>
+              Configurez les rôles et permissions pour le nouvel utilisateur.
+            </DialogDescription>
+          </DialogHeader>
+          <OptimizedUserForm onSuccess={handleCreateSuccess} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'édition */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
