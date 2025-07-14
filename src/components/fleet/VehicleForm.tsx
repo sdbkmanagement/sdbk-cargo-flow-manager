@@ -59,7 +59,7 @@ interface FormData {
   remorque_immatriculation: string;
   remorque_volume_litres: string;
   remorque_marque: string;
-  remorque_modele: string;
+  remorque_modelle: string;
   remorque_configuration: string;
   remorque_numero_chassis: string;
   remorque_annee_fabrication: string;
@@ -140,7 +140,7 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
         remorque_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.remorque_immatriculation : null,
         remorque_volume_litres: data.remorque_volume_litres ? parseFloat(data.remorque_volume_litres) : null,
         remorque_marque: data.type_vehicule === 'tracteur_remorque' ? data.remorque_marque : null,
-        remorque_modele: data.type_vehicule === 'tracteur_remorque' ? data.remorque_modele : null,
+        remorque_modele: data.type_vehicule === 'tracteur_remorque' ? data.remorque_modelle : null,
         remorque_configuration: data.remorque_configuration || null,
         remorque_numero_chassis: data.remorque_numero_chassis || null,
         remorque_annee_fabrication: data.remorque_annee_fabrication ? parseInt(data.remorque_annee_fabrication) : null,
