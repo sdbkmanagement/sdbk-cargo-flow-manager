@@ -17,7 +17,9 @@ export interface User {
   prenom: string;
   email: string;
   role: UserRole;
+  roles?: UserRole[];
   permissions: string[];
+  module_permissions?: string[];
   avatar?: string;
 }
 
@@ -27,7 +29,9 @@ export interface UserWithRole {
   prenom: string;
   email: string;
   role: UserRole;
+  roles?: UserRole[];
   permissions: string[];
+  module_permissions?: string[];
 }
 
 export interface Vehicle {

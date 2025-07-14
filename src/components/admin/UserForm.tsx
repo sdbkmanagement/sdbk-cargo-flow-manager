@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation } from '@tanstack/react-query';
@@ -23,6 +22,7 @@ interface UserFormData {
   nom: string;
   prenom: string;
   password?: string;
+  role: string; // Rôle principal pour compatibilité
   roles: string[];
   module_permissions: string[];
   statut: 'actif' | 'inactif' | 'suspendu';
@@ -36,6 +36,7 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
       email: user?.email || '',
       nom: user?.nom || '',
       prenom: user?.prenom || '',
+      role: user?.roles?.[0] || user?.role || 'transport',
       roles: user?.roles || [user?.role] || ['transport'],
       module_permissions: user?.module_permissions || [],
       statut: user?.statut || 'actif'
@@ -45,7 +46,12 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
   const createMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
       console.log('Creating user:', data);
-      return userService.createUser(data);
+      // Assurer que le rôle principal est le premier des rôles
+      const userData = {
+        ...data,
+        role: data.roles[0] || 'transport'
+      };
+      return userService.createUser(userData);
     },
     onSuccess: () => {
       toast({
@@ -66,7 +72,11 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
 
   const updateMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
-      return userService.updateUser(user!.id, data);
+      const userData = {
+        ...data,
+        role: data.roles[0] || 'transport'
+      };
+      return userService.updateUser(user!.id, userData);
     },
     onSuccess: () => {
       toast({
