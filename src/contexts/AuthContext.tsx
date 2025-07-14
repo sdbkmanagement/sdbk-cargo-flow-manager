@@ -34,8 +34,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (authUser.email === 'sdbkmanagement@gmail.com') {
       return {
         id: authUser.id,
-        nom: 'Admin',
-        prenom: 'SDBK',
+        nom: 'Système',
+        prenom: 'Admin',
         email: authUser.email,
         role: 'admin',
         roles: ['admin'],
@@ -61,36 +61,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Loading user data for:', authUser.email);
       
-      // Essayer de récupérer les données utilisateur depuis la base
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
+      // Créer un utilisateur par défaut immédiatement pour éviter les blocages
+      const defaultUser = createDefaultUser(authUser);
+      setUser(defaultUser);
+      
+      // Essayer de récupérer les données depuis la base en arrière-plan
+      setTimeout(async () => {
+        try {
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authUser.id)
+            .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error loading user data:', error);
-      }
-
-      if (userData) {
-        const userWithRole: UserWithRole = {
-          id: userData.id,
-          nom: userData.last_name || 'Utilisateur',
-          prenom: userData.first_name || 'Nouveau',
-          email: authUser.email,
-          role: userData.roles?.[0] || 'transport',
-          roles: userData.roles || ['transport'],
-          module_permissions: userData.module_permissions || [],
-          permissions: userData.roles?.includes('admin') ? ['all'] : []
-        };
-        setUser(userWithRole);
-        console.log('User loaded from database:', userWithRole);
-      } else {
-        // Créer un utilisateur par défaut si pas trouvé en base
-        const defaultUser = createDefaultUser(authUser);
-        setUser(defaultUser);
-        console.log('Default user created:', defaultUser);
-      }
+          if (!error && userData) {
+            const userWithRole: UserWithRole = {
+              id: userData.id,
+              nom: userData.last_name || 'Utilisateur',
+              prenom: userData.first_name || 'Nouveau',
+              email: authUser.email,
+              role: userData.roles?.[0] || 'transport',
+              roles: userData.roles || ['transport'],
+              module_permissions: userData.module_permissions || [],
+              permissions: userData.roles?.includes('admin') ? ['all'] : []
+            };
+            setUser(userWithRole);
+            console.log('User updated from database:', userWithRole);
+          }
+        } catch (error) {
+          console.error('Error loading user from database:', error);
+          // Garder l'utilisateur par défaut en cas d'erreur
+        }
+      }, 100);
       
     } catch (error) {
       console.error('Error in loadUser:', error);
@@ -107,14 +109,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         console.log('Initializing auth...');
         
-        // Définir un timeout pour éviter les blocages infinis
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Auth timeout')), 5000)
-        );
-        
-        const sessionPromise = supabase.auth.getSession();
-        
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user && mounted) {
           await loadUser(session.user);
@@ -125,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('Error during auth initialization:', error);
       } finally {
         if (mounted) {
-          console.log('Auth initialization completed, setting loading to false');
+          console.log('Auth initialization completed');
           setLoading(false);
         }
       }
@@ -145,7 +140,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(null);
         }
         
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     );
 
