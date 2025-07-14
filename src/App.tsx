@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { UserMenu } from '@/components/layout/UserMenu';
+import { LoginForm } from '@/components/auth/LoginForm';
 
 // Lazy loading pour améliorer les performances
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -43,27 +44,6 @@ const PageLoader = () => (
   </div>
 );
 
-// Composant de connexion simplifié
-const LoginPage = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gray-50">
-    <div className="max-w-md w-full space-y-8 p-8">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-8">SDBK Cargo Flow Manager</h2>
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium mb-4">Connexion requise</h3>
-          <p className="text-gray-600 mb-6">Veuillez vous connecter pour accéder à l'application.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
-          >
-            Actualiser la page
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 // Layout principal optimisé
 const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, initialized } = useAuth();
@@ -96,10 +76,10 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     );
   }
 
-  // Si pas d'utilisateur connecté, afficher la page de connexion
+  // Si pas d'utilisateur connecté, afficher le formulaire de connexion
   if (!user) {
-    console.log('No user found, showing login page');
-    return <LoginPage />;
+    console.log('No user found, showing login form');
+    return <LoginForm />;
   }
 
   console.log('User authenticated, showing app layout');
