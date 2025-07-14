@@ -9,9 +9,12 @@ interface FleetStatsData {
   disponibles: number;
   en_mission: number;
   maintenance: number;
+  validation_requise: number;
   hydrocarbures: number;
   bauxite: number;
   maintenance_urgente: number;
+  bases: Array<{ nom: string; count: number }>;
+  types_transport: Array<{ nom: string; count: number }>;
 }
 
 interface FleetStatsProps {
@@ -20,7 +23,7 @@ interface FleetStatsProps {
 
 export const FleetStats = ({ stats }: FleetStatsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4">
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
@@ -65,6 +68,18 @@ export const FleetStats = ({ stats }: FleetStatsProps) => {
               <p className="text-2xl font-bold text-orange-600">{stats.maintenance}</p>
             </div>
             <Wrench className="w-8 h-8 text-orange-600" />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Validation</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.validation_requise}</p>
+            </div>
+            <AlertTriangle className="w-8 h-8 text-yellow-600" />
           </div>
         </CardContent>
       </Card>

@@ -51,6 +51,9 @@ export interface FleetStatsData {
   en_mission: number;
   maintenance: number;
   validation_requise: number;
+  hydrocarbures: number;
+  bauxite: number;
+  maintenance_urgente: number;
   bases: Array<{ nom: string; count: number }>;
   types_transport: Array<{ nom: string; count: number }>;
 }
@@ -195,6 +198,9 @@ const vehiculesService = {
           en_mission: 0,
           maintenance: 0,
           validation_requise: 0,
+          hydrocarbures: 0,
+          bauxite: 0,
+          maintenance_urgente: 0,
           bases: [],
           types_transport: []
         };
@@ -205,6 +211,9 @@ const vehiculesService = {
       const en_mission = vehicles?.filter(v => v.statut === 'en_mission').length || 0;
       const maintenance = vehicles?.filter(v => v.statut === 'maintenance').length || 0;
       const validation_requise = vehicles?.filter(v => v.statut === 'validation_requise').length || 0;
+      const hydrocarbures = vehicles?.filter(v => v.type_transport === 'hydrocarbures').length || 0;
+      const bauxite = vehicles?.filter(v => v.type_transport === 'bauxite').length || 0;
+      const maintenance_urgente = 0; // TODO: Calculate based on maintenance dates
 
       // Calcul des statistiques par base
       const basesCount = vehicles?.reduce((acc: { [key: string]: number }, vehicle) => {
@@ -236,6 +245,9 @@ const vehiculesService = {
         en_mission,
         maintenance,
         validation_requise,
+        hydrocarbures,
+        bauxite,
+        maintenance_urgente,
         bases,
         types_transport
       };
@@ -247,6 +259,9 @@ const vehiculesService = {
         en_mission: 0,
         maintenance: 0,
         validation_requise: 0,
+        hydrocarbures: 0,
+        bauxite: 0,
+        maintenance_urgente: 0,
         bases: [],
         types_transport: []
       };
@@ -269,6 +284,26 @@ const vehiculesService = {
       return bases;
     } catch (error) {
       console.error('Erreur lors du chargement des bases:', error);
+      return [];
+    }
+  },
+
+  async getDocuments(vehiculeId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('documents_vehicules')
+        .select('*')
+        .eq('vehicule_id', vehiculeId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur lors du chargement des documents:', error);
+        return [];
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Erreur lors du chargement des documents:', error);
       return [];
     }
   },

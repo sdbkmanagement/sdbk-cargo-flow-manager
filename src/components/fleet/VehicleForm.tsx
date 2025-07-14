@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -108,7 +109,7 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
         numero: data.numero,
         type_vehicule: data.type_vehicule,
         type_transport: data.type_transport,
-        statut: data.statut,
+        statut: data.statut || 'disponible', // Ensure statut is always provided
         base: data.base || null,
         integration: data.integration || null,
         
