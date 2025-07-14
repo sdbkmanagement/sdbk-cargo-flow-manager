@@ -47,19 +47,19 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Afficher le loader seulement si non initialisé
+  // Afficher le loader seulement si l'authentification n'est pas initialisée
   if (!initialized) {
     return <PageLoader message="Chargement de l'application..." />;
   }
 
-  // Afficher le loader pendant la connexion
-  if (loading && !user) {
-    return <PageLoader message="Connexion en cours..." />;
+  // Si pas d'utilisateur connecté, afficher la page de connexion
+  if (!user && !loading) {
+    return <LoginForm />;
   }
 
-  // Redirection vers login si non authentifié
-  if (!user) {
-    return <LoginForm />;
+  // Si l'utilisateur est en cours de connexion, afficher le loader
+  if (loading && !user) {
+    return <PageLoader message="Connexion en cours..." />;
   }
 
   return (

@@ -11,13 +11,20 @@ import { useToast } from '@/hooks/use-toast';
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loading } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    if (!email || !password) {
+      toast({
+        title: "Champs requis",
+        description: "Veuillez remplir tous les champs",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       const result = await login(email, password);
@@ -25,7 +32,7 @@ export const LoginForm = () => {
       if (result.success) {
         toast({
           title: "Connexion réussie",
-          description: "Bienvenue dans SDBK Transport Manager",
+          description: "Redirection en cours...",
         });
       } else {
         toast({
@@ -41,8 +48,6 @@ export const LoginForm = () => {
         description: "Une erreur est survenue lors de la connexion",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -71,7 +76,7 @@ export const LoginForm = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre-email@sdbk.com"
                 required
-                disabled={isLoading}
+                disabled={loading}
                 autoComplete="email"
               />
             </div>
@@ -84,16 +89,16 @@ export const LoginForm = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={isLoading}
+                disabled={loading}
                 autoComplete="current-password"
               />
             </div>
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isLoading || !email || !password}
+              disabled={loading || !email || !password}
             >
-              {isLoading ? (
+              {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Connexion en cours...

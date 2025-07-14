@@ -81,10 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         console.log('👤 Active session found');
-        setLoading(true);
         const userData = await loadUserFromDatabase(session.user);
         setUser(userData);
-        setLoading(false);
       } else {
         console.log('🚫 No active session');
         setUser(null);
@@ -92,7 +90,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('❌ Auth initialization error:', error);
       setUser(null);
-      setLoading(false);
     } finally {
       setInitialized(true);
       console.log('✅ Auth initialization completed');
@@ -100,31 +97,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [loadUserFromDatabase]);
 
   useEffect(() => {
-    // Timeout pour éviter les chargements infinis
-    const initTimeout = setTimeout(() => {
-      if (!initialized) {
-        console.log('⏰ Auth initialization timeout - forcing initialized state');
-        setInitialized(true);
-        setLoading(false);
-      }
-    }, 2000); // 2 secondes maximum
-
     initializeAuth();
-
-    return () => clearTimeout(initTimeout);
-  }, [initializeAuth, initialized]);
+  }, [initializeAuth]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event);
       
       if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ User signed in, loading profile...');
         setLoading(true);
         const userData = await loadUserFromDatabase(session.user);
         setUser(userData);
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
+        console.log('👋 User signed out');
         setUser(null);
+        setLoading(false);
       }
     });
 
@@ -132,7 +121,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [loadUserFromDatabase]);
 
   const login = async (email: string, password: string) => {
+    console.log('🔐 Attempting login for:', email);
     setLoading(true);
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -141,30 +132,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Login error:', error);
+        setLoading(false);
         return { success: false, error: error.message };
       }
 
       if (data.user) {
+        console.log('✅ Login successful, loading user data...');
         const userData = await loadUserFromDatabase(data.user);
         setUser(userData);
+        setLoading(false);
         return { success: true };
       }
 
+      setLoading(false);
       return { success: false, error: 'Échec de la connexion' };
     } catch (error: any) {
       console.error('❌ Login exception:', error);
-      return { success: false, error: error.message || 'Erreur de connexion' };
-    } finally {
       setLoading(false);
+      return { success: false, error: error.message || 'Erreur de connexion' };
     }
   };
 
   const logout = async () => {
     try {
+      setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
+      setLoading(false);
     } catch (error) {
       console.error('❌ Logout error:', error);
+      setLoading(false);
     }
   };
 
