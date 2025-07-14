@@ -1,4 +1,5 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
+
+import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
@@ -44,33 +45,11 @@ const queryClient = new QueryClient({
 
 // Layout principal avec correction du positionnement
 const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, initialized } = useAuth();
+  const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { isVisible, hasReturned } = usePageVisibility();
 
-  console.log('🔍 App state:', { user: !!user, loading, initialized, isVisible, hasReturned });
-
-  // Léger refresh uniquement quand nécessaire
-  useEffect(() => {
-    if (hasReturned && user) {
-      console.log('🔄 User returned to tab - gentle refresh');
-      // Force un léger recalcul sans casser l'interface
-      const timer = setTimeout(() => {
-        document.body.style.transform = 'translateZ(0)';
-        setTimeout(() => {
-          document.body.style.transform = '';
-        }, 10);
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [hasReturned, user]);
-
-  // Afficher le loader seulement pendant l'initialisation
-  if (!initialized) {
-    console.log('⏳ Auth initializing...');
-    return <PageLoader message="Initialisation..." />;
-  }
+  console.log('🔍 App state:', { user: !!user, loading, isVisible, hasReturned });
 
   // Si pas d'utilisateur connecté, afficher la page de connexion
   if (!user) {

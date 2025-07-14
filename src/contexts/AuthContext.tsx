@@ -1,7 +1,6 @@
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { User } from '@supabase/supabase-js';
 
 interface AuthUser {
   id: string;
@@ -17,7 +16,6 @@ interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   loading: boolean;
-  initialized: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
@@ -36,10 +34,9 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(false); // Changé de true à false
-  const [initialized, setInitialized] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const loadUserFromDatabase = useCallback(async (authUser: User): Promise<AuthUser | null> => {
+  const loadUserFromDatabase = useCallback(async (authUser: any): Promise<AuthUser | null> => {
     try {
       console.log('🔄 Loading user data for:', authUser.email);
       
@@ -90,101 +87,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         module_permissions: [],
         permissions: []
       };
-      console.log('🔧 Fallback user created:', fallbackUser);
       return fallbackUser;
     }
   }, []);
-
-  useEffect(() => {
-    console.log('🚀 Initializing auth...');
-    
-    let mounted = true;
-
-    const initializeAuth = async () => {
-      try {
-        // Commencer par vérifier s'il y a une session existante
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session?.user && mounted) {
-          console.log('📱 Existing session found, loading user...');
-          setLoading(true);
-          try {
-            const userData = await loadUserFromDatabase(session.user);
-            if (mounted) {
-              setUser(userData);
-            }
-          } catch (error) {
-            console.error('❌ Error loading user from existing session:', error);
-            if (mounted) {
-              setUser(null);
-            }
-          } finally {
-            if (mounted) {
-              setLoading(false);
-              setInitialized(true);
-            }
-          }
-        } else {
-          console.log('🚫 No existing session found');
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-            setInitialized(true);
-          }
-        }
-      } catch (error) {
-        console.error('❌ Auth initialization error:', error);
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-          setInitialized(true);
-        }
-      }
-    };
-
-    initializeAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, [loadUserFromDatabase]);
-
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event);
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ User signed in, loading profile...');
-        setLoading(true);
-        
-        try {
-          const userData = await loadUserFromDatabase(session.user);
-          setUser(userData);
-          console.log('✅ User profile loaded after sign in');
-        } catch (error) {
-          console.error('❌ Error loading user profile after sign in:', error);
-          setUser({
-            id: session.user.id,
-            email: session.user.email || '',
-            nom: '',
-            prenom: '',
-            role: 'transport',
-            roles: ['transport'],
-            module_permissions: [],
-            permissions: []
-          });
-        } finally {
-          setLoading(false);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        console.log('👋 User signed out');
-        setUser(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [loadUserFromDatabase]);
 
   const login = async (email: string, password: string) => {
     console.log('🔐 Attempting login for:', email);
@@ -203,7 +108,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        console.log('✅ Login successful, user will be loaded by auth state change');
+        console.log('✅ Login successful, loading user profile...');
+        const userData = await loadUserFromDatabase(data.user);
+        setUser(userData);
+        setLoading(false);
         return { success: true };
       }
 
@@ -244,7 +152,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider value={{
       user,
       loading,
-      initialized,
       login,
       logout,
       hasRole,

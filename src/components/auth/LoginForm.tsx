@@ -11,8 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false); // État local pour le formulaire
-  const { login, loading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,7 +35,7 @@ export const LoginForm = () => {
       if (result.success) {
         toast({
           title: "Connexion réussie",
-          description: "Redirection en cours...",
+          description: "Bienvenue !",
         });
       } else {
         toast({
@@ -56,9 +56,6 @@ export const LoginForm = () => {
     }
   };
 
-  // Utiliser l'état local isSubmitting au lieu de loading pour l'affichage du formulaire
-  const isLoading = isSubmitting || loading;
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
       <Card className="w-full max-w-md">
@@ -70,7 +67,7 @@ export const LoginForm = () => {
           </div>
           <CardTitle className="text-2xl font-bold">SDBK Transport</CardTitle>
           <CardDescription>
-            Système de gestion de flotte
+            Connexion au système de gestion de flotte
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -84,7 +81,7 @@ export const LoginForm = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre-email@sdbk.com"
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
                 autoComplete="email"
               />
             </div>
@@ -97,16 +94,16 @@ export const LoginForm = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={isLoading}
+                disabled={isSubmitting}
                 autoComplete="current-password"
               />
             </div>
             <Button 
               type="submit" 
               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors" 
-              disabled={isLoading}
+              disabled={isSubmitting}
             >
-              {isLoading ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Connexion en cours...
