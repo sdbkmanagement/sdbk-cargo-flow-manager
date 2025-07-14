@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -28,8 +27,8 @@ export const UserManagement = () => {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => adminService.getUsers(),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const deleteUserMutation = useMutation({
@@ -86,7 +85,6 @@ export const UserManagement = () => {
     }
   });
 
-  // Filtres optimisés
   const filteredUsers = React.useMemo(() => {
     return users.filter(user => {
       const matchesSearch = !searchTerm || 
@@ -154,26 +152,34 @@ export const UserManagement = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
+      <Card className="shadow-lg border-0 bg-gradient-to-r from-white to-gray-50">
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Gestion des Utilisateurs</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl font-bold text-gray-900">
+                Gestion des Utilisateurs
+              </CardTitle>
+              <CardDescription className="text-base text-gray-600 mt-1">
                 Gérez les comptes utilisateurs, leurs rôles et permissions
               </CardDescription>
             </div>
+            
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button 
+                  size="lg" 
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <Plus className="h-5 w-5 mr-2" />
                   Nouvel utilisateur
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
-                  <DialogDescription>
+                  <DialogTitle className="text-xl font-semibold">
+                    Créer un nouvel utilisateur
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-600">
                     Configurez les rôles et permissions pour le nouvel utilisateur.
                   </DialogDescription>
                 </DialogHeader>
@@ -182,8 +188,8 @@ export const UserManagement = () => {
             </Dialog>
           </div>
         </CardHeader>
+        
         <CardContent>
-          {/* Filtres optimisés */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
@@ -192,12 +198,12 @@ export const UserManagement = () => {
                   placeholder="Rechercher par nom, prénom ou email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-9 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
                 />
               </div>
             </div>
             <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px] h-11 border-gray-200">
                 <SelectValue placeholder="Filtrer par rôle" />
               </SelectTrigger>
               <SelectContent>
@@ -208,7 +214,7 @@ export const UserManagement = () => {
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectTrigger className="w-full sm:w-[200px] h-11 border-gray-200">
                 <SelectValue placeholder="Filtrer par statut" />
               </SelectTrigger>
               <SelectContent>
@@ -220,25 +226,24 @@ export const UserManagement = () => {
             </Select>
           </div>
 
-          {/* Tableau optimisé */}
-          <div className="border rounded-lg">
+          <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
             <Table>
-              <TableHeader>
+              <TableHeader className="bg-gray-50">
                 <TableRow>
-                  <TableHead>Utilisateur</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Rôles</TableHead>
-                  <TableHead>Modules</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="font-semibold">Utilisateur</TableHead>
+                  <TableHead className="font-semibold">Email</TableHead>
+                  <TableHead className="font-semibold">Rôles</TableHead>
+                  <TableHead className="font-semibold">Modules</TableHead>
+                  <TableHead className="font-semibold">Statut</TableHead>
+                  <TableHead className="text-right font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+                  <TableRow key={user.id} className="hover:bg-gray-50 transition-colors">
                     <TableCell>
                       <div>
-                        <div className="font-medium">{user.prenom} {user.nom}</div>
+                        <div className="font-medium text-gray-900">{user.prenom} {user.nom}</div>
                         <div className="text-sm text-muted-foreground">
                           Créé le {new Date(user.created_at).toLocaleDateString('fr-FR')}
                         </div>
@@ -275,6 +280,7 @@ export const UserManagement = () => {
                             setSelectedUser(user);
                             setIsEditDialogOpen(true);
                           }}
+                          className="hover:bg-blue-50 hover:border-blue-200"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -284,6 +290,7 @@ export const UserManagement = () => {
                           variant="outline"
                           onClick={() => resetPasswordMutation.mutate(user.id)}
                           disabled={resetPasswordMutation.isPending}
+                          className="hover:bg-orange-50 hover:border-orange-200"
                         >
                           <RotateCcw className="h-3 w-3" />
                         </Button>
@@ -293,6 +300,7 @@ export const UserManagement = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'inactif' })}
+                            className="hover:bg-red-50 hover:border-red-200"
                           >
                             <UserX className="h-3 w-3" />
                           </Button>
@@ -301,6 +309,7 @@ export const UserManagement = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'actif' })}
+                            className="hover:bg-green-50 hover:border-green-200"
                           >
                             <UserCheck className="h-3 w-3" />
                           </Button>
@@ -308,7 +317,11 @@ export const UserManagement = () => {
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 hover:border-red-200"
+                            >
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </AlertDialogTrigger>
@@ -340,19 +353,22 @@ export const UserManagement = () => {
           </div>
 
           {filteredUsers.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              Aucun utilisateur trouvé avec les critères de recherche actuels.
+            <div className="text-center py-12 text-muted-foreground">
+              <div className="text-6xl mb-4">🔍</div>
+              <h3 className="text-lg font-medium mb-2">Aucun utilisateur trouvé</h3>
+              <p>Aucun utilisateur ne correspond aux critères de recherche actuels.</p>
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Dialog d'édition optimisé */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Modifier l'utilisateur</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl font-semibold">
+              Modifier l'utilisateur
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
               Modifiez les rôles et permissions de l'utilisateur
             </DialogDescription>
           </DialogHeader>
