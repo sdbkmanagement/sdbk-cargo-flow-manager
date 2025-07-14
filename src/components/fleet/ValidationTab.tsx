@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ValidationWorkflowCard } from './validation/ValidationWorkflowCard';
 import { ValidationStats } from './validation/ValidationStats';
 import { Search, Filter } from 'lucide-react';
+import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import type { Database } from '@/integrations/supabase/types';
 
 type Vehicule = Database['public']['Tables']['vehicules']['Row'] & {
@@ -23,6 +24,7 @@ interface ValidationTabProps {
 export const ValidationTab = ({ vehicles }: ValidationTabProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const { getUserRole } = useValidationPermissions();
 
   // Filtrer les véhicules
   const filteredVehicles = vehicles.filter(vehicle => {
@@ -116,7 +118,7 @@ export const ValidationTab = ({ vehicles }: ValidationTabProps) => {
                   key={vehicle.id}
                   vehiculeId={vehicle.id}
                   vehiculeNumero={`${vehicle.numero} (${vehicle.immatriculation})`}
-                  userRole="admin" // TODO: Récupérer le vrai rôle utilisateur
+                  userRole={getUserRole()}
                 />
               ))
             )}

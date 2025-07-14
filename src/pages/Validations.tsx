@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { ValidationWorkflowCard } from '@/components/fleet/validation/Validation
 import { ValidationStats } from '@/components/fleet/validation/ValidationStats';
 import { vehiculesService } from '@/services/vehicules';
 import { validationService } from '@/services/validation';
+import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 
 type Vehicule = {
@@ -80,6 +80,8 @@ const Validations = () => {
     staleTime: 60000, // Cache 1 minute
     gcTime: 300000, // Keep in cache for 5 minutes
   });
+
+  const { getUserRole } = useValidationPermissions();
 
   const handleRefresh = async () => {
     console.log('Actualisation manuelle des données');
@@ -224,7 +226,7 @@ const Validations = () => {
                   key={vehicle.id}
                   vehiculeId={vehicle.id}
                   vehiculeNumero={`${vehicle.numero} (${vehicle.immatriculation || vehicle.tracteur_immatriculation || 'N/A'})`}
-                  userRole="admin"
+                  userRole={getUserRole()}
                 />
               ))
             ) : (

@@ -5,15 +5,21 @@ export const useValidationPermissions = () => {
   const { user, hasRole } = useAuth();
 
   const canValidateEtape = (etape: string): boolean => {
+    if (!user) return false;
+    
+    // L'admin peut tout faire
+    if (user.role === 'admin') return true;
+    
+    // Chaque rôle peut valider son étape correspondante
     switch (etape) {
       case 'maintenance':
-        return hasRole('maintenance') || hasRole('admin');
+        return user.role === 'maintenance';
       case 'administratif':
-        return hasRole('administratif') || hasRole('admin');
+        return user.role === 'administratif';
       case 'hsecq':
-        return hasRole('hsecq') || hasRole('admin');
+        return user.role === 'hsecq';
       case 'obc':
-        return hasRole('obc') || hasRole('admin');
+        return user.role === 'obc';
       default:
         return false;
     }
@@ -21,7 +27,6 @@ export const useValidationPermissions = () => {
 
   const getUserRole = (): string => {
     if (!user) return '';
-    // Retourner le premier rôle trouvé
     return user.role || '';
   };
 
