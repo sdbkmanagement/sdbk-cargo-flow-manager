@@ -6,7 +6,6 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { UserMenu } from '@/components/layout/UserMenu';
-import Index from '@/pages/Index';
 
 // Lazy loading pour améliorer les performances
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -40,6 +39,27 @@ const PageLoader = () => (
     <div className="text-center">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
       <p className="text-sm text-gray-600">Chargement du module...</p>
+    </div>
+  </div>
+);
+
+// Composant de connexion simplifié
+const LoginPage = () => (
+  <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="max-w-md w-full space-y-8 p-8">
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-900 mb-8">SDBK Cargo Flow Manager</h2>
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h3 className="text-lg font-medium mb-4">Connexion requise</h3>
+          <p className="text-gray-600 mb-6">Veuillez vous connecter pour accéder à l'application.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-colors"
+          >
+            Actualiser la page
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 );
@@ -78,8 +98,8 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   // Si pas d'utilisateur connecté, afficher la page de connexion
   if (!user) {
-    console.log('No user found, showing login form');
-    return <Index />;
+    console.log('No user found, showing login page');
+    return <LoginPage />;
   }
 
   console.log('User authenticated, showing app layout');
