@@ -23,7 +23,7 @@ const DocumentStock = lazy(() => import('@/pages/DocumentStock'));
 const Guide = lazy(() => import('@/pages/Guide'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
-// Configuration optimisée du QueryClient avec cache intelligent
+// Configuration optimisée du QueryClient
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -31,11 +31,9 @@ const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000, // 10 minutes
       refetchOnWindowFocus: false,
       retry: (failureCount, error: any) => {
-        // Pas de retry pour les erreurs d'authentification
         if (error?.status === 401 || error?.status === 403) return false;
         return failureCount < 2;
       },
-      // Optimisation réseau
       networkMode: 'offlineFirst',
     },
     mutations: {
@@ -49,9 +47,14 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Optimisation: État de chargement immédiat sans délai
-  if (!initialized || loading) {
+  // Afficher le loader seulement si non initialisé
+  if (!initialized) {
     return <PageLoader message="Chargement de l'application..." />;
+  }
+
+  // Afficher le loader pendant la connexion
+  if (loading && !user) {
+    return <PageLoader message="Connexion en cours..." />;
   }
 
   // Redirection vers login si non authentifié

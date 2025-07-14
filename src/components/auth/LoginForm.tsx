@@ -12,7 +12,7 @@ export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login, loading: authLoading } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,45 +20,31 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      toast({
-        title: "Connexion réussie",
-        description: "Bienvenue dans SDBK Transport Manager",
-      });
+      const result = await login(email, password);
+      
+      if (result.success) {
+        toast({
+          title: "Connexion réussie",
+          description: "Bienvenue dans SDBK Transport Manager",
+        });
+      } else {
+        toast({
+          title: "Erreur de connexion",
+          description: result.error || "Identifiants invalides",
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       console.error('Login error:', error);
-      let errorMessage = "Identifiants invalides";
-      
-      if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = "Email ou mot de passe incorrect";
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMessage = "Veuillez confirmer votre email avant de vous connecter";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
         title: "Erreur de connexion",
-        description: errorMessage,
+        description: "Une erreur est survenue lors de la connexion",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-            <span className="ml-2 text-lg">Chargement...</span>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
@@ -86,6 +72,7 @@ export const LoginForm = () => {
                 placeholder="votre-email@sdbk.com"
                 required
                 disabled={isLoading}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -98,13 +85,18 @@ export const LoginForm = () => {
                 placeholder="••••••••"
                 required
                 disabled={isLoading}
+                autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isLoading || !email || !password}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Connexion...
+                  Connexion en cours...
                 </>
               ) : (
                 'Se connecter'

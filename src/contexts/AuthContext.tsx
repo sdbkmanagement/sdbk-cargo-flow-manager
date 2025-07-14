@@ -39,18 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Cache pour éviter les appels répétés
-  const [userCache, setUserCache] = useState<Map<string, AuthUser>>(new Map());
-
   const loadUserFromDatabase = useCallback(async (authUser: User): Promise<AuthUser | null> => {
     try {
-      // Vérifier le cache d'abord
-      const cached = userCache.get(authUser.email!);
-      if (cached) {
-        console.log('✅ User loaded from cache:', authUser.email);
-        return cached;
-      }
-
       console.log('🔄 Loading user data for:', authUser.email);
       
       const { data: userData, error } = await supabase
@@ -59,13 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('email', authUser.email)
         .single();
 
-      if (error) {
+      if (error || !userData) {
         console.error('❌ Error loading user:', error);
-        return null;
-      }
-
-      if (!userData) {
-        console.warn('⚠️ No user data found for:', authUser.email);
         return null;
       }
 
@@ -80,50 +65,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         permissions: userData.roles?.includes('admin') ? ['all'] : userData.module_permissions || []
       };
 
-      // Mettre en cache
-      setUserCache(prev => new Map(prev.set(authUser.email!, authUserData)));
-      
-      console.log('✅ User loaded from database:', authUserData);
+      console.log('✅ User loaded successfully:', authUserData);
       return authUserData;
     } catch (error) {
       console.error('❌ Exception loading user:', error);
       return null;
     }
-  }, [userCache]);
+  }, []);
 
   const initializeAuth = useCallback(async () => {
-    if (initialized) return;
-
     console.log('🚀 Initializing auth...');
-    setLoading(true);
-
+    
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error('❌ Auth session error:', error);
-        setUser(null);
-      } else if (session?.user) {
-        console.log('👤 Active session found for:', session.user.email);
+      if (session?.user) {
+        console.log('👤 Active session found');
+        setLoading(true);
         const userData = await loadUserFromDatabase(session.user);
         setUser(userData);
+        setLoading(false);
       } else {
-        console.log('🚫 No active session found');
+        console.log('🚫 No active session');
         setUser(null);
       }
     } catch (error) {
       console.error('❌ Auth initialization error:', error);
       setUser(null);
-    } finally {
       setLoading(false);
+    } finally {
       setInitialized(true);
       console.log('✅ Auth initialization completed');
     }
-  }, [initialized, loadUserFromDatabase]);
+  }, [loadUserFromDatabase]);
 
   useEffect(() => {
+    // Timeout pour éviter les chargements infinis
+    const initTimeout = setTimeout(() => {
+      if (!initialized) {
+        console.log('⏰ Auth initialization timeout - forcing initialized state');
+        setInitialized(true);
+        setLoading(false);
+      }
+    }, 2000); // 2 secondes maximum
+
     initializeAuth();
-  }, [initializeAuth]);
+
+    return () => clearTimeout(initTimeout);
+  }, [initializeAuth, initialized]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -136,7 +125,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setUserCache(new Map()); // Clear cache on logout
       }
     });
 
@@ -175,7 +163,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setUser(null);
-      setUserCache(new Map()); // Clear cache
     } catch (error) {
       console.error('❌ Logout error:', error);
     }
