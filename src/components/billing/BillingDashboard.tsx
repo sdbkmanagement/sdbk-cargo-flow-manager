@@ -65,7 +65,7 @@ export const BillingDashboard = () => {
             <Euro className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalFacture.toLocaleString('fr-FR')} €</div>
+            <div className="text-2xl font-bold">{stats.totalFacture.toLocaleString('fr-FR')} GNF</div>
             <p className="text-xs text-muted-foreground">Toutes factures confondues</p>
           </CardContent>
         </Card>
@@ -116,7 +116,7 @@ export const BillingDashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600 mb-2">
-              {stats.chiffreAffaireMois.toLocaleString('fr-FR')} €
+              {stats.chiffreAffaireMois.toLocaleString('fr-FR')} GNF
             </div>
             <div className="space-y-2">
               <div className="flex justify-between text-sm">

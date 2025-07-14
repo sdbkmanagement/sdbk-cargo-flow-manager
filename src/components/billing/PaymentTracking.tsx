@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -163,7 +162,7 @@ export const PaymentTracking = () => {
               <div>
                 <div className="text-2xl font-bold">{stats.enAttente}</div>
                 <div className="text-sm text-muted-foreground">En attente</div>
-                <div className="text-xs text-muted-foreground">{stats.montantEnAttente.toFixed(2)} €</div>
+                <div className="text-xs text-muted-foreground">{stats.montantEnAttente.toLocaleString('fr-FR')} GNF</div>
               </div>
             </div>
           </CardContent>
@@ -176,7 +175,7 @@ export const PaymentTracking = () => {
               <div>
                 <div className="text-2xl font-bold">{stats.enRetard}</div>
                 <div className="text-sm text-muted-foreground">En retard</div>
-                <div className="text-xs text-muted-foreground">{stats.montantEnRetard.toFixed(2)} €</div>
+                <div className="text-xs text-muted-foreground">{stats.montantEnRetard.toLocaleString('fr-FR')} GNF</div>
               </div>
             </div>
           </CardContent>
@@ -267,7 +266,7 @@ export const PaymentTracking = () => {
                     <TableCell>{invoice.client_nom}</TableCell>
                     <TableCell>{new Date(invoice.date_emission).toLocaleDateString('fr-FR')}</TableCell>
                     <TableCell>{new Date(invoice.date_echeance).toLocaleDateString('fr-FR')}</TableCell>
-                    <TableCell className="font-medium">{Number(invoice.montant_ttc).toLocaleString('fr-FR')} €</TableCell>
+                    <TableCell className="font-medium">{Number(invoice.montant_ttc).toLocaleString('fr-FR')} GNF</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {getStatusIcon(invoice.statut)}

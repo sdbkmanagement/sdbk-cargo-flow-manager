@@ -57,38 +57,76 @@ const useDashboardStats = () => {
   });
 };
 
-// Hook pour les alertes récentes
+// Hook pour les alertes récentes basées sur les vraies données
 const useRecentAlerts = () => {
   return useQuery({
     queryKey: ['recent-alerts'],
     queryFn: async () => {
-      // Simulation d'alertes - à remplacer par de vraies requêtes
-      return [
-        {
-          id: 1,
+      // Récupérer les vraies alertes depuis la base de données
+      const [
+        alertesVehiculesRes,
+        alertesChauffeursRes,
+        alertesRHRes,
+        facturesEnRetardRes
+      ] = await Promise.all([
+        supabase.from('alertes_documents_vehicules').select('*').order('date_expiration', { ascending: true }).limit(3),
+        supabase.from('alertes_documents_chauffeurs').select('*').order('date_expiration', { ascending: true }).limit(3),
+        supabase.from('alertes_rh').select('*').order('date_echeance', { ascending: true }).limit(3),
+        supabase.from('factures').select('*').eq('statut', 'en_retard').order('date_echeance', { ascending: true }).limit(3)
+      ]);
+
+      const alertes = [];
+
+      // Ajouter les alertes de véhicules
+      (alertesVehiculesRes.data || []).forEach(alerte => {
+        alertes.push({
+          id: alerte.id,
           type: 'maintenance',
-          title: 'Maintenance programmée',
-          message: 'Véhicule TRK-001 - Échéance dans 2 jours',
-          priority: 'warning',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // Il y a 2h
-        },
-        {
-          id: 2,
-          type: 'mission',
-          title: 'Nouvelle mission',
-          message: 'Transport vers Dakar - À affecter',
-          priority: 'info',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000) // Il y a 4h
-        },
-        {
-          id: 3,
+          title: 'Document véhicule à renouveler',
+          message: `${alerte.vehicule_numero} - ${alerte.document_nom} (expire dans ${alerte.jours_restants} jours)`,
+          priority: alerte.niveau_alerte === 'critique' ? 'danger' : alerte.niveau_alerte === 'urgent' ? 'warning' : 'info',
+          timestamp: new Date(alerte.date_expiration)
+        });
+      });
+
+      // Ajouter les alertes de chauffeurs
+      (alertesChauffeursRes.data || []).forEach(alerte => {
+        alertes.push({
+          id: alerte.id,
           type: 'formation',
-          title: 'Formation terminée',
-          message: '3 chauffeurs certifiés HSE',
-          priority: 'success',
-          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000) // Il y a 6h
-        }
-      ];
+          title: 'Document chauffeur à renouveler',
+          message: `${alerte.chauffeur_nom} - ${alerte.document_nom} (expire dans ${alerte.jours_restants} jours)`,
+          priority: alerte.niveau_alerte === 'critique' ? 'danger' : alerte.niveau_alerte === 'urgent' ? 'warning' : 'info',
+          timestamp: new Date(alerte.date_expiration)
+        });
+      });
+
+      // Ajouter les alertes RH
+      (alertesRHRes.data || []).forEach(alerte => {
+        alertes.push({
+          id: alerte.employe_id,
+          type: 'formation',
+          title: alerte.type_alerte,
+          message: `${alerte.nom_complet} - ${alerte.message}`,
+          priority: alerte.priorite === 'critique' ? 'danger' : alerte.priorite === 'important' ? 'warning' : 'info',
+          timestamp: new Date(alerte.date_echeance)
+        });
+      });
+
+      // Ajouter les alertes de factures en retard
+      (facturesEnRetardRes.data || []).forEach(facture => {
+        alertes.push({
+          id: facture.id,
+          type: 'mission',
+          title: 'Facture en retard',
+          message: `Facture ${facture.numero} - ${facture.client_nom}`,
+          priority: 'warning',
+          timestamp: new Date(facture.date_echeance)
+        });
+      });
+
+      // Trier par date et prendre les 5 plus récentes
+      return alertes.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()).slice(0, 5);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -130,7 +168,7 @@ const Dashboard: React.FC = () => {
               subtitle="Véhicules disponibles"
               icon={Truck}
               color="primary"
-              trend={{ value: 5, isPositive: true }}
+              trend={stats.vehicules.total > 0 ? { value: Math.round((stats.vehicules.disponibles / stats.vehicules.total) * 100), isPositive: true } : undefined}
             />
             <ModernStatCard
               title="Chauffeurs"
@@ -138,7 +176,7 @@ const Dashboard: React.FC = () => {
               subtitle="Chauffeurs disponibles"
               icon={Users}
               color="success"
-              trend={{ value: 2, isPositive: true }}
+              trend={stats.chauffeurs.total > 0 ? { value: Math.round((stats.chauffeurs.actifs / stats.chauffeurs.total) * 100), isPositive: true } : undefined}
             />
             <ModernStatCard
               title="Missions"
@@ -153,7 +191,7 @@ const Dashboard: React.FC = () => {
               subtitle="Taux de réussite"
               icon={TrendingUp}
               color={successRate >= 90 ? "success" : successRate >= 75 ? "warning" : "danger"}
-              trend={{ value: 4, isPositive: true }}
+              trend={successRate > 0 ? { value: successRate, isPositive: successRate >= 75 } : undefined}
             />
           </StatsGrid>
         ) : (
@@ -218,7 +256,7 @@ const Dashboard: React.FC = () => {
                           {alert.message}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {alert.timestamp.toLocaleString('fr-FR')}
+                          {alert.timestamp.toLocaleDateString('fr-FR')}
                         </p>
                       </div>
                     </div>
