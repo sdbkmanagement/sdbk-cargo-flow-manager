@@ -107,9 +107,9 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
     mutationFn: async (data: FormData) => {
       const vehicleData: VehiculeInsert = {
         numero: data.numero,
-        type_vehicule: data.type_vehicule,
-        type_transport: data.type_transport,
-        statut: data.statut, // Required field, no need for fallback
+        type_vehicule: data.type_vehicule, // This is required
+        type_transport: data.type_transport, // This is required
+        statut: data.statut, // This is required
         base: data.base || null,
         integration: data.integration || null,
         

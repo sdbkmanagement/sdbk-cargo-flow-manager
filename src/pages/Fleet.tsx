@@ -73,7 +73,7 @@ const Fleet = () => {
     });
   };
 
-  // Filtrage des véhicules
+  // Filtrage des véhicules avec type guards
   const filteredVehicles = vehicles.filter((vehicle: Vehicule) => {
     const matchesSearch = 
       vehicle.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
