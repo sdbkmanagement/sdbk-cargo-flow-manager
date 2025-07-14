@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
-      retry: 2,
+      retry: 1,
       networkMode: 'offlineFirst',
     },
     mutations: {
@@ -48,12 +48,15 @@ const AppContent: React.FC = () => {
     loading 
   });
 
-  // Affichage du chargement pendant l'initialisation - limité dans le temps
+  // Chargement simplifié
   if (loading) {
     console.log('⏳ Chargement initial...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <PageLoader message="Chargement..." />
+        <div className="text-center space-y-4">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
+          <p className="text-white text-sm">Initialisation...</p>
+        </div>
       </div>
     );
   }

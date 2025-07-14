@@ -34,12 +34,11 @@ export const LoginForm = () => {
       const result = await login(email, password);
       
       if (result.success) {
-        console.log('✅ Connexion réussie, redirection automatique...');
+        console.log('✅ Connexion réussie');
         toast({
           title: "Connexion réussie",
-          description: "Bienvenue dans l'application",
+          description: "Redirection en cours...",
         });
-        // La redirection se fait automatiquement via le contexte
       } else {
         console.error('❌ Échec de la connexion:', result.error);
         toast({
@@ -121,7 +120,7 @@ export const LoginForm = () => {
           </form>
           
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Pour les tests, vous pouvez utiliser n'importe quel email/mot de passe valide</p>
+            <p>Utilisez vos identifiants Supabase pour vous connecter</p>
           </div>
         </CardContent>
       </Card>

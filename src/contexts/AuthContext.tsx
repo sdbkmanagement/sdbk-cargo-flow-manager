@@ -37,98 +37,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialisation de l'état d'authentification
   useEffect(() => {
     console.log('🔍 Initialisation de l\'authentification');
-    let mounted = true;
     
-    // Timeout pour éviter le chargement infini
-    const loadingTimeout = setTimeout(() => {
-      if (mounted) {
-        console.log('⏰ Timeout de chargement - arrêt du loading');
-        setLoading(false);
+    // Fonction pour traiter une session Supabase
+    const handleSession = (session: Session | null) => {
+      console.log('📊 Traitement de la session:', !!session);
+      
+      if (session?.user) {
+        // Créer un utilisateur admin par défaut
+        const authUser: AuthUser = {
+          id: session.user.id,
+          email: session.user.email || '',
+          nom: 'Admin',
+          prenom: 'Utilisateur',
+          role: 'admin',
+          roles: ['admin'],
+          module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
+          permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
+        };
+        
+        console.log('✅ Utilisateur connecté:', authUser.email);
+        setUser(authUser);
+      } else {
+        console.log('🚪 Aucune session active');
+        setUser(null);
       }
-    }, 5000); // Maximum 5 secondes de chargement
-    
+      
+      setLoading(false);
+    };
+
     // Vérifier la session actuelle
     const checkSession = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('📊 Session actuelle:', !!session);
-        
-        if (session?.user && mounted) {
-          await handleUserSession(session.user);
-        }
-      } catch (error) {
-        console.error('❌ Erreur lors de la vérification de session:', error);
-      } finally {
-        if (mounted) {
-          clearTimeout(loadingTimeout);
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('❌ Erreur lors de la récupération de session:', error);
           setLoading(false);
+          return;
         }
+        handleSession(session);
+      } catch (error) {
+        console.error('❌ Exception lors de la vérification de session:', error);
+        setLoading(false);
       }
     };
 
     // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
-      
-      console.log('🔔 Changement d\'état auth:', event, !!session);
-      
-      if (event === 'SIGNED_IN' && session?.user) {
-        await handleUserSession(session.user);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-      
-      clearTimeout(loadingTimeout);
-      setLoading(false);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔔 Changement d\'état auth:', event);
+      handleSession(session);
     });
 
+    // Vérifier la session initiale
     checkSession();
 
+    // Cleanup
     return () => {
-      mounted = false;
-      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, []);
-
-  const handleUserSession = async (supabaseUser: User) => {
-    try {
-      console.log('👤 Traitement de l\'utilisateur:', supabaseUser.email);
-      
-      // Créer un utilisateur admin par défaut pour simplifier
-      const defaultUser: AuthUser = {
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        nom: 'Admin',
-        prenom: 'Utilisateur',
-        role: 'admin',
-        roles: ['admin'],
-        module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
-        permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
-      };
-
-      console.log('✅ Utilisateur admin configuré');
-      setUser(defaultUser);
-      
-    } catch (error) {
-      console.error('❌ Exception handleUserSession:', error);
-      // En cas d'erreur, créer un utilisateur admin par défaut
-      const fallbackUser: AuthUser = {
-        id: supabaseUser.id,
-        email: supabaseUser.email || '',
-        nom: 'Admin',
-        prenom: 'Utilisateur',
-        role: 'admin',
-        roles: ['admin'],
-        module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
-        permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
-      };
-      setUser(fallbackUser);
-    }
-  };
 
   const login = async (email: string, password: string) => {
     console.log('🔐 Tentative de connexion pour:', email);
@@ -141,13 +109,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('❌ Erreur de connexion:', error);
+        console.error('❌ Erreur de connexion:', error.message);
         setLoading(false);
         return { success: false, error: error.message };
       }
 
       if (data.user) {
-        console.log('✅ Connexion Supabase réussie');
+        console.log('✅ Connexion réussie');
         // L'utilisateur sera traité dans onAuthStateChange
         return { success: true };
       }
@@ -163,14 +131,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      setLoading(true);
       console.log('🚪 Déconnexion...');
       await supabase.auth.signOut();
       setUser(null);
-      setLoading(false);
     } catch (error) {
       console.error('❌ Erreur de déconnexion:', error);
-      setLoading(false);
     }
   };
 
