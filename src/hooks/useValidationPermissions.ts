@@ -1,6 +1,5 @@
 
 import { useAuth } from '@/contexts/AuthContext';
-import { UserRole } from '@/types';
 
 export const useValidationPermissions = () => {
   const { user, hasRole } = useAuth();
@@ -15,40 +14,34 @@ export const useValidationPermissions = () => {
       etape,
       user: user.email,
       userRole: user.role,
-      userRoles: user.roles,
-      modulePermissions: user.module_permissions
+      userRoles: user.roles
     });
     
     // L'admin peut tout faire
-    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) {
+    if (user.role === 'admin' || hasRole('admin')) {
       console.log('✅ Permission accordée - Admin');
       return true;
     }
     
     // Vérifier si l'utilisateur a le rôle spécifique pour cette étape
-    const userRoles = user.roles || [];
-    // Aussi vérifier le rôle principal si pas dans les rôles
-    const allRoles = [...userRoles];
-    if (user.role && !allRoles.includes(user.role)) {
-      allRoles.push(user.role);
-    }
+    const userRoles = user.roles || [user.role];
     
-    console.log('🔍 Tous les rôles de l\'utilisateur:', allRoles);
+    console.log('🔍 Tous les rôles de l\'utilisateur:', userRoles);
     
     let hasPermission = false;
     
     switch (etape) {
       case 'maintenance':
-        hasPermission = allRoles.includes('maintenance');
+        hasPermission = userRoles.includes('maintenance');
         break;
       case 'administratif':
-        hasPermission = allRoles.includes('administratif');
+        hasPermission = userRoles.includes('administratif');
         break;
       case 'hsecq':
-        hasPermission = allRoles.includes('hsecq');
+        hasPermission = userRoles.includes('hsecq');
         break;
       case 'obc':
-        hasPermission = allRoles.includes('obc');
+        hasPermission = userRoles.includes('obc');
         break;
       default:
         hasPermission = false;
@@ -56,7 +49,7 @@ export const useValidationPermissions = () => {
     
     console.log(`${hasPermission ? '✅' : '❌'} Permission ${etape}:`, {
       required: etape,
-      allRoles,
+      userRoles,
       hasPermission
     });
     
@@ -67,7 +60,7 @@ export const useValidationPermissions = () => {
     if (!user) return false;
     
     // L'admin a accès à tout
-    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) return true;
+    if (user.role === 'admin' || hasRole('admin')) return true;
     
     // Vérifier les permissions de module
     const modulePermissions = user.module_permissions || [];
@@ -78,17 +71,13 @@ export const useValidationPermissions = () => {
     if (!user) return false;
     
     // L'admin a accès à tout
-    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) return true;
+    if (user.role === 'admin' || hasRole('admin')) return true;
     
     // Vérifier si l'utilisateur a au moins un rôle de validation
-    const userRoles = user.roles || [];
-    const allRoles = [...userRoles];
-    if (user.role && !allRoles.includes(user.role)) {
-      allRoles.push(user.role);
-    }
+    const userRoles = user.roles || [user.role];
     
     const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
-    return validationRoles.some(role => allRoles.includes(role));
+    return validationRoles.some(role => userRoles.includes(role));
   };
 
   const getUserRole = (): string => {
@@ -98,12 +87,7 @@ export const useValidationPermissions = () => {
 
   const getUserRoles = (): string[] => {
     if (!user) return [];
-    const userRoles = user.roles || [];
-    const allRoles = [...userRoles];
-    if (user.role && !allRoles.includes(user.role)) {
-      allRoles.push(user.role);
-    }
-    return allRoles;
+    return user.roles || [user.role];
   };
 
   const getUserName = (): string => {
