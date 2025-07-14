@@ -107,9 +107,9 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
     mutationFn: async (data: FormData) => {
       const vehicleData: VehiculeInsert = {
         numero: data.numero,
-        type_vehicule: data.type_vehicule as 'porteur' | 'tracteur_remorque', // Ensure it's not undefined
-        type_transport: data.type_transport as 'hydrocarbures' | 'bauxite', // Ensure it's not undefined
-        statut: data.statut as 'disponible' | 'en_mission' | 'maintenance' | 'validation_requise', // Ensure it's not undefined
+        type_vehicule: data.type_vehicule || 'porteur', // Provide default value
+        type_transport: data.type_transport || 'hydrocarbures', // Provide default value
+        statut: data.statut || 'disponible', // Provide default value
         base: data.base || null,
         integration: data.integration || null,
         
