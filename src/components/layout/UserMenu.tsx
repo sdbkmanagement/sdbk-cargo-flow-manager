@@ -11,10 +11,18 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { LogOut, User, Settings } from 'lucide-react';
+import { LogOut, User, Settings, Loader2 } from 'lucide-react';
 
 export const UserMenu = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </Button>
+    );
+  }
 
   if (!user) return null;
 
@@ -25,7 +33,7 @@ export const UserMenu = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-blue-100 text-blue-600">
+            <AvatarFallback className="bg-sdbk-blue text-white">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -40,7 +48,7 @@ export const UserMenu = () => {
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}
             </p>
-            <p className="text-xs leading-none text-muted-foreground capitalize">
+            <p className="text-xs leading-none text-sdbk-blue capitalize font-medium">
               {user.role}
             </p>
           </div>
