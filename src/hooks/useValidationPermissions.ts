@@ -15,7 +15,7 @@ export const useValidationPermissions = () => {
       user: user.email,
       userRole: user.role,
       userRoles: user.roles,
-      rawUser: user
+      modulePermissions: user.module_permissions
     });
     
     // L'admin peut tout faire

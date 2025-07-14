@@ -29,6 +29,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserWithRole | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const loadUser = async (authUser: User) => {
+    try {
+      console.log('🔄 Loading user data for:', authUser.email);
+      
+      // Récupérer les données depuis la table users
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .single();
+
+      console.log('📊 User data from database:', { userData, error });
+
+      if (userData && !error) {
+        const userWithRole: UserWithRole = {
+          id: userData.id,
+          nom: userData.last_name || 'Utilisateur',
+          prenom: userData.first_name || 'Nouveau',
+          email: authUser.email || userData.email,
+          role: userData.roles?.[0] || 'transport',
+          roles: userData.roles || ['transport'],
+          module_permissions: userData.module_permissions || [],
+          permissions: userData.roles?.includes('admin') ? ['all'] : userData.module_permissions || []
+        };
+        
+        console.log('✅ User loaded from database:', userWithRole);
+        setUser(userWithRole);
+      } else {
+        console.log('⚠️ No user data found, creating default user');
+        const defaultUser = createDefaultUser(authUser);
+        setUser(defaultUser);
+      }
+      
+    } catch (error) {
+      console.error('💥 Error in loadUser:', error);
+      const defaultUser = createDefaultUser(authUser);
+      setUser(defaultUser);
+    }
+  };
+
   const createDefaultUser = (authUser: User): UserWithRole => {
     // Vérifier si c'est l'admin par défaut
     if (authUser.email === 'sdbkmanagement@gmail.com') {
@@ -49,52 +89,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       id: authUser.id,
       nom: 'Utilisateur',
       prenom: 'Nouveau',
-      email: authUser.email,
+      email: authUser.email || '',
       role: 'transport',
       roles: ['transport'],
       module_permissions: ['fleet', 'drivers', 'missions'],
       permissions: []
     };
-  };
-
-  const loadUser = async (authUser: User) => {
-    try {
-      console.log('🔄 Loading user data for:', authUser.email);
-      
-      // Essayer de récupérer les données depuis la base
-      const { data: userData, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', authUser.id)
-        .single();
-
-      console.log('📊 User data from database:', { userData, error });
-
-      if (!error && userData) {
-        const userWithRole: UserWithRole = {
-          id: userData.id,
-          nom: userData.last_name || 'Utilisateur',
-          prenom: userData.first_name || 'Nouveau',
-          email: authUser.email || userData.email,
-          role: userData.roles?.[0] || 'transport',
-          roles: userData.roles || ['transport'],
-          module_permissions: userData.module_permissions || [],
-          permissions: userData.roles?.includes('admin') ? ['all'] : []
-        };
-        console.log('✅ User loaded from database:', userWithRole);
-        setUser(userWithRole);
-      } else {
-        console.log('⚠️ No user data in database, creating default user');
-        const defaultUser = createDefaultUser(authUser);
-        setUser(defaultUser);
-      }
-      
-    } catch (error) {
-      console.error('💥 Error in loadUser:', error);
-      // En cas d'erreur, créer quand même un utilisateur par défaut
-      const defaultUser = createDefaultUser(authUser);
-      setUser(defaultUser);
-    }
   };
 
   useEffect(() => {
