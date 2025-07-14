@@ -38,7 +38,8 @@ const queryClient = new QueryClient({
   },
 });
 
-const AppContent: React.FC = () => {
+// Composant séparé qui utilise useAuth et qui sera à l'intérieur de AuthProvider
+const AuthenticatedApp: React.FC = () => {
   const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -115,11 +116,12 @@ const AppContent: React.FC = () => {
   );
 };
 
+// Composant principal qui enveloppe tout avec les providers
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppContent />
+        <AuthenticatedApp />
       </AuthProvider>
     </QueryClientProvider>
   );
