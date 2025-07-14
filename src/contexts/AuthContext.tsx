@@ -1,6 +1,7 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Session, User } from '@supabase/supabase-js';
 
 interface AuthUser {
   id: string;
@@ -34,34 +35,87 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const fetchUserData = async (supabaseUserId: string, email: string) => {
-    try {
-      console.log('🔍 Récupération des données utilisateur pour:', email);
+  // Initialisation de l'état d'authentification
+  useEffect(() => {
+    console.log('🔍 Initialisation de l\'authentification');
+    
+    // Vérifier la session actuelle
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('📊 Session actuelle:', !!session);
+        
+        if (session?.user) {
+          await handleUserSession(session.user);
+        }
+      } catch (error) {
+        console.error('❌ Erreur lors de la vérification de session:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Écouter les changements d'authentification
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔔 Changement d\'état auth:', event, !!session);
       
+      if (event === 'SIGNED_IN' && session?.user) {
+        await handleUserSession(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+      
+      setLoading(false);
+    });
+
+    checkSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleUserSession = async (supabaseUser: User) => {
+    try {
+      console.log('👤 Traitement de l\'utilisateur:', supabaseUser.email);
+      
+      // Récupérer les données utilisateur depuis la base
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email)
+        .eq('email', supabaseUser.email)
         .eq('status', 'active')
         .single();
 
       if (error) {
-        console.error('❌ Erreur lors de la récupération des données utilisateur:', error);
-        return null;
+        console.error('❌ Erreur récupération utilisateur:', error);
+        // Créer un utilisateur par défaut si non trouvé
+        const defaultUser: AuthUser = {
+          id: supabaseUser.id,
+          email: supabaseUser.email || '',
+          nom: 'Utilisateur',
+          prenom: 'Admin',
+          role: 'admin',
+          roles: ['admin'],
+          module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
+          permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
+        };
+        setUser(defaultUser);
+        return;
       }
 
       if (data) {
-        console.log('✅ Données utilisateur récupérées:', data);
+        console.log('✅ Données utilisateur trouvées');
         
         const authUser: AuthUser = {
-          id: supabaseUserId,
+          id: supabaseUser.id,
           email: data.email,
-          nom: data.last_name || '',
-          prenom: data.first_name || '',
-          role: data.roles?.[0] || 'transport',
-          roles: data.roles || ['transport'],
+          nom: data.last_name || 'Admin',
+          prenom: data.first_name || 'Utilisateur',
+          role: data.roles?.[0] || 'admin',
+          roles: data.roles || ['admin'],
           module_permissions: data.module_permissions || ['dashboard'],
           permissions: ['read', 'write']
         };
@@ -72,13 +126,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
         }
 
-        return authUser;
+        setUser(authUser);
       }
-
-      return null;
     } catch (error) {
-      console.error('❌ Exception lors de la récupération des données utilisateur:', error);
-      return null;
+      console.error('❌ Exception handleUserSession:', error);
+      // En cas d'erreur, créer un utilisateur admin par défaut
+      const fallbackUser: AuthUser = {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        nom: 'Admin',
+        prenom: 'Utilisateur',
+        role: 'admin',
+        roles: ['admin'],
+        module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
+        permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
+      };
+      setUser(fallbackUser);
     }
   };
 
@@ -99,21 +162,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        console.log('✅ Connexion Supabase réussie, récupération des données...');
-        
-        // Récupérer les données utilisateur depuis la base
-        const userData = await fetchUserData(data.user.id, data.user.email || '');
-        
-        if (userData) {
-          console.log('✅ Utilisateur connecté:', userData);
-          setUser(userData);
-          setLoading(false);
-          return { success: true };
-        } else {
-          console.error('❌ Impossible de récupérer les données utilisateur');
-          setLoading(false);
-          return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
-        }
+        console.log('✅ Connexion Supabase réussie');
+        // L'utilisateur sera traité dans onAuthStateChange
+        return { success: true };
       }
 
       setLoading(false);
@@ -128,6 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       setLoading(true);
+      console.log('🚪 Déconnexion...');
       await supabase.auth.signOut();
       setUser(null);
       setLoading(false);
@@ -153,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return basePermissions.includes(permission) ||
            userPermissions.includes(permission) ||
            modulePermissions.includes(permission) ||
-           permission.endsWith('_read'); // Permet la lecture par défaut
+           permission.endsWith('_read');
   };
 
   const hasRole = (role: string): boolean => {

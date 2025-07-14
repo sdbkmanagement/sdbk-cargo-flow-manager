@@ -28,17 +28,20 @@ export const LoginForm = () => {
     }
 
     setIsSubmitting(true);
+    console.log('🔐 Soumission du formulaire de connexion');
     
     try {
       const result = await login(email, password);
       
       if (result.success) {
+        console.log('✅ Connexion réussie, redirection automatique...');
         toast({
           title: "Connexion réussie",
-          description: "Redirection vers l'application...",
+          description: "Bienvenue dans l'application",
         });
-        // La redirection se fera automatiquement via App.tsx
+        // La redirection se fait automatiquement via le contexte
       } else {
+        console.error('❌ Échec de la connexion:', result.error);
         toast({
           title: "Erreur de connexion",
           description: result.error || "Identifiants invalides",
@@ -46,10 +49,10 @@ export const LoginForm = () => {
         });
       }
     } catch (error: any) {
-      console.error('Erreur de connexion:', error);
+      console.error('❌ Exception lors de la connexion:', error);
       toast({
         title: "Erreur de connexion",
-        description: "Une erreur est survenue",
+        description: "Une erreur inattendue est survenue",
         variant: "destructive",
       });
     } finally {
@@ -58,7 +61,7 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -66,7 +69,7 @@ export const LoginForm = () => {
               <Truck className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">SDBK Transport</CardTitle>
+          <CardTitle className="text-2xl font-bold">Transport Manager</CardTitle>
           <CardDescription>
             Connexion au système de gestion de flotte
           </CardDescription>
@@ -80,10 +83,11 @@ export const LoginForm = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre-email@sdbk.com"
+                placeholder="votre-email@exemple.com"
                 required
                 disabled={isSubmitting}
                 autoComplete="email"
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -97,6 +101,7 @@ export const LoginForm = () => {
                 required
                 disabled={isSubmitting}
                 autoComplete="current-password"
+                className="w-full"
               />
             </div>
             <Button 
@@ -114,6 +119,10 @@ export const LoginForm = () => {
               )}
             </Button>
           </form>
+          
+          <div className="mt-6 text-center text-sm text-muted-foreground">
+            <p>Pour les tests, vous pouvez utiliser n'importe quel email/mot de passe valide</p>
+          </div>
         </CardContent>
       </Card>
     </div>

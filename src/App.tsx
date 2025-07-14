@@ -38,52 +38,77 @@ const queryClient = new QueryClient({
   },
 });
 
-const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  console.log('🔍 État de l\'app:', { user: !!user, loading });
+  console.log('🔍 État de l\'app:', { 
+    user: !!user, 
+    userEmail: user?.email,
+    loading 
+  });
+
+  // Affichage du chargement pendant l'initialisation
+  if (loading) {
+    console.log('⏳ Chargement initial...');
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+        <PageLoader message="Initialisation..." />
+      </div>
+    );
+  }
 
   // Si pas d'utilisateur connecté, afficher la page de connexion
-  if (!user && !loading) {
+  if (!user) {
     console.log('📋 Aucun utilisateur - affichage du formulaire de connexion');
     return <LoginForm />;
   }
 
-  // Si chargement en cours
-  if (loading) {
-    console.log('⏳ Chargement...');
-    return <PageLoader message="Connexion..." />;
-  }
-
   // Si utilisateur connecté, afficher l'application
-  console.log('🏠 Affichage de l\'application pour:', user?.email);
+  console.log('🏠 Affichage de l\'application pour:', user.email);
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <ModernSidebar 
-        isCollapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-      />
-
-      <div 
-        className={`min-h-screen transition-all duration-300 ease-out ${
-          sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
-        }`}
-      >
-        <ModernHeader 
-          onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          showMenuButton={true}
+    <BrowserRouter>
+      <div className="min-h-screen bg-background text-foreground">
+        <ModernSidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
-        
-        <main className="flex-1">
-          <div className="page-container">
-            <Suspense fallback={<PageLoader message="Chargement du module..." />}>
-              {children}
-            </Suspense>
-          </div>
-        </main>
+
+        <div 
+          className={`min-h-screen transition-all duration-300 ease-out ${
+            sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+          }`}
+        >
+          <ModernHeader 
+            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            showMenuButton={true}
+          />
+          
+          <main className="flex-1">
+            <div className="page-container">
+              <Suspense fallback={<PageLoader message="Chargement du module..." />}>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/fleet" element={<Fleet />} />
+                  <Route path="/drivers" element={<Drivers />} />
+                  <Route path="/missions" element={<Missions />} />
+                  <Route path="/cargo" element={<Cargo />} />
+                  <Route path="/billing" element={<Billing />} />
+                  <Route path="/rh" element={<RH />} />
+                  <Route path="/validations" element={<Validations />} />
+                  <Route path="/administration" element={<Administration />} />
+                  <Route path="/documents" element={<DocumentStock />} />
+                  <Route path="/guide" element={<Guide />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+      <Toaster />
+    </BrowserRouter>
   );
 };
 
@@ -91,26 +116,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <ModernAppLayout>
-            <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/fleet" element={<Fleet />} />
-              <Route path="/drivers" element={<Drivers />} />
-              <Route path="/missions" element={<Missions />} />
-              <Route path="/cargo" element={<Cargo />} />
-              <Route path="/billing" element={<Billing />} />
-              <Route path="/rh" element={<RH />} />
-              <Route path="/validations" element={<Validations />} />
-              <Route path="/administration" element={<Administration />} />
-              <Route path="/documents" element={<DocumentStock />} />
-              <Route path="/guide" element={<Guide />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </ModernAppLayout>
-          <Toaster />
-        </BrowserRouter>
+        <AppContent />
       </AuthProvider>
     </QueryClientProvider>
   );
