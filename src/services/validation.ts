@@ -226,7 +226,7 @@ export const validationService = {
     return result;
   },
 
-  // Correction principale de la mise à jour avec gestion d'erreur robuste
+  // Fonction améliorée pour la mise à jour avec historique
   async updateEtapeStatut(
     etapeId: string,
     statut: StatutEtape,
@@ -239,10 +239,10 @@ export const validationService = {
     console.log(`💬 Commentaire: ${commentaire}`);
 
     try {
-      // Vérifier que l'étape existe d'abord
-      const { data: etapeExiste, error: checkError } = await supabase
+      // Récupérer l'état actuel de l'étape pour l'historique
+      const { data: etapeActuelle, error: checkError } = await supabase
         .from('validation_etapes')
-        .select('id, workflow_id, etape, statut')
+        .select('id, workflow_id, etape, statut, commentaire, validateur_nom, validateur_role')
         .eq('id', etapeId)
         .single();
 
@@ -251,11 +251,33 @@ export const validationService = {
         throw new Error(`Étape non trouvée: ${checkError.message}`);
       }
 
-      if (!etapeExiste) {
+      if (!etapeActuelle) {
         throw new Error('Étape non trouvée dans la base de données');
       }
 
-      console.log(`✅ Étape trouvée: ${etapeExiste.etape} (statut actuel: ${etapeExiste.statut})`);
+      console.log(`✅ Étape trouvée: ${etapeActuelle.etape} (statut actuel: ${etapeActuelle.statut})`);
+
+      // Ajouter à l'historique avant la mise à jour
+      const historiqueData = {
+        workflow_id: etapeActuelle.workflow_id,
+        etape: etapeActuelle.etape,
+        ancien_statut: etapeActuelle.statut,
+        nouveau_statut: statut,
+        commentaire: commentaire?.trim() || null,
+        validateur_nom: validateurNom,
+        validateur_role: validateurRole
+      };
+
+      console.log('📝 Ajout à l\'historique:', historiqueData);
+
+      const { error: historiqueError } = await supabase
+        .from('validation_historique')
+        .insert(historiqueData);
+
+      if (historiqueError) {
+        console.error('❌ Erreur lors de l\'ajout à l\'historique:', historiqueError);
+        throw new Error(`Erreur historique: ${historiqueError.message}`);
+      }
 
       // Préparer les données de mise à jour
       const updateData = {
@@ -319,7 +341,7 @@ export const validationService = {
     }
   },
 
-  // Historique simplifié
+  // Historique amélioré avec plus de détails
   async getHistorique(workflowId: string) {
     const cacheKey = `historique_${workflowId}`;
     const cached = this._getCached(cacheKey, 30000);
@@ -332,7 +354,7 @@ export const validationService = {
       .select('*')
       .eq('workflow_id', workflowId)
       .order('created_at', { ascending: false })
-      .limit(50); // Limiter les résultats
+      .limit(100); // Augmenter la limite pour voir plus d'historique
 
     if (error) throw error;
     

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -5,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, XCircle, Clock, MessageSquare, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, MessageSquare, RefreshCw, History } from 'lucide-react';
 import { validationService, type ValidationWorkflowWithEtapes, type EtapeType, type StatutEtape } from '@/services/validation';
 import { useToast } from '@/hooks/use-toast';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
+import { ValidationHistorique } from './ValidationHistorique';
 
 interface ValidationWorkflowCardProps {
   vehiculeId: string;
@@ -97,7 +99,8 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       console.log('🚀 Démarrage de la validation:', {
         etapeId,
         etape: etape.etape,
-        statut,
+        statutActuel: etape.statut,
+        nouveauStatut: statut,
         commentaire: commentaireFinal,
         validateur: userName,
         role: userRoleValue
@@ -114,9 +117,13 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       
       console.log('✅ Validation réussie');
       
+      // Message de succès adapté selon l'action
+      const actionText = statut === 'valide' ? 'validée' : 
+                        statut === 'rejete' ? 'rejetée' : 'mise à jour';
+      
       toast({
         title: 'Validation mise à jour',
-        description: `L'étape "${ETAPE_LABELS[etape.etape as EtapeType]}" a été ${statut === 'valide' ? 'validée' : 'rejetée'} avec succès`,
+        description: `L'étape "${ETAPE_LABELS[etape.etape as EtapeType]}" a été ${actionText} avec succès`,
       });
       
       // Recharger le workflow
@@ -173,6 +180,10 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
     }
   };
 
+  const canModifyEtape = (etape: any) => {
+    return canValidateEtape(etape.etape);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -209,6 +220,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
           <CardTitle className="text-lg">Workflow - {vehiculeNumero}</CardTitle>
           <div className="flex items-center gap-2">
             {getStatutGlobalBadge(workflow.statut_global)}
+            <ValidationHistorique workflowId={workflow.id} />
             <Button onClick={loadWorkflow} variant="ghost" size="sm">
               <RefreshCw className="w-4 h-4" />
             </Button>
@@ -225,8 +237,9 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                   {getStatutBadge(etape.statut as StatutEtape)}
                 </div>
                 
-                {canValidateEtape(etape.etape) && etape.statut === 'en_attente' && (
+                {canModifyEtape(etape) && (
                   <div className="flex gap-2">
+                    {/* Bouton Valider - toujours disponible si on a les permissions */}
                     <Button
                       size="sm"
                       variant="outline"
@@ -235,8 +248,10 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                       disabled={actionLoading === etape.id}
                     >
                       <CheckCircle className="w-4 h-4 mr-1" />
-                      Valider
+                      {etape.statut === 'valide' ? 'Re-valider' : 'Valider'}
                     </Button>
+                    
+                    {/* Bouton Rejeter - toujours disponible si on a les permissions */}
                     <Button
                       size="sm"
                       variant="outline"
@@ -245,12 +260,26 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                       disabled={actionLoading === etape.id}
                     >
                       <XCircle className="w-4 h-4 mr-1" />
-                      Rejeter
+                      {etape.statut === 'rejete' ? 'Re-rejeter' : 'Rejeter'}
                     </Button>
+
+                    {/* Bouton Remettre en attente - disponible si l'étape a déjà été traitée */}
+                    {(etape.statut === 'valide' || etape.statut === 'rejete') && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
+                        onClick={() => setShowCommentDialog({show: true, etapeId: etape.id, action: 'en_attente'})}
+                        disabled={actionLoading === etape.id}
+                      >
+                        <Clock className="w-4 h-4 mr-1" />
+                        En attente
+                      </Button>
+                    )}
                   </div>
                 )}
 
-                {!canValidateEtape(etape.etape) && etape.statut === 'en_attente' && (
+                {!canModifyEtape(etape) && (
                   <Badge variant="outline" className="text-gray-500">
                     Accès limité
                   </Badge>
@@ -280,7 +309,9 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {showCommentDialog?.action === 'valide' ? 'Valider l\'étape' : 'Rejeter l\'étape'}
+                {showCommentDialog?.action === 'valide' ? 'Valider l\'étape' : 
+                 showCommentDialog?.action === 'rejete' ? 'Rejeter l\'étape' : 
+                 'Remettre en attente'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
@@ -290,7 +321,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                 </Label>
                 <Textarea
                   id="commentaire"
-                  placeholder="Ajoutez un commentaire..."
+                  placeholder="Ajoutez un commentaire pour expliquer la modification..."
                   value={commentaire}
                   onChange={(e) => setCommentaire(e.target.value)}
                   rows={3}
@@ -313,9 +344,17 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                     }
                   }}
                   disabled={actionLoading !== null || (showCommentDialog?.action === 'rejete' && !commentaire.trim())}
-                  className={showCommentDialog?.action === 'valide' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
+                  className={
+                    showCommentDialog?.action === 'valide' ? 'bg-green-600 hover:bg-green-700' : 
+                    showCommentDialog?.action === 'rejete' ? 'bg-red-600 hover:bg-red-700' :
+                    'bg-yellow-600 hover:bg-yellow-700'
+                  }
                 >
-                  {actionLoading ? 'En cours...' : (showCommentDialog?.action === 'valide' ? 'Valider' : 'Rejeter')}
+                  {actionLoading ? 'En cours...' : (
+                    showCommentDialog?.action === 'valide' ? 'Valider' : 
+                    showCommentDialog?.action === 'rejete' ? 'Rejeter' :
+                    'Mettre en attente'
+                  )}
                 </Button>
               </div>
             </div>
