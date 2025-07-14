@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type EtapeType = 'maintenance' | 'administratif' | 'hsecq' | 'obc';
@@ -227,7 +226,7 @@ export const validationService = {
     return result;
   },
 
-  // Optimisation: Mise à jour avec invalidation de cache ciblée
+  // Correction de la mise à jour avec gestion d'erreur améliorée
   async updateEtapeStatut(
     etapeId: string,
     statut: StatutEtape,
@@ -235,35 +234,47 @@ export const validationService = {
     validateurNom: string,
     validateurRole: string
   ) {
-    console.log(`Mise à jour rapide étape ${etapeId} vers ${statut}`);
+    console.log(`Mise à jour étape ${etapeId} vers ${statut} avec commentaire: ${commentaire}`);
 
-    const updateData = {
-      statut,
-      commentaire,
-      validateur_nom: validateurNom,
-      validateur_role: validateurRole,
-      date_validation: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
+    try {
+      const updateData = {
+        statut,
+        commentaire: commentaire || null,
+        validateur_nom: validateurNom,
+        validateur_role: validateurRole,
+        date_validation: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-    const { data, error } = await supabase
-      .from('validation_etapes')
-      .update(updateData)
-      .eq('id', etapeId)
-      .select('workflow_id')
-      .single();
+      const { data, error } = await supabase
+        .from('validation_etapes')
+        .update(updateData)
+        .eq('id', etapeId)
+        .select('workflow_id')
+        .single();
 
-    if (error) throw error;
-
-    // Invalider seulement les caches pertinents
-    const workflowId = data.workflow_id;
-    for (const [key] of this._cache) {
-      if (key.includes(`workflow_`) || key.includes('stats')) {
-        this._cache.delete(key);
+      if (error) {
+        console.error('Erreur lors de la mise à jour de l\'étape:', error);
+        throw new Error(`Erreur de mise à jour: ${error.message}`);
       }
-    }
 
-    return data;
+      if (!data) {
+        throw new Error('Aucune étape trouvée avec cet ID');
+      }
+
+      // Invalider les caches pertinents
+      const workflowId = data.workflow_id;
+      for (const [key] of this._cache) {
+        if (key.includes(`workflow_`) || key.includes('stats')) {
+          this._cache.delete(key);
+        }
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur dans updateEtapeStatut:', error);
+      throw error;
+    }
   },
 
   // Historique simplifié

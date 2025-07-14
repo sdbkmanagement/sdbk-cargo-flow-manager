@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -60,7 +59,16 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       setActionLoading(etapeId);
       
       const etape = workflow?.etapes.find(e => e.id === etapeId);
-      if (!etape || !canValidateEtape(etape.etape)) {
+      if (!etape) {
+        toast({
+          title: 'Erreur',
+          description: 'Étape non trouvée',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      if (!canValidateEtape(etape.etape)) {
         toast({
           title: 'Accès refusé',
           description: 'Vous n\'avez pas l\'autorisation de valider cette étape.',
@@ -68,6 +76,14 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         });
         return;
       }
+
+      console.log('Validation des données:', {
+        etapeId,
+        statut,
+        commentaire: commentaireText || '',
+        validateur: getUserName(),
+        role: getUserRole()
+      });
 
       await validationService.updateEtapeStatut(
         etapeId, 
@@ -88,9 +104,10 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       setCommentaire('');
     } catch (error) {
       console.error('Erreur lors de la validation:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       toast({
         title: 'Erreur',
-        description: 'Impossible de mettre à jour la validation',
+        description: `Impossible de mettre à jour la validation: ${errorMessage}`,
         variant: 'destructive'
       });
     } finally {
@@ -234,7 +251,9 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="commentaire">Commentaire (optionnel)</Label>
+                <Label htmlFor="commentaire">
+                  Commentaire {showCommentDialog?.action === 'rejete' ? '(requis pour un rejet)' : '(optionnel)'}
+                </Label>
                 <Textarea
                   id="commentaire"
                   placeholder="Ajoutez un commentaire..."
@@ -246,13 +265,20 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
-                  onClick={() => setShowCommentDialog(null)}
+                  onClick={() => {
+                    setShowCommentDialog(null);
+                    setCommentaire('');
+                  }}
                 >
                   Annuler
                 </Button>
                 <Button
-                  onClick={() => showCommentDialog && handleValidation(showCommentDialog.etapeId, showCommentDialog.action, commentaire)}
-                  disabled={actionLoading !== null}
+                  onClick={() => {
+                    if (showCommentDialog) {
+                      handleValidation(showCommentDialog.etapeId, showCommentDialog.action, commentaire);
+                    }
+                  }}
+                  disabled={actionLoading !== null || (showCommentDialog?.action === 'rejete' && !commentaire.trim())}
                   className={showCommentDialog?.action === 'valide' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}
                 >
                   {actionLoading ? 'En cours...' : (showCommentDialog?.action === 'valide' ? 'Valider' : 'Rejeter')}
