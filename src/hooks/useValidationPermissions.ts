@@ -5,13 +5,17 @@ export const useValidationPermissions = () => {
   const { user, hasRole } = useAuth();
 
   const canValidateEtape = (etape: string): boolean => {
-    if (!user) return false;
+    if (!user) {
+      console.log('❌ Pas d\'utilisateur connecté');
+      return false;
+    }
     
     console.log('🔍 Vérification permission validation:', {
       etape,
       user: user.email,
       userRole: user.role,
-      userRoles: user.roles
+      userRoles: user.roles,
+      rawUser: user
     });
     
     // L'admin peut tout faire
@@ -21,22 +25,29 @@ export const useValidationPermissions = () => {
     }
     
     // Vérifier si l'utilisateur a le rôle spécifique pour cette étape
-    const userRoles = user.roles || [user.role];
+    const userRoles = user.roles || [];
+    // Aussi vérifier le rôle principal si pas dans les rôles
+    const allRoles = [...userRoles];
+    if (user.role && !allRoles.includes(user.role)) {
+      allRoles.push(user.role);
+    }
+    
+    console.log('🔍 Tous les rôles de l\'utilisateur:', allRoles);
     
     let hasPermission = false;
     
     switch (etape) {
       case 'maintenance':
-        hasPermission = userRoles.includes('maintenance');
+        hasPermission = allRoles.includes('maintenance');
         break;
       case 'administratif':
-        hasPermission = userRoles.includes('administratif');
+        hasPermission = allRoles.includes('administratif');
         break;
       case 'hsecq':
-        hasPermission = userRoles.includes('hsecq');
+        hasPermission = allRoles.includes('hsecq');
         break;
       case 'obc':
-        hasPermission = userRoles.includes('obc');
+        hasPermission = allRoles.includes('obc');
         break;
       default:
         hasPermission = false;
@@ -44,7 +55,7 @@ export const useValidationPermissions = () => {
     
     console.log(`${hasPermission ? '✅' : '❌'} Permission ${etape}:`, {
       required: etape,
-      userRoles,
+      allRoles,
       hasPermission
     });
     
@@ -69,7 +80,12 @@ export const useValidationPermissions = () => {
 
   const getUserRoles = (): string[] => {
     if (!user) return [];
-    return user.roles || [user.role];
+    const userRoles = user.roles || [];
+    const allRoles = [...userRoles];
+    if (user.role && !allRoles.includes(user.role)) {
+      allRoles.push(user.role);
+    }
+    return allRoles;
   };
 
   const getUserName = (): string => {

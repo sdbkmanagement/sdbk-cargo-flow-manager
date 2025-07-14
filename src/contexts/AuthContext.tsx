@@ -59,43 +59,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const loadUser = async (authUser: User) => {
     try {
-      console.log('Loading user data for:', authUser.email);
+      console.log('🔄 Loading user data for:', authUser.email);
       
-      // Créer un utilisateur par défaut immédiatement pour éviter les blocages
-      const defaultUser = createDefaultUser(authUser);
-      setUser(defaultUser);
-      
-      // Essayer de récupérer les données depuis la base en arrière-plan
-      setTimeout(async () => {
-        try {
-          const { data: userData, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', authUser.id)
-            .single();
+      // Essayer de récupérer les données depuis la base
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
 
-          if (!error && userData) {
-            const userWithRole: UserWithRole = {
-              id: userData.id,
-              nom: userData.last_name || 'Utilisateur',
-              prenom: userData.first_name || 'Nouveau',
-              email: authUser.email,
-              role: userData.roles?.[0] || 'transport',
-              roles: userData.roles || ['transport'],
-              module_permissions: userData.module_permissions || [],
-              permissions: userData.roles?.includes('admin') ? ['all'] : []
-            };
-            setUser(userWithRole);
-            console.log('User updated from database:', userWithRole);
-          }
-        } catch (error) {
-          console.error('Error loading user from database:', error);
-          // Garder l'utilisateur par défaut en cas d'erreur
-        }
-      }, 100);
+      console.log('📊 User data from database:', { userData, error });
+
+      if (!error && userData) {
+        const userWithRole: UserWithRole = {
+          id: userData.id,
+          nom: userData.last_name || 'Utilisateur',
+          prenom: userData.first_name || 'Nouveau',
+          email: authUser.email || userData.email,
+          role: userData.roles?.[0] || 'transport',
+          roles: userData.roles || ['transport'],
+          module_permissions: userData.module_permissions || [],
+          permissions: userData.roles?.includes('admin') ? ['all'] : []
+        };
+        console.log('✅ User loaded from database:', userWithRole);
+        setUser(userWithRole);
+      } else {
+        console.log('⚠️ No user data in database, creating default user');
+        const defaultUser = createDefaultUser(authUser);
+        setUser(defaultUser);
+      }
       
     } catch (error) {
-      console.error('Error in loadUser:', error);
+      console.error('💥 Error in loadUser:', error);
       // En cas d'erreur, créer quand même un utilisateur par défaut
       const defaultUser = createDefaultUser(authUser);
       setUser(defaultUser);
@@ -107,20 +102,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const initializeAuth = async () => {
       try {
-        console.log('Initializing auth...');
+        console.log('🚀 Initializing auth...');
         
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user && mounted) {
           await loadUser(session.user);
         } else if (mounted) {
-          console.log('No active session found');
+          console.log('🚫 No active session found');
         }
       } catch (error) {
-        console.error('Error during auth initialization:', error);
+        console.error('💥 Error during auth initialization:', error);
       } finally {
         if (mounted) {
-          console.log('Auth initialization completed');
+          console.log('✅ Auth initialization completed');
           setLoading(false);
         }
       }
@@ -130,7 +125,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event);
+        console.log('🔄 Auth state changed:', event);
         
         if (!mounted) return;
 
@@ -153,7 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    console.log('Attempting sign in for:', email);
+    console.log('🔑 Attempting sign in for:', email);
     
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -161,16 +156,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     if (error) {
-      console.error('Sign in error:', error);
+      console.error('💥 Sign in error:', error);
       throw error;
     }
   };
 
   const signOut = async () => {
-    console.log('Signing out...');
+    console.log('👋 Signing out...');
     const { error } = await supabase.auth.signOut();
     if (error) {
-      console.error('Sign out error:', error);
+      console.error('💥 Sign out error:', error);
       throw error;
     }
     setUser(null);
