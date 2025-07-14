@@ -95,7 +95,7 @@ export const LoginForm = () => {
             </div>
             <Button 
               type="submit" 
-              className="w-full" 
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors" 
               disabled={loading}
             >
               {loading ? (
@@ -108,18 +108,6 @@ export const LoginForm = () => {
               )}
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-            <p className="text-sm font-medium mb-2">Compte administrateur :</p>
-            <div className="space-y-1 text-xs">
-              <p className="text-slate-600">
-                <strong>Email :</strong> sdbkmanagement@gmail.com
-              </p>
-              <p className="text-slate-600">
-                <strong>Mot de passe :</strong> Admin@2025
-              </p>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

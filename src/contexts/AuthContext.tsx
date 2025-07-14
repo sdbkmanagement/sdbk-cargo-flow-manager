@@ -43,22 +43,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔄 Loading user data for:', authUser.email);
       
-      // Timeout après 2 secondes maximum
-      const timeoutPromise = new Promise<null>((_, reject) => {
-        setTimeout(() => reject(new Error('Database timeout')), 2000);
-      });
-
-      const dbPromise = supabase
+      const { data: userData, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', authUser.email)
         .single();
 
-      const { data: userData, error } = await Promise.race([dbPromise, timeoutPromise]) as any;
-
       if (error || !userData) {
         console.log('⚠️ Database lookup failed, creating basic user');
-        // Créer un utilisateur basique immédiatement
         const basicUser: AuthUser = {
           id: authUser.id,
           email: authUser.email,
@@ -88,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return authUserData;
     } catch (error) {
       console.error('❌ Exception loading user:', error);
-      // En cas d'erreur, créer un utilisateur basique immédiatement
       const fallbackUser: AuthUser = {
         id: authUser.id,
         email: authUser.email,
@@ -111,57 +102,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        // NE PAS récupérer automatiquement la session existante
+        // L'utilisateur doit se connecter manuellement
+        console.log('🚫 No automatic session recovery - user must login manually');
         
-        if (!mounted) return;
-
-        if (session?.user) {
-          console.log('👤 Active session found, loading user profile');
-          setLoading(true);
-          
-          try {
-            const userData = await loadUserFromDatabase(session.user);
-            if (mounted) {
-              setUser(userData);
-              console.log('✅ User profile loaded successfully');
-            }
-          } catch (error) {
-            console.error('❌ Error loading user profile:', error);
-            if (mounted) {
-              // Créer un utilisateur basique en cas d'erreur
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                nom: '',
-                prenom: '',
-                role: 'transport',
-                roles: ['transport'],
-                module_permissions: [],
-                permissions: []
-              });
-            }
-          } finally {
-            if (mounted) {
-              setLoading(false);
-            }
-          }
-        } else {
-          console.log('🚫 No active session');
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-          }
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+          setInitialized(true);
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
         if (mounted) {
           setUser(null);
           setLoading(false);
-        }
-      } finally {
-        if (mounted) {
           setInitialized(true);
-          console.log('✅ Auth initialization completed');
         }
       }
     };
@@ -171,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       mounted = false;
     };
-  }, [loadUserFromDatabase]);
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -187,7 +142,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('✅ User profile loaded after sign in');
         } catch (error) {
           console.error('❌ Error loading user profile after sign in:', error);
-          // Créer un utilisateur basique en cas d'erreur
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -229,7 +183,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         console.log('✅ Login successful, user will be loaded by auth state change');
-        // Ne pas définir loading à false ici, laisse onAuthStateChange le gérer
         return { success: true };
       }
 
