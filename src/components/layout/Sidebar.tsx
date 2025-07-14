@@ -16,20 +16,22 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
-  Shield
+  Shield,
+  Zap,
+  Building2
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Flotte', href: '/fleet', icon: Truck },
-  { name: 'Chauffeurs', href: '/drivers', icon: Users },
-  { name: 'Missions', href: '/missions', icon: MapPin },
-  { name: 'Chargements', href: '/cargo', icon: Package },
-  { name: 'Facturation', href: '/billing', icon: FileText },
-  { name: 'Validations', href: '/validations', icon: CheckSquare },
-  { name: 'Ressources Humaines', href: '/rh', icon: UserCheck },
-  { name: 'Administration', href: '/administration', icon: Shield },
-  { name: 'Guide', href: '/guide', icon: BookOpen },
+  { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, color: 'text-white' },
+  { name: 'Flotte', href: '/fleet', icon: Truck, color: 'text-white' },
+  { name: 'Chauffeurs', href: '/drivers', icon: Users, color: 'text-white' },
+  { name: 'Missions', href: '/missions', icon: MapPin, color: 'text-white' },
+  { name: 'Chargements', href: '/cargo', icon: Package, color: 'text-white' },
+  { name: 'Facturation', href: '/billing', icon: FileText, color: 'text-white' },
+  { name: 'Validations', href: '/validations', icon: CheckSquare, color: 'text-white' },
+  { name: 'Ressources Humaines', href: '/rh', icon: UserCheck, color: 'text-white' },
+  { name: 'Administration', href: '/administration', icon: Shield, color: 'text-white' },
+  { name: 'Guide', href: '/guide', icon: BookOpen, color: 'text-white' },
 ];
 
 export const Sidebar = () => {
@@ -37,20 +39,33 @@ export const Sidebar = () => {
 
   return (
     <div className={cn(
-      "bg-brand-blue shadow-elegant transition-all duration-300 flex flex-col relative",
-      collapsed ? "w-16" : "w-64"
+      "bg-sdbk-blue shadow-2xl transition-all duration-300 flex flex-col relative border-r border-blue-800/20",
+      collapsed ? "w-20" : "w-72"
     )}>
-      {/* Header avec logo et toggle */}
-      <div className="p-4 border-b border-blue-700/30">
+      {/* Header avec logo SDBK */}
+      <div className="p-6 border-b border-blue-800/20">
         <div className="flex items-center justify-between">
           {!collapsed && (
-            <div className="flex items-center space-x-3 animate-fade-in">
-              <div className="p-2 bg-brand-gold rounded-lg shadow-brand-glow">
-                <Truck className="h-6 w-6 text-brand-darkText" />
+            <div className="flex items-center space-x-4 animate-fade-in">
+              <div className="relative">
+                <div className="p-3 bg-sdbk-green rounded-xl shadow-sdbk-green">
+                  <Building2 className="h-8 w-8 text-white" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-sdbk-red rounded-full flex items-center justify-center">
+                  <Zap className="h-2.5 w-2.5 text-white" />
+                </div>
               </div>
               <div>
-                <span className="text-xl font-bold text-white">SDBK</span>
-                <p className="text-xs text-blue-200">Cargo Flow Manager</p>
+                <h1 className="text-2xl font-bold text-white">SDBK</h1>
+                <p className="text-sm text-blue-200 font-medium">Cargo Flow Manager</p>
+                <p className="text-xs text-blue-300">Version 2.0</p>
+              </div>
+            </div>
+          )}
+          {collapsed && (
+            <div className="flex justify-center w-full">
+              <div className="p-2 bg-sdbk-green rounded-lg">
+                <Building2 className="h-6 w-6 text-white" />
               </div>
             </div>
           )}
@@ -58,57 +73,64 @@ export const Sidebar = () => {
             variant="ghost"
             size="sm"
             onClick={() => setCollapsed(!collapsed)}
-            className="h-8 w-8 p-0 text-white hover:bg-blue-700/50 hover:text-brand-gold transition-colors"
+            className="h-10 w-10 p-0 text-white hover:bg-blue-700/50 hover:text-sdbk-green transition-all duration-200 rounded-lg"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {collapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
           </Button>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navigation.map((item, index) => (
           <NavLink
             key={item.name}
             to={item.href}
             className={({ isActive }) =>
               cn(
-                "group flex items-center space-x-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 relative overflow-hidden",
-                "hover:bg-blue-700/50 hover:translate-x-1 hover:shadow-md",
+                "group flex items-center space-x-4 px-4 py-3.5 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden",
+                "hover:bg-blue-700/50 hover:translate-x-1 hover:shadow-lg hover:scale-[1.02]",
                 isActive
-                  ? "bg-brand-gold text-brand-darkText shadow-brand-glow font-semibold"
+                  ? "bg-sdbk-green text-white shadow-sdbk-green font-semibold scale-[1.02]"
                   : "text-blue-100 hover:text-white"
               )
             }
             style={{ animationDelay: `${index * 50}ms` }}
           >
-            <item.icon className={cn(
-              "h-5 w-5 flex-shrink-0 transition-all duration-200",
-              "group-hover:scale-110"
-            )} />
+            <div className="relative">
+              <item.icon className={cn(
+                "h-6 w-6 flex-shrink-0 transition-all duration-200",
+                "group-hover:scale-110 group-hover:rotate-3"
+              )} />
+            </div>
             {!collapsed && (
-              <span className="animate-fade-in">{item.name}</span>
+              <span className="animate-fade-in font-medium">{item.name}</span>
             )}
             {/* Indicateur actif */}
-            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-gold rounded-l-full opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-2 h-8 bg-sdbk-green rounded-full opacity-0 group-hover:opacity-50 transition-opacity" />
           </NavLink>
         ))}
       </nav>
 
       {/* User Menu et informations */}
-      <div className="p-4 border-t border-blue-700/30 bg-blue-900/30">
+      <div className="p-4 border-t border-blue-800/20 bg-blue-900/30">
         {!collapsed ? (
-          <div className="space-y-3 animate-fade-in">
-            <div className="text-xs text-blue-200 text-center">
-              <div className="font-medium">SDBK Cargo Flow Manager</div>
-              <div className="text-blue-300">Version 1.0.0</div>
+          <div className="space-y-4 animate-fade-in">
+            <div className="text-center">
+              <div className="text-xs text-blue-200 font-medium">SDBK Cargo Flow Manager</div>
+              <div className="text-xs text-blue-300">Système de gestion intégré</div>
+              <div className="mt-2 flex items-center justify-center space-x-2">
+                <div className="w-2 h-2 bg-sdbk-green rounded-full animate-pulse" />
+                <span className="text-xs text-blue-300">Système opérationnel</span>
+              </div>
             </div>
             <div className="flex justify-center">
               <UserMenu />
             </div>
           </div>
         ) : (
-          <div className="flex justify-center">
+          <div className="flex flex-col items-center space-y-3">
+            <div className="w-2 h-2 bg-sdbk-green rounded-full animate-pulse" />
             <UserMenu />
           </div>
         )}

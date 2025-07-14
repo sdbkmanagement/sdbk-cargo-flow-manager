@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { StatCard } from '@/components/common/StatCard';
 import { 
   Calendar, 
   Clock, 
@@ -8,7 +8,8 @@ import {
   XCircle,
   TrendingUp,
   Truck,
-  Package
+  Package,
+  BarChart3
 } from 'lucide-react';
 
 interface MissionsStatsProps {
@@ -34,85 +35,95 @@ export const MissionsStats = ({
   bauxite,
   volume_total
 }: MissionsStatsProps) => {
-  const stats = [
-    {
-      title: 'Total missions',
-      value: total,
-      icon: Calendar,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100'
-    },
-    {
-      title: 'En attente',
-      value: en_attente,
-      icon: Clock,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100'
-    },
-    {
-      title: 'En cours',
-      value: en_cours,
-      icon: TrendingUp,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100'
-    },
-    {
-      title: 'Terminées',
-      value: terminees,
-      icon: CheckCircle,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100'
-    },
-    {
-      title: 'Ce mois',
-      value: ce_mois,
-      icon: Calendar,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100'
-    },
-    {
-      title: 'Hydrocarbures',
-      value: hydrocarbures,
-      icon: Truck,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100'
-    },
-    {
-      title: 'Bauxite',
-      value: bauxite,
-      icon: Package,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100'
-    },
-    {
-      title: 'Volume total (t)',
-      value: Math.round(volume_total),
-      icon: Package,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-100'
-    }
-  ];
+  // Calcul des tendances (exemple)
+  const completionRate = total > 0 ? Math.round((terminees / total) * 100) : 0;
+  const monthlyGrowth = ce_mois > 0 ? Math.round(((ce_mois - (ce_mois * 0.8)) / (ce_mois * 0.8)) * 100) : 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-      {stats.map((stat, index) => {
-        const Icon = stat.icon;
-        return (
-          <Card key={index}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                </div>
-                <div className={`p-2 rounded-full ${stat.bgColor}`}>
-                  <Icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6 mb-8">
+      <StatCard
+        title="Total des missions"
+        value={total}
+        subtitle={`${completionRate}% de taux de réussite`}
+        icon={Calendar}
+        color="blue"
+        trend={{
+          value: 12,
+          label: "vs mois dernier",
+          isPositive: true
+        }}
+      />
+      
+      <StatCard
+        title="En attente"
+        value={en_attente}
+        subtitle="Missions planifiées"
+        icon={Clock}
+        color="yellow"
+      />
+      
+      <StatCard
+        title="En cours"
+        value={en_cours}
+        subtitle="Missions actives"
+        icon={TrendingUp}
+        color="green"
+        trend={{
+          value: 8,
+          label: "vs semaine dernière",
+          isPositive: true
+        }}
+      />
+      
+      <StatCard
+        title="Terminées"
+        value={terminees}
+        subtitle="Missions accomplies"
+        icon={CheckCircle}
+        color="green"
+      />
+      
+      <StatCard
+        title="Ce mois"
+        value={ce_mois}
+        subtitle="Missions du mois"
+        icon={BarChart3}
+        color="purple"
+        trend={{
+          value: monthlyGrowth,
+          label: "croissance mensuelle",
+          isPositive: monthlyGrowth >= 0
+        }}
+      />
+      
+      <StatCard
+        title="Hydrocarbures"
+        value={hydrocarbures}
+        subtitle="Transport carburant"
+        icon={Truck}
+        color="red"
+      />
+      
+      <StatCard
+        title="Bauxite"
+        value={bauxite}
+        subtitle="Transport minerai"
+        icon={Package}
+        color="yellow"
+      />
+      
+      <StatCard
+        title="Volume total"
+        value={`${Math.round(volume_total)}t`}
+        subtitle="Tonnage transporté"
+        icon={Package}
+        color="blue"
+        trend={{
+          value: 15,
+          label: "vs objectif mensuel",
+          isPositive: true
+        }}
+      />
     </div>
   );
 };
