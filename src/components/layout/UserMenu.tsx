@@ -16,6 +16,16 @@ import { LogOut, User, Settings, Loader2 } from 'lucide-react';
 export const UserMenu = () => {
   const { user, logout, loading } = useAuth();
 
+  const handleLogout = async () => {
+    console.log('🚪 Logout initiated from UserMenu');
+    try {
+      await logout();
+      console.log('✅ Logout completed successfully');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    }
+  };
+
   if (loading) {
     return (
       <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -63,7 +73,7 @@ export const UserMenu = () => {
           <span>Paramètres</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout} className="text-red-600">
+        <DropdownMenuItem onClick={handleLogout} className="text-red-600">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Se déconnecter</span>
         </DropdownMenuItem>

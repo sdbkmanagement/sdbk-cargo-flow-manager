@@ -83,12 +83,17 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
   isCollapsed = false,
   onToggleCollapse 
 }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
 
-  const handleLogout = () => {
-    // TODO: Implement logout functionality
-    console.log('Logout clicked');
+  const handleLogout = async () => {
+    console.log('🚪 Logout initiated from sidebar');
+    try {
+      await logout();
+      console.log('✅ Logout completed successfully');
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    }
   };
 
   return (
