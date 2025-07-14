@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false); // État local pour le formulaire
   const { login, loading } = useAuth();
   const { toast } = useToast();
 
@@ -26,6 +27,8 @@ export const LoginForm = () => {
       return;
     }
 
+    setIsSubmitting(true);
+    
     try {
       const result = await login(email, password);
       
@@ -48,8 +51,13 @@ export const LoginForm = () => {
         description: "Une erreur est survenue lors de la connexion",
         variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  // Utiliser l'état local isSubmitting au lieu de loading pour l'affichage du formulaire
+  const isLoading = isSubmitting || loading;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
@@ -76,7 +84,7 @@ export const LoginForm = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre-email@sdbk.com"
                 required
-                disabled={loading}
+                disabled={isLoading}
                 autoComplete="email"
               />
             </div>
@@ -89,16 +97,16 @@ export const LoginForm = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={loading}
+                disabled={isLoading}
                 autoComplete="current-password"
               />
             </div>
             <Button 
               type="submit" 
               className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors" 
-              disabled={loading}
+              disabled={isLoading}
             >
-              {loading ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Connexion en cours...

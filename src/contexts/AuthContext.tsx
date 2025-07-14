@@ -36,7 +36,7 @@ export const useAuth = () => {
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Changé de true à false
   const [initialized, setInitialized] = useState(false);
 
   const loadUserFromDatabase = useCallback(async (authUser: User): Promise<AuthUser | null> => {
@@ -102,14 +102,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initializeAuth = async () => {
       try {
-        // NE PAS récupérer automatiquement la session existante
-        // L'utilisateur doit se connecter manuellement
-        console.log('🚫 No automatic session recovery - user must login manually');
+        // Commencer par vérifier s'il y a une session existante
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (mounted) {
-          setUser(null);
-          setLoading(false);
-          setInitialized(true);
+        if (session?.user && mounted) {
+          console.log('📱 Existing session found, loading user...');
+          setLoading(true);
+          try {
+            const userData = await loadUserFromDatabase(session.user);
+            if (mounted) {
+              setUser(userData);
+            }
+          } catch (error) {
+            console.error('❌ Error loading user from existing session:', error);
+            if (mounted) {
+              setUser(null);
+            }
+          } finally {
+            if (mounted) {
+              setLoading(false);
+              setInitialized(true);
+            }
+          }
+        } else {
+          console.log('🚫 No existing session found');
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+            setInitialized(true);
+          }
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
@@ -126,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [loadUserFromDatabase]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
