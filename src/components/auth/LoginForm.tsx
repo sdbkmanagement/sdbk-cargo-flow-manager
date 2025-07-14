@@ -17,29 +17,49 @@ export const LoginForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      await login(email, password);
-      toast({
-        title: "Connexion réussie",
-        description: "Bienvenue dans SDBK Transport Manager",
-      });
+      const result = await login(email, password);
+      
+      if (result.success) {
+        toast({
+          title: "Connexion réussie",
+          description: "Bienvenue dans SDBK Transport Manager",
+        });
+        // La redirection sera gérée automatiquement par le contexte d'auth
+      } else {
+        let errorMessage = "Identifiants invalides";
+        
+        if (result.error?.includes('Invalid login credentials')) {
+          errorMessage = "Email ou mot de passe incorrect";
+        } else if (result.error?.includes('Email not confirmed')) {
+          errorMessage = "Veuillez confirmer votre email avant de vous connecter";
+        } else if (result.error) {
+          errorMessage = result.error;
+        }
+        
+        toast({
+          title: "Erreur de connexion",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
     } catch (error: any) {
       console.error('Login error:', error);
-      let errorMessage = "Identifiants invalides";
-      
-      if (error.message?.includes('Invalid login credentials')) {
-        errorMessage = "Email ou mot de passe incorrect";
-      } else if (error.message?.includes('Email not confirmed')) {
-        errorMessage = "Veuillez confirmer votre email avant de vous connecter";
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
         title: "Erreur de connexion",
-        description: errorMessage,
+        description: "Une erreur inattendue s'est produite",
         variant: "destructive",
       });
     } finally {
@@ -47,21 +67,10 @@ export const LoginForm = () => {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <Card className="w-full max-w-md">
-          <CardContent className="flex items-center justify-center p-8">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-            <span className="ml-2 text-lg">Chargement...</span>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const isFormLoading = isLoading || authLoading;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -85,7 +94,8 @@ export const LoginForm = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="votre-email@sdbk.com"
                 required
-                disabled={isLoading}
+                disabled={isFormLoading}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -97,11 +107,17 @@ export const LoginForm = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                disabled={isLoading}
+                disabled={isFormLoading}
+                autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isFormLoading}
+              size="lg"
+            >
+              {isFormLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Connexion...

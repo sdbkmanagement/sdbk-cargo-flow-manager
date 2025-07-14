@@ -73,36 +73,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Initialisation avec timeout de sécurité
+  // Initialisation simplifiée
   useEffect(() => {
     let mounted = true;
-    let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
       console.log('🚀 Starting auth initialization...');
       
       try {
+        // Vérifier s'il y a une session active
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!mounted) return;
 
         if (session?.user) {
-          console.log('👤 Session found, loading user data...');
-          setLoading(true);
+          console.log('👤 Existing session found');
           const userData = await loadUserFromDatabase(session.user);
           if (mounted) {
             setUser(userData);
-            setLoading(false);
           }
         } else {
           console.log('🚫 No active session');
-          setLoading(false);
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
-        if (mounted) {
-          setLoading(false);
-        }
       }
       
       if (mounted) {
@@ -111,20 +105,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // Timeout de sécurité : forcer l'initialisation après 3 secondes max
-    timeoutId = setTimeout(() => {
-      if (mounted && !initialized) {
-        console.warn('⏰ Auth initialization timeout - forcing completion');
-        setInitialized(true);
-        setLoading(false);
-      }
-    }, 3000);
-
     initAuth();
 
     return () => {
       mounted = false;
-      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 
@@ -134,7 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔄 Auth state changed:', event, !!session);
       
       if (event === 'SIGNED_IN' && session?.user) {
-        setLoading(true);
         const userData = await loadUserFromDatabase(session.user);
         setUser(userData);
         setLoading(false);
@@ -182,6 +165,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
+      setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
       setLoading(false);

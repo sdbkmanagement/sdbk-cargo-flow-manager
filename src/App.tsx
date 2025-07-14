@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -49,27 +48,27 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   console.log('App state:', { initialized, loading, hasUser: !!user });
 
-  // Attendre l'initialisation
+  // Attendre l'initialisation avec timeout de sécurité (max 2 secondes)
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <PageLoader message="Initialisation de l'application..." />
+        <PageLoader message="Initialisation..." />
       </div>
     );
   }
 
-  // Afficher un loader pendant la connexion UNIQUEMENT si on essaie de se connecter
+  // Afficher la page de connexion si pas d'utilisateur ET pas en train de se connecter
+  if (!user && !loading) {
+    return <LoginForm />;
+  }
+
+  // Afficher un loader UNIQUEMENT pendant le processus de connexion
   if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <PageLoader message="Connexion en cours..." />
+        <PageLoader message="Connexion..." />
       </div>
     );
-  }
-
-  // Afficher la page de connexion si pas d'utilisateur
-  if (!user) {
-    return <LoginForm />;
   }
 
   // Interface principale pour les utilisateurs connectés
