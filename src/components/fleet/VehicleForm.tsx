@@ -17,9 +17,6 @@ import { RemorqueFields } from './form/RemorqueFields';
 import vehiculesService, { type Vehicule } from '@/services/vehicules';
 import { chauffeursService } from '@/services/chauffeurs';
 import { useToast } from '@/hooks/use-toast';
-import type { Database } from '@/integrations/supabase/types';
-
-type VehiculeInsert = Database['public']['Tables']['vehicules']['Insert'];
 
 interface FormData {
   // Champs de base
@@ -105,11 +102,11 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
   // Mutation pour créer/modifier un véhicule
   const mutation = useMutation({
     mutationFn: async (data: FormData) => {
-      const vehicleData: VehiculeInsert = {
+      const vehicleData = {
         numero: data.numero,
-        type_vehicule: data.type_vehicule || 'porteur', // Provide default value
-        type_transport: data.type_transport || 'hydrocarbures', // Provide default value
-        statut: data.statut || 'disponible', // Provide default value
+        type_vehicule: data.type_vehicule || 'porteur',
+        type_transport: data.type_transport || 'hydrocarbures',
+        statut: data.statut || 'disponible',
         base: data.base || null,
         integration: data.integration || null,
         
@@ -150,7 +147,7 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
       if (vehicle) {
         return vehiculesService.update(vehicle.id, vehicleData);
       } else {
-        return vehiculesService.create(vehicleData);
+        return vehiculesService.create(vehicleData as any);
       }
     },
     onSuccess: () => {
