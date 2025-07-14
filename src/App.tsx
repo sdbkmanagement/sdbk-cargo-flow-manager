@@ -49,27 +49,27 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   console.log('App state:', { initialized, loading, hasUser: !!user });
 
-  // Attendre l'initialisation avec un timeout maximum
+  // Attendre l'initialisation
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <PageLoader message="Chargement de l'application..." />
+        <PageLoader message="Initialisation de l'application..." />
       </div>
     );
   }
 
-  // Afficher la page de connexion si pas d'utilisateur
-  if (!user && !loading) {
-    return <LoginForm />;
-  }
-
-  // Afficher un loader pendant la connexion
-  if (loading) {
+  // Afficher un loader pendant la connexion UNIQUEMENT si on essaie de se connecter
+  if (loading && !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
         <PageLoader message="Connexion en cours..." />
       </div>
     );
+  }
+
+  // Afficher la page de connexion si pas d'utilisateur
+  if (!user) {
+    return <LoginForm />;
   }
 
   // Interface principale pour les utilisateurs connectés

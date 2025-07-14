@@ -88,15 +88,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (session?.user) {
           console.log('👤 Session found, loading user data...');
+          setLoading(true);
           const userData = await loadUserFromDatabase(session.user);
           if (mounted) {
             setUser(userData);
+            setLoading(false);
           }
         } else {
           console.log('🚫 No active session');
+          setLoading(false);
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
+        if (mounted) {
+          setLoading(false);
+        }
       }
       
       if (mounted) {
@@ -110,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (mounted && !initialized) {
         console.warn('⏰ Auth initialization timeout - forcing completion');
         setInitialized(true);
+        setLoading(false);
       }
     }, 3000);
 
@@ -133,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
+        setLoading(false);
       }
     });
 
@@ -141,6 +149,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     setLoading(true);
+    console.log('🔐 Attempting login for:', email);
+    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -149,21 +159,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Login error:', error);
+        setLoading(false);
         return { success: false, error: error.message };
       }
 
       if (data.user) {
+        console.log('✅ Login successful, loading user data...');
         const userData = await loadUserFromDatabase(data.user);
         setUser(userData);
+        setLoading(false);
         return { success: true };
       }
 
+      setLoading(false);
       return { success: false, error: 'Échec de la connexion' };
     } catch (error: any) {
       console.error('❌ Login exception:', error);
-      return { success: false, error: error.message || 'Erreur de connexion' };
-    } finally {
       setLoading(false);
+      return { success: false, error: error.message || 'Erreur de connexion' };
     }
   };
 
@@ -171,8 +184,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setUser(null);
+      setLoading(false);
     } catch (error) {
       console.error('❌ Logout error:', error);
+      setLoading(false);
     }
   };
 
