@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Loader2 } from 'lucide-react';
+import { Truck, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const LoginForm = () => {
@@ -119,8 +119,15 @@ export const LoginForm = () => {
             </Button>
           </form>
           
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>Utilisez vos identifiants Supabase pour vous connecter</p>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-start space-x-2">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-blue-800">
+                <p className="font-medium mb-1">Compte de test :</p>
+                <p><strong>Email :</strong> sdbkmanagement@gmail.com</p>
+                <p><strong>Mot de passe :</strong> Votre mot de passe Supabase</p>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>

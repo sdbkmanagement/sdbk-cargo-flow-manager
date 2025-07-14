@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('📊 Traitement de la session:', !!session);
       
       if (session?.user) {
-        // Créer un utilisateur admin par défaut
+        // Créer un utilisateur admin par défaut pour les utilisateurs connectés
         const authUser: AuthUser = {
           id: session.user.id,
           email: session.user.email || '',
