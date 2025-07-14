@@ -5,7 +5,6 @@ import {
   Calendar, 
   Clock, 
   CheckCircle, 
-  XCircle,
   TrendingUp,
   Truck,
   Package,
@@ -35,9 +34,8 @@ export const MissionsStats = ({
   bauxite,
   volume_total
 }: MissionsStatsProps) => {
-  // Calcul des tendances (exemple)
+  // Calcul du taux de réussite
   const completionRate = total > 0 ? Math.round((terminees / total) * 100) : 0;
-  const monthlyGrowth = ce_mois > 0 ? Math.round(((ce_mois - (ce_mois * 0.8)) / (ce_mois * 0.8)) * 100) : 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-6 mb-8">
@@ -47,11 +45,6 @@ export const MissionsStats = ({
         subtitle={`${completionRate}% de taux de réussite`}
         icon={Calendar}
         color="blue"
-        trend={{
-          value: 12,
-          label: "vs mois dernier",
-          isPositive: true
-        }}
       />
       
       <StatCard
@@ -68,11 +61,6 @@ export const MissionsStats = ({
         subtitle="Missions actives"
         icon={TrendingUp}
         color="green"
-        trend={{
-          value: 8,
-          label: "vs semaine dernière",
-          isPositive: true
-        }}
       />
       
       <StatCard
@@ -89,11 +77,6 @@ export const MissionsStats = ({
         subtitle="Missions du mois"
         icon={BarChart3}
         color="purple"
-        trend={{
-          value: monthlyGrowth,
-          label: "croissance mensuelle",
-          isPositive: monthlyGrowth >= 0
-        }}
       />
       
       <StatCard
@@ -114,15 +97,10 @@ export const MissionsStats = ({
       
       <StatCard
         title="Volume total"
-        value={`${Math.round(volume_total)}t`}
+        value={volume_total > 0 ? `${Math.round(volume_total)}t` : '0t'}
         subtitle="Tonnage transporté"
         icon={Package}
         color="blue"
-        trend={{
-          value: 15,
-          label: "vs objectif mensuel",
-          isPositive: true
-        }}
       />
     </div>
   );
