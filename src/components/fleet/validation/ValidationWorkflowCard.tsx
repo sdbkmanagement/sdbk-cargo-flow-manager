@@ -62,54 +62,88 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       if (!etape) {
         toast({
           title: 'Erreur',
-          description: 'Étape non trouvée',
+          description: 'Étape non trouvée dans le workflow',
           variant: 'destructive'
         });
         return;
       }
 
+      // Vérification des permissions avec des messages plus clairs
       if (!canValidateEtape(etape.etape)) {
         toast({
           title: 'Accès refusé',
-          description: 'Vous n\'avez pas l\'autorisation de valider cette étape.',
+          description: `Vous n'avez pas l'autorisation de valider l'étape "${ETAPE_LABELS[etape.etape as EtapeType]}". Rôle requis: ${etape.etape}`,
           variant: 'destructive'
         });
         return;
       }
 
-      console.log('Validation des données:', {
+      // Validation des données avant envoi
+      const commentaireFinal = commentaireText?.trim() || '';
+      
+      // Vérification obligatoire du commentaire pour les rejets
+      if (statut === 'rejete' && !commentaireFinal) {
+        toast({
+          title: 'Commentaire requis',
+          description: 'Un commentaire est obligatoire pour rejeter une étape',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const userName = getUserName();
+      const userRoleValue = getUserRole();
+
+      console.log('🚀 Démarrage de la validation:', {
         etapeId,
+        etape: etape.etape,
         statut,
-        commentaire: commentaireText || '',
-        validateur: getUserName(),
-        role: getUserRole()
+        commentaire: commentaireFinal,
+        validateur: userName,
+        role: userRoleValue
       });
 
+      // Appel du service avec gestion d'erreur améliorée
       await validationService.updateEtapeStatut(
         etapeId, 
         statut, 
-        commentaireText || '',
-        getUserName(),
-        getUserRole()
+        commentaireFinal,
+        userName,
+        userRoleValue
       );
+      
+      console.log('✅ Validation réussie');
       
       toast({
         title: 'Validation mise à jour',
-        description: `L'étape a été ${statut === 'valide' ? 'validée' : 'rejetée'} avec succès`,
+        description: `L'étape "${ETAPE_LABELS[etape.etape as EtapeType]}" a été ${statut === 'valide' ? 'validée' : 'rejetée'} avec succès`,
       });
       
-      // Recharger seulement ce workflow
+      // Recharger le workflow
       await loadWorkflow();
       setShowCommentDialog(null);
       setCommentaire('');
+      
     } catch (error) {
-      console.error('Erreur lors de la validation:', error);
+      console.error('💥 Erreur lors de la validation:', error);
+      
+      // Affichage d'erreur plus informatif
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      
       toast({
-        title: 'Erreur',
+        title: 'Erreur de validation',
         description: `Impossible de mettre à jour la validation: ${errorMessage}`,
         variant: 'destructive'
       });
+
+      // Log pour le débogage
+      console.error('🔍 Détails de l\'erreur:', {
+        etapeId,
+        statut,
+        commentaire: commentaireText,
+        error: error
+      });
+      
     } finally {
       setActionLoading(null);
     }

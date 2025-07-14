@@ -226,7 +226,7 @@ export const validationService = {
     return result;
   },
 
-  // Correction de la mise à jour avec gestion d'erreur améliorée
+  // Correction principale de la mise à jour avec gestion d'erreur robuste
   async updateEtapeStatut(
     etapeId: string,
     statut: StatutEtape,
@@ -234,46 +234,88 @@ export const validationService = {
     validateurNom: string,
     validateurRole: string
   ) {
-    console.log(`Mise à jour étape ${etapeId} vers ${statut} avec commentaire: ${commentaire}`);
+    console.log(`🔄 Mise à jour étape ${etapeId} vers ${statut}`);
+    console.log(`👤 Validateur: ${validateurNom} (${validateurRole})`);
+    console.log(`💬 Commentaire: ${commentaire}`);
 
     try {
+      // Vérifier que l'étape existe d'abord
+      const { data: etapeExiste, error: checkError } = await supabase
+        .from('validation_etapes')
+        .select('id, workflow_id, etape, statut')
+        .eq('id', etapeId)
+        .single();
+
+      if (checkError) {
+        console.error('❌ Erreur lors de la vérification de l\'étape:', checkError);
+        throw new Error(`Étape non trouvée: ${checkError.message}`);
+      }
+
+      if (!etapeExiste) {
+        throw new Error('Étape non trouvée dans la base de données');
+      }
+
+      console.log(`✅ Étape trouvée: ${etapeExiste.etape} (statut actuel: ${etapeExiste.statut})`);
+
+      // Préparer les données de mise à jour
       const updateData = {
         statut,
-        commentaire: commentaire || null,
+        commentaire: commentaire?.trim() || null,
         validateur_nom: validateurNom,
         validateur_role: validateurRole,
         date_validation: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
 
+      console.log('📝 Données de mise à jour:', updateData);
+
+      // Effectuer la mise à jour avec une requête plus robuste
       const { data, error } = await supabase
         .from('validation_etapes')
         .update(updateData)
         .eq('id', etapeId)
-        .select('workflow_id')
+        .select('workflow_id, etape, statut')
         .single();
 
       if (error) {
-        console.error('Erreur lors de la mise à jour de l\'étape:', error);
-        throw new Error(`Erreur de mise à jour: ${error.message}`);
-      }
-
-      if (!data) {
-        throw new Error('Aucune étape trouvée avec cet ID');
-      }
-
-      // Invalider les caches pertinents
-      const workflowId = data.workflow_id;
-      for (const [key] of this._cache) {
-        if (key.includes(`workflow_`) || key.includes('stats')) {
-          this._cache.delete(key);
+        console.error('❌ Erreur Supabase lors de la mise à jour:', error);
+        console.error('🔍 Code d\'erreur:', error.code);
+        console.error('🔍 Message détaillé:', error.message);
+        
+        // Messages d'erreur plus spécifiques
+        if (error.code === '23505') {
+          throw new Error('Conflit de données: cette validation a peut-être déjà été mise à jour');
+        } else if (error.code === '23503') {
+          throw new Error('Référence invalide: workflow ou étape non trouvé');
+        } else if (error.message.includes('permission')) {
+          throw new Error('Permissions insuffisantes pour cette opération');
+        } else if (error.message.includes('constraint')) {
+          throw new Error('Contrainte de données violée: vérifiez les valeurs saisies');
+        } else {
+          throw new Error(`Erreur de base de données: ${error.message}`);
         }
       }
 
+      if (!data) {
+        throw new Error('Aucune donnée retournée après la mise à jour');
+      }
+
+      console.log('✅ Mise à jour réussie:', data);
+
+      // Invalider les caches pertinents
+      this.clearCache('workflow_');
+      this.clearCache('stats');
+
       return data;
     } catch (error) {
-      console.error('Erreur dans updateEtapeStatut:', error);
-      throw error;
+      console.error('💥 Erreur complète dans updateEtapeStatut:', error);
+      
+      // Re-lancer l'erreur avec un message plus clair
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Erreur inconnue lors de la mise à jour de la validation');
+      }
     }
   },
 
@@ -324,7 +366,7 @@ export const validationService = {
     return stats;
   },
 
-  // Nettoyage de cache intelligent
+  // Nettoyage de cache intelligent amélioré
   clearCache(pattern?: string) {
     if (pattern) {
       for (const [key] of this._cache) {
@@ -332,9 +374,10 @@ export const validationService = {
           this._cache.delete(key);
         }
       }
+      console.log(`🧹 Cache nettoyé pour le pattern: ${pattern}`);
     } else {
       this._cache.clear();
+      console.log('🧹 Cache complètement nettoyé');
     }
-    console.log('Cache de validation nettoyé');
   }
 };
