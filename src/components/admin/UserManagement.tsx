@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
-import { adminService } from '@/services/admin';
+import { userService } from '@/services/admin/userService';
 import { OptimizedUserForm } from './OptimizedUserForm';
 import { ROLE_LABELS, MODULE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -25,15 +25,26 @@ export const UserManagement = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading } = useQuery({
+  // Fetch users with better error handling
+  const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['admin-users'],
-    queryFn: () => adminService.getUsers(),
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
-    refetchOnWindowFocus: false, // Don't refetch on window focus
+    queryFn: async () => {
+      console.log('🔧 Fetching users from database...');
+      try {
+        const result = await userService.getUsers();
+        console.log('✅ Users fetched successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('❌ Error fetching users:', error);
+        throw error;
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const deleteUserMutation = useMutation({
-    mutationFn: (userId: string) => adminService.deleteUser(userId),
+    mutationFn: (userId: string) => userService.deleteUser(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast({
@@ -41,10 +52,11 @@ export const UserManagement = () => {
         description: "L'utilisateur a été supprimé avec succès."
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('❌ Delete user error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de supprimer l'utilisateur.",
+        description: error.message || "Impossible de supprimer l'utilisateur.",
         variant: "destructive"
       });
     }
@@ -52,7 +64,7 @@ export const UserManagement = () => {
 
   const toggleStatusMutation = useMutation({
     mutationFn: ({ userId, status }: { userId: string; status: SystemUser['statut'] }) => 
-      adminService.toggleUserStatus(userId, status),
+      userService.toggleUserStatus(userId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       toast({
@@ -60,33 +72,35 @@ export const UserManagement = () => {
         description: "Le statut de l'utilisateur a été modifié avec succès."
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('❌ Toggle status error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de modifier le statut de l'utilisateur.",
+        description: error.message || "Impossible de modifier le statut de l'utilisateur.",
         variant: "destructive"
       });
     }
   });
 
   const resetPasswordMutation = useMutation({
-    mutationFn: (userId: string) => adminService.resetPassword(userId),
+    mutationFn: (userId: string) => userService.resetPassword(userId),
     onSuccess: () => {
       toast({
         title: "Mot de passe réinitialisé",
         description: "Un email de réinitialisation a été envoyé à l'utilisateur."
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('❌ Reset password error:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de réinitialiser le mot de passe.",
+        description: error.message || "Impossible de réinitialiser le mot de passe.",
         variant: "destructive"
       });
     }
   });
 
-  // Filtres optimisés
+  // Filter users
   const filteredUsers = React.useMemo(() => {
     return users.filter(user => {
       const matchesSearch = !searchTerm || 
@@ -134,12 +148,38 @@ export const UserManagement = () => {
 
   const handleCreateSuccess = () => {
     setIsCreateDialogOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
   };
 
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     setSelectedUser(null);
+    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
   };
+
+  if (error) {
+    console.error('❌ User management error:', error);
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600">Erreur de connexion</CardTitle>
+            <CardDescription>
+              Impossible de se connecter à la base de données des utilisateurs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button 
+              onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-users'] })}
+              variant="outline"
+            >
+              Réessayer
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -160,12 +200,12 @@ export const UserManagement = () => {
             <div>
               <CardTitle>Gestion des Utilisateurs</CardTitle>
               <CardDescription>
-                Gérez les comptes utilisateurs, leurs rôles et permissions
+                Gérez les comptes utilisateurs, leurs rôles et permissions ({users.length} utilisateur{users.length > 1 ? 's' : ''})
               </CardDescription>
             </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="bg-blue-600 hover:bg-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
                   Nouvel utilisateur
                 </Button>
@@ -183,7 +223,7 @@ export const UserManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filtres optimisés */}
+          {/* Filtres */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
@@ -220,7 +260,7 @@ export const UserManagement = () => {
             </Select>
           </div>
 
-          {/* Tableau optimisé */}
+          {/* Tableau */}
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
@@ -341,13 +381,26 @@ export const UserManagement = () => {
 
           {filteredUsers.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              Aucun utilisateur trouvé avec les critères de recherche actuels.
+              {users.length === 0 ? (
+                <div>
+                  <p className="mb-4">Aucun utilisateur trouvé dans la base de données.</p>
+                  <Button 
+                    onClick={() => setIsCreateDialogOpen(true)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Créer le premier utilisateur
+                  </Button>
+                </div>
+              ) : (
+                "Aucun utilisateur trouvé avec les critères de recherche actuels."
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Dialog d'édition optimisé */}
+      {/* Dialog d'édition */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>

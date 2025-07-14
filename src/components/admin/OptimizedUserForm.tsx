@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ROLES, ROLE_LABELS, MODULE_PERMISSIONS, MODULE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { userService } from '@/services/admin/userService';
 
 interface OptimizedUserFormProps {
@@ -19,6 +20,7 @@ interface OptimizedUserFormProps {
 export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSuccess }) => {
   const isEdit = !!user;
   const queryClient = useQueryClient();
+  const [showPassword, setShowPassword] = useState(false);
   
   // État local optimisé
   const [formData, setFormData] = useState({
@@ -33,6 +35,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
 
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      console.log('🔧 Creating user with data:', data);
       const userData = {
         ...data,
         role: data.roles[0] || 'transport'
@@ -48,6 +51,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
       onSuccess();
     },
     onError: (error: any) => {
+      console.error('❌ Create user error:', error);
       toast({
         title: "Erreur de création",
         description: error.message || "Impossible de créer l'utilisateur.",
@@ -58,6 +62,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
 
   const updateMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
+      console.log('🔧 Updating user with data:', data);
       const userData = {
         ...data,
         role: data.roles[0] || 'transport'
@@ -73,6 +78,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
       onSuccess();
     },
     onError: (error: any) => {
+      console.error('❌ Update user error:', error);
       toast({
         title: "Erreur",
         description: error.message || "Impossible de modifier l'utilisateur.",
@@ -104,10 +110,28 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!formData.email || !formData.nom || !formData.prenom) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez remplir tous les champs obligatoires.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!isEdit && (!formData.password || formData.password.trim() === '')) {
       toast({
         title: "Erreur de validation",
         description: "Le mot de passe est requis pour créer un nouvel utilisateur.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (formData.roles.length === 0) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez sélectionner au moins un rôle.",
         variant: "destructive"
       });
       return;
@@ -121,7 +145,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {/* Informations de base */}
       <Card>
         <CardHeader>
@@ -136,6 +160,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
               onChange={(e) => handleInputChange('prenom', e.target.value)}
               required
               disabled={isLoading}
+              placeholder="Prénom de l'utilisateur"
             />
           </div>
           <div>
@@ -146,6 +171,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
               onChange={(e) => handleInputChange('nom', e.target.value)}
               required
               disabled={isLoading}
+              placeholder="Nom de l'utilisateur"
             />
           </div>
           <div className="md:col-span-2">
@@ -157,29 +183,60 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
               onChange={(e) => handleInputChange('email', e.target.value)}
               required
               disabled={isEdit || isLoading}
+              placeholder="email@example.com"
             />
           </div>
           {!isEdit && (
             <div className="md:col-span-2">
               <Label htmlFor="password">Mot de passe *</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
-                required
-                disabled={isLoading}
-                minLength={6}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  required
+                  disabled={isLoading}
+                  minLength={6}
+                  placeholder="Minimum 6 caractères"
+                  className="pr-10"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
             </div>
           )}
+          <div className="md:col-span-2">
+            <Label htmlFor="statut">Statut</Label>
+            <Select value={formData.statut} onValueChange={(value) => handleInputChange('statut', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="actif">Actif</SelectItem>
+                <SelectItem value="inactif">Inactif</SelectItem>
+                <SelectItem value="suspendu">Suspendu</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardContent>
       </Card>
 
       {/* Rôles de validation */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Rôles de validation</CardTitle>
+          <CardTitle className="text-lg">Rôles de validation *</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -191,12 +248,15 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
                   onCheckedChange={(checked) => handleRoleToggle(role, !!checked)}
                   disabled={isLoading}
                 />
-                <Label htmlFor={`role-${role}`} className="text-sm font-normal">
+                <Label htmlFor={`role-${role}`} className="text-sm font-normal cursor-pointer">
                   {ROLE_LABELS[role] || role}
                 </Label>
               </div>
             ))}
           </div>
+          {formData.roles.length === 0 && (
+            <p className="text-sm text-red-600 mt-2">Veuillez sélectionner au moins un rôle</p>
+          )}
         </CardContent>
       </Card>
 
@@ -215,7 +275,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
                   onCheckedChange={(checked) => handleModuleToggle(module, !!checked)}
                   disabled={isLoading}
                 />
-                <Label htmlFor={`module-${module}`} className="text-sm font-normal">
+                <Label htmlFor={`module-${module}`} className="text-sm font-normal cursor-pointer">
                   {MODULE_LABELS[module] || module}
                 </Label>
               </div>
@@ -225,11 +285,11 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
       </Card>
 
       {/* Boutons d'action */}
-      <div className="flex justify-end gap-3">
+      <div className="flex justify-end gap-3 pt-4">
         <Button 
           type="submit" 
           disabled={isLoading}
-          className="min-w-[120px]"
+          className="min-w-[120px] bg-blue-600 hover:bg-blue-700"
         >
           {isLoading ? (
             <>
@@ -237,7 +297,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
               {isEdit ? 'Modification...' : 'Création...'}
             </>
           ) : (
-            isEdit ? 'Enregistrer' : 'Créer'
+            isEdit ? 'Enregistrer' : 'Créer l\'utilisateur'
           )}
         </Button>
       </div>
