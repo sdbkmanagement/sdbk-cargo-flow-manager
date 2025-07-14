@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,7 +42,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Layout principal avec gestion de la visibilité
+// Layout principal avec correction du positionnement
 const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -84,27 +83,29 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     return <PageLoader message="Connexion en cours..." />;
   }
 
-  // Si on a un utilisateur, afficher l'application
+  // Si on a un utilisateur, afficher l'application avec le layout corrigé
   if (user) {
     console.log('🏠 Showing main app for user:', user.email);
     return (
-      <div className="min-h-screen flex bg-background text-foreground">
-        {/* Sidebar moderne responsive */}
-        <div className="hidden lg:block">
-          <ModernSidebar 
-            isCollapsed={sidebarCollapsed}
-            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-          />
-        </div>
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Sidebar fixe */}
+        <ModernSidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
 
-        {/* Contenu principal */}
-        <div className="flex-1 flex flex-col min-w-0">
+        {/* Contenu principal avec marge pour éviter le chevauchement */}
+        <div 
+          className={`min-h-screen transition-all duration-300 ease-out ${
+            sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+          }`}
+        >
           <ModernHeader 
             onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             showMenuButton={true}
           />
           
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1">
             <div className="page-container">
               <Suspense fallback={<PageLoader message="Chargement du module..." />}>
                 {children}

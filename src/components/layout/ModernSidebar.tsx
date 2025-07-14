@@ -94,7 +94,7 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
   return (
     <aside 
       className={cn(
-        "fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-out",
+        "fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-out",
         "bg-card border-r border-border shadow-lg",
         isCollapsed ? "w-16" : "w-64"
       )}
