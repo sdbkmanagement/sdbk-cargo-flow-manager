@@ -9,7 +9,7 @@ import { ModernHeader } from '@/components/layout/ModernHeader';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { PageLoader } from '@/components/ui/loading-states';
 
-// Lazy loading optimisé pour de meilleures performances
+// Lazy loading des pages
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Fleet = lazy(() => import('@/pages/Fleet'));
 const Drivers = lazy(() => import('@/pages/Drivers'));
@@ -23,7 +23,7 @@ const DocumentStock = lazy(() => import('@/pages/DocumentStock'));
 const Guide = lazy(() => import('@/pages/Guide'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
-// Configuration optimisée du QueryClient
+// Configuration du QueryClient
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -42,25 +42,34 @@ const queryClient = new QueryClient({
   },
 });
 
-// Layout principal
-const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Layout principal de l'application
+const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  console.log('App Layout - initialized:', initialized, 'loading:', loading, 'user:', !!user);
+  console.log('App state:', { initialized, loading, hasUser: !!user });
 
-  // Attendre l'initialisation SEULEMENT
+  // Attendre l'initialisation avec un timeout maximum
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <PageLoader message="Initialisation..." />
+        <PageLoader message="Chargement de l'application..." />
       </div>
     );
   }
 
-  // Afficher l'écran de connexion si pas d'utilisateur connecté
-  if (!user) {
+  // Afficher la page de connexion si pas d'utilisateur
+  if (!user && !loading) {
     return <LoginForm />;
+  }
+
+  // Afficher un loader pendant la connexion
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+        <PageLoader message="Connexion en cours..." />
+      </div>
+    );
   }
 
   // Interface principale pour les utilisateurs connectés
@@ -82,7 +91,7 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         <main className="flex-1 overflow-auto">
           <div className="page-container">
             <Suspense fallback={<PageLoader message="Chargement du module..." />}>
-              {loading ? <PageLoader message="Connexion..." /> : children}
+              {children}
             </Suspense>
           </div>
         </main>
@@ -96,7 +105,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
-          <ModernAppLayout>
+          <AppLayout>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -112,7 +121,7 @@ function App() {
               <Route path="/guide" element={<Guide />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </ModernAppLayout>
+          </AppLayout>
           <Toaster />
         </BrowserRouter>
       </AuthProvider>

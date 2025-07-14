@@ -49,12 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('email', authUser.email)
         .single();
 
-      if (error) {
-        console.error('❌ Error loading user:', error);
-        return null;
-      }
-
-      if (!userData) {
+      if (error || !userData) {
         console.warn('⚠️ No user data found for:', authUser.email);
         return null;
       }
@@ -78,28 +73,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Initialisation unique au montage
+  // Initialisation avec timeout de sécurité
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initAuth = async () => {
-      console.log('🚀 Initializing auth...');
+      console.log('🚀 Starting auth initialization...');
       
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (!mounted) return;
 
-        if (error) {
-          console.error('❌ Auth session error:', error);
-        } else if (session?.user) {
-          console.log('👤 Active session found for:', session.user.email);
+        if (session?.user) {
+          console.log('👤 Session found, loading user data...');
           const userData = await loadUserFromDatabase(session.user);
           if (mounted) {
             setUser(userData);
           }
         } else {
-          console.log('🚫 No active session found');
+          console.log('🚫 No active session');
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
@@ -111,17 +105,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    // Timeout de sécurité : forcer l'initialisation après 3 secondes max
+    timeoutId = setTimeout(() => {
+      if (mounted && !initialized) {
+        console.warn('⏰ Auth initialization timeout - forcing completion');
+        setInitialized(true);
+      }
+    }, 3000);
+
     initAuth();
 
     return () => {
       mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, []); // Pas de dépendances pour éviter les re-exécutions
+  }, []);
 
   // Écouter les changements d'authentification
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event);
+      console.log('🔄 Auth state changed:', event, !!session);
       
       if (event === 'SIGNED_IN' && session?.user) {
         setLoading(true);
@@ -134,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, []); // Pas de dépendances
+  }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
