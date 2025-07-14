@@ -1,14 +1,15 @@
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
-import { Sidebar } from '@/components/layout/Sidebar';
-import { UserMenu } from '@/components/layout/UserMenu';
+import { ModernSidebar } from '@/components/layout/ModernSidebar';
+import { ModernHeader } from '@/components/layout/ModernHeader';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { PageLoader } from '@/components/ui/loading-states';
 
-// Lazy loading pour améliorer les performances
+// Lazy loading optimisé pour de meilleures performances
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Fleet = lazy(() => import('@/pages/Fleet'));
 const Drivers = lazy(() => import('@/pages/Drivers'));
@@ -22,82 +23,65 @@ const DocumentStock = lazy(() => import('@/pages/DocumentStock'));
 const Guide = lazy(() => import('@/pages/Guide'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
-// Configuration optimisée du QueryClient
+// Configuration optimisée du QueryClient avec cache intelligent
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 10 * 60 * 1000, // 10 minutes
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: (failureCount, error: any) => {
+        // Pas de retry pour les erreurs d'authentification
+        if (error?.status === 401 || error?.status === 403) return false;
+        return failureCount < 2;
+      },
+      // Optimisation réseau
+      networkMode: 'offlineFirst',
     },
+    mutations: {
+      networkMode: 'offlineFirst',
+    }
   },
 });
 
-// Composant de chargement optimisé
-const PageLoader = () => (
-  <div className="flex items-center justify-center min-h-[400px]">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-      <p className="text-sm text-gray-600">Chargement du module...</p>
-    </div>
-  </div>
-);
-
-// Layout principal optimisé
-const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Layout principal moderne et optimisé
+const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, initialized } = useAuth();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  console.log('AppLayout - User:', user, 'Loading:', loading);
-
-  // Affichage pendant l'initialisation
-  if (!initialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Initialisation en cours...</h2>
-          <p className="text-gray-600">Vérification de votre session</p>
-        </div>
-      </div>
-    );
+  // Optimisation: État de chargement immédiat sans délai
+  if (!initialized || loading) {
+    return <PageLoader message="Chargement de l'application..." />;
   }
 
-  // Affichage pendant le chargement de l'utilisateur
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Connexion en cours...</h2>
-          <p className="text-gray-600">Chargement de votre profil</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Si pas d'utilisateur connecté, afficher le formulaire de connexion
+  // Redirection vers login si non authentifié
   if (!user) {
-    console.log('No user found, showing login form');
     return <LoginForm />;
   }
 
-  console.log('User authenticated, showing app layout');
-
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-900">SDBK Transport Manager</h1>
-            <UserMenu />
+    <div className="min-h-screen flex bg-background text-foreground">
+      {/* Sidebar moderne responsive */}
+      <div className="hidden lg:block">
+        <ModernSidebar 
+          isCollapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        />
+      </div>
+
+      {/* Contenu principal */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <ModernHeader 
+          onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          showMenuButton={true}
+        />
+        
+        <main className="flex-1 overflow-auto">
+          <div className="page-container">
+            <Suspense fallback={<PageLoader message="Chargement du module..." />}>
+              {children}
+            </Suspense>
           </div>
-        </header>
-        <main className="flex-1 p-6 overflow-auto">
-          <Suspense fallback={<PageLoader />}>
-            {children}
-          </Suspense>
         </main>
       </div>
     </div>
@@ -109,7 +93,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
-          <AppLayout>
+          <ModernAppLayout>
             <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<Dashboard />} />
@@ -125,7 +109,7 @@ function App() {
               <Route path="/guide" element={<Guide />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </AppLayout>
+          </ModernAppLayout>
           <Toaster />
         </BrowserRouter>
       </AuthProvider>

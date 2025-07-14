@@ -1,378 +1,268 @@
+
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Users, CheckCircle, AlertTriangle, Calendar, DollarSign, BarChart3, TrendingUp, Clock, Shield } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
+import { ModernStatCard, StatsGrid } from '@/components/ui/modern-stats';
+import { ModernCard, ModernCardHeader, ModernCardTitle, ModernCardContent } from '@/components/ui/modern-card';
+import { ModernSkeleton, EmptyState } from '@/components/ui/loading-states';
+import { 
+  Truck, 
+  Users, 
+  FileText, 
+  TrendingUp,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  MapPin
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { AlertesDocuments } from '@/components/common/AlertesDocuments';
 
-const StatCard = ({ title, value, description, icon: Icon, color, bgColor, isLoading, trend }: any) => (
-  <Card className="brand-card hover:scale-105 transition-all duration-300 border-l-4 border-l-brand-gold">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-      <CardTitle className="text-sm font-medium text-brand-secondaryText">{title}</CardTitle>
-      <div className={`p-3 rounded-lg ${bgColor} shadow-soft`}>
-        <Icon className={`h-5 w-5 ${color}`} />
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="flex items-end justify-between">
-        <div>
-          <div className="text-3xl font-bold text-brand-darkText mb-1">
-            {isLoading ? (
-              <div className="animate-pulse bg-gray-200 h-8 w-16 rounded"></div>
-            ) : (
-              value
-            )}
-          </div>
-          <p className="text-xs text-brand-secondaryText">{description}</p>
-        </div>
-        {trend && (
-          <div className="flex items-center text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">
-            <TrendingUp className="h-3 w-3 mr-1" />
-            {trend}
-          </div>
-        )}
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const Dashboard = () => {
-  const { user } = useAuth();
-
-  // Requête unique pour toutes les statistiques au lieu de requêtes séparées
-  const { data: dashboardStats, isLoading } = useQuery({
+// Hook optimisé pour les statistiques du dashboard
+const useDashboardStats = () => {
+  return useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async () => {
-      console.log('Fetching dashboard stats...');
-      
-      const [
-        vehiculesRes,
-        chauffeursRes,
-        missionsRes,
-        validationsRes,
-        facturesRes
-      ] = await Promise.all([
-        supabase.from('vehicules').select('statut'),
-        supabase.from('chauffeurs').select('statut'),
-        supabase.from('missions').select('statut'),
-        supabase.from('validation_workflows').select('statut_global'),
-        supabase.from('factures').select('montant_ttc, statut, created_at')
+      const [vehiculesRes, chauffeursRes, missionsRes] = await Promise.all([
+        supabase.from('vehicules').select('id, statut'),
+        supabase.from('chauffeurs').select('id, statut'),
+        supabase.from('missions').select('id, statut')
       ]);
 
       const vehicules = vehiculesRes.data || [];
       const chauffeurs = chauffeursRes.data || [];
       const missions = missionsRes.data || [];
-      const validations = validationsRes.data || [];
-      const factures = facturesRes.data || [];
-
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
-      
-      const caMensuel = factures.filter(f => {
-        const factureDate = new Date(f.created_at);
-        return factureDate.getMonth() === currentMonth && 
-               factureDate.getFullYear() === currentYear &&
-               f.statut === 'payee';
-      }).reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
-      
-      const tauxConformite = factures.length > 0 ? 
-        Math.round((factures.filter(f => f.statut === 'payee').length / factures.length) * 100) : 0;
-
-      console.log('Dashboard stats loaded successfully');
 
       return {
         vehicules: {
           total: vehicules.length,
-          actifs: vehicules.filter(v => v.statut === 'disponible' || v.statut === 'en_mission').length
+          disponibles: vehicules.filter(v => v.statut === 'disponible').length,
+          enMaintenance: vehicules.filter(v => v.statut === 'maintenance').length,
+          enMission: vehicules.filter(v => v.statut === 'en_mission').length
         },
         chauffeurs: {
+          total: chauffeurs.length,
+          actifs: chauffeurs.filter(c => c.statut === 'actif').length,
+          enConge: chauffeurs.filter(c => c.statut === 'conge').length,
           disponibles: chauffeurs.filter(c => c.statut === 'actif').length
         },
         missions: {
-          enCours: missions.filter(m => m.statut === 'en_cours').length
-        },
-        validations: {
-          enAttente: validations.filter(v => v.statut_global === 'en_validation').length
-        },
-        factures: {
-          caMensuel,
-          tauxConformite
+          total: missions.length,
+          enCours: missions.filter(m => m.statut === 'en_cours').length,
+          terminees: missions.filter(m => m.statut === 'terminee').length,
+          enAttente: missions.filter(m => m.statut === 'en_attente').length
         }
       };
     },
-    staleTime: 5 * 60 * 1000, // Cache pendant 5 minutes
-    gcTime: 10 * 60 * 1000 // Garde en cache 10 minutes (remplace cacheTime)
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    refetchInterval: 5 * 60 * 1000, // Actualisation toutes les 5 minutes
   });
+};
 
-  // Requête simplifiée pour les activités récentes
-  const { data: recentActivities } = useQuery({
-    queryKey: ['dashboard-activities'],
+// Hook pour les alertes récentes
+const useRecentAlerts = () => {
+  return useQuery({
+    queryKey: ['recent-alerts'],
     queryFn: async () => {
-      console.log('Fetching recent activities...');
-      
-      const [missionsHist, validationsHist] = await Promise.all([
-        supabase
-          .from('missions_historique')
-          .select('action, details, created_at')
-          .order('created_at', { ascending: false })
-          .limit(2),
-        supabase
-          .from('validation_historique')
-          .select('etape, nouveau_statut, created_at')
-          .order('created_at', { ascending: false })
-          .limit(2)
-      ]);
-
-      const activities = [];
-      
-      if (missionsHist.data) {
-        activities.push(...missionsHist.data.map(h => ({
+      // Simulation d'alertes - à remplacer par de vraies requêtes
+      return [
+        {
+          id: 1,
+          type: 'maintenance',
+          title: 'Maintenance programmée',
+          message: 'Véhicule TRK-001 - Échéance dans 2 jours',
+          priority: 'warning',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // Il y a 2h
+        },
+        {
+          id: 2,
           type: 'mission',
-          message: h.details || `Mission ${h.action}`,
-          time: new Date(h.created_at).toLocaleString('fr-FR', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            day: '2-digit',
-            month: '2-digit'
-          })
-        })));
-      }
-      
-      if (validationsHist.data) {
-        activities.push(...validationsHist.data.map(h => ({
-          type: 'validation',
-          message: `Validation ${h.etape} : ${h.nouveau_statut}`,
-          time: new Date(h.created_at).toLocaleString('fr-FR', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            day: '2-digit',
-            month: '2-digit'
-          })
-        })));
-      }
-
-      return activities.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 4);
+          title: 'Nouvelle mission',
+          message: 'Transport vers Dakar - À affecter',
+          priority: 'info',
+          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000) // Il y a 4h
+        },
+        {
+          id: 3,
+          type: 'formation',
+          title: 'Formation terminée',
+          message: '3 chauffeurs certifiés HSE',
+          priority: 'success',
+          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000) // Il y a 6h
+        }
+      ];
     },
-    staleTime: 2 * 60 * 1000 // Cache pendant 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+};
 
-  const stats = [
-    {
-      title: "Véhicules actifs",
-      value: `${dashboardStats?.vehicules?.actifs || 0}`,
-      description: `Sur ${dashboardStats?.vehicules?.total || 0} véhicules total`,
-      icon: Truck,
-      color: "text-brand-blue",
-      bgColor: "bg-blue-50",
-      isLoading,
-      trend: "+12%"
-    },
-    {
-      title: "Chauffeurs disponibles",
-      value: `${dashboardStats?.chauffeurs?.disponibles || 0}`,
-      description: "Prêts pour missions",
-      icon: Users,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      isLoading,
-      trend: "+5%"
-    },
-    {
-      title: "Missions en cours",
-      value: `${dashboardStats?.missions?.enCours || 0}`,
-      description: "En cours de livraison",
-      icon: Calendar,
-      color: "text-orange-600",
-      bgColor: "bg-orange-50",
-      isLoading
-    },
-    {
-      title: "Validations en attente",
-      value: `${dashboardStats?.validations?.enAttente || 0}`,
-      description: "Nécessitent une action",
-      icon: AlertTriangle,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
-      isLoading
-    },
-    {
-      title: "CA mensuel",
-      value: `${(dashboardStats?.factures?.caMensuel || 0).toLocaleString('fr-FR')} GNF`,
-      description: "Factures payées ce mois",
-      icon: DollarSign,
-      color: "text-purple-600",
-      bgColor: "bg-purple-50",
-      isLoading,
-      trend: "+23%"
-    },
-    {
-      title: "Taux de conformité",
-      value: `${dashboardStats?.factures?.tauxConformite || 0}%`,
-      description: "Factures payées",
-      icon: CheckCircle,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-      isLoading,
-      trend: "+8%"
-    }
-  ];
+const Dashboard: React.FC = () => {
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: alerts, isLoading: alertsLoading } = useRecentAlerts();
+
+  // Calcul du taux de réussite (exemple)
+  const successRate = stats ? 
+    Math.round((stats.missions.terminees / Math.max(stats.missions.total, 1)) * 100) : 0;
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* En-tête de bienvenue modernisé */}
-      <div className="relative bg-gradient-to-r from-brand-blue via-blue-700 to-blue-800 rounded-2xl p-8 text-white shadow-elegant overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-brand-gold/10 rounded-full -translate-y-32 translate-x-32" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full translate-y-24 -translate-x-24" />
-        <div className="relative z-10">
-          <h1 className="text-4xl font-bold mb-3">
-            Bienvenue dans SDBK Cargo Flow Manager
-          </h1>
-          <p className="text-blue-100 text-lg">
-            Bonjour <span className="text-brand-gold font-medium">{user?.prenom} {user?.nom}</span>, 
-            vous êtes connecté en tant que <span className="text-brand-gold font-medium capitalize">{user?.role}</span>
+      {/* En-tête de page */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Tableau de bord</h1>
+          <p className="page-subtitle">
+            Vue d'ensemble de vos opérations de transport
           </p>
-          <div className="mt-4 flex items-center space-x-4 text-sm text-blue-200">
-            <div className="flex items-center">
-              <Clock className="h-4 w-4 mr-1" />
-              {new Date().toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Statistiques principales avec grid responsive */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {stats.map((stat, index) => (
-          <div key={index} className="animate-fade-in" style={{ animationDelay: `${index * 100}ms` }}>
-            <StatCard {...stat} />
+      {/* Statistiques principales */}
+      <section>
+        {statsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <ModernSkeleton key={i} variant="card" />
+            ))}
           </div>
-        ))}
-      </div>
+        ) : stats ? (
+          <StatsGrid>
+            <ModernStatCard
+              title="Flotte"
+              value={stats.vehicules.disponibles}
+              subtitle="Véhicules disponibles"
+              icon={Truck}
+              color="primary"
+              trend={{ value: 5, isPositive: true }}
+            />
+            <ModernStatCard
+              title="Chauffeurs"
+              value={stats.chauffeurs.disponibles}
+              subtitle="Chauffeurs disponibles"
+              icon={Users}
+              color="success"
+              trend={{ value: 2, isPositive: true }}
+            />
+            <ModernStatCard
+              title="Missions"
+              value={stats.missions.enCours}
+              subtitle="Missions en cours"
+              icon={FileText}
+              color="info"
+            />
+            <ModernStatCard
+              title="Performance"
+              value={`${successRate}%`}
+              subtitle="Taux de réussite"
+              icon={TrendingUp}
+              color={successRate >= 90 ? "success" : successRate >= 75 ? "warning" : "danger"}
+              trend={{ value: 4, isPositive: true }}
+            />
+          </StatsGrid>
+        ) : (
+          <EmptyState
+            title="Aucune donnée disponible"
+            description="Impossible de charger les statistiques"
+            icon={<AlertTriangle className="w-12 h-12" />}
+          />
+        )}
+      </section>
 
-      {/* Alertes documentaires */}
-      <AlertesDocuments />
-
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Activité récente modernisée */}
-        <Card className="brand-card">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-brand-darkText">
-              <div className="p-2 bg-blue-50 rounded-lg">
-                <BarChart3 className="h-5 w-5 text-brand-blue" />
-              </div>
-              Activité récente
-            </CardTitle>
-            <CardDescription>Les dernières actions dans le système</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {recentActivities?.length > 0 ? (
-              recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-4 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                  <div className={`w-2 h-2 rounded-full mt-2 ${
-                    activity.type === 'mission' ? 'bg-brand-blue' :
-                    activity.type === 'validation' ? 'bg-green-500' : 'bg-orange-500'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-brand-darkText">{activity.message}</p>
-                    <p className="text-xs text-brand-secondaryText mt-1">Le {activity.time}</p>
+      {/* Grille de contenu secondaire */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Alertes récentes */}
+        <ModernCard>
+          <ModernCardHeader>
+            <ModernCardTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" />
+              Alertes récentes
+            </ModernCardTitle>
+          </ModernCardHeader>
+          <ModernCardContent>
+            {alertsLoading ? (
+              <div className="space-y-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <ModernSkeleton variant="avatar" className="w-10 h-10" />
+                    <div className="flex-1 space-y-2">
+                      <ModernSkeleton className="h-4 w-3/4" />
+                      <ModernSkeleton className="h-3 w-1/2" />
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
+            ) : alerts && alerts.length > 0 ? (
+              <div className="space-y-4">
+                {alerts.map((alert) => {
+                  const icons = {
+                    maintenance: Clock,
+                    mission: MapPin,
+                    formation: CheckCircle
+                  };
+                  const Icon = icons[alert.type as keyof typeof icons] || AlertTriangle;
+                  
+                  const colors = {
+                    warning: 'text-warning',
+                    info: 'text-info',
+                    success: 'text-success',
+                    danger: 'text-destructive'
+                  };
+
+                  return (
+                    <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 smooth-transition">
+                      <div className={`p-2 rounded-lg bg-muted ${colors[alert.priority as keyof typeof colors]}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm text-foreground">
+                          {alert.title}
+                        </h4>
+                        <p className="text-sm text-muted-foreground">
+                          {alert.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {alert.timestamp.toLocaleString('fr-FR')}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
-              <div className="text-center py-8">
-                <Clock className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-sm text-brand-secondaryText">Aucune activité récente</p>
-              </div>
+              <EmptyState
+                title="Aucune alerte"
+                description="Toutes vos opérations fonctionnent normalement"
+                icon={<CheckCircle className="w-8 h-8 text-success" />}
+              />
             )}
-          </CardContent>
-        </Card>
+          </ModernCardContent>
+        </ModernCard>
 
-        {/* Alertes importantes modernisées */}
-        <Card className="brand-card">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-brand-darkText">
-              <div className="p-2 bg-orange-50 rounded-lg">
-                <AlertTriangle className="h-5 w-5 text-orange-600" />
-              </div>
-              Alertes importantes
-            </CardTitle>
-            <CardDescription>Actions requises et notifications</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {dashboardStats?.validations?.enAttente > 0 && (
-              <div className="p-4 border-l-4 border-orange-500 bg-orange-50 rounded-r-lg">
-                <div className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 text-orange-600 mr-2" />
-                  <p className="text-sm font-medium text-orange-800">Validations en attente</p>
-                </div>
-                <p className="text-sm text-orange-700 mt-1">
-                  {dashboardStats.validations.enAttente} véhicule(s) en attente de validation
-                </p>
-              </div>
-            )}
-            {dashboardStats?.missions?.enCours > 0 && (
-              <div className="p-4 border-l-4 border-brand-blue bg-blue-50 rounded-r-lg">
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-brand-blue mr-2" />
-                  <p className="text-sm font-medium text-blue-800">Missions en cours</p>
-                </div>
-                <p className="text-sm text-blue-700 mt-1">
-                  {dashboardStats.missions.enCours} mission(s) en cours de livraison
-                </p>
-              </div>
-            )}
-            
-            {(!dashboardStats?.validations?.enAttente && !dashboardStats?.missions?.enCours) && (
-              <div className="p-4 border-l-4 border-green-500 bg-green-50 rounded-r-lg">
-                <div className="flex items-center">
-                  <CheckCircle className="h-5 w-5 text-green-600 mr-2" />
-                  <p className="text-sm font-medium text-green-800">Système opérationnel</p>
-                </div>
-                <p className="text-sm text-green-700 mt-1">Aucune alerte critique détectée</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Accès rapide */}
+        <ModernCard>
+          <ModernCardHeader>
+            <ModernCardTitle>Accès rapide</ModernCardTitle>
+          </ModernCardHeader>
+          <ModernCardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { title: 'Nouvelle mission', icon: FileText, href: '/missions', color: 'primary' },
+                { title: 'Ajouter véhicule', icon: Truck, href: '/fleet', color: 'success' },
+                { title: 'Gérer chauffeurs', icon: Users, href: '/drivers', color: 'info' },
+                { title: 'Validations', icon: CheckCircle, href: '/validations', color: 'warning' }
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.title}
+                    className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-accent smooth-transition text-left group"
+                  >
+                    <Icon className="w-6 h-6 text-muted-foreground group-hover:text-primary mb-2" />
+                    <span className="text-sm font-medium text-foreground">{item.title}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </ModernCardContent>
+        </ModernCard>
       </div>
-
-      {/* Accès rapide modernisé */}
-      <Card className="brand-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-brand-darkText">
-            <div className="p-2 bg-brand-gold/20 rounded-lg">
-              <Shield className="h-5 w-5 text-brand-gold" />
-            </div>
-            Accès rapide
-          </CardTitle>
-          <CardDescription>
-            Fonctionnalités disponibles selon votre rôle
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {user?.role === 'admin' && (
-              <div className="flex items-center p-4 bg-green-50 rounded-lg border border-green-200">
-                <CheckCircle className="h-5 w-5 text-green-600 mr-3" />
-                <div>
-                  <p className="text-sm font-medium text-green-800">Accès administrateur</p>
-                  <p className="text-xs text-green-600">Tous les modules disponibles</p>
-                </div>
-              </div>
-            )}
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-brand-secondaryText">
-                Utilisez la navigation latérale pour accéder aux différents modules du système SDBK.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };
