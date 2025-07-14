@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,9 +31,10 @@ type ChargementFormData = z.infer<typeof chargementSchema>;
 
 interface ChargementsFormProps {
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-export const ChargementsForm = ({ onSuccess }: ChargementsFormProps) => {
+export const ChargementsForm = ({ onSuccess, onCancel }: ChargementsFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
@@ -130,7 +130,6 @@ export const ChargementsForm = ({ onSuccess }: ChargementsFormProps) => {
       reset();
       queryClient.invalidateQueries({ queryKey: ['chargements'] });
       queryClient.invalidateQueries({ queryKey: ['chargements-stats'] });
-      // Call the onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
       }
@@ -296,13 +295,15 @@ export const ChargementsForm = ({ onSuccess }: ChargementsFormProps) => {
       </div>
 
       <div className="flex justify-end space-x-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => reset()}
-        >
-          Annuler
-        </Button>
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+          >
+            Annuler
+          </Button>
+        )}
         <Button
           type="submit"
           disabled={isSubmitting}

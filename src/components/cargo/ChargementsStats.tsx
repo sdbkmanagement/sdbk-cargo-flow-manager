@@ -3,29 +3,26 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Package, Truck, MapPin, Fuel, Mountain } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { chargementsService } from '@/services/chargements';
 
-export const ChargementsStats = () => {
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['chargements-stats'],
-    queryFn: chargementsService.getStatistiques
-  });
+interface ChargementsStatsProps {
+  totalChargements: number;
+  chargementsLivres: number;
+  chargementsEnCours: number;
+  chargementsAnnules: number;
+  hydrocarbures: number;
+  bauxite: number;
+  volumeTotal: number;
+}
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
-          <Card key={i} className="animate-pulse">
-            <CardContent className="p-6">
-              <div className="h-12 bg-gray-200 rounded"></div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
+export const ChargementsStats = ({ 
+  totalChargements, 
+  chargementsLivres, 
+  chargementsEnCours, 
+  chargementsAnnules, 
+  hydrocarbures, 
+  bauxite, 
+  volumeTotal 
+}: ChargementsStatsProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
       <Card>
@@ -34,7 +31,7 @@ export const ChargementsStats = () => {
           <Package className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{stats?.totalChargements || 0}</div>
+          <div className="text-2xl font-bold">{totalChargements || 0}</div>
           <p className="text-xs text-muted-foreground">
             Tous les chargements enregistrés
           </p>
@@ -47,7 +44,7 @@ export const ChargementsStats = () => {
           <Truck className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-blue-600">{stats?.chargementsEnCours || 0}</div>
+          <div className="text-2xl font-bold text-blue-600">{chargementsEnCours || 0}</div>
           <p className="text-xs text-muted-foreground">
             Chargements en transit
           </p>
@@ -60,7 +57,7 @@ export const ChargementsStats = () => {
           <MapPin className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-green-600">{stats?.chargementsLivres || 0}</div>
+          <div className="text-2xl font-bold text-green-600">{chargementsLivres || 0}</div>
           <p className="text-xs text-muted-foreground">
             Livraisons terminées
           </p>
@@ -73,7 +70,7 @@ export const ChargementsStats = () => {
           <Fuel className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">{stats?.hydrocarbures || 0}</div>
+          <div className="text-2xl font-bold text-red-600">{hydrocarbures || 0}</div>
           <p className="text-xs text-muted-foreground">
             Transports spécialisés
           </p>
@@ -86,7 +83,7 @@ export const ChargementsStats = () => {
           <Mountain className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-orange-600">{stats?.bauxite || 0}</div>
+          <div className="text-2xl font-bold text-orange-600">{bauxite || 0}</div>
           <p className="text-xs text-muted-foreground">
             Minerai transporté
           </p>

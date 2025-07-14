@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Table,
@@ -13,14 +12,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useQuery } from '@tanstack/react-query';
-import { chargementsService } from '@/services/chargements';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Search, Filter, Download, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { ChargementActions } from './ChargementActions';
 import { exportChargementsToCSV } from '@/utils/chargementsExport';
+
+interface ChargementsTableProps {
+  data: any[];
+  onEdit: (chargement: any) => void;
+  hasWritePermission: boolean;
+  onRefresh: () => Promise<void>;
+  onFiltersChange: (filters: any) => void;
+}
 
 const getStatutBadgeVariant = (statut: string) => {
   switch (statut) {
@@ -61,17 +66,12 @@ const getStatutLabel = (statut: string) => {
   }
 };
 
-export const ChargementsTable = () => {
+export const ChargementsTable = ({ data, onEdit, hasWritePermission, onRefresh, onFiltersChange }: ChargementsTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statutFilter, setStatutFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
 
-  const { data: chargements, isLoading, refetch } = useQuery({
-    queryKey: ['chargements'],
-    queryFn: () => chargementsService.getChargements()
-  });
-
-  const filteredChargements = chargements?.filter(chargement => {
+  const filteredChargements = data?.filter(chargement => {
     const matchesSearch = 
       chargement.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
       chargement.client_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -101,26 +101,21 @@ export const ChargementsTable = () => {
   };
 
   const handleRefresh = () => {
-    refetch();
+    onRefresh();
     toast({
       title: "Données actualisées",
       description: "La liste des chargements a été rechargée.",
     });
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="h-12 bg-gray-200 rounded"></div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Update filters when they change
+  React.useEffect(() => {
+    onFiltersChange({
+      search: searchTerm,
+      statut: statutFilter === 'all' ? undefined : statutFilter,
+      type_chargement: typeFilter === 'all' ? undefined : typeFilter
+    });
+  }, [searchTerm, statutFilter, typeFilter, onFiltersChange]);
 
   return (
     <div className="space-y-4">
@@ -196,7 +191,7 @@ export const ChargementsTable = () => {
                   <TableHead>Client</TableHead>
                   <TableHead>Date chargement</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead>Actions</TableHead>
+                  {hasWritePermission && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -241,14 +236,16 @@ export const ChargementsTable = () => {
                         {getStatutLabel(chargement.statut)}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <ChargementActions chargement={chargement} />
-                    </TableCell>
+                    {hasWritePermission && (
+                      <TableCell>
+                        <ChargementActions chargement={chargement} />
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
                 {filteredChargements?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-8">
+                    <TableCell colSpan={hasWritePermission ? 10 : 9} className="text-center py-8">
                       <div className="text-gray-500">
                         <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>Aucun chargement trouvé</p>
