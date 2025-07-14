@@ -17,8 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Shield,
-  Zap,
-  Building2
+  Zap
 } from 'lucide-react';
 
 const navigation = [
@@ -48,8 +47,12 @@ export const Sidebar = () => {
           {!collapsed && (
             <div className="flex items-center space-x-4 animate-fade-in">
               <div className="relative">
-                <div className="p-3 bg-sdbk-green rounded-xl shadow-sdbk-green">
-                  <Building2 className="h-8 w-8 text-white" />
+                <div className="p-2 bg-white rounded-xl shadow-lg">
+                  <img 
+                    src="/lovable-uploads/5c1b1d8b-3d62-4847-8e12-3e4dd4c0ba33.png" 
+                    alt="Logo SDBK" 
+                    className="h-12 w-12 object-contain"
+                  />
                 </div>
                 <div className="absolute -top-1 -right-1 w-4 h-4 bg-sdbk-red rounded-full flex items-center justify-center">
                   <Zap className="h-2.5 w-2.5 text-white" />
@@ -64,8 +67,12 @@ export const Sidebar = () => {
           )}
           {collapsed && (
             <div className="flex justify-center w-full">
-              <div className="p-2 bg-sdbk-green rounded-lg">
-                <Building2 className="h-6 w-6 text-white" />
+              <div className="p-1 bg-white rounded-lg">
+                <img 
+                  src="/lovable-uploads/5c1b1d8b-3d62-4847-8e12-3e4dd4c0ba33.png" 
+                  alt="Logo SDBK" 
+                  className="h-8 w-8 object-contain"
+                />
               </div>
             </div>
           )}

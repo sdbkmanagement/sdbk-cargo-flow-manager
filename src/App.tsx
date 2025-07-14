@@ -35,8 +35,12 @@ const AppLayout = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-sdbk-blue via-blue-700 to-blue-900">
         <div className="text-center space-y-6">
           <div className="relative">
-            <div className="w-20 h-20 bg-sdbk-green rounded-2xl flex items-center justify-center shadow-sdbk-green animate-bounce-subtle">
-              <Building2 className="h-10 w-10 text-white" />
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-sdbk-green animate-bounce-subtle">
+              <img 
+                src="/lovable-uploads/5c1b1d8b-3d62-4847-8e12-3e4dd4c0ba33.png" 
+                alt="Logo SDBK" 
+                className="h-12 w-12 object-contain"
+              />
             </div>
             <Loader2 className="h-8 w-8 animate-spin text-white absolute -top-2 -right-2 bg-sdbk-red rounded-full p-1" />
           </div>
@@ -68,7 +72,14 @@ const AppLayout = () => {
           <div className="flex items-center justify-between px-8 py-4">
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-4">
-                <div className="w-3 h-3 bg-sdbk-green rounded-full animate-pulse shadow-sdbk-green" />
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src="/lovable-uploads/5c1b1d8b-3d62-4847-8e12-3e4dd4c0ba33.png" 
+                    alt="Logo SDBK" 
+                    className="h-8 w-8 object-contain"
+                  />
+                  <div className="w-3 h-3 bg-sdbk-green rounded-full animate-pulse shadow-sdbk-green" />
+                </div>
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">
                     SDBK Transport Manager
