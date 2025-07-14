@@ -7,24 +7,48 @@ export const useValidationPermissions = () => {
   const canValidateEtape = (etape: string): boolean => {
     if (!user) return false;
     
+    console.log('🔍 Vérification permission validation:', {
+      etape,
+      user: user.email,
+      userRole: user.role,
+      userRoles: user.roles
+    });
+    
     // L'admin peut tout faire
-    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) return true;
+    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) {
+      console.log('✅ Permission accordée - Admin');
+      return true;
+    }
     
     // Vérifier si l'utilisateur a le rôle spécifique pour cette étape
     const userRoles = user.roles || [user.role];
     
+    let hasPermission = false;
+    
     switch (etape) {
       case 'maintenance':
-        return userRoles.includes('maintenance');
+        hasPermission = userRoles.includes('maintenance');
+        break;
       case 'administratif':
-        return userRoles.includes('administratif');
+        hasPermission = userRoles.includes('administratif');
+        break;
       case 'hsecq':
-        return userRoles.includes('hsecq');
+        hasPermission = userRoles.includes('hsecq');
+        break;
       case 'obc':
-        return userRoles.includes('obc');
+        hasPermission = userRoles.includes('obc');
+        break;
       default:
-        return false;
+        hasPermission = false;
     }
+    
+    console.log(`${hasPermission ? '✅' : '❌'} Permission ${etape}:`, {
+      required: etape,
+      userRoles,
+      hasPermission
+    });
+    
+    return hasPermission;
   };
 
   const hasModulePermission = (module: string): boolean => {

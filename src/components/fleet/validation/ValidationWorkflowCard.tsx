@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +35,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   const [showCommentDialog, setShowCommentDialog] = useState<{show: boolean, etapeId: string, action: StatutEtape} | null>(null);
   const [etapeCommentaires, setEtapeCommentaires] = useState<{[key: string]: any[]}>({});
   const { toast } = useToast();
-  const { canValidateEtape, getUserRole, getUserName } = useValidationPermissions();
+  const { canValidateEtape, getUserRole, getUserName, getUserRoles } = useValidationPermissions();
 
   const loadWorkflow = async () => {
     try {
@@ -159,7 +158,16 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   };
 
   const canModifyEtape = (etape: any) => {
-    return canValidateEtape(etape.etape);
+    const canValidate = canValidateEtape(etape.etape);
+    
+    console.log('🔍 Vérification modification étape:', {
+      etape: etape.etape,
+      canValidate,
+      userRoles: getUserRoles(),
+      userRole: getUserRole()
+    });
+    
+    return canValidate;
   };
 
   if (loading) {
@@ -207,38 +215,50 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {workflow.etapes.map((etape) => (
-            <div key={etape.id} className="border rounded-lg p-4 bg-gray-50">
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex items-center gap-3">
-                  <h4 className="font-medium text-sm">{ETAPE_LABELS[etape.etape as EtapeType]}</h4>
-                  <ValidationStatusBadge statut={etape.statut as StatutEtape} />
+          {workflow.etapes.map((etape) => {
+            const canModify = canModifyEtape(etape);
+            
+            return (
+              <div key={etape.id} className="border rounded-lg p-4 bg-gray-50">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-medium text-sm">{ETAPE_LABELS[etape.etape as EtapeType]}</h4>
+                    <ValidationStatusBadge statut={etape.statut as StatutEtape} />
+                  </div>
+                  
+                  {canModify ? (
+                    <ValidationActionButtons
+                      currentStatus={etape.statut as StatutEtape}
+                      onStatusChange={(status) => setShowCommentDialog({show: true, etapeId: etape.id, action: status})}
+                      isLoading={actionLoading === etape.id}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-end gap-1">
+                      <Badge variant="outline" className="text-xs text-gray-500">
+                        Accès limité
+                      </Badge>
+                      <div className="text-xs text-gray-400">
+                        Rôle requis: {etape.etape}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        Vos rôles: {getUserRoles().join(', ')}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
-                {canModifyEtape(etape) ? (
-                  <ValidationActionButtons
-                    currentStatus={etape.statut as StatutEtape}
-                    onStatusChange={(status) => setShowCommentDialog({show: true, etapeId: etape.id, action: status})}
-                    isLoading={actionLoading === etape.id}
-                  />
-                ) : (
-                  <Badge variant="outline" className="text-xs text-gray-500">
-                    Accès limité
-                  </Badge>
-                )}
+                <EtapeCommentaires
+                  etapeLabel={ETAPE_LABELS[etape.etape as EtapeType]}
+                  commentaires={etapeCommentaires[etape.id] || []}
+                  dernierCommentaire={etape.commentaire}
+                  derniereModification={etape.validateur_nom ? {
+                    validateur_nom: etape.validateur_nom,
+                    date: etape.date_validation || etape.updated_at
+                  } : undefined}
+                />
               </div>
-              
-              <EtapeCommentaires
-                etapeLabel={ETAPE_LABELS[etape.etape as EtapeType]}
-                commentaires={etapeCommentaires[etape.id] || []}
-                dernierCommentaire={etape.commentaire}
-                derniereModification={etape.validateur_nom ? {
-                  validateur_nom: etape.validateur_nom,
-                  date: etape.date_validation || etape.updated_at
-                } : undefined}
-              />
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         <Dialog open={showCommentDialog?.show} onOpenChange={(open) => !open && setShowCommentDialog(null)}>
