@@ -1,5 +1,6 @@
 
 import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/types';
 
 export const useValidationPermissions = () => {
   const { user, hasRole } = useAuth();
@@ -87,7 +88,7 @@ export const useValidationPermissions = () => {
     }
     
     const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
-    return validationRoles.some(role => allRoles.includes(role));
+    return validationRoles.some(role => allRoles.includes(role as UserRole));
   };
 
   const getUserRole = (): string => {
@@ -95,7 +96,7 @@ export const useValidationPermissions = () => {
     return user.role || '';
   };
 
-  const getUserRoles = (): string[] => {
+  const getUserRoles = (): UserRole[] => {
     if (!user) return [];
     const userRoles = user.roles || [];
     const allRoles = [...userRoles];
