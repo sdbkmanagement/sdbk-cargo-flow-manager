@@ -39,18 +39,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Cache pour éviter les appels répétés
-  const [userCache, setUserCache] = useState<Map<string, AuthUser>>(new Map());
-
   const loadUserFromDatabase = useCallback(async (authUser: User): Promise<AuthUser | null> => {
     try {
-      // Vérifier le cache d'abord
-      const cached = userCache.get(authUser.email!);
-      if (cached) {
-        console.log('✅ User loaded from cache:', authUser.email);
-        return cached;
-      }
-
       console.log('🔄 Loading user data for:', authUser.email);
       
       const { data: userData, error } = await supabase
@@ -80,20 +70,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         permissions: userData.roles?.includes('admin') ? ['all'] : userData.module_permissions || []
       };
 
-      // Mettre en cache
-      setUserCache(prev => new Map(prev.set(authUser.email!, authUserData)));
-      
       console.log('✅ User loaded from database:', authUserData);
       return authUserData;
     } catch (error) {
       console.error('❌ Exception loading user:', error);
       return null;
     }
-  }, [userCache]);
+  }, []);
 
   const initializeAuth = useCallback(async () => {
-    if (initialized) return;
-
     console.log('🚀 Initializing auth...');
     setLoading(true);
 
@@ -119,11 +104,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setInitialized(true);
       console.log('✅ Auth initialization completed');
     }
-  }, [initialized, loadUserFromDatabase]);
+  }, [loadUserFromDatabase]);
 
   useEffect(() => {
-    initializeAuth();
-  }, [initializeAuth]);
+    // Initialize auth only once
+    if (!initialized) {
+      initializeAuth();
+    }
+  }, [initializeAuth, initialized]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -136,7 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setUserCache(new Map()); // Clear cache on logout
       }
     });
 
@@ -175,7 +162,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await supabase.auth.signOut();
       setUser(null);
-      setUserCache(new Map()); // Clear cache
     } catch (error) {
       console.error('❌ Logout error:', error);
     }

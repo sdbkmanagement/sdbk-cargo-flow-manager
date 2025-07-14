@@ -23,19 +23,17 @@ const DocumentStock = lazy(() => import('@/pages/DocumentStock'));
 const Guide = lazy(() => import('@/pages/Guide'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
-// Configuration optimisée du QueryClient avec cache intelligent
+// Configuration optimisée du QueryClient
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
       retry: (failureCount, error: any) => {
-        // Pas de retry pour les erreurs d'authentification
         if (error?.status === 401 || error?.status === 403) return false;
         return failureCount < 2;
       },
-      // Optimisation réseau
       networkMode: 'offlineFirst',
     },
     mutations: {
@@ -44,24 +42,37 @@ const queryClient = new QueryClient({
   },
 });
 
-// Layout principal moderne et optimisé
+// Layout principal
 const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Optimisation: État de chargement immédiat sans délai
-  if (!initialized || loading) {
-    return <PageLoader message="Chargement de l'application..." />;
+  // Attendre que l'authentification soit initialisée
+  if (!initialized) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+        <PageLoader message="Initialisation..." />
+      </div>
+    );
   }
 
-  // Redirection vers login si non authentifié
+  // Afficher le loader uniquement pendant les opérations de connexion/déconnexion
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
+        <PageLoader message="Connexion..." />
+      </div>
+    );
+  }
+
+  // Afficher l'écran de connexion si pas d'utilisateur connecté
   if (!user) {
     return <LoginForm />;
   }
 
+  // Interface principale pour les utilisateurs connectés
   return (
     <div className="min-h-screen flex bg-background text-foreground">
-      {/* Sidebar moderne responsive */}
       <div className="hidden lg:block">
         <ModernSidebar 
           isCollapsed={sidebarCollapsed}
@@ -69,7 +80,6 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         />
       </div>
 
-      {/* Contenu principal */}
       <div className="flex-1 flex flex-col min-w-0">
         <ModernHeader 
           onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
