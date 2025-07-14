@@ -2,14 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { VehicleTable } from './VehicleTable';
-import type { Database } from '@/integrations/supabase/types';
-
-type Vehicule = Database['public']['Tables']['vehicules']['Row'] & {
-  chauffeur?: {
-    nom: string;
-    prenom: string;
-  } | null;
-};
+import type { Vehicule } from '@/services/vehicules';
 
 interface VehicleListTabProps {
   vehicles: Vehicule[];

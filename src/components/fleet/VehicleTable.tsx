@@ -3,15 +3,8 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Truck, Edit, FileText, Wrench, Trash2, AlertTriangle } from 'lucide-react';
-import type { Database } from '@/integrations/supabase/types';
-
-type Vehicule = Database['public']['Tables']['vehicules']['Row'] & {
-  chauffeur?: {
-    nom: string;
-    prenom: string;
-  } | null;
-};
+import { Edit, Eye, FileText, Wrench, Trash2 } from 'lucide-react';
+import type { Vehicule } from '@/services/vehicules';
 
 interface VehicleTableProps {
   vehicles: Vehicule[];
@@ -31,188 +24,118 @@ export const VehicleTable = ({
   onViewPostMissionWorkflow 
 }: VehicleTableProps) => {
   const getStatusBadge = (statut: string) => {
-    const variants = {
-      'disponible': 'bg-green-100 text-green-800',
-      'en_mission': 'bg-blue-100 text-blue-800',
-      'maintenance': 'bg-orange-100 text-orange-800',
-      'validation_requise': 'bg-red-100 text-red-800'
+    const statusConfig = {
+      'disponible': { variant: 'default' as const, label: 'Disponible' },
+      'en_mission': { variant: 'secondary' as const, label: 'En mission' },
+      'maintenance': { variant: 'destructive' as const, label: 'Maintenance' },
+      'validation_requise': { variant: 'outline' as const, label: 'Validation requise' }
     };
     
-    const labels = {
-      'disponible': 'Disponible',
-      'en_mission': 'En mission',
-      'maintenance': 'Maintenance',
-      'validation_requise': 'Validation requise'
-    };
-
-    return (
-      <Badge className={variants[statut as keyof typeof variants]}>
-        {labels[statut as keyof typeof labels]}
-      </Badge>
-    );
-  };
-
-  const getTransportTypeBadge = (type: string) => {
-    return (
-      <Badge variant={type === 'hydrocarbures' ? 'destructive' : 'secondary'}>
-        {type === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
-      </Badge>
-    );
-  };
-
-  const getVehicleTypeBadge = (typeVehicule: string) => {
-    return (
-      <Badge variant={typeVehicule === 'tracteur_remorque' ? 'default' : 'outline'}>
-        {typeVehicule === 'tracteur_remorque' ? 'Tracteur + Remorque' : 'Porteur'}
-      </Badge>
-    );
-  };
-
-  const getDisplayImmatriculation = (vehicle: Vehicule) => {
-    if (vehicle.type_vehicule === 'tracteur_remorque') {
-      return `${vehicle.tracteur_immatriculation || 'N/A'} / ${vehicle.remorque_immatriculation || 'N/A'}`;
-    }
-    return vehicle.immatriculation || 'N/A';
-  };
-
-  const getDisplayMarque = (vehicle: Vehicule) => {
-    if (vehicle.type_vehicule === 'tracteur_remorque') {
-      return `${vehicle.tracteur_marque || 'N/A'} ${vehicle.tracteur_modele || ''}`;
-    }
-    return `${vehicle.marque || 'N/A'} ${vehicle.modele || ''}`;
-  };
-
-  const canDeleteVehicle = (vehicle: Vehicule) => {
-    return vehicle.statut === 'disponible' && !vehicle.chauffeur_assigne;
-  };
-
-  const getDeleteTooltip = (vehicle: Vehicule) => {
-    if (vehicle.statut === 'en_mission') {
-      return 'Ce véhicule est actuellement en mission';
-    } else if (vehicle.chauffeur_assigne) {
-      return 'Ce véhicule est assigné à un chauffeur';
-    } else if (vehicle.statut === 'maintenance') {
-      return 'Ce véhicule est en maintenance';
-    } else if (vehicle.statut === 'validation_requise') {
-      return 'Ce véhicule nécessite une validation';
-    }
-    return 'Supprimer le véhicule';
-  };
-
-  const handleDeleteClick = async (vehicle: Vehicule) => {
-    if (!canDeleteVehicle(vehicle)) {
-      const cause = getDeleteTooltip(vehicle);
-      // Utiliser une alerte personnalisée pour éviter le texte indésirable
-      const message = `Suppression impossible : ${cause}`;
-      console.warn(message);
-      window.alert(message);
-      return;
-    }
-    
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce véhicule ?')) {
-      try {
-        await onDelete(vehicle.id);
-      } catch (error: any) {
-        const errorMessage = `Erreur lors de la suppression: ${error.message || 'Une erreur inattendue est survenue'}`;
-        console.error(errorMessage);
-        window.alert(errorMessage);
-      }
-    }
+    const config = statusConfig[statut as keyof typeof statusConfig] || { variant: 'default' as const, label: statut };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Véhicule</TableHead>
-          <TableHead>Immatriculation</TableHead>
-          <TableHead>Type véhicule</TableHead>
-          <TableHead>Catégorie</TableHead>
-          <TableHead>Base</TableHead>
-          <TableHead>Chauffeur</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {vehicles.map((vehicle) => (
-          <TableRow key={vehicle.id}>
-            <TableCell>
-              <div className="flex items-center space-x-3">
-                <Truck className="h-5 w-5 text-muted-foreground" />
-                <div>
-                  <p className="font-medium">{vehicle.numero}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {getDisplayMarque(vehicle)}
-                  </p>
-                </div>
-              </div>
-            </TableCell>
-            <TableCell className="max-w-xs">
-              <div className="truncate">
-                {getDisplayImmatriculation(vehicle)}
-              </div>
-            </TableCell>
-            <TableCell>
-              {getVehicleTypeBadge(vehicle.type_vehicule || 'porteur')}
-            </TableCell>
-            <TableCell>
-              {getTransportTypeBadge(vehicle.type_transport)}
-            </TableCell>
-            <TableCell>
-              <span className="text-sm text-muted-foreground">
-                {vehicle.base || 'Non définie'}
-              </span>
-            </TableCell>
-            <TableCell>
-              {vehicle.chauffeur 
-                ? `${vehicle.chauffeur.prenom} ${vehicle.chauffeur.nom}`
-                : 'Non assigné'
-              }
-            </TableCell>
-            <TableCell>
-              {getStatusBadge(vehicle.statut)}
-            </TableCell>
-            <TableCell>
-              <div className="flex space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onEdit(vehicle)}
-                  title="Modifier le véhicule"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onViewDocuments?.(vehicle)}
-                  title="Voir les documents"
-                >
-                  <FileText className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onViewMaintenance?.(vehicle)}
-                  title="Voir la maintenance"
-                >
-                  <Wrench className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => handleDeleteClick(vehicle)}
-                  title={getDeleteTooltip(vehicle)}
-                  className={!canDeleteVehicle(vehicle) ? "opacity-50" : ""}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </TableCell>
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Numéro</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Immatriculation</TableHead>
+            <TableHead>Marque/Modèle</TableHead>
+            <TableHead>Transport</TableHead>
+            <TableHead>Statut</TableHead>
+            <TableHead>Base</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+        </TableHeader>
+        <TableBody>
+          {vehicles.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                Aucun véhicule trouvé
+              </TableCell>
+            </TableRow>
+          ) : (
+            vehicles.map((vehicle) => (
+              <TableRow key={vehicle.id}>
+                <TableCell className="font-medium">{vehicle.numero}</TableCell>
+                <TableCell>{vehicle.type_vehicule}</TableCell>
+                <TableCell>
+                  {vehicle.type_vehicule === 'porteur' 
+                    ? vehicle.immatriculation 
+                    : vehicle.tracteur_immatriculation
+                  }
+                </TableCell>
+                <TableCell>
+                  {vehicle.type_vehicule === 'porteur' 
+                    ? `${vehicle.marque || ''} ${vehicle.modele || ''}`.trim() || '-'
+                    : `${vehicle.tracteur_marque || ''} ${vehicle.tracteur_modele || ''}`.trim() || '-'
+                  }
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">
+                    {vehicle.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
+                  </Badge>
+                </TableCell>
+                <TableCell>{getStatusBadge(vehicle.statut)}</TableCell>
+                <TableCell>{vehicle.base || '-'}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEdit(vehicle)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    {onViewDocuments && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewDocuments(vehicle)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onViewMaintenance && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewMaintenance(vehicle)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Wrench className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {onViewPostMissionWorkflow && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onViewPostMissionWorkflow(vehicle)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(vehicle.id)}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
