@@ -78,41 +78,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const initializeAuth = useCallback(async () => {
-    console.log('🚀 Initializing auth...');
-    setLoading(true);
+  // Initialisation simplifiée
+  useEffect(() => {
+    let mounted = true;
 
-    try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error('❌ Auth session error:', error);
-        setUser(null);
-      } else if (session?.user) {
-        console.log('👤 Active session found for:', session.user.email);
-        const userData = await loadUserFromDatabase(session.user);
-        setUser(userData);
-      } else {
-        console.log('🚫 No active session found');
-        setUser(null);
+    const initAuth = async () => {
+      try {
+        console.log('🚀 Initializing auth...');
+        
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        if (error) {
+          console.error('❌ Auth session error:', error);
+          setUser(null);
+        } else if (session?.user) {
+          console.log('👤 Active session found for:', session.user.email);
+          const userData = await loadUserFromDatabase(session.user);
+          if (mounted) {
+            setUser(userData);
+          }
+        } else {
+          console.log('🚫 No active session found');
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('❌ Auth initialization error:', error);
+        if (mounted) {
+          setUser(null);
+        }
+      } finally {
+        if (mounted) {
+          setInitialized(true);
+          console.log('✅ Auth initialization completed');
+        }
       }
-    } catch (error) {
-      console.error('❌ Auth initialization error:', error);
-      setUser(null);
-    } finally {
-      setLoading(false);
-      setInitialized(true);
-      console.log('✅ Auth initialization completed');
-    }
+    };
+
+    initAuth();
+
+    return () => {
+      mounted = false;
+    };
   }, [loadUserFromDatabase]);
 
-  useEffect(() => {
-    // Initialize auth only once
-    if (!initialized) {
-      initializeAuth();
-    }
-  }, [initializeAuth, initialized]);
-
+  // Écouter les changements d'authentification
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔄 Auth state changed:', event);

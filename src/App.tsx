@@ -47,20 +47,13 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Attendre que l'authentification soit initialisée
+  console.log('App Layout - initialized:', initialized, 'loading:', loading, 'user:', !!user);
+
+  // Attendre l'initialisation SEULEMENT
   if (!initialized) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
         <PageLoader message="Initialisation..." />
-      </div>
-    );
-  }
-
-  // Afficher le loader uniquement pendant les opérations de connexion/déconnexion
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <PageLoader message="Connexion..." />
       </div>
     );
   }
@@ -89,7 +82,7 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
         <main className="flex-1 overflow-auto">
           <div className="page-container">
             <Suspense fallback={<PageLoader message="Chargement du module..." />}>
-              {children}
+              {loading ? <PageLoader message="Connexion..." /> : children}
             </Suspense>
           </div>
         </main>
