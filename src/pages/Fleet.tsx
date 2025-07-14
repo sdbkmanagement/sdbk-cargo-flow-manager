@@ -11,7 +11,8 @@ import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
 import { SearchInput } from '@/components/fleet/SearchInput';
 import { VehicleFilters } from '@/components/fleet/VehicleFilters';
-import vehiculesService, { type Vehicule, type FleetStatsData } from '@/services/vehicules';
+import vehiculesService from '@/services/vehicules';
+import type { Vehicule, FleetStatsData } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 
 const Fleet = () => {

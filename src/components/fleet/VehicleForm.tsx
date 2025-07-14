@@ -109,7 +109,7 @@ export const VehicleForm = ({ vehicle, onClose, onSuccess }: VehicleFormProps) =
         numero: data.numero,
         type_vehicule: data.type_vehicule,
         type_transport: data.type_transport,
-        statut: data.statut || 'disponible', // Ensure statut is always provided
+        statut: data.statut, // Required field, no need for fallback
         base: data.base || null,
         integration: data.integration || null,
         
