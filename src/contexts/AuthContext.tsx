@@ -43,30 +43,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('🔄 Loading user data for:', authUser.email);
       
-      const { data: userData, error } = await supabase
+      // Timeout après 2 secondes maximum
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => reject(new Error('Database timeout')), 2000);
+      });
+
+      const dbPromise = supabase
         .from('users')
         .select('*')
         .eq('email', authUser.email)
         .single();
 
-      if (error) {
-        console.error('❌ Error loading user from database:', error);
-        // Create a basic user object if database lookup fails
-        return {
-          id: authUser.id,
-          email: authUser.email,
-          nom: '',
-          prenom: '',
-          role: 'transport',
-          roles: ['transport'],
-          module_permissions: [],
-          permissions: []
-        };
-      }
+      const { data: userData, error } = await Promise.race([dbPromise, timeoutPromise]) as any;
 
-      if (!userData) {
-        console.warn('⚠️ No user data found, creating basic user');
-        return {
+      if (error || !userData) {
+        console.log('⚠️ Database lookup failed, creating basic user');
+        // Créer un utilisateur basique immédiatement
+        const basicUser: AuthUser = {
           id: authUser.id,
           email: authUser.email,
           nom: '',
@@ -76,6 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           module_permissions: [],
           permissions: []
         };
+        console.log('✅ Basic user created:', basicUser);
+        return basicUser;
       }
 
       const authUserData: AuthUser = {
@@ -89,12 +84,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         permissions: userData.roles?.includes('admin') ? ['all'] : userData.module_permissions || []
       };
 
-      console.log('✅ User loaded successfully:', authUserData);
+      console.log('✅ Full user loaded successfully:', authUserData);
       return authUserData;
     } catch (error) {
       console.error('❌ Exception loading user:', error);
-      // Return a basic user object to prevent infinite loading
-      return {
+      // En cas d'erreur, créer un utilisateur basique immédiatement
+      const fallbackUser: AuthUser = {
         id: authUser.id,
         email: authUser.email,
         nom: '',
@@ -104,50 +99,79 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         module_permissions: [],
         permissions: []
       };
+      console.log('🔧 Fallback user created:', fallbackUser);
+      return fallbackUser;
     }
   }, []);
 
-  const initializeAuth = useCallback(async () => {
+  useEffect(() => {
     console.log('🚀 Initializing auth...');
     
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        console.log('👤 Active session found');
-        setLoading(true);
-        const userData = await loadUserFromDatabase(session.user);
-        setUser(userData);
-        setLoading(false);
-      } else {
-        console.log('🚫 No active session');
-        setUser(null);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error('❌ Auth initialization error:', error);
-      setUser(null);
-      setLoading(false);
-    } finally {
-      setInitialized(true);
-      console.log('✅ Auth initialization completed');
-    }
-  }, [loadUserFromDatabase]);
+    let mounted = true;
 
-  useEffect(() => {
-    // Ajouter un timeout pour éviter le blocage
-    const initTimeout = setTimeout(() => {
-      if (!initialized) {
-        console.log('⚠️ Auth initialization timeout, forcing completion');
-        setInitialized(true);
-        setLoading(false);
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!mounted) return;
+
+        if (session?.user) {
+          console.log('👤 Active session found, loading user profile');
+          setLoading(true);
+          
+          try {
+            const userData = await loadUserFromDatabase(session.user);
+            if (mounted) {
+              setUser(userData);
+              console.log('✅ User profile loaded successfully');
+            }
+          } catch (error) {
+            console.error('❌ Error loading user profile:', error);
+            if (mounted) {
+              // Créer un utilisateur basique en cas d'erreur
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                nom: '',
+                prenom: '',
+                role: 'transport',
+                roles: ['transport'],
+                module_permissions: [],
+                permissions: []
+              });
+            }
+          } finally {
+            if (mounted) {
+              setLoading(false);
+            }
+          }
+        } else {
+          console.log('🚫 No active session');
+          if (mounted) {
+            setUser(null);
+            setLoading(false);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Auth initialization error:', error);
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+      } finally {
+        if (mounted) {
+          setInitialized(true);
+          console.log('✅ Auth initialization completed');
+        }
       }
-    }, 3000); // Maximum 3 secondes
+    };
 
     initializeAuth();
 
-    return () => clearTimeout(initTimeout);
-  }, [initializeAuth]);
+    return () => {
+      mounted = false;
+    };
+  }, [loadUserFromDatabase]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -156,13 +180,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in, loading profile...');
         setLoading(true);
+        
         try {
           const userData = await loadUserFromDatabase(session.user);
           setUser(userData);
-          console.log('✅ User profile loaded, setting loading to false');
+          console.log('✅ User profile loaded after sign in');
         } catch (error) {
-          console.error('❌ Error loading user profile:', error);
-          // Set a basic user to prevent infinite loading
+          console.error('❌ Error loading user profile after sign in:', error);
+          // Créer un utilisateur basique en cas d'erreur
           setUser({
             id: session.user.id,
             email: session.user.email || '',
@@ -203,8 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        console.log('✅ Login successful');
-        // Don't set loading to false here, let the auth state change handle it
+        console.log('✅ Login successful, user will be loaded by auth state change');
+        // Ne pas définir loading à false ici, laisse onAuthStateChange le gérer
         return { success: true };
       }
 

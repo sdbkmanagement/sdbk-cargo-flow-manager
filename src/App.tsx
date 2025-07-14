@@ -41,7 +41,7 @@ const queryClient = new QueryClient({
   },
 });
 
-// Layout principal moderne et optimisé
+// Layout principal simplifié
 const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -50,47 +50,56 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   // Afficher le loader seulement pendant l'initialisation
   if (!initialized) {
-    return <PageLoader message="Chargement de l'application..." />;
+    return <PageLoader message="Initialisation..." />;
   }
 
-  // Si pas d'utilisateur connecté ET qu'on ne charge pas, afficher la page de connexion
+  // Si pas d'utilisateur et qu'on ne charge pas, afficher la page de connexion
   if (!user && !loading) {
+    console.log('📋 Showing login form - no user and not loading');
     return <LoginForm />;
   }
 
-  // Si on est en train de charger ET qu'il n'y a pas d'utilisateur, afficher le loader de connexion
+  // Si on charge ET qu'il n'y a pas d'utilisateur, afficher le loader de connexion
   if (loading && !user) {
+    console.log('⏳ Loading user after authentication...');
     return <PageLoader message="Connexion en cours..." />;
   }
 
   // Si on a un utilisateur, afficher l'application
-  return (
-    <div className="min-h-screen flex bg-background text-foreground">
-      {/* Sidebar moderne responsive */}
-      <div className="hidden lg:block">
-        <ModernSidebar 
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
-      </div>
+  if (user) {
+    console.log('🏠 Showing main app for user:', user.email);
+    return (
+      <div className="min-h-screen flex bg-background text-foreground">
+        {/* Sidebar moderne responsive */}
+        <div className="hidden lg:block">
+          <ModernSidebar 
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          />
+        </div>
 
-      {/* Contenu principal */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <ModernHeader 
-          onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          showMenuButton={true}
-        />
-        
-        <main className="flex-1 overflow-auto">
-          <div className="page-container">
-            <Suspense fallback={<PageLoader message="Chargement du module..." />}>
-              {children}
-            </Suspense>
-          </div>
-        </main>
+        {/* Contenu principal */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <ModernHeader 
+            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            showMenuButton={true}
+          />
+          
+          <main className="flex-1 overflow-auto">
+            <div className="page-container">
+              <Suspense fallback={<PageLoader message="Chargement du module..." />}>
+                {children}
+              </Suspense>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // Fallback - ne devrait jamais arriver
+  console.log('⚠️ Unexpected state, showing login form');
+  return <LoginForm />;
 };
 
 function App() {
