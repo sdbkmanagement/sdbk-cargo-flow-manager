@@ -23,6 +23,34 @@ interface UpdateUserData {
 }
 
 export const userService = {
+  async getUsers(): Promise<SystemUser[]> {
+    console.log('🔧 Fetching all users');
+    
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching users:', error);
+      throw new Error(`Erreur lors de la récupération des utilisateurs: ${error.message}`);
+    }
+
+    return users.map(user => ({
+      id: user.id,
+      email: user.email,
+      nom: user.last_name || '',
+      prenom: user.first_name || '',
+      role: user.roles?.[0] || 'transport',
+      roles: user.roles || ['transport'],
+      module_permissions: user.module_permissions || [],
+      statut: user.status === 'active' ? 'actif' as const : 
+              user.status === 'inactive' ? 'inactif' as const : 'suspendu' as const,
+      created_at: user.created_at,
+      updated_at: user.updated_at
+    }));
+  },
+
   async createUser(userData: CreateUserData): Promise<SystemUser> {
     console.log('🔧 Creating user with data:', userData);
     
@@ -52,7 +80,7 @@ export const userService = {
         email: userData.email,
         first_name: userData.prenom,
         last_name: userData.nom,
-        roles: userData.roles,
+        roles: userData.roles as any,
         module_permissions: userData.module_permissions,
         status: userData.statut === 'actif' ? 'active' : userData.statut
       })
@@ -76,7 +104,8 @@ export const userService = {
       role: dbUser.roles[0] || 'transport',
       roles: dbUser.roles,
       module_permissions: dbUser.module_permissions,
-      statut: dbUser.status === 'active' ? 'actif' : dbUser.status,
+      statut: dbUser.status === 'active' ? 'actif' as const : 
+              dbUser.status === 'inactive' ? 'inactif' as const : 'suspendu' as const,
       created_at: dbUser.created_at,
       updated_at: dbUser.updated_at
     };
@@ -90,7 +119,7 @@ export const userService = {
       .update({
         first_name: userData.prenom,
         last_name: userData.nom,
-        roles: userData.roles,
+        roles: userData.roles as any,
         module_permissions: userData.module_permissions,
         status: userData.statut === 'actif' ? 'active' : userData.statut,
         updated_at: new Date().toISOString()
@@ -112,7 +141,8 @@ export const userService = {
       role: dbUser.roles[0] || 'transport',
       roles: dbUser.roles,
       module_permissions: dbUser.module_permissions,
-      statut: dbUser.status === 'active' ? 'actif' : dbUser.status,
+      statut: dbUser.status === 'active' ? 'actif' as const :
+              dbUser.status === 'inactive' ? 'inactif' as const : 'suspendu' as const,
       created_at: dbUser.created_at,
       updated_at: dbUser.updated_at
     };
