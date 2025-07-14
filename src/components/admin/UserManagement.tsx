@@ -11,8 +11,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
 import { adminService } from '@/services/admin';
-import { UserForm } from './UserForm';
-import { ROLE_LABELS, MODULE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
+import { OptimizedUserForm } from './OptimizedUserForm';
+import { ROLE_LABELS, MODULE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 
 export const UserManagement = () => {
@@ -28,6 +28,8 @@ export const UserManagement = () => {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => adminService.getUsers(),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   const deleteUserMutation = useMutation({
@@ -84,17 +86,21 @@ export const UserManagement = () => {
     }
   });
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const userRoles = user.roles || [user.role];
-    const matchesRole = roleFilter === 'all' || userRoles.includes(roleFilter);
-    const matchesStatus = statusFilter === 'all' || user.statut === statusFilter;
-    
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  // Filtres optimisés
+  const filteredUsers = React.useMemo(() => {
+    return users.filter(user => {
+      const matchesSearch = !searchTerm || 
+        user.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const userRoles = user.roles || [user.role];
+      const matchesRole = roleFilter === 'all' || userRoles.includes(roleFilter);
+      const matchesStatus = statusFilter === 'all' || user.statut === statusFilter;
+      
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  }, [users, searchTerm, roleFilter, statusFilter]);
 
   const getStatusBadge = (statut: SystemUser['statut']) => {
     switch (statut) {
@@ -111,7 +117,7 @@ export const UserManagement = () => {
 
   const getRolesBadges = (user: SystemUser) => {
     const roles = user.roles || [user.role];
-    return roles.map(role => (
+    return roles.slice(0, 2).map(role => (
       <Badge key={role} variant="outline" className="text-xs">
         {ROLE_LABELS[role] || role}
       </Badge>
@@ -119,7 +125,7 @@ export const UserManagement = () => {
   };
 
   const getModulesBadges = (modulePermissions: string[] = []) => {
-    return modulePermissions.slice(0, 3).map(module => (
+    return modulePermissions.slice(0, 2).map(module => (
       <Badge key={module} variant="secondary" className="text-xs">
         {MODULE_LABELS[module] || module}
       </Badge>
@@ -128,17 +134,22 @@ export const UserManagement = () => {
 
   const handleCreateSuccess = () => {
     setIsCreateDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
   };
 
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     setSelectedUser(null);
-    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
   };
 
   if (isLoading) {
-    return <div>Chargement des utilisateurs...</div>;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Chargement des utilisateurs...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -149,7 +160,7 @@ export const UserManagement = () => {
             <div>
               <CardTitle>Gestion des Utilisateurs</CardTitle>
               <CardDescription>
-                Créer, modifier et gérer les comptes utilisateurs avec rôles multiples et permissions modulaires
+                Gérez les comptes utilisateurs, leurs rôles et permissions
               </CardDescription>
             </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -163,16 +174,16 @@ export const UserManagement = () => {
                 <DialogHeader>
                   <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Configurez les rôles de validation et les accès aux modules pour le nouvel utilisateur.
+                    Configurez les rôles et permissions pour le nouvel utilisateur.
                   </DialogDescription>
                 </DialogHeader>
-                <UserForm onSuccess={handleCreateSuccess} />
+                <OptimizedUserForm onSuccess={handleCreateSuccess} />
               </DialogContent>
             </Dialog>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filtres */}
+          {/* Filtres optimisés */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
@@ -209,7 +220,7 @@ export const UserManagement = () => {
             </Select>
           </div>
 
-          {/* Tableau des utilisateurs */}
+          {/* Tableau optimisé */}
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
@@ -233,25 +244,30 @@ export const UserManagement = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{user.email}</TableCell>
+                    <TableCell className="font-mono text-sm">{user.email}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {getRolesBadges(user)}
+                        {(user.roles || [user.role]).length > 2 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{(user.roles || [user.role]).length - 2}
+                          </Badge>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {getModulesBadges(user.module_permissions)}
-                        {user.module_permissions && user.module_permissions.length > 3 && (
+                        {user.module_permissions && user.module_permissions.length > 2 && (
                           <Badge variant="secondary" className="text-xs">
-                            +{user.module_permissions.length - 3}
+                            +{user.module_permissions.length - 2}
                           </Badge>
                         )}
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(user.statut)}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
                         <Button 
                           size="sm" 
                           variant="outline"
@@ -331,17 +347,17 @@ export const UserManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Dialog d'édition */}
+      {/* Dialog d'édition optimisé */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier l'utilisateur</DialogTitle>
             <DialogDescription>
-              Modifiez les rôles de validation et les accès aux modules de l'utilisateur
+              Modifiez les rôles et permissions de l'utilisateur
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
-            <UserForm 
+            <OptimizedUserForm 
               user={selectedUser} 
               onSuccess={handleEditSuccess}
             />

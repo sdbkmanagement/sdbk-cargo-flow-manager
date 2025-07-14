@@ -1,273 +1,207 @@
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
-import { UserRole, UserWithRole } from '@/types';
+import type { User } from '@supabase/supabase-js';
+
+interface AuthUser {
+  id: string;
+  email: string;
+  nom: string;
+  prenom: string;
+  role: string;
+  roles?: string[];
+  module_permissions?: string[];
+  permissions?: string[];
+}
 
 interface AuthContextType {
-  user: UserWithRole | null;
+  user: AuthUser | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  initialized: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  hasPermission: (permission: string) => boolean;
   hasRole: (role: string) => boolean;
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserWithRole | null>(null);
-  const [loading, setLoading] = useState(true);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  const createDefaultUser = async (authUser: User): Promise<UserWithRole> => {
-    console.log('🔧 Creating default user for:', authUser.email);
-    
-    // Vérifier si c'est l'admin par défaut
-    if (authUser.email === 'sdbkmanagement@gmail.com') {
-      const adminUser = {
-        id: authUser.id,
-        nom: 'Système',
-        prenom: 'Admin',
-        email: authUser.email,
-        role: 'admin' as UserRole,
-        roles: ['admin'] as UserRole[],
-        module_permissions: ['fleet', 'drivers', 'rh', 'cargo', 'missions', 'billing', 'dashboard'],
-        permissions: ['all']
-      };
+  // Cache pour éviter les appels répétés
+  const [userCache, setUserCache] = useState<Map<string, AuthUser>>(new Map());
 
-      // Créer l'utilisateur admin dans la base de manière asynchrone
-      try {
-        await supabase
-          .from('users')
-          .upsert({
-            id: authUser.id,
-            email: authUser.email,
-            first_name: 'Admin',
-            last_name: 'Système',
-            roles: ['admin'],
-            status: 'active',
-            module_permissions: ['fleet', 'drivers', 'rh', 'cargo', 'missions', 'billing', 'dashboard']
-          });
-      } catch (error) {
-        console.error('Error creating admin user:', error);
+  const loadUserFromDatabase = useCallback(async (authUser: User): Promise<AuthUser | null> => {
+    try {
+      // Vérifier le cache d'abord
+      const cached = userCache.get(authUser.email!);
+      if (cached) {
+        console.log('✅ User loaded from cache:', authUser.email);
+        return cached;
       }
 
-      return adminUser;
-    }
-
-    // Utilisateur par défaut
-    const defaultUser = {
-      id: authUser.id,
-      nom: 'Utilisateur',
-      prenom: 'Nouveau',
-      email: authUser.email || '',
-      role: 'transport' as UserRole,
-      roles: ['transport'] as UserRole[],
-      module_permissions: ['fleet', 'drivers', 'missions'],
-      permissions: []
-    };
-
-    // Créer l'utilisateur par défaut dans la base de manière asynchrone
-    try {
-      await supabase
-        .from('users')
-        .upsert({
-          id: authUser.id,
-          email: authUser.email,
-          first_name: 'Nouveau',
-          last_name: 'Utilisateur',
-          roles: ['transport'],
-          status: 'active',
-          module_permissions: ['fleet', 'drivers', 'missions']
-        });
-    } catch (error) {
-      console.error('Error creating default user:', error);
-    }
-
-    return defaultUser;
-  };
-
-  const loadUser = async (authUser: User) => {
-    try {
       console.log('🔄 Loading user data for:', authUser.email);
       
-      // Récupérer les données depuis la table users
       const { data: userData, error } = await supabase
         .from('users')
         .select('*')
         .eq('email', authUser.email)
         .single();
 
-      if (userData && !error) {
-        const userWithRole: UserWithRole = {
-          id: userData.id,
-          nom: userData.last_name || 'Utilisateur',
-          prenom: userData.first_name || 'Nouveau',
-          email: authUser.email || userData.email,
-          role: userData.roles?.[0] || 'transport',
-          roles: userData.roles || ['transport'],
-          module_permissions: userData.module_permissions || [],
-          permissions: userData.roles?.includes('admin') ? ['all'] : userData.module_permissions || []
-        };
-        
-        console.log('✅ User loaded from database:', userWithRole);
-        setUser(userWithRole);
-      } else {
-        console.log('⚠️ No user data found, creating default user');
-        const defaultUser = await createDefaultUser(authUser);
-        setUser(defaultUser);
+      if (error) {
+        console.error('❌ Error loading user:', error);
+        return null;
       }
+
+      if (!userData) {
+        console.warn('⚠️ No user data found for:', authUser.email);
+        return null;
+      }
+
+      const authUserData: AuthUser = {
+        id: userData.id,
+        nom: userData.last_name || '',
+        prenom: userData.first_name || '',
+        email: userData.email,
+        role: userData.roles?.[0] || 'transport',
+        roles: userData.roles || ['transport'],
+        module_permissions: userData.module_permissions || [],
+        permissions: userData.roles?.includes('admin') ? ['all'] : userData.module_permissions || []
+      };
+
+      // Mettre en cache
+      setUserCache(prev => new Map(prev.set(authUser.email!, authUserData)));
       
+      console.log('✅ User loaded from database:', authUserData);
+      return authUserData;
     } catch (error) {
-      console.error('💥 Error in loadUser:', error);
-      const defaultUser = await createDefaultUser(authUser);
-      setUser(defaultUser);
+      console.error('❌ Exception loading user:', error);
+      return null;
     }
-  };
+  }, [userCache]);
+
+  const initializeAuth = useCallback(async () => {
+    if (initialized) return;
+
+    console.log('🚀 Initializing auth...');
+    setLoading(true);
+
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('❌ Auth session error:', error);
+        setUser(null);
+      } else if (session?.user) {
+        console.log('👤 Active session found for:', session.user.email);
+        const userData = await loadUserFromDatabase(session.user);
+        setUser(userData);
+      } else {
+        console.log('🚫 No active session found');
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('❌ Auth initialization error:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+      setInitialized(true);
+      console.log('✅ Auth initialization completed');
+    }
+  }, [initialized, loadUserFromDatabase]);
 
   useEffect(() => {
-    let mounted = true;
-    
-    const initializeAuth = async () => {
-      try {
-        console.log('🚀 Initializing auth...');
-        
-        // Obtenir la session actuelle
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-            setInitialized(true);
-          }
-          return;
-        }
-        
-        if (session?.user && mounted) {
-          await loadUser(session.user);
-        } else if (mounted) {
-          console.log('🚫 No active session found');
-          setUser(null);
-        }
-      } catch (error) {
-        console.error('💥 Error during auth initialization:', error);
-        if (mounted) {
-          setUser(null);
-        }
-      } finally {
-        if (mounted) {
-          console.log('✅ Auth initialization completed');
-          setLoading(false);
-          setInitialized(true);
-        }
+    initializeAuth();
+  }, [initializeAuth]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔄 Auth state changed:', event);
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        setLoading(true);
+        const userData = await loadUserFromDatabase(session.user);
+        setUser(userData);
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserCache(new Map()); // Clear cache on logout
       }
-    };
+    });
 
-    // Configurer l'écoute des changements d'état d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('🔄 Auth state changed:', event);
-        
-        if (!mounted || !initialized) return;
+    return () => subscription.unsubscribe();
+  }, [loadUserFromDatabase]);
 
-        if (event === 'SIGNED_IN' && session?.user) {
-          setLoading(true);
-          await loadUser(session.user);
-          setLoading(false);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setLoading(false);
-        }
-      }
-    );
-
-    // Initialiser l'authentification
-    if (!initialized) {
-      initializeAuth();
-    }
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [initialized]);
-
-  const signIn = async (email: string, password: string) => {
-    console.log('🔑 Attempting sign in for:', email);
+  const login = async (email: string, password: string) => {
     setLoading(true);
-    
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password
       });
 
       if (error) {
-        console.error('💥 Sign in error:', error);
-        setLoading(false);
-        throw error;
+        console.error('❌ Login error:', error);
+        return { success: false, error: error.message };
       }
-    } catch (error) {
-      setLoading(false);
-      throw error;
-    }
-  };
 
-  const signOut = async () => {
-    console.log('👋 Signing out...');
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('💥 Sign out error:', error);
-        throw error;
+      if (data.user) {
+        const userData = await loadUserFromDatabase(data.user);
+        setUser(userData);
+        return { success: true };
       }
+
+      return { success: false, error: 'Échec de la connexion' };
+    } catch (error: any) {
+      console.error('❌ Login exception:', error);
+      return { success: false, error: error.message || 'Erreur de connexion' };
     } finally {
       setLoading(false);
     }
   };
 
-  // Alias pour la compatibilité
-  const login = signIn;
-  const logout = signOut;
-
-  const hasPermission = (permission: string): boolean => {
-    if (!user) return false;
-    const userRoles = user.roles || [user.role];
-    if (userRoles.includes('admin')) return true;
-    return user.permissions.includes(permission) || user.permissions.includes('all');
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setUserCache(new Map()); // Clear cache
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+    }
   };
 
   const hasRole = (role: string): boolean => {
     if (!user) return false;
     const userRoles = user.roles || [user.role];
-    return userRoles.includes(role as UserRole) || userRoles.includes('admin');
+    return userRoles.includes(role) || userRoles.includes('admin');
+  };
+
+  const hasPermission = (permission: string): boolean => {
+    if (!user) return false;
+    if (user.roles?.includes('admin')) return true;
+    return user.permissions?.includes(permission) || user.permissions?.includes('all') || false;
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      signIn, 
-      signOut, 
-      login, 
-      logout, 
-      hasPermission, 
-      hasRole 
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      initialized,
+      login,
+      logout,
+      hasRole,
+      hasPermission
     }}>
       {children}
     </AuthContext.Provider>

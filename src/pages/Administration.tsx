@@ -4,9 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Shield, Activity, AlertTriangle } from 'lucide-react';
+import { Users, Activity, AlertTriangle } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
-import { RolePermissionManagement } from '@/components/admin/RolePermissionManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { CreateAdminButton } from '@/components/admin/CreateAdminButton';
@@ -21,7 +20,7 @@ const Administration = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <Shield className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+            <AlertTriangle className="h-12 w-12 text-blue-500 mx-auto mb-4" />
             <CardTitle>Configuration initiale</CardTitle>
             <CardDescription>
               Créez votre premier compte administrateur pour commencer à utiliser le système.
@@ -60,7 +59,7 @@ const Administration = () => {
             Administration & Gestion des accès
           </h1>
           <p className="text-gray-600 mt-2">
-            Gestion des utilisateurs, rôles, permissions et sécurité du système
+            Gestion des utilisateurs et sécurité du système
           </p>
         </div>
         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -69,18 +68,14 @@ const Administration = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Vue d'ensemble
           </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Utilisateurs
-          </TabsTrigger>
-          <TabsTrigger value="roles" className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Rôles & Permissions
+            Gestion Utilisateurs
           </TabsTrigger>
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
@@ -94,10 +89,6 @@ const Administration = () => {
 
         <TabsContent value="users" className="space-y-6">
           <UserManagement />
-        </TabsContent>
-
-        <TabsContent value="roles" className="space-y-6">
-          <RolePermissionManagement />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6">
