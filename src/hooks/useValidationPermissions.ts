@@ -88,7 +88,7 @@ export const useValidationPermissions = () => {
     }
     
     const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
-    return validationRoles.some(role => allRoles.includes(role as UserRole));
+    return validationRoles.some(role => allRoles.includes(role));
   };
 
   const getUserRole = (): string => {
@@ -96,7 +96,7 @@ export const useValidationPermissions = () => {
     return user.role || '';
   };
 
-  const getUserRoles = (): UserRole[] => {
+  const getUserRoles = (): string[] => {
     if (!user) return [];
     const userRoles = user.roles || [];
     const allRoles = [...userRoles];
