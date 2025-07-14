@@ -8,9 +8,8 @@ import { ModernSidebar } from '@/components/layout/ModernSidebar';
 import { ModernHeader } from '@/components/layout/ModernHeader';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { PageLoader } from '@/components/ui/loading-states';
-import { usePageVisibility } from '@/hooks/usePageVisibility';
 
-// Lazy loading optimisé pour de meilleures performances
+// Lazy loading des pages
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Fleet = lazy(() => import('@/pages/Fleet'));
 const Drivers = lazy(() => import('@/pages/Drivers'));
@@ -24,17 +23,13 @@ const DocumentStock = lazy(() => import('@/pages/DocumentStock'));
 const Guide = lazy(() => import('@/pages/Guide'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
-// Configuration optimisée du QueryClient
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
-      retry: (failureCount, error: any) => {
-        if (error?.status === 401 || error?.status === 403) return false;
-        return failureCount < 2;
-      },
+      retry: 2,
       networkMode: 'offlineFirst',
     },
     mutations: {
@@ -43,37 +38,33 @@ const queryClient = new QueryClient({
   },
 });
 
-// Layout principal avec correction du positionnement
 const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const { isVisible, hasReturned } = usePageVisibility();
 
-  console.log('🔍 App state:', { user: !!user, loading, isVisible, hasReturned });
+  console.log('🔍 État de l\'app:', { user: !!user, loading });
 
   // Si pas d'utilisateur connecté, afficher la page de connexion
-  if (!user) {
-    console.log('📋 No user found - showing login form');
+  if (!user && !loading) {
+    console.log('📋 Aucun utilisateur - affichage du formulaire de connexion');
     return <LoginForm />;
   }
 
-  // Si on charge (par exemple pendant une déconnexion), afficher un loader
+  // Si chargement en cours
   if (loading) {
-    console.log('⏳ Loading state...');
-    return <PageLoader message="Chargement..." />;
+    console.log('⏳ Chargement...');
+    return <PageLoader message="Connexion..." />;
   }
 
-  // Si on a un utilisateur, afficher l'application avec le layout corrigé
-  console.log('🏠 Showing main app for user:', user.email);
+  // Si utilisateur connecté, afficher l'application
+  console.log('🏠 Affichage de l\'application pour:', user?.email);
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Sidebar fixe */}
       <ModernSidebar 
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
 
-      {/* Contenu principal avec marge pour éviter le chevauchement */}
       <div 
         className={`min-h-screen transition-all duration-300 ease-out ${
           sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'

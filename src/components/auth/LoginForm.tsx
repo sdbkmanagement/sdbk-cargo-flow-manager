@@ -35,8 +35,9 @@ export const LoginForm = () => {
       if (result.success) {
         toast({
           title: "Connexion réussie",
-          description: "Bienvenue !",
+          description: "Redirection vers l'application...",
         });
+        // La redirection se fera automatiquement via App.tsx
       } else {
         toast({
           title: "Erreur de connexion",
@@ -45,10 +46,10 @@ export const LoginForm = () => {
         });
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('Erreur de connexion:', error);
       toast({
         title: "Erreur de connexion",
-        description: "Une erreur est survenue lors de la connexion",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
     } finally {
