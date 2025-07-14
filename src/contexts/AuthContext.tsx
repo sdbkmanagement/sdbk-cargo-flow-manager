@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -39,8 +39,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  const loadUserFromDatabase = async (authUser: User): Promise<AuthUser | null> => {
+  // Cache pour éviter les appels répétés
+  const [userCache, setUserCache] = useState<Map<string, AuthUser>>(new Map());
+
+  const loadUserFromDatabase = useCallback(async (authUser: User): Promise<AuthUser | null> => {
     try {
+      // Vérifier le cache d'abord
+      const cached = userCache.get(authUser.email!);
+      if (cached) {
+        console.log('✅ User loaded from cache:', authUser.email);
+        return cached;
+      }
+
       console.log('🔄 Loading user data for:', authUser.email);
       
       const { data: userData, error } = await supabase
@@ -49,7 +59,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('email', authUser.email)
         .single();
 
-      if (error || !userData) {
+      if (error) {
+        console.error('❌ Error loading user:', error);
+        return null;
+      }
+
+      if (!userData) {
         console.warn('⚠️ No user data found for:', authUser.email);
         return null;
       }
@@ -65,75 +80,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         permissions: userData.roles?.includes('admin') ? ['all'] : userData.module_permissions || []
       };
 
+      // Mettre en cache
+      setUserCache(prev => new Map(prev.set(authUser.email!, authUserData)));
+      
       console.log('✅ User loaded from database:', authUserData);
       return authUserData;
     } catch (error) {
       console.error('❌ Exception loading user:', error);
       return null;
     }
-  };
+  }, [userCache]);
 
-  // Initialisation simplifiée
+  const initializeAuth = useCallback(async () => {
+    if (initialized) return;
+
+    console.log('🚀 Initializing auth...');
+    setLoading(true);
+
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.error('❌ Auth session error:', error);
+        setUser(null);
+      } else if (session?.user) {
+        console.log('👤 Active session found for:', session.user.email);
+        const userData = await loadUserFromDatabase(session.user);
+        setUser(userData);
+      } else {
+        console.log('🚫 No active session found');
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('❌ Auth initialization error:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
+      setInitialized(true);
+      console.log('✅ Auth initialization completed');
+    }
+  }, [initialized, loadUserFromDatabase]);
+
   useEffect(() => {
-    let mounted = true;
+    initializeAuth();
+  }, [initializeAuth]);
 
-    const initAuth = async () => {
-      console.log('🚀 Starting auth initialization...');
-      
-      try {
-        // Vérifier s'il y a une session active
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!mounted) return;
-
-        if (session?.user) {
-          console.log('👤 Existing session found');
-          const userData = await loadUserFromDatabase(session.user);
-          if (mounted) {
-            setUser(userData);
-          }
-        } else {
-          console.log('🚫 No active session');
-        }
-      } catch (error) {
-        console.error('❌ Auth initialization error:', error);
-      }
-      
-      if (mounted) {
-        setInitialized(true);
-        console.log('✅ Auth initialization completed');
-      }
-    };
-
-    initAuth();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  // Écouter les changements d'authentification
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('🔄 Auth state changed:', event, !!session);
+      console.log('🔄 Auth state changed:', event);
       
       if (event === 'SIGNED_IN' && session?.user) {
+        setLoading(true);
         const userData = await loadUserFromDatabase(session.user);
         setUser(userData);
         setLoading(false);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
-        setLoading(false);
+        setUserCache(new Map()); // Clear cache on logout
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [loadUserFromDatabase]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
-    console.log('🔐 Attempting login for:', email);
-    
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
@@ -142,36 +153,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Login error:', error);
-        setLoading(false);
         return { success: false, error: error.message };
       }
 
       if (data.user) {
-        console.log('✅ Login successful, loading user data...');
         const userData = await loadUserFromDatabase(data.user);
         setUser(userData);
-        setLoading(false);
         return { success: true };
       }
 
-      setLoading(false);
       return { success: false, error: 'Échec de la connexion' };
     } catch (error: any) {
       console.error('❌ Login exception:', error);
-      setLoading(false);
       return { success: false, error: error.message || 'Erreur de connexion' };
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
-      setLoading(false);
+      setUserCache(new Map()); // Clear cache
     } catch (error) {
       console.error('❌ Logout error:', error);
-      setLoading(false);
     }
   };
 
