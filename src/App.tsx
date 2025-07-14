@@ -47,7 +47,9 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // Afficher le loader seulement si l'authentification n'est pas initialisée
+  console.log('🔍 App state:', { user: !!user, loading, initialized });
+
+  // Afficher le loader seulement pendant l'initialisation
   if (!initialized) {
     return <PageLoader message="Chargement de l'application..." />;
   }

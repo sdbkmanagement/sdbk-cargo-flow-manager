@@ -97,8 +97,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [loadUserFromDatabase]);
 
   useEffect(() => {
+    // Ajouter un timeout pour éviter le blocage
+    const initTimeout = setTimeout(() => {
+      if (!initialized) {
+        console.log('⚠️ Auth initialization timeout, forcing completion');
+        setInitialized(true);
+      }
+    }, 3000); // Maximum 3 secondes
+
     initializeAuth();
-  }, [initializeAuth]);
+
+    return () => clearTimeout(initTimeout);
+  }, [initializeAuth, initialized]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

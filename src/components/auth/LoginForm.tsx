@@ -96,7 +96,7 @@ export const LoginForm = () => {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={loading || !email || !password}
+              disabled={loading}
             >
               {loading ? (
                 <>
