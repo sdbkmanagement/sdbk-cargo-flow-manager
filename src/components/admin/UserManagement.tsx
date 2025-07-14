@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
 import { userService } from '@/services/admin/userService';
@@ -25,20 +25,12 @@ export const UserManagement = () => {
 
   const queryClient = useQueryClient();
 
-  console.log('🔧 UserManagement - État des dialogs:', { 
-    isCreateDialogOpen, 
-    isEditDialogOpen,
-    selectedUser: selectedUser?.id
-  });
-
   const { data: users = [], isLoading, error } = useQuery({
     queryKey: ['admin-users'],
     queryFn: () => userService.getUsers(),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
-
-  console.log('🔧 UserManagement - Users loaded:', users.length, 'Error:', error);
 
   const deleteUserMutation = useMutation({
     mutationFn: (userId: string) => userService.deleteUser(userId),
@@ -50,7 +42,6 @@ export const UserManagement = () => {
       });
     },
     onError: (error: any) => {
-      console.error('🔧 Delete user error:', error);
       toast({
         title: "Erreur",
         description: error.message || "Impossible de supprimer l'utilisateur.",
@@ -70,7 +61,6 @@ export const UserManagement = () => {
       });
     },
     onError: (error: any) => {
-      console.error('🔧 Toggle status error:', error);
       toast({
         title: "Erreur",
         description: error.message || "Impossible de modifier le statut de l'utilisateur.",
@@ -88,7 +78,6 @@ export const UserManagement = () => {
       });
     },
     onError: (error: any) => {
-      console.error('🔧 Reset password error:', error);
       toast({
         title: "Erreur",
         description: error.message || "Impossible de réinitialiser le mot de passe.",
@@ -97,7 +86,6 @@ export const UserManagement = () => {
     }
   });
 
-  // Filtres optimisés
   const filteredUsers = React.useMemo(() => {
     return users.filter(user => {
       const matchesSearch = !searchTerm || 
@@ -144,21 +132,22 @@ export const UserManagement = () => {
   };
 
   const handleCreateSuccess = () => {
-    console.log('🔧 handleCreateSuccess appelé');
     queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     setIsCreateDialogOpen(false);
+    toast({
+      title: "Utilisateur créé",
+      description: "L'utilisateur a été créé avec succès."
+    });
   };
 
   const handleEditSuccess = () => {
-    console.log('🔧 handleEditSuccess appelé');
     queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     setIsEditDialogOpen(false);
     setSelectedUser(null);
-  };
-
-  const handleCreateClick = () => {
-    console.log('🔧 Bouton Nouvel utilisateur cliqué');
-    setIsCreateDialogOpen(true);
+    toast({
+      title: "Utilisateur modifié",
+      description: "L'utilisateur a été modifié avec succès."
+    });
   };
 
   if (isLoading) {
@@ -194,14 +183,17 @@ export const UserManagement = () => {
                 Gérez les comptes utilisateurs, leurs rôles et permissions
               </CardDescription>
             </div>
-            <Button onClick={handleCreateClick} className="flex items-center gap-2">
+            <Button 
+              onClick={() => setIsCreateDialogOpen(true)} 
+              className="flex items-center gap-2"
+            >
               <Plus className="h-4 w-4" />
               Nouvel utilisateur
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {/* Filtres optimisés */}
+          {/* Filtres */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
@@ -238,7 +230,7 @@ export const UserManagement = () => {
             </Select>
           </div>
 
-          {/* Tableau optimisé */}
+          {/* Tableau */}
           <div className="border rounded-lg">
             <Table>
               <TableHeader>
