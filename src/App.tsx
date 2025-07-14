@@ -1,3 +1,4 @@
+
 import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -47,25 +48,22 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const { user, loading, initialized } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const { isVisible, hasReturned } = usePageVisibility();
-  const [forceRefresh, setForceRefresh] = useState(0);
 
   console.log('🔍 App state:', { user: !!user, loading, initialized, isVisible, hasReturned });
 
-  // Force refresh when user returns to tab to fix UI degradation
+  // Léger refresh uniquement quand nécessaire
   useEffect(() => {
     if (hasReturned && user) {
-      console.log('🔄 Forcing UI refresh after tab return');
-      setForceRefresh(prev => prev + 1);
-      
-      // Additional cleanup for potential style issues
-      setTimeout(() => {
-        // Force recalculation of sidebar state
-        setSidebarCollapsed(prev => {
-          const newState = !prev;
-          setTimeout(() => setSidebarCollapsed(prev), 50);
-          return newState;
-        });
+      console.log('🔄 User returned to tab - gentle refresh');
+      // Force un léger recalcul sans casser l'interface
+      const timer = setTimeout(() => {
+        document.body.style.transform = 'translateZ(0)';
+        setTimeout(() => {
+          document.body.style.transform = '';
+        }, 10);
       }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [hasReturned, user]);
 
@@ -90,20 +88,18 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   if (user) {
     console.log('🏠 Showing main app for user:', user.email);
     return (
-      <div key={forceRefresh} className="min-h-screen flex bg-background text-foreground">
-        {/* Sidebar moderne responsive avec key pour forcer re-render */}
+      <div className="min-h-screen flex bg-background text-foreground">
+        {/* Sidebar moderne responsive */}
         <div className="hidden lg:block">
           <ModernSidebar 
-            key={`sidebar-${forceRefresh}`}
             isCollapsed={sidebarCollapsed}
             onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
           />
         </div>
 
-        {/* Contenu principal avec key pour forcer re-render */}
+        {/* Contenu principal */}
         <div className="flex-1 flex flex-col min-w-0">
           <ModernHeader 
-            key={`header-${forceRefresh}`}
             onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             showMenuButton={true}
           />

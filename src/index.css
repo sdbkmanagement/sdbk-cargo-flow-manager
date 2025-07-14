@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -96,7 +97,7 @@
 @layer components {
   /* Composants modernes réutilisables */
   .modern-card {
-    @apply bg-card border border-border rounded-lg shadow-soft hover:shadow-medium transition-all duration-300 ease-out;
+    @apply bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all duration-300 ease-out;
   }
 
   .modern-button {
@@ -104,19 +105,11 @@
   }
 
   .modern-button-primary {
-    @apply modern-button bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft hover:shadow-medium hover:-translate-y-0.5;
+    @apply modern-button bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm hover:shadow-md;
   }
 
   .modern-button-secondary {
     @apply modern-button bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-border;
-  }
-
-  .modern-button-success {
-    @apply modern-button bg-success text-success-foreground hover:bg-success/90 shadow-soft hover:shadow-medium hover:-translate-y-0.5;
-  }
-
-  .modern-button-danger {
-    @apply modern-button bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-soft hover:shadow-medium hover:-translate-y-0.5;
   }
 
   .modern-input {
@@ -147,58 +140,6 @@
     @apply modern-badge bg-secondary text-secondary-foreground border border-border;
   }
 
-  /* Animations et micro-interactions */
-  .smooth-transition {
-    @apply transition-all duration-300 ease-out;
-  }
-
-  .hover-lift {
-    @apply hover:-translate-y-1 hover:shadow-large smooth-transition;
-  }
-
-  .loading-shimmer {
-    @apply bg-gradient-to-r from-muted via-muted/50 to-muted bg-[length:200%_100%] animate-shimmer;
-  }
-
-  /* Navigation moderne */
-  .modern-nav-item {
-    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-lg smooth-transition hover:bg-accent hover:text-accent-foreground;
-  }
-
-  .modern-nav-item-active {
-    @apply modern-nav-item bg-primary text-primary-foreground shadow-soft;
-  }
-
-  /* Tables modernes */
-  .modern-table {
-    @apply w-full border-collapse bg-card rounded-lg overflow-hidden shadow-soft;
-  }
-
-  .modern-table-header {
-    @apply bg-muted/50 border-b border-border;
-  }
-
-  .modern-table-row {
-    @apply border-b border-border/50 hover:bg-muted/30 smooth-transition;
-  }
-
-  .modern-table-cell {
-    @apply px-4 py-3 text-sm;
-  }
-
-  /* Stats cards */
-  .stats-card {
-    @apply modern-card p-6 hover:scale-105 smooth-transition cursor-pointer;
-  }
-
-  .stats-value {
-    @apply text-2xl font-bold tracking-tight;
-  }
-
-  .stats-label {
-    @apply text-sm text-muted-foreground;
-  }
-
   /* Layout moderne */
   .page-container {
     @apply container mx-auto px-4 py-6 max-w-7xl;
@@ -215,51 +156,6 @@
   .page-subtitle {
     @apply text-muted-foreground mt-2;
   }
-}
-
-/* Protection contre la dégradation UI lors du retour sur l'onglet */
-@layer utilities {
-  /* Force correct rendering after visibility change */
-  .force-repaint {
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    perspective: 1000px;
-  }
-
-  /* Ensure proper font and icon rendering */
-  * {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
-
-  /* Force hardware acceleration for better performance */
-  .modern-card,
-  .modern-nav-item,
-  .stats-card {
-    will-change: transform;
-    transform: translateZ(0);
-  }
-
-  /* Prevent layout shift on tab return */
-  body {
-    overflow-x: hidden;
-  }
-  
-  /* Ensure sidebar maintains proper state */
-  [data-sidebar] {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-}
-
-/* Animation pour le rafraîchissement forcé */
-@keyframes ui-refresh {
-  0% { opacity: 0.95; }
-  50% { opacity: 1; }
-  100% { opacity: 1; }
-}
-
-.ui-refreshing {
-  animation: ui-refresh 0.2s ease-out;
 }
 
 /* Scrollbar personnalisée moderne */
@@ -281,15 +177,4 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground));
-}
-
-/* Performance optimizations */
-.gpu-accelerated {
-  transform: translateZ(0);
-  will-change: transform;
-}
-
-/* Réduction du layout shift */
-.skeleton-loader {
-  @apply loading-shimmer rounded animate-pulse;
 }

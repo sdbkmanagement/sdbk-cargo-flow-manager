@@ -14,13 +14,10 @@ export const usePageVisibility = () => {
         // Page became visible again - user returned to tab
         setHasReturned(true);
         
-        // Force reflow to fix potential CSS/layout issues
+        // Reset the flag after a short delay
         setTimeout(() => {
-          document.body.style.display = 'none';
-          document.body.offsetHeight; // Force reflow
-          document.body.style.display = '';
           setHasReturned(false);
-        }, 10);
+        }, 500);
       }
     };
 
