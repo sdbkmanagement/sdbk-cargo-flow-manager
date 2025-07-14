@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
@@ -216,6 +215,51 @@
   .page-subtitle {
     @apply text-muted-foreground mt-2;
   }
+}
+
+/* Protection contre la dégradation UI lors du retour sur l'onglet */
+@layer utilities {
+  /* Force correct rendering after visibility change */
+  .force-repaint {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  /* Ensure proper font and icon rendering */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Force hardware acceleration for better performance */
+  .modern-card,
+  .modern-nav-item,
+  .stats-card {
+    will-change: transform;
+    transform: translateZ(0);
+  }
+
+  /* Prevent layout shift on tab return */
+  body {
+    overflow-x: hidden;
+  }
+  
+  /* Ensure sidebar maintains proper state */
+  [data-sidebar] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Animation pour le rafraîchissement forcé */
+@keyframes ui-refresh {
+  0% { opacity: 0.95; }
+  50% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.ui-refreshing {
+  animation: ui-refresh 0.2s ease-out;
 }
 
 /* Scrollbar personnalisée moderne */

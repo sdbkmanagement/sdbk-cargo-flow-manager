@@ -1,235 +1,177 @@
-
-import React from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { useValidationPermissions } from '@/hooks/useValidationPermissions';
+import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
   Truck, 
   Users, 
   FileText, 
-  Package, 
-  Calculator, 
+  Coins, 
   UserCog, 
-  Shield,
+  CheckCircle, 
   Settings,
-  Building2,
-  BookOpen,
-  ChevronLeft,
-  ChevronRight
+  Book,
+  LogOut 
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ModernSkeleton } from '@/components/ui/loading-states';
-
-const navigationItems = [
-  {
-    title: 'Tableau de bord',
-    icon: LayoutDashboard,
-    href: '/dashboard',
-    permissions: ['dashboard', 'all']
-  },
-  {
-    title: 'Flotte',
-    icon: Truck,
-    href: '/fleet',
-    permissions: ['fleet', 'all']
-  },
-  {
-    title: 'Chauffeurs',
-    icon: Users,
-    href: '/drivers',
-    permissions: ['drivers', 'all']
-  },
-  {
-    title: 'Missions',
-    icon: FileText,
-    href: '/missions',
-    permissions: ['missions', 'all']
-  },
-  {
-    title: 'Chargements',
-    icon: Package,
-    href: '/cargo',
-    permissions: ['cargo', 'all']
-  },
-  {
-    title: 'Facturation',
-    icon: Calculator,
-    href: '/billing',
-    permissions: ['billing', 'all']
-  },
-  {
-    title: 'RH',
-    icon: UserCog,
-    href: '/rh',
-    permissions: ['rh', 'all']
-  },
-  {
-    title: 'Validations',
-    icon: Shield,
-    href: '/validations',
-    permissions: ['validations'],
-    requiresValidationRole: true
-  },
-  {
-    title: 'Administration',
-    icon: Settings,
-    href: '/administration',
-    permissions: ['admin', 'all']
-  },
-  {
-    title: 'Stock Documents',
-    icon: Building2,
-    href: '/documents',
-    permissions: ['documents', 'all']
-  },
-  {
-    title: 'Guide',
-    icon: BookOpen,
-    href: '/guide',
-    permissions: ['all']
-  }
-];
 
 interface ModernSidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
 
+const menuItems = [
+  {
+    path: '/dashboard',
+    label: 'Tableau de bord',
+    icon: LayoutDashboard
+  },
+  {
+    path: '/fleet',
+    label: 'Flotte',
+    icon: Truck
+  },
+  {
+    path: '/drivers',
+    label: 'Chauffeurs',
+    icon: Users
+  },
+  {
+    path: '/missions',
+    label: 'Missions',
+    icon: FileText
+  },
+  {
+    path: '/cargo',
+    label: 'Cargaison',
+    icon: FileText
+  },
+  {
+    path: '/billing',
+    label: 'Facturation',
+    icon: Coins
+  },
+  {
+    path: '/rh',
+    label: 'RH',
+    icon: UserCog
+  },
+  {
+    path: '/validations',
+    label: 'Validations',
+    icon: CheckCircle
+  },
+  {
+    path: '/administration',
+    label: 'Administration',
+    icon: Settings
+  },
+  {
+    path: '/documents',
+    label: 'Documents',
+    icon: FileText
+  },
+  {
+    path: '/guide',
+    label: 'Guide',
+    icon: Book
+  }
+];
+
+const getIconColor = (isActive: boolean) => {
+  return isActive ? 'text-primary-foreground' : 'text-muted-foreground';
+};
+
+const getItemStyle = (isActive: boolean) => {
+  return isActive ? 'modern-nav-item-active' : 'modern-nav-item';
+};
+
 export const ModernSidebar: React.FC<ModernSidebarProps> = ({ 
-  isCollapsed = false, 
+  isCollapsed = false,
   onToggleCollapse 
 }) => {
-  const { user, hasPermission, loading } = useAuth();
-  const { hasValidationAccess } = useValidationPermissions();
+  const { user } = useAuth();
   const location = useLocation();
+  const [mounted, setMounted] = useState(false);
 
-  if (loading) {
-    return (
-      <div className={cn(
-        "h-full bg-card border-r border-border smooth-transition",
-        isCollapsed ? "w-16" : "w-64"
-      )}>
-        <div className="p-6">
-          <ModernSkeleton variant="avatar" className="mb-6" />
-          <div className="space-y-3">
-            {[...Array(8)].map((_, i) => (
-              <ModernSkeleton key={i} variant="button" className="w-full" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
+  // Ensure proper mounting and re-mounting
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Force re-render on location change to prevent UI degradation
+  useEffect(() => {
+    if (mounted) {
+      // Small delay to ensure proper rendering
+      const timer = setTimeout(() => {
+        // Force style recalculation
+        const sidebar = document.querySelector('[data-sidebar="main"]');
+        if (sidebar) {
+          sidebar.classList.add('ui-refreshing');
+          setTimeout(() => {
+            sidebar.classList.remove('ui-refreshing');
+          }, 200);
+        }
+      }, 10);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, mounted]);
+
+  if (!mounted) {
+    return null;
   }
 
-  if (!user) return null;
-
-  const visibleItems = navigationItems.filter(item => {
-    if (user.roles?.includes('admin')) return true;
-    
-    if (item.requiresValidationRole) {
-      return hasValidationAccess();
-    }
-    
-    return item.permissions.some(permission => 
-      hasPermission(permission) || 
-      user.module_permissions?.includes(permission) ||
-      user.permissions?.includes(permission)
-    );
-  });
+  const handleLogout = () => {
+    // TODO: Implement logout functionality
+    console.log('Logout clicked');
+  };
 
   return (
-    <div className={cn(
-      "h-full bg-card border-r border-border smooth-transition flex flex-col",
-      isCollapsed ? "w-16" : "w-64"
-    )}>
-      {/* Header avec logo */}
-      <div className={cn(
-        "p-6 border-b border-border",
-        isCollapsed && "p-4"
-      )}>
-        <div className="flex items-center justify-between">
-          <div className={cn(
-            "flex items-center space-x-3",
-            isCollapsed && "justify-center"
-          )}>
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center">
-              <Truck className="w-5 h-5 text-primary-foreground" />
-            </div>
-            {!isCollapsed && (
-              <div>
-                <h1 className="text-lg font-bold text-foreground">SDBK</h1>
-                <p className="text-xs text-muted-foreground">Transport Manager</p>
-              </div>
-            )}
-          </div>
-          
-          {onToggleCollapse && (
-            <button
-              onClick={onToggleCollapse}
-              className="p-1.5 rounded-md hover:bg-accent smooth-transition"
-            >
-              {isCollapsed ? (
-                <ChevronRight className="w-4 h-4" />
-              ) : (
-                <ChevronLeft className="w-4 h-4" />
-              )}
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <div className="space-y-1">
-          {visibleItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.href;
-            
-            return (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium smooth-transition",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-soft"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent",
-                  isCollapsed && "justify-center px-2"
-                )}
-                title={isCollapsed ? item.title : undefined}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && <span>{item.title}</span>}
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-
-      {/* Footer utilisateur */}
-      <div className={cn(
-        "p-4 border-t border-border",
-        isCollapsed && "p-2"
-      )}>
-        {!isCollapsed ? (
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">Connecté en tant que:</p>
-            <p className="text-sm font-medium text-foreground capitalize">
-              {user.prenom} {user.nom}
-            </p>
-            <p className="text-xs font-medium text-primary">
-              {user.role}
-            </p>
-          </div>
-        ) : (
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <span className="text-xs font-semibold text-primary-foreground">
-              {user.prenom.charAt(0)}{user.nom.charAt(0)}
+    <aside 
+      data-sidebar="main"
+      className={cn(
+        "fixed top-0 left-0 z-40 h-screen transition-all duration-300 ease-out force-repaint",
+        "bg-card border-r border-border shadow-lg",
+        isCollapsed ? "w-16" : "w-64"
+      )}
+    >
+      <div className="h-full flex flex-col justify-between">
+        <div className="flex-grow flex flex-col py-4 px-3 bg-card">
+          <Link to="/" className="flex items-center pl-2.5 mb-8">
+            <img
+              src="/logo.png"
+              className="mr-3 h-6 sm:h-7"
+              alt="SDBK Logo"
+            />
+            <span className={cn("self-center text-xl font-semibold whitespace-nowrap text-foreground", isCollapsed && "hidden")}>
+              SDBK Transport
             </span>
-          </div>
-        )}
+          </Link>
+          <ul className="space-y-2 font-medium">
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <li key={item.path}>
+                  <Link
+                    to={item.path}
+                    className={getItemStyle(isActive)}
+                  >
+                    <item.icon className={cn("w-5 h-5", getIconColor(isActive))} />
+                    <span className={cn("ml-3", isCollapsed && "hidden")}>{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <div className="py-4 px-3 bg-card border-t border-border">
+          <button onClick={handleLogout} className="modern-nav-item">
+            <LogOut className="w-5 h-5 text-muted-foreground" />
+            <span className={cn("ml-3", isCollapsed && "hidden")}>Déconnexion</span>
+          </button>
+        </div>
       </div>
-    </div>
+    </aside>
   );
 };
