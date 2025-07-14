@@ -23,14 +23,19 @@ interface AuthContextType {
   hasRole: (role: string) => boolean;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Créer le contexte avec une valeur par défaut
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  login: async () => ({ success: false }),
+  logout: async () => {},
+  hasPermission: () => false,
+  hasRole: () => false,
+});
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return context; // Pas besoin de vérifier undefined car on a une valeur par défaut
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -40,8 +45,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log('🔍 Initialisation de l\'authentification');
     
+    let mounted = true;
+
     // Fonction pour traiter une session Supabase
     const handleSession = (session: Session | null) => {
+      if (!mounted) return;
+      
       console.log('📊 Traitement de la session:', !!session);
       
       if (session?.user) {
@@ -67,33 +76,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     };
 
+    // Écouter les changements d'authentification en premier
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔔 Changement d\'état auth:', event);
+      handleSession(session);
+    });
+
     // Vérifier la session actuelle
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('❌ Erreur lors de la récupération de session:', error);
-          setLoading(false);
+          if (mounted) setLoading(false);
           return;
         }
         handleSession(session);
       } catch (error) {
         console.error('❌ Exception lors de la vérification de session:', error);
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
-    // Écouter les changements d'authentification
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔔 Changement d\'état auth:', event);
-      handleSession(session);
-    });
-
-    // Vérifier la session initiale
     checkSession();
 
     // Cleanup
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -169,15 +178,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return userRoles.includes(role);
   };
 
+  const value = {
+    user,
+    loading,
+    login,
+    logout,
+    hasPermission,
+    hasRole
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      loading,
-      login,
-      logout,
-      hasPermission,
-      hasRole
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

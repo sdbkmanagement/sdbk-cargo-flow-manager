@@ -38,25 +38,25 @@ const queryClient = new QueryClient({
   },
 });
 
-// Composant séparé qui utilise useAuth et qui sera à l'intérieur de AuthProvider
-const AuthenticatedApp: React.FC = () => {
+// Composant pour le contenu principal de l'application
+const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  console.log('🔍 État de l\'app:', { 
+  console.log('🔍 État de l\'application:', { 
     user: !!user, 
     userEmail: user?.email,
     loading 
   });
 
-  // Chargement simplifié
+  // Affichage du chargement
   if (loading) {
-    console.log('⏳ Chargement initial...');
+    console.log('⏳ Chargement de l\'authentification...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
         <div className="text-center space-y-4">
           <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
-          <p className="text-white text-sm">Initialisation...</p>
+          <p className="text-white text-sm">Chargement...</p>
         </div>
       </div>
     );
@@ -116,12 +116,12 @@ const AuthenticatedApp: React.FC = () => {
   );
 };
 
-// Composant principal qui enveloppe tout avec les providers
+// Composant principal
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AuthenticatedApp />
+        <AppContent />
       </AuthProvider>
     </QueryClientProvider>
   );
