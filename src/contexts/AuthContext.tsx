@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  const loadUserFromDatabase = useCallback(async (authUser: User): Promise<AuthUser | null> => {
+  const loadUserFromDatabase = async (authUser: User): Promise<AuthUser | null> => {
     try {
       console.log('🔄 Loading user data for:', authUser.email);
       
@@ -76,23 +76,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('❌ Exception loading user:', error);
       return null;
     }
-  }, []);
+  };
 
-  // Initialisation simplifiée
+  // Initialisation unique au montage
   useEffect(() => {
     let mounted = true;
 
     const initAuth = async () => {
+      console.log('🚀 Initializing auth...');
+      
       try {
-        console.log('🚀 Initializing auth...');
-        
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (!mounted) return;
 
         if (error) {
           console.error('❌ Auth session error:', error);
-          setUser(null);
         } else if (session?.user) {
           console.log('👤 Active session found for:', session.user.email);
           const userData = await loadUserFromDatabase(session.user);
@@ -101,18 +100,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         } else {
           console.log('🚫 No active session found');
-          setUser(null);
         }
       } catch (error) {
         console.error('❌ Auth initialization error:', error);
-        if (mounted) {
-          setUser(null);
-        }
-      } finally {
-        if (mounted) {
-          setInitialized(true);
-          console.log('✅ Auth initialization completed');
-        }
+      }
+      
+      if (mounted) {
+        setInitialized(true);
+        console.log('✅ Auth initialization completed');
       }
     };
 
@@ -121,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       mounted = false;
     };
-  }, [loadUserFromDatabase]);
+  }, []); // Pas de dépendances pour éviter les re-exécutions
 
   // Écouter les changements d'authentification
   useEffect(() => {
@@ -139,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, [loadUserFromDatabase]);
+  }, []); // Pas de dépendances
 
   const login = async (email: string, password: string) => {
     setLoading(true);
