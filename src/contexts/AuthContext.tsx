@@ -193,7 +193,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const hasRole = (role: string): boolean => {
     if (!user) return false;
     const userRoles = user.roles || [user.role];
-    return userRoles.includes(role) || userRoles.includes('admin');
+    return userRoles.includes(role as UserRole) || userRoles.includes('admin');
   };
 
   return (
