@@ -8,26 +8,44 @@ export const useValidationPermissions = () => {
     if (!user) return false;
     
     // L'admin peut tout faire
-    if (user.role === 'admin') return true;
+    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) return true;
     
-    // Chaque rôle peut valider son étape correspondante
+    // Vérifier si l'utilisateur a le rôle spécifique pour cette étape
+    const userRoles = user.roles || [user.role];
+    
     switch (etape) {
       case 'maintenance':
-        return user.role === 'maintenance';
+        return userRoles.includes('maintenance');
       case 'administratif':
-        return user.role === 'administratif';
+        return userRoles.includes('administratif');
       case 'hsecq':
-        return user.role === 'hsecq';
+        return userRoles.includes('hsecq');
       case 'obc':
-        return user.role === 'obc';
+        return userRoles.includes('obc');
       default:
         return false;
     }
   };
 
+  const hasModulePermission = (module: string): boolean => {
+    if (!user) return false;
+    
+    // L'admin a accès à tout
+    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) return true;
+    
+    // Vérifier les permissions de module
+    const modulePermissions = user.module_permissions || [];
+    return modulePermissions.includes(module);
+  };
+
   const getUserRole = (): string => {
     if (!user) return '';
     return user.role || '';
+  };
+
+  const getUserRoles = (): string[] => {
+    if (!user) return [];
+    return user.roles || [user.role];
   };
 
   const getUserName = (): string => {
@@ -37,7 +55,9 @@ export const useValidationPermissions = () => {
 
   return {
     canValidateEtape,
+    hasModulePermission,
     getUserRole,
+    getUserRoles,
     getUserName
   };
 };

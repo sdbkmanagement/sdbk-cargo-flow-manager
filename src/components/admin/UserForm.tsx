@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent } from '@/components/ui/card';
-import { ROLES, ROLE_LABELS, type SystemUser } from '@/types/admin';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ROLES, ROLE_LABELS, MODULE_PERMISSIONS, MODULE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { userService } from '@/services/admin/userService';
@@ -22,7 +23,8 @@ interface UserFormData {
   nom: string;
   prenom: string;
   password?: string;
-  role: string;
+  roles: string[];
+  module_permissions: string[];
   statut: 'actif' | 'inactif' | 'suspendu';
 }
 
@@ -34,7 +36,8 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
       email: user?.email || '',
       nom: user?.nom || '',
       prenom: user?.prenom || '',
-      role: user?.role || 'transport',
+      roles: user?.roles || [user?.role] || ['transport'],
+      module_permissions: user?.module_permissions || [],
       statut: user?.statut || 'actif'
     }
   });
@@ -97,14 +100,36 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
     }
   };
 
-  const watchedRole = watch('role');
+  const watchedRoles = watch('roles') || [];
+  const watchedModulePermissions = watch('module_permissions') || [];
   const watchedStatut = watch('statut');
   const isLoading = createMutation.isPending || updateMutation.isPending;
+
+  const handleRoleChange = (roleId: string, checked: boolean) => {
+    const currentRoles = watchedRoles;
+    if (checked) {
+      setValue('roles', [...currentRoles, roleId]);
+    } else {
+      setValue('roles', currentRoles.filter(r => r !== roleId));
+    }
+  };
+
+  const handleModulePermissionChange = (moduleId: string, checked: boolean) => {
+    const currentPermissions = watchedModulePermissions;
+    if (checked) {
+      setValue('module_permissions', [...currentPermissions, moduleId]);
+    } else {
+      setValue('module_permissions', currentPermissions.filter(m => m !== moduleId));
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <Card>
-        <CardContent className="pt-6">
+        <CardHeader>
+          <CardTitle>Informations personnelles</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="prenom">Prénom *</Label>
@@ -175,26 +200,6 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="role">Rôle *</Label>
-              <Select 
-                value={watchedRole} 
-                onValueChange={(value: string) => setValue('role', value)}
-                disabled={isLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un rôle" />
-                </SelectTrigger>
-                <SelectContent>
-                  {ROLES.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {ROLE_LABELS[role as keyof typeof ROLE_LABELS] || role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="statut">Statut *</Label>
               <Select 
                 value={watchedStatut} 
@@ -212,17 +217,69 @@ export const UserForm: React.FC<UserFormProps> = ({ user, onSuccess }) => {
               </Select>
             </div>
           </div>
-
-          {!isEdit && (
-            <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Note :</strong> L'utilisateur pourra se connecter avec l'email et le mot de passe définis.
-                Un profil sera automatiquement créé dans le système.
-              </p>
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Rôles de validation</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Sélectionnez les rôles permettant d'interagir avec les étapes du workflow de validation
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {ROLES.map((role) => (
+              <div key={role} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`role-${role}`}
+                  checked={watchedRoles.includes(role)}
+                  onCheckedChange={(checked) => handleRoleChange(role, !!checked)}
+                  disabled={isLoading}
+                />
+                <Label htmlFor={`role-${role}`} className="text-sm">
+                  {ROLE_LABELS[role] || role}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Accès aux modules</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Sélectionnez les modules auxquels l'utilisateur aura un accès complet
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {MODULE_PERMISSIONS.map((module) => (
+              <div key={module} className="flex items-center space-x-2">
+                <Checkbox
+                  id={`module-${module}`}
+                  checked={watchedModulePermissions.includes(module)}
+                  onCheckedChange={(checked) => handleModulePermissionChange(module, !!checked)}
+                  disabled={isLoading}
+                />
+                <Label htmlFor={`module-${module}`} className="text-sm">
+                  {MODULE_LABELS[module] || module}
+                </Label>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {!isEdit && (
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Note :</strong> L'utilisateur pourra se connecter avec l'email et le mot de passe définis.
+            Un profil sera automatiquement créé dans le système.
+          </p>
+        </div>
+      )}
 
       <div className="flex justify-end gap-3">
         <Button 

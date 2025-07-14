@@ -1678,6 +1678,7 @@ export type Database = {
           id: string
           last_login: string | null
           last_name: string
+          module_permissions: string[] | null
           password_hash: string
           roles: Database["public"]["Enums"]["user_role"][]
           status: string
@@ -1691,6 +1692,7 @@ export type Database = {
           id?: string
           last_login?: string | null
           last_name?: string
+          module_permissions?: string[] | null
           password_hash?: string
           roles?: Database["public"]["Enums"]["user_role"][]
           status?: string
@@ -1704,6 +1706,7 @@ export type Database = {
           id?: string
           last_login?: string | null
           last_name?: string
+          module_permissions?: string[] | null
           password_hash?: string
           roles?: Database["public"]["Enums"]["user_role"][]
           status?: string
@@ -2106,6 +2109,14 @@ export type Database = {
         }
         Returns: Json
       }
+      has_module_permission: {
+        Args: { user_id: string; module_name: string }
+        Returns: boolean
+      }
+      has_validation_role: {
+        Args: { user_id: string; role_name: string }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
@@ -2116,6 +2127,14 @@ export type Database = {
       }
     }
     Enums: {
+      module_permission:
+        | "fleet"
+        | "drivers"
+        | "rh"
+        | "cargo"
+        | "missions"
+        | "billing"
+        | "dashboard"
       user_role:
         | "admin"
         | "transport"
@@ -2255,6 +2274,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      module_permission: [
+        "fleet",
+        "drivers",
+        "rh",
+        "cargo",
+        "missions",
+        "billing",
+        "dashboard",
+      ],
       user_role: [
         "admin",
         "transport",

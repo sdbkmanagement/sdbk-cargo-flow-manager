@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
 import { adminService } from '@/services/admin';
 import { UserForm } from './UserForm';
-import { ROLE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
+import { ROLE_LABELS, MODULE_LABELS, type SystemUser, type AppRole } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 
 export const UserManagement = () => {
@@ -88,7 +88,9 @@ export const UserManagement = () => {
     const matchesSearch = user.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    
+    const userRoles = user.roles || [user.role];
+    const matchesRole = roleFilter === 'all' || userRoles.includes(roleFilter);
     const matchesStatus = statusFilter === 'all' || user.statut === statusFilter;
     
     return matchesSearch && matchesRole && matchesStatus;
@@ -105,6 +107,23 @@ export const UserManagement = () => {
       default:
         return <Badge variant="secondary">{statut}</Badge>;
     }
+  };
+
+  const getRolesBadges = (user: SystemUser) => {
+    const roles = user.roles || [user.role];
+    return roles.map(role => (
+      <Badge key={role} variant="outline" className="text-xs">
+        {ROLE_LABELS[role] || role}
+      </Badge>
+    ));
+  };
+
+  const getModulesBadges = (modulePermissions: string[] = []) => {
+    return modulePermissions.slice(0, 3).map(module => (
+      <Badge key={module} variant="secondary" className="text-xs">
+        {MODULE_LABELS[module] || module}
+      </Badge>
+    ));
   };
 
   const handleCreateSuccess = () => {
@@ -130,7 +149,7 @@ export const UserManagement = () => {
             <div>
               <CardTitle>Gestion des Utilisateurs</CardTitle>
               <CardDescription>
-                Créer, modifier et gérer les comptes utilisateurs du système
+                Créer, modifier et gérer les comptes utilisateurs avec rôles multiples et permissions modulaires
               </CardDescription>
             </div>
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
@@ -140,11 +159,11 @@ export const UserManagement = () => {
                   Nouvel utilisateur
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Saisissez les informations du nouvel utilisateur.
+                    Configurez les rôles de validation et les accès aux modules pour le nouvel utilisateur.
                   </DialogDescription>
                 </DialogHeader>
                 <UserForm onSuccess={handleCreateSuccess} />
@@ -197,7 +216,8 @@ export const UserManagement = () => {
                 <TableRow>
                   <TableHead>Utilisateur</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Rôle</TableHead>
+                  <TableHead>Rôles</TableHead>
+                  <TableHead>Modules</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -215,9 +235,19 @@ export const UserManagement = () => {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge variant="outline">
-                        {ROLE_LABELS[user.role]}
-                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {getRolesBadges(user)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {getModulesBadges(user.module_permissions)}
+                        {user.module_permissions && user.module_permissions.length > 3 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{user.module_permissions.length - 3}
+                          </Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(user.statut)}</TableCell>
                     <TableCell className="text-right">
@@ -303,11 +333,11 @@ export const UserManagement = () => {
 
       {/* Dialog d'édition */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier l'utilisateur</DialogTitle>
             <DialogDescription>
-              Modifiez les informations de l'utilisateur
+              Modifiez les rôles de validation et les accès aux modules de l'utilisateur
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (

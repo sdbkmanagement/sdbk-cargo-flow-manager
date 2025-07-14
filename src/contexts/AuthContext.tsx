@@ -38,6 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         prenom: 'SDBK',
         email: authUser.email,
         role: 'admin',
+        roles: ['admin'],
+        module_permissions: ['fleet', 'drivers', 'rh', 'cargo', 'missions', 'billing', 'dashboard'],
         permissions: ['all']
       };
     }
@@ -49,6 +51,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       prenom: 'Nouveau',
       email: authUser.email,
       role: 'transport',
+      roles: ['transport'],
+      module_permissions: ['fleet', 'drivers', 'missions'],
       permissions: []
     };
   };
@@ -57,10 +61,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log('Loading user data for:', authUser.email);
       
-      // Créer directement l'utilisateur par défaut pour éviter les blocages
-      const defaultUser = createDefaultUser(authUser);
-      setUser(defaultUser);
-      console.log('User loaded:', defaultUser);
+      // Essayer de récupérer les données utilisateur depuis la base
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading user data:', error);
+      }
+
+      if (userData) {
+        const userWithRole: UserWithRole = {
+          id: userData.id,
+          nom: userData.last_name || 'Utilisateur',
+          prenom: userData.first_name || 'Nouveau',
+          email: authUser.email,
+          role: userData.roles?.[0] || 'transport',
+          roles: userData.roles || ['transport'],
+          module_permissions: userData.module_permissions || [],
+          permissions: userData.roles?.includes('admin') ? ['all'] : []
+        };
+        setUser(userWithRole);
+        console.log('User loaded from database:', userWithRole);
+      } else {
+        // Créer un utilisateur par défaut si pas trouvé en base
+        const defaultUser = createDefaultUser(authUser);
+        setUser(defaultUser);
+        console.log('Default user created:', defaultUser);
+      }
       
     } catch (error) {
       console.error('Error in loadUser:', error);
@@ -155,13 +185,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const hasPermission = (permission: string): boolean => {
     if (!user) return false;
-    if (user.role === 'admin') return true;
+    const userRoles = user.roles || [user.role];
+    if (userRoles.includes('admin')) return true;
     return user.permissions.includes(permission) || user.permissions.includes('all');
   };
 
   const hasRole = (role: string): boolean => {
     if (!user) return false;
-    return user.role === role || user.role === 'admin';
+    const userRoles = user.roles || [user.role];
+    return userRoles.includes(role) || userRoles.includes('admin');
   };
 
   return (
