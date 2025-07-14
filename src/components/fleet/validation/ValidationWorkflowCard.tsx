@@ -6,11 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { CheckCircle, XCircle, Clock, MessageSquare, RefreshCw, History } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { validationService, type ValidationWorkflowWithEtapes, type EtapeType, type StatutEtape } from '@/services/validation';
 import { useToast } from '@/hooks/use-toast';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import { ValidationHistorique } from './ValidationHistorique';
+import { ValidationStatusBadge } from './ValidationStatusBadge';
+import { ValidationActionButtons } from './ValidationActionButtons';
+import { EtapeCommentaires } from './EtapeCommentaires';
 
 interface ValidationWorkflowCardProps {
   vehiculeId: string;
@@ -31,6 +34,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [commentaire, setCommentaire] = useState('');
   const [showCommentDialog, setShowCommentDialog] = useState<{show: boolean, etapeId: string, action: StatutEtape} | null>(null);
+  const [etapeCommentaires, setEtapeCommentaires] = useState<{[key: string]: any[]}>({});
   const { toast } = useToast();
   const { canValidateEtape, getUserRole, getUserName } = useValidationPermissions();
 
@@ -40,6 +44,18 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       console.log(`Chargement optimisé workflow pour véhicule ${vehiculeId}`);
       const data = await validationService.getWorkflowByVehicule(vehiculeId);
       setWorkflow(data);
+      
+      // Charger l'historique des commentaires pour chaque étape
+      if (data) {
+        const historique = await validationService.getHistorique(data.id);
+        const commentairesParEtape: {[key: string]: any[]} = {};
+        
+        data.etapes.forEach(etape => {
+          commentairesParEtape[etape.id] = historique.filter(h => h.etape === etape.etape);
+        });
+        
+        setEtapeCommentaires(commentairesParEtape);
+      }
     } catch (error) {
       console.error('Erreur lors du chargement du workflow:', error);
       toast({
@@ -70,29 +86,16 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         return;
       }
 
-      // Vérification des permissions avec des messages plus clairs
       if (!canValidateEtape(etape.etape)) {
         toast({
           title: 'Accès refusé',
-          description: `Vous n'avez pas l'autorisation de valider l'étape "${ETAPE_LABELS[etape.etape as EtapeType]}". Rôle requis: ${etape.etape}`,
+          description: `Vous n'avez pas l'autorisation de valider l'étape "${ETAPE_LABELS[etape.etape as EtapeType]}"`,
           variant: 'destructive'
         });
         return;
       }
 
-      // Validation des données avant envoi
       const commentaireFinal = commentaireText?.trim() || '';
-      
-      // Vérification obligatoire du commentaire pour les rejets
-      if (statut === 'rejete' && !commentaireFinal) {
-        toast({
-          title: 'Commentaire requis',
-          description: 'Un commentaire est obligatoire pour rejeter une étape',
-          variant: 'destructive'
-        });
-        return;
-      }
-
       const userName = getUserName();
       const userRoleValue = getUserRole();
 
@@ -106,7 +109,6 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         role: userRoleValue
       });
 
-      // Appel du service avec gestion d'erreur améliorée
       await validationService.updateEtapeStatut(
         etapeId, 
         statut, 
@@ -117,16 +119,14 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
       
       console.log('✅ Validation réussie');
       
-      // Message de succès adapté selon l'action
       const actionText = statut === 'valide' ? 'validée' : 
-                        statut === 'rejete' ? 'rejetée' : 'mise à jour';
+                        statut === 'rejete' ? 'rejetée' : 'mise en attente';
       
       toast({
         title: 'Validation mise à jour',
         description: `L'étape "${ETAPE_LABELS[etape.etape as EtapeType]}" a été ${actionText} avec succès`,
       });
       
-      // Recharger le workflow
       await loadWorkflow();
       setShowCommentDialog(null);
       setCommentaire('');
@@ -134,7 +134,6 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
     } catch (error) {
       console.error('💥 Erreur lors de la validation:', error);
       
-      // Affichage d'erreur plus informatif
       const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       
       toast({
@@ -142,29 +141,8 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         description: `Impossible de mettre à jour la validation: ${errorMessage}`,
         variant: 'destructive'
       });
-
-      // Log pour le débogage
-      console.error('🔍 Détails de l\'erreur:', {
-        etapeId,
-        statut,
-        commentaire: commentaireText,
-        error: error
-      });
-      
     } finally {
       setActionLoading(null);
-    }
-  };
-
-  const getStatutBadge = (statut: StatutEtape) => {
-    switch (statut) {
-      case 'valide':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Validé</Badge>;
-      case 'rejete':
-        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />Rejeté</Badge>;
-      case 'en_attente':
-      default:
-        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />En attente</Badge>;
     }
   };
 
@@ -215,9 +193,9 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
 
   return (
     <Card className="transition-all duration-200 hover:shadow-md">
-      <CardHeader>
+      <CardHeader className="pb-4">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">Workflow - {vehiculeNumero}</CardTitle>
+          <CardTitle className="text-lg">{vehiculeNumero}</CardTitle>
           <div className="flex items-center gap-2">
             {getStatutGlobalBadge(workflow.statut_global)}
             <ValidationHistorique workflowId={workflow.id} />
@@ -231,105 +209,65 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {workflow.etapes.map((etape) => (
             <div key={etape.id} className="border rounded-lg p-4 bg-gray-50">
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-start mb-3">
                 <div className="flex items-center gap-3">
-                  <h4 className="font-medium">{ETAPE_LABELS[etape.etape as EtapeType]}</h4>
-                  {getStatutBadge(etape.statut as StatutEtape)}
+                  <h4 className="font-medium text-sm">{ETAPE_LABELS[etape.etape as EtapeType]}</h4>
+                  <ValidationStatusBadge statut={etape.statut as StatutEtape} />
                 </div>
                 
-                {canModifyEtape(etape) && (
-                  <div className="flex gap-2">
-                    {/* Bouton Valider - toujours disponible si on a les permissions */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-green-600 border-green-600 hover:bg-green-50"
-                      onClick={() => setShowCommentDialog({show: true, etapeId: etape.id, action: 'valide'})}
-                      disabled={actionLoading === etape.id}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      {etape.statut === 'valide' ? 'Re-valider' : 'Valider'}
-                    </Button>
-                    
-                    {/* Bouton Rejeter - toujours disponible si on a les permissions */}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-red-600 border-red-600 hover:bg-red-50"
-                      onClick={() => setShowCommentDialog({show: true, etapeId: etape.id, action: 'rejete'})}
-                      disabled={actionLoading === etape.id}
-                    >
-                      <XCircle className="w-4 h-4 mr-1" />
-                      {etape.statut === 'rejete' ? 'Re-rejeter' : 'Rejeter'}
-                    </Button>
-
-                    {/* Bouton Remettre en attente - disponible si l'étape a déjà été traitée */}
-                    {(etape.statut === 'valide' || etape.statut === 'rejete') && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50"
-                        onClick={() => setShowCommentDialog({show: true, etapeId: etape.id, action: 'en_attente'})}
-                        disabled={actionLoading === etape.id}
-                      >
-                        <Clock className="w-4 h-4 mr-1" />
-                        En attente
-                      </Button>
-                    )}
-                  </div>
-                )}
-
-                {!canModifyEtape(etape) && (
-                  <Badge variant="outline" className="text-gray-500">
+                {canModifyEtape(etape) ? (
+                  <ValidationActionButtons
+                    currentStatus={etape.statut as StatutEtape}
+                    onStatusChange={(status) => setShowCommentDialog({show: true, etapeId: etape.id, action: status})}
+                    isLoading={actionLoading === etape.id}
+                  />
+                ) : (
+                  <Badge variant="outline" className="text-xs text-gray-500">
                     Accès limité
                   </Badge>
                 )}
               </div>
               
-              {etape.commentaire && (
-                <div className="mt-2 p-2 bg-white rounded text-sm border">
-                  <div className="flex items-start gap-2">
-                    <MessageSquare className="w-4 h-4 mt-0.5 text-gray-500" />
-                    <div>
-                      <p>{etape.commentaire}</p>
-                      {etape.validateur_nom && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          Par {etape.validateur_nom} • {etape.date_validation ? new Date(etape.date_validation).toLocaleDateString('fr-FR') : ''}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+              <EtapeCommentaires
+                etapeLabel={ETAPE_LABELS[etape.etape as EtapeType]}
+                commentaires={etapeCommentaires[etape.id] || []}
+                dernierCommentaire={etape.commentaire}
+                derniereModification={etape.validateur_nom ? {
+                  validateur_nom: etape.validateur_nom,
+                  date: etape.date_validation || etape.updated_at
+                } : undefined}
+              />
             </div>
           ))}
         </div>
 
         <Dialog open={showCommentDialog?.show} onOpenChange={(open) => !open && setShowCommentDialog(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>
-                {showCommentDialog?.action === 'valide' ? 'Valider l\'étape' : 
-                 showCommentDialog?.action === 'rejete' ? 'Rejeter l\'étape' : 
-                 'Remettre en attente'}
+              <DialogTitle className="text-base">
+                {showCommentDialog?.action === 'valide' ? '✅ Valider l\'étape' : 
+                 showCommentDialog?.action === 'rejete' ? '❌ Rejeter l\'étape' : 
+                 '⏳ Remettre en attente'}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="commentaire">
+                <Label htmlFor="commentaire" className="text-sm">
                   Commentaire {showCommentDialog?.action === 'rejete' ? '(requis pour un rejet)' : '(optionnel)'}
                 </Label>
                 <Textarea
                   id="commentaire"
-                  placeholder="Ajoutez un commentaire pour expliquer la modification..."
+                  placeholder="Expliquez la raison de cette modification..."
                   value={commentaire}
                   onChange={(e) => setCommentaire(e.target.value)}
                   rows={3}
+                  className="mt-1"
                 />
               </div>
               <div className="flex justify-end gap-2">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => {
                     setShowCommentDialog(null);
                     setCommentaire('');
@@ -338,6 +276,7 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
                   Annuler
                 </Button>
                 <Button
+                  size="sm"
                   onClick={() => {
                     if (showCommentDialog) {
                       handleValidation(showCommentDialog.etapeId, showCommentDialog.action, commentaire);
