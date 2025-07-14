@@ -48,19 +48,19 @@ const AppContent: React.FC = () => {
     loading 
   });
 
-  // Affichage du chargement pendant l'initialisation
+  // Affichage du chargement pendant l'initialisation - limité dans le temps
   if (loading) {
     console.log('⏳ Chargement initial...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <PageLoader message="Initialisation..." />
+        <PageLoader message="Chargement..." />
       </div>
     );
   }
 
   // Si pas d'utilisateur connecté, afficher la page de connexion
   if (!user) {
-    console.log('📋 Aucun utilisateur - affichage du formulaire de connexion');
+    console.log('📋 Affichage du formulaire de connexion');
     return <LoginForm />;
   }
 

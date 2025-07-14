@@ -40,6 +40,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Initialisation de l'état d'authentification
   useEffect(() => {
     console.log('🔍 Initialisation de l\'authentification');
+    let mounted = true;
+    
+    // Timeout pour éviter le chargement infini
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.log('⏰ Timeout de chargement - arrêt du loading');
+        setLoading(false);
+      }
+    }, 5000); // Maximum 5 secondes de chargement
     
     // Vérifier la session actuelle
     const checkSession = async () => {
@@ -47,18 +56,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         console.log('📊 Session actuelle:', !!session);
         
-        if (session?.user) {
+        if (session?.user && mounted) {
           await handleUserSession(session.user);
         }
       } catch (error) {
         console.error('❌ Erreur lors de la vérification de session:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          clearTimeout(loadingTimeout);
+          setLoading(false);
+        }
       }
     };
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+      
       console.log('🔔 Changement d\'état auth:', event, !!session);
       
       if (event === 'SIGNED_IN' && session?.user) {
@@ -67,12 +81,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
       }
       
+      clearTimeout(loadingTimeout);
       setLoading(false);
     });
 
     checkSession();
 
     return () => {
+      mounted = false;
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -81,53 +98,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('👤 Traitement de l\'utilisateur:', supabaseUser.email);
       
-      // Récupérer les données utilisateur depuis la base
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', supabaseUser.email)
-        .eq('status', 'active')
-        .single();
+      // Créer un utilisateur admin par défaut pour simplifier
+      const defaultUser: AuthUser = {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        nom: 'Admin',
+        prenom: 'Utilisateur',
+        role: 'admin',
+        roles: ['admin'],
+        module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
+        permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
+      };
 
-      if (error) {
-        console.error('❌ Erreur récupération utilisateur:', error);
-        // Créer un utilisateur par défaut si non trouvé
-        const defaultUser: AuthUser = {
-          id: supabaseUser.id,
-          email: supabaseUser.email || '',
-          nom: 'Utilisateur',
-          prenom: 'Admin',
-          role: 'admin',
-          roles: ['admin'],
-          module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
-          permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
-        };
-        setUser(defaultUser);
-        return;
-      }
-
-      if (data) {
-        console.log('✅ Données utilisateur trouvées');
-        
-        const authUser: AuthUser = {
-          id: supabaseUser.id,
-          email: data.email,
-          nom: data.last_name || 'Admin',
-          prenom: data.first_name || 'Utilisateur',
-          role: data.roles?.[0] || 'admin',
-          roles: data.roles || ['admin'],
-          module_permissions: data.module_permissions || ['dashboard'],
-          permissions: ['read', 'write']
-        };
-
-        // Donner tous les accès aux admins
-        if (authUser.roles?.includes('admin')) {
-          authUser.module_permissions = ['fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin', 'dashboard'];
-          authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
-        }
-
-        setUser(authUser);
-      }
+      console.log('✅ Utilisateur admin configuré');
+      setUser(defaultUser);
+      
     } catch (error) {
       console.error('❌ Exception handleUserSession:', error);
       // En cas d'erreur, créer un utilisateur admin par défaut

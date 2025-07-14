@@ -150,6 +150,11 @@ export const UserManagement = () => {
     });
   };
 
+  const handleCreateUser = () => {
+    console.log('🆕 Ouverture du dialog de création d\'utilisateur');
+    setIsCreateDialogOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -184,8 +189,8 @@ export const UserManagement = () => {
               </CardDescription>
             </div>
             <Button 
-              onClick={() => setIsCreateDialogOpen(true)} 
-              className="flex items-center gap-2"
+              onClick={handleCreateUser}
+              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600"
             >
               <Plus className="h-4 w-4" />
               Nouvel utilisateur
