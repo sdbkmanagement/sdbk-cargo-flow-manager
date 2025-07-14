@@ -62,7 +62,7 @@ const Dashboard = () => {
         facturesResult,
         chargementsResult,
         alertesVehiculesResult,
-        alertesChauffeurs
+        alertesChauffeursResult
       ] = await Promise.all([
         supabase.from('chauffeurs').select('id, statut'),
         supabase.from('vehicules').select('id, statut'),
@@ -80,23 +80,23 @@ const Dashboard = () => {
       const factures = facturesResult.data || [];
       const chargements = chargementsResult.data || [];
       const alertesVehicules = alertesVehiculesResult.data || [];
-      const alertesChauffeurs = alertesChauffeurs.data || [];
+      const alertesChauffeurs = alertesChauffeursResult.data || [];
 
       setStats({
         totalChauffeurs: chauffeurs.length,
-        chauffeursActifs: chauffeurs.filter(c => c.statut === 'actif').length,
+        chauffeursActifs: chauffeurs.filter((c: any) => c.statut === 'actif').length,
         totalVehicules: vehicules.length,
-        vehiculesDisponibles: vehicules.filter(v => v.statut === 'disponible').length,
-        missionsEnCours: missions.filter(m => m.statut === 'en_cours').length,
+        vehiculesDisponibles: vehicules.filter((v: any) => v.statut === 'disponible').length,
+        missionsEnCours: missions.filter((m: any) => m.statut === 'en_cours').length,
         alertesDocuments: alertesVehicules.length + alertesChauffeurs.length,
-        facturesEnAttente: factures.filter(f => f.statut === 'en_attente').length,
+        facturesEnAttente: factures.filter((f: any) => f.statut === 'en_attente').length,
         chargementsAujourdhui: chargements.length
       });
 
       // Fusionner les alertes
       const toutesAlertes = [
-        ...alertesVehicules.map(a => ({ ...a, type: 'vehicule' })),
-        ...alertesChauffeurs.map(a => ({ ...a, type: 'chauffeur' }))
+        ...alertesVehicules.map((a: any) => ({ ...a, type: 'vehicule' })),
+        ...alertesChauffeurs.map((a: any) => ({ ...a, type: 'chauffeur' }))
       ].slice(0, 5);
 
       setAlertes(toutesAlertes);
