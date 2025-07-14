@@ -55,7 +55,7 @@ const Billing = () => {
           
           <Dialog open={showInvoiceForm} onOpenChange={setShowInvoiceForm}>
             <DialogTrigger asChild>
-              <Button className="gap-2">
+              <Button className="gap-2 bg-orange-500 hover:bg-orange-600 text-white">
                 <Plus className="h-4 w-4" />
                 Nouvelle facture
               </Button>

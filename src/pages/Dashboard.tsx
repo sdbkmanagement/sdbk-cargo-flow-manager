@@ -1,306 +1,306 @@
 
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { ModernStatCard, StatsGrid } from '@/components/ui/modern-stats';
-import { ModernCard, ModernCardHeader, ModernCardTitle, ModernCardContent } from '@/components/ui/modern-card';
-import { ModernSkeleton, EmptyState } from '@/components/ui/loading-states';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
-  Truck, 
   Users, 
-  FileText, 
+  Truck, 
+  AlertTriangle, 
+  CheckCircle, 
+  Clock, 
+  Plus,
+  FileText,
+  UserCheck,
   TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  MapPin
+  Calendar
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-// Hook optimisé pour les statistiques du dashboard
-const useDashboardStats = () => {
-  return useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      const [vehiculesRes, chauffeursRes, missionsRes] = await Promise.all([
-        supabase.from('vehicules').select('id, statut'),
-        supabase.from('chauffeurs').select('id, statut'),
-        supabase.from('missions').select('id, statut')
-      ]);
+interface DashboardStats {
+  totalChauffeurs: number;
+  chauffeursActifs: number;
+  totalVehicules: number;
+  vehiculesDisponibles: number;
+  missionsEnCours: number;
+  alertesDocuments: number;
+  facturesEnAttente: number;
+  chargementsAujourdhui: number;
+}
 
-      const vehicules = vehiculesRes.data || [];
-      const chauffeurs = chauffeursRes.data || [];
-      const missions = missionsRes.data || [];
-
-      return {
-        vehicules: {
-          total: vehicules.length,
-          disponibles: vehicules.filter(v => v.statut === 'disponible').length,
-          enMaintenance: vehicules.filter(v => v.statut === 'maintenance').length,
-          enMission: vehicules.filter(v => v.statut === 'en_mission').length
-        },
-        chauffeurs: {
-          total: chauffeurs.length,
-          actifs: chauffeurs.filter(c => c.statut === 'actif').length,
-          enConge: chauffeurs.filter(c => c.statut === 'conge').length,
-          disponibles: chauffeurs.filter(c => c.statut === 'actif').length
-        },
-        missions: {
-          total: missions.length,
-          enCours: missions.filter(m => m.statut === 'en_cours').length,
-          terminees: missions.filter(m => m.statut === 'terminee').length,
-          enAttente: missions.filter(m => m.statut === 'en_attente').length
-        }
-      };
-    },
-    staleTime: 2 * 60 * 1000, // 2 minutes
-    refetchInterval: 5 * 60 * 1000, // Actualisation toutes les 5 minutes
+const Dashboard = () => {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<DashboardStats>({
+    totalChauffeurs: 0,
+    chauffeursActifs: 0,
+    totalVehicules: 0,
+    vehiculesDisponibles: 0,
+    missionsEnCours: 0,
+    alertesDocuments: 0,
+    facturesEnAttente: 0,
+    chargementsAujourdhui: 0
   });
-};
+  const [loading, setLoading] = useState(true);
+  const [alertes, setAlertes] = useState<any[]>([]);
 
-// Hook pour les alertes récentes basées sur les vraies données
-const useRecentAlerts = () => {
-  return useQuery({
-    queryKey: ['recent-alerts'],
-    queryFn: async () => {
-      // Récupérer les vraies alertes depuis la base de données
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      
+      // Charger les statistiques
       const [
-        alertesVehiculesRes,
-        alertesChauffeursRes,
-        alertesRHRes,
-        facturesEnRetardRes
+        chauffeursResult,
+        vehiculesResult,
+        missionsResult,
+        facturesResult,
+        chargementsResult,
+        alertesVehiculesResult,
+        alertesChauffeurs
       ] = await Promise.all([
-        supabase.from('alertes_documents_vehicules').select('*').order('date_expiration', { ascending: true }).limit(3),
-        supabase.from('alertes_documents_chauffeurs').select('*').order('date_expiration', { ascending: true }).limit(3),
-        supabase.from('alertes_rh').select('*').order('date_echeance', { ascending: true }).limit(3),
-        supabase.from('factures').select('*').eq('statut', 'en_retard').order('date_echeance', { ascending: true }).limit(3)
+        supabase.from('chauffeurs').select('id, statut'),
+        supabase.from('vehicules').select('id, statut'),
+        supabase.from('missions').select('id, statut'),
+        supabase.from('factures').select('id, statut'),
+        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
+        supabase.from('alertes_documents_vehicules').select('*'),
+        supabase.from('alertes_documents_chauffeurs').select('*')
       ]);
 
-      const alertes = [];
+      // Calculer les statistiques
+      const chauffeurs = chauffeursResult.data || [];
+      const vehicules = vehiculesResult.data || [];
+      const missions = missionsResult.data || [];
+      const factures = facturesResult.data || [];
+      const chargements = chargementsResult.data || [];
+      const alertesVehicules = alertesVehiculesResult.data || [];
+      const alertesChauffeurs = alertesChauffeurs.data || [];
 
-      // Ajouter les alertes de véhicules
-      (alertesVehiculesRes.data || []).forEach(alerte => {
-        alertes.push({
-          id: alerte.id,
-          type: 'maintenance',
-          title: 'Document véhicule à renouveler',
-          message: `${alerte.vehicule_numero} - ${alerte.document_nom} (expire dans ${alerte.jours_restants} jours)`,
-          priority: alerte.niveau_alerte === 'critique' ? 'danger' : alerte.niveau_alerte === 'urgent' ? 'warning' : 'info',
-          timestamp: new Date(alerte.date_expiration)
-        });
+      setStats({
+        totalChauffeurs: chauffeurs.length,
+        chauffeursActifs: chauffeurs.filter(c => c.statut === 'actif').length,
+        totalVehicules: vehicules.length,
+        vehiculesDisponibles: vehicules.filter(v => v.statut === 'disponible').length,
+        missionsEnCours: missions.filter(m => m.statut === 'en_cours').length,
+        alertesDocuments: alertesVehicules.length + alertesChauffeurs.length,
+        facturesEnAttente: factures.filter(f => f.statut === 'en_attente').length,
+        chargementsAujourdhui: chargements.length
       });
 
-      // Ajouter les alertes de chauffeurs
-      (alertesChauffeursRes.data || []).forEach(alerte => {
-        alertes.push({
-          id: alerte.id,
-          type: 'formation',
-          title: 'Document chauffeur à renouveler',
-          message: `${alerte.chauffeur_nom} - ${alerte.document_nom} (expire dans ${alerte.jours_restants} jours)`,
-          priority: alerte.niveau_alerte === 'critique' ? 'danger' : alerte.niveau_alerte === 'urgent' ? 'warning' : 'info',
-          timestamp: new Date(alerte.date_expiration)
-        });
-      });
+      // Fusionner les alertes
+      const toutesAlertes = [
+        ...alertesVehicules.map(a => ({ ...a, type: 'vehicule' })),
+        ...alertesChauffeurs.map(a => ({ ...a, type: 'chauffeur' }))
+      ].slice(0, 5);
 
-      // Ajouter les alertes RH
-      (alertesRHRes.data || []).forEach(alerte => {
-        alertes.push({
-          id: alerte.employe_id,
-          type: 'formation',
-          title: alerte.type_alerte,
-          message: `${alerte.nom_complet} - ${alerte.message}`,
-          priority: alerte.priorite === 'critique' ? 'danger' : alerte.priorite === 'important' ? 'warning' : 'info',
-          timestamp: new Date(alerte.date_echeance)
-        });
-      });
+      setAlertes(toutesAlertes);
 
-      // Ajouter les alertes de factures en retard
-      (facturesEnRetardRes.data || []).forEach(facture => {
-        alertes.push({
-          id: facture.id,
-          type: 'mission',
-          title: 'Facture en retard',
-          message: `Facture ${facture.numero} - ${facture.client_nom}`,
-          priority: 'warning',
-          timestamp: new Date(facture.date_echeance)
-        });
-      });
+    } catch (error) {
+      console.error('Erreur lors du chargement des données:', error);
+      toast.error('Erreur lors du chargement des données du tableau de bord');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      // Trier par date et prendre les 5 plus récentes
-      return alertes.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()).slice(0, 5);
+  const quickActions = [
+    {
+      title: 'Nouvelle Mission',
+      description: 'Créer une nouvelle mission de transport',
+      icon: Plus,
+      color: 'bg-blue-500',
+      onClick: () => navigate('/missions')
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-};
+    {
+      title: 'Ajouter Véhicule',
+      description: 'Enregistrer un nouveau véhicule',
+      icon: Truck,
+      color: 'bg-green-500',
+      onClick: () => navigate('/fleet')
+    },
+    {
+      title: 'Gérer Chauffeurs',
+      description: 'Gestion des chauffeurs et conducteurs',
+      icon: Users,
+      color: 'bg-orange-500',
+      onClick: () => navigate('/drivers')
+    },
+    {
+      title: 'Validations',
+      description: 'Processus de validation des véhicules',
+      icon: UserCheck,
+      color: 'bg-purple-500',
+      onClick: () => navigate('/validations')
+    }
+  ];
 
-const Dashboard: React.FC = () => {
-  const { data: stats, isLoading: statsLoading } = useDashboardStats();
-  const { data: alerts, isLoading: alertsLoading } = useRecentAlerts();
-
-  // Calcul du taux de réussite (exemple)
-  const successRate = stats ? 
-    Math.round((stats.missions.terminees / Math.max(stats.missions.total, 1)) * 100) : 0;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-lg">Chargement du tableau de bord...</div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 animate-fade-in">
-      {/* En-tête de page */}
-      <div className="page-header">
+    <div className="container mx-auto p-6 space-y-6">
+      {/* En-tête */}
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="page-title">Tableau de bord</h1>
-          <p className="page-subtitle">
-            Vue d'ensemble de vos opérations de transport
-          </p>
+          <h1 className="text-3xl font-bold">Tableau de Bord</h1>
+          <p className="text-muted-foreground">Vue d'ensemble de vos opérations de transport</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4" />
+          <span className="text-sm text-muted-foreground">
+            {new Date().toLocaleDateString('fr-FR', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </span>
         </div>
       </div>
 
       {/* Statistiques principales */}
-      <section>
-        {statsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[...Array(4)].map((_, i) => (
-              <ModernSkeleton key={i} variant="card" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Chauffeurs</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalChauffeurs}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.chauffeursActifs} actifs
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Véhicules</CardTitle>
+            <Truck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.totalVehicules}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.vehiculesDisponibles} disponibles
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Missions en cours</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.missionsEnCours}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.chargementsAujourdhui} chargements aujourd'hui
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Alertes</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.alertesDocuments}</div>
+            <p className="text-xs text-muted-foreground">
+              {stats.facturesEnAttente} factures en attente
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Accès rapides */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Accès Rapides</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {quickActions.map((action, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
+                onClick={action.onClick}
+              >
+                <div className={`${action.color} text-white p-2 rounded-full`}>
+                  <action.icon className="h-5 w-5" />
+                </div>
+                <div className="text-center">
+                  <div className="font-medium">{action.title}</div>
+                  <div className="text-xs text-muted-foreground">{action.description}</div>
+                </div>
+              </Button>
             ))}
           </div>
-        ) : stats ? (
-          <StatsGrid>
-            <ModernStatCard
-              title="Flotte"
-              value={stats.vehicules.disponibles}
-              subtitle="Véhicules disponibles"
-              icon={Truck}
-              color="primary"
-              trend={stats.vehicules.total > 0 ? { value: Math.round((stats.vehicules.disponibles / stats.vehicules.total) * 100), isPositive: true } : undefined}
-            />
-            <ModernStatCard
-              title="Chauffeurs"
-              value={stats.chauffeurs.disponibles}
-              subtitle="Chauffeurs disponibles"
-              icon={Users}
-              color="success"
-              trend={stats.chauffeurs.total > 0 ? { value: Math.round((stats.chauffeurs.actifs / stats.chauffeurs.total) * 100), isPositive: true } : undefined}
-            />
-            <ModernStatCard
-              title="Missions"
-              value={stats.missions.enCours}
-              subtitle="Missions en cours"
-              icon={FileText}
-              color="info"
-            />
-            <ModernStatCard
-              title="Performance"
-              value={`${successRate}%`}
-              subtitle="Taux de réussite"
-              icon={TrendingUp}
-              color={successRate >= 90 ? "success" : successRate >= 75 ? "warning" : "danger"}
-              trend={successRate > 0 ? { value: successRate, isPositive: successRate >= 75 } : undefined}
-            />
-          </StatsGrid>
-        ) : (
-          <EmptyState
-            title="Aucune donnée disponible"
-            description="Impossible de charger les statistiques"
-            icon={<AlertTriangle className="w-12 h-12" />}
-          />
-        )}
-      </section>
+        </CardContent>
+      </Card>
 
-      {/* Grille de contenu secondaire */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Alertes récentes */}
-        <ModernCard>
-          <ModernCardHeader>
-            <ModernCardTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              Alertes récentes
-            </ModernCardTitle>
-          </ModernCardHeader>
-          <ModernCardContent>
-            {alertsLoading ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <ModernSkeleton variant="avatar" className="w-10 h-10" />
-                    <div className="flex-1 space-y-2">
-                      <ModernSkeleton className="h-4 w-3/4" />
-                      <ModernSkeleton className="h-3 w-1/2" />
+      {/* Alertes récentes */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            Alertes Récentes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {alertes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+              <p className="text-lg font-medium">Aucune alerte récente</p>
+              <p className="text-sm">Tous les documents sont à jour</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {alertes.map((alerte, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${
+                      alerte.niveau_alerte === 'expire' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                    }`}>
+                      {alerte.niveau_alerte === 'expire' ? (
+                        <AlertTriangle className="h-4 w-4" />
+                      ) : (
+                        <Clock className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">
+                        {alerte.type === 'vehicule' ? alerte.vehicule_numero : alerte.chauffeur_nom}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {alerte.document_nom} - {alerte.niveau_alerte === 'expire' ? 'Expiré' : 'À renouveler'}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : alerts && alerts.length > 0 ? (
-              <div className="space-y-4">
-                {alerts.map((alert) => {
-                  const icons = {
-                    maintenance: Clock,
-                    mission: MapPin,
-                    formation: CheckCircle
-                  };
-                  const Icon = icons[alert.type as keyof typeof icons] || AlertTriangle;
-                  
-                  const colors = {
-                    warning: 'text-warning',
-                    info: 'text-info',
-                    success: 'text-success',
-                    danger: 'text-destructive'
-                  };
-
-                  return (
-                    <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 smooth-transition">
-                      <div className={`p-2 rounded-lg bg-muted ${colors[alert.priority as keyof typeof colors]}`}>
-                        <Icon className="w-4 h-4" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm text-foreground">
-                          {alert.title}
-                        </h4>
-                        <p className="text-sm text-muted-foreground">
-                          {alert.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {alert.timestamp.toLocaleDateString('fr-FR')}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState
-                title="Aucune alerte"
-                description="Toutes vos opérations fonctionnent normalement"
-                icon={<CheckCircle className="w-8 h-8 text-success" />}
-              />
-            )}
-          </ModernCardContent>
-        </ModernCard>
-
-        {/* Accès rapide */}
-        <ModernCard>
-          <ModernCardHeader>
-            <ModernCardTitle>Accès rapide</ModernCardTitle>
-          </ModernCardHeader>
-          <ModernCardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { title: 'Nouvelle mission', icon: FileText, href: '/missions', color: 'primary' },
-                { title: 'Ajouter véhicule', icon: Truck, href: '/fleet', color: 'success' },
-                { title: 'Gérer chauffeurs', icon: Users, href: '/drivers', color: 'info' },
-                { title: 'Validations', icon: CheckCircle, href: '/validations', color: 'warning' }
-              ].map((item) => {
-                const Icon = item.icon;
-                return (
-                  <button
-                    key={item.title}
-                    className="p-4 rounded-lg border border-border hover:border-primary/50 hover:bg-accent smooth-transition text-left group"
-                  >
-                    <Icon className="w-6 h-6 text-muted-foreground group-hover:text-primary mb-2" />
-                    <span className="text-sm font-medium text-foreground">{item.title}</span>
-                  </button>
-                );
-              })}
+                  <Badge variant={alerte.niveau_alerte === 'expire' ? 'destructive' : 'secondary'}>
+                    {alerte.jours_restants < 0 ? 
+                      `Expiré depuis ${Math.abs(alerte.jours_restants)} jours` : 
+                      `${alerte.jours_restants} jours restants`
+                    }
+                  </Badge>
+                </div>
+              ))}
             </div>
-          </ModernCardContent>
-        </ModernCard>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
