@@ -73,6 +73,23 @@ export const useValidationPermissions = () => {
     return modulePermissions.includes(module);
   };
 
+  const hasValidationAccess = (): boolean => {
+    if (!user) return false;
+    
+    // L'admin a accès à tout
+    if (user.role === 'admin' || (user.roles && user.roles.includes('admin'))) return true;
+    
+    // Vérifier si l'utilisateur a au moins un rôle de validation
+    const userRoles = user.roles || [];
+    const allRoles = [...userRoles];
+    if (user.role && !allRoles.includes(user.role)) {
+      allRoles.push(user.role);
+    }
+    
+    const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
+    return validationRoles.some(role => allRoles.includes(role));
+  };
+
   const getUserRole = (): string => {
     if (!user) return '';
     return user.role || '';
@@ -96,6 +113,7 @@ export const useValidationPermissions = () => {
   return {
     canValidateEtape,
     hasModulePermission,
+    hasValidationAccess,
     getUserRole,
     getUserRoles,
     getUserName

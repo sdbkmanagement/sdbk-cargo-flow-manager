@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLocation, Link } from 'react-router-dom';
+import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import { 
   LayoutDashboard, 
   Truck, 
@@ -64,7 +65,8 @@ const navigationItems = [
     title: 'Validations',
     icon: Shield,
     href: '/validations',
-    permissions: ['maintenance', 'administratif', 'hsecq', 'obc', 'all']
+    permissions: ['validations'], // Utilisation spéciale pour les validations
+    requiresValidationRole: true
   },
   {
     title: 'Administration',
@@ -88,6 +90,7 @@ const navigationItems = [
 
 export const Sidebar = () => {
   const { user, hasPermission, loading } = useAuth();
+  const { hasValidationAccess } = useValidationPermissions();
   const location = useLocation();
 
   if (loading) {
@@ -116,6 +119,11 @@ export const Sidebar = () => {
     // L'admin a accès à tout
     if (user.roles?.includes('admin')) return true;
     
+    // Cas spécial pour les validations
+    if (item.requiresValidationRole) {
+      return hasValidationAccess();
+    }
+    
     // Vérifier si l'utilisateur a au moins une des permissions requises
     return item.permissions.some(permission => 
       hasPermission(permission) || 
@@ -125,6 +133,7 @@ export const Sidebar = () => {
   });
 
   console.log('🔧 Sidebar - User:', user);
+  console.log('🔧 Sidebar - Has validation access:', hasValidationAccess());
   console.log('🔧 Sidebar - Visible items:', visibleItems.map(item => item.title));
 
   return (

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,13 +10,36 @@ import { ValidationStats } from '@/components/fleet/validation/ValidationStats';
 import vehiculesService, { type Vehicule } from '@/services/vehicules';
 import { validationService } from '@/services/validation';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
-import { RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 
 const Validations = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const { hasValidationAccess, getUserRole, getUserRoles } = useValidationPermissions();
+
+  // Vérifier si l'utilisateur a accès aux validations
+  if (!hasValidationAccess()) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
+          <p className="text-gray-600 mb-4">
+            Vous n'avez pas les permissions nécessaires pour accéder aux validations.
+          </p>
+          <p className="text-sm text-gray-500">
+            Rôles requis : maintenance, administratif, hsecq, obc
+          </p>
+          <p className="text-sm text-gray-500">
+            Vos rôles : {getUserRoles().join(', ')}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Récupération optimisée des véhicules avec pagination côté serveur
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError, refetch: refetchVehicles } = useQuery({
@@ -65,8 +89,6 @@ const Validations = () => {
     staleTime: 60000, // Cache 1 minute
     gcTime: 300000, // Keep in cache for 5 minutes
   });
-
-  const { getUserRole } = useValidationPermissions();
 
   const handleRefresh = async () => {
     console.log('Actualisation manuelle des données');
@@ -134,6 +156,10 @@ const Validations = () => {
           <p className="text-gray-600 mt-2">
             Gestion des processus de validation des véhicules (Page {currentPage} - {totalCount} véhicule(s))
           </p>
+          <div className="mt-2 text-sm text-blue-600">
+            <p>Connecté en tant que : <strong>{getUserRole()}</strong></p>
+            <p>Rôles : {getUserRoles().join(', ')}</p>
+          </div>
         </div>
         <Button onClick={handleRefresh} variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
