@@ -49,9 +49,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('email', authUser.email)
         .single();
 
-      if (error || !userData) {
-        console.error('❌ Error loading user:', error);
-        return null;
+      if (error) {
+        console.error('❌ Error loading user from database:', error);
+        // Create a basic user object if database lookup fails
+        return {
+          id: authUser.id,
+          email: authUser.email,
+          nom: '',
+          prenom: '',
+          role: 'transport',
+          roles: ['transport'],
+          module_permissions: [],
+          permissions: []
+        };
+      }
+
+      if (!userData) {
+        console.warn('⚠️ No user data found, creating basic user');
+        return {
+          id: authUser.id,
+          email: authUser.email,
+          nom: '',
+          prenom: '',
+          role: 'transport',
+          roles: ['transport'],
+          module_permissions: [],
+          permissions: []
+        };
       }
 
       const authUserData: AuthUser = {
@@ -69,7 +93,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return authUserData;
     } catch (error) {
       console.error('❌ Exception loading user:', error);
-      return null;
+      // Return a basic user object to prevent infinite loading
+      return {
+        id: authUser.id,
+        email: authUser.email,
+        nom: '',
+        prenom: '',
+        role: 'transport',
+        roles: ['transport'],
+        module_permissions: [],
+        permissions: []
+      };
     }
   }, []);
 
@@ -81,15 +115,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (session?.user) {
         console.log('👤 Active session found');
+        setLoading(true);
         const userData = await loadUserFromDatabase(session.user);
         setUser(userData);
+        setLoading(false);
       } else {
         console.log('🚫 No active session');
         setUser(null);
+        setLoading(false);
       }
     } catch (error) {
       console.error('❌ Auth initialization error:', error);
       setUser(null);
+      setLoading(false);
     } finally {
       setInitialized(true);
       console.log('✅ Auth initialization completed');
@@ -102,13 +140,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!initialized) {
         console.log('⚠️ Auth initialization timeout, forcing completion');
         setInitialized(true);
+        setLoading(false);
       }
     }, 3000); // Maximum 3 secondes
 
     initializeAuth();
 
     return () => clearTimeout(initTimeout);
-  }, [initializeAuth, initialized]);
+  }, [initializeAuth]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -117,9 +156,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (event === 'SIGNED_IN' && session?.user) {
         console.log('✅ User signed in, loading profile...');
         setLoading(true);
-        const userData = await loadUserFromDatabase(session.user);
-        setUser(userData);
-        setLoading(false);
+        try {
+          const userData = await loadUserFromDatabase(session.user);
+          setUser(userData);
+          console.log('✅ User profile loaded, setting loading to false');
+        } catch (error) {
+          console.error('❌ Error loading user profile:', error);
+          // Set a basic user to prevent infinite loading
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            nom: '',
+            prenom: '',
+            role: 'transport',
+            roles: ['transport'],
+            module_permissions: [],
+            permissions: []
+          });
+        } finally {
+          setLoading(false);
+        }
       } else if (event === 'SIGNED_OUT') {
         console.log('👋 User signed out');
         setUser(null);
@@ -147,10 +203,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (data.user) {
-        console.log('✅ Login successful, loading user data...');
-        const userData = await loadUserFromDatabase(data.user);
-        setUser(userData);
-        setLoading(false);
+        console.log('✅ Login successful');
+        // Don't set loading to false here, let the auth state change handle it
         return { success: true };
       }
 

@@ -1,4 +1,3 @@
-
 import React, { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -54,16 +53,17 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
     return <PageLoader message="Chargement de l'application..." />;
   }
 
-  // Si pas d'utilisateur connecté, afficher la page de connexion
+  // Si pas d'utilisateur connecté ET qu'on ne charge pas, afficher la page de connexion
   if (!user && !loading) {
     return <LoginForm />;
   }
 
-  // Si l'utilisateur est en cours de connexion, afficher le loader
+  // Si on est en train de charger ET qu'il n'y a pas d'utilisateur, afficher le loader de connexion
   if (loading && !user) {
     return <PageLoader message="Connexion en cours..." />;
   }
 
+  // Si on a un utilisateur, afficher l'application
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       {/* Sidebar moderne responsive */}
