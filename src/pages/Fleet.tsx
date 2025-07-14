@@ -74,7 +74,7 @@ const Fleet = () => {
   };
 
   // Filtrage des véhicules avec type guards
-  const filteredVehicles = vehicles.filter((vehicle: Vehicule) => {
+  const filteredVehicles = vehicles.filter((vehicle) => {
     const matchesSearch = 
       vehicle.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vehicle.immatriculation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
