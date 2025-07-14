@@ -11,7 +11,7 @@ interface ModernHeaderProps {
 }
 
 export const ModernHeader: React.FC<ModernHeaderProps> = ({ 
-  title = "Transport Manager",
+  title = "SDBK Transport Manager",
   onMenuClick,
   showMenuButton = false
 }) => {

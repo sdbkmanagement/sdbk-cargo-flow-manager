@@ -106,14 +106,19 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
     >
       <div className="h-full flex flex-col justify-between">
         <div className="flex-grow flex flex-col py-4 px-3">
-          {/* Header sans logo */}
-          <div className="mb-8 pl-2.5">
+          {/* Logo */}
+          <Link to="/" className="flex items-center pl-2.5 mb-8">
+            <img
+              src="/logo.png"
+              className="mr-3 h-6 sm:h-7"
+              alt="SDBK Logo"
+            />
             {!isCollapsed && (
               <span className="self-center text-xl font-semibold whitespace-nowrap text-foreground">
-                Transport Manager
+                SDBK Transport
               </span>
             )}
-          </div>
+          </Link>
 
           {/* Menu items */}
           <ul className="space-y-2 font-medium">

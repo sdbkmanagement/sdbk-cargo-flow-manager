@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, Loader2, AlertCircle } from 'lucide-react';
+import { Truck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const LoginForm = () => {
@@ -28,19 +28,17 @@ export const LoginForm = () => {
     }
 
     setIsSubmitting(true);
-    console.log('🔐 Soumission du formulaire de connexion');
     
     try {
       const result = await login(email, password);
       
       if (result.success) {
-        console.log('✅ Connexion réussie');
         toast({
           title: "Connexion réussie",
-          description: "Redirection en cours...",
+          description: "Redirection vers l'application...",
         });
+        // La redirection se fera automatiquement via App.tsx
       } else {
-        console.error('❌ Échec de la connexion:', result.error);
         toast({
           title: "Erreur de connexion",
           description: result.error || "Identifiants invalides",
@@ -48,10 +46,10 @@ export const LoginForm = () => {
         });
       }
     } catch (error: any) {
-      console.error('❌ Exception lors de la connexion:', error);
+      console.error('Erreur de connexion:', error);
       toast({
         title: "Erreur de connexion",
-        description: "Une erreur inattendue est survenue",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
     } finally {
@@ -60,7 +58,7 @@ export const LoginForm = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -68,7 +66,7 @@ export const LoginForm = () => {
               <Truck className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Transport Manager</CardTitle>
+          <CardTitle className="text-2xl font-bold">SDBK Transport</CardTitle>
           <CardDescription>
             Connexion au système de gestion de flotte
           </CardDescription>
@@ -82,11 +80,10 @@ export const LoginForm = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="votre-email@exemple.com"
+                placeholder="votre-email@sdbk.com"
                 required
                 disabled={isSubmitting}
                 autoComplete="email"
-                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -100,7 +97,6 @@ export const LoginForm = () => {
                 required
                 disabled={isSubmitting}
                 autoComplete="current-password"
-                className="w-full"
               />
             </div>
             <Button 
@@ -118,17 +114,6 @@ export const LoginForm = () => {
               )}
             </Button>
           </form>
-          
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex items-start space-x-2">
-              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-blue-800">
-                <p className="font-medium mb-1">Compte de test :</p>
-                <p><strong>Email :</strong> sdbkmanagement@gmail.com</p>
-                <p><strong>Mot de passe :</strong> Votre mot de passe Supabase</p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Shield, Save, Check } from 'lucide-react';
+import { Shield, Save } from 'lucide-react';
 import { adminService } from '@/services/admin';
 import { ROLES, ROLE_LABELS, MODULES, MODULE_LABELS, PERMISSIONS, PERMISSION_LABELS } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
@@ -22,7 +22,6 @@ interface RolePermission {
 
 export const RolePermissionManagement = () => {
   const [selectedRole, setSelectedRole] = useState<string>('transport');
-  const [hasChanges, setHasChanges] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: allPermissions = [], isLoading } = useQuery({
@@ -44,7 +43,6 @@ export const RolePermissionManagement = () => {
     }) => adminService.updateRolePermissions(role, module, permissions),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-      setHasChanges(false);
       toast({
         title: "Permissions mises à jour",
         description: "Les permissions du rôle ont été mises à jour avec succès."
@@ -54,32 +52,6 @@ export const RolePermissionManagement = () => {
       toast({
         title: "Erreur",
         description: "Impossible de mettre à jour les permissions.",
-        variant: "destructive"
-      });
-    }
-  });
-
-  const saveAllChangesMutation = useMutation({
-    mutationFn: async () => {
-      // Sauvegarder tous les changements en une fois
-      const promises = MODULES.map(module => {
-        const permissions = getPermissionsForModule(module);
-        return adminService.updateRolePermissions(selectedRole, module, permissions);
-      });
-      await Promise.all(promises);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['role-permissions'] });
-      setHasChanges(false);
-      toast({
-        title: "Toutes les permissions sauvegardées",
-        description: "Toutes les modifications ont été appliquées avec succès."
-      });
-    },
-    onError: () => {
-      toast({
-        title: "Erreur",
-        description: "Impossible de sauvegarder toutes les permissions.",
         variant: "destructive"
       });
     }
@@ -101,17 +73,11 @@ export const RolePermissionManagement = () => {
       newPermissions = currentPermissions.filter(p => p !== permission);
     }
 
-    setHasChanges(true);
-    
     updatePermissionsMutation.mutate({
       role: selectedRole,
       module,
       permissions: newPermissions
     });
-  };
-
-  const handleSaveAll = () => {
-    saveAllChangesMutation.mutate();
   };
 
   const getRoleColor = (role: string) => {
@@ -137,27 +103,13 @@ export const RolePermissionManagement = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                Gestion des Rôles & Permissions
-              </CardTitle>
-              <CardDescription>
-                Configurez les permissions d'accès pour chaque rôle système
-              </CardDescription>
-            </div>
-            {hasChanges && (
-              <Button 
-                onClick={handleSaveAll}
-                disabled={saveAllChangesMutation.isPending}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {saveAllChangesMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder tout'}
-              </Button>
-            )}
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Gestion des Rôles & Permissions
+          </CardTitle>
+          <CardDescription>
+            Configurez les permissions d'accès pour chaque rôle système
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -167,10 +119,7 @@ export const RolePermissionManagement = () => {
                 <label className="text-sm font-medium mb-2 block">
                   Sélectionner un rôle à configurer :
                 </label>
-                <Select value={selectedRole} onValueChange={(value: string) => {
-                  setSelectedRole(value);
-                  setHasChanges(false);
-                }}>
+                <Select value={selectedRole} onValueChange={(value: string) => setSelectedRole(value)}>
                   <SelectTrigger className="w-full max-w-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -204,7 +153,6 @@ export const RolePermissionManagement = () => {
                         </div>
                       </TableHead>
                     ))}
-                    <TableHead className="text-center">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -231,24 +179,6 @@ export const RolePermissionManagement = () => {
                             />
                           </TableCell>
                         ))}
-                        <TableCell className="text-center">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              // Valider les permissions pour ce module spécifique
-                              const permissions = getPermissionsForModule(module);
-                              updatePermissionsMutation.mutate({
-                                role: selectedRole,
-                                module,
-                                permissions
-                              });
-                            }}
-                            disabled={updatePermissionsMutation.isPending}
-                          >
-                            <Check className="h-3 w-3" />
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     );
                   })}

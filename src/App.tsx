@@ -29,7 +29,7 @@ const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
       gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
-      retry: 1,
+      retry: 2,
       networkMode: 'offlineFirst',
     },
     mutations: {
@@ -38,90 +38,79 @@ const queryClient = new QueryClient({
   },
 });
 
-// Composant pour le contenu principal de l'application
-const AppContent: React.FC = () => {
+const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  console.log('🔍 État de l\'application:', { 
-    user: !!user, 
-    userEmail: user?.email,
-    loading 
-  });
-
-  // Affichage du chargement
-  if (loading) {
-    console.log('⏳ Chargement de l\'authentification...');
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <div className="text-center space-y-4">
-          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto"></div>
-          <p className="text-white text-sm">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
+  console.log('🔍 État de l\'app:', { user: !!user, loading });
 
   // Si pas d'utilisateur connecté, afficher la page de connexion
-  if (!user) {
-    console.log('📋 Affichage du formulaire de connexion');
+  if (!user && !loading) {
+    console.log('📋 Aucun utilisateur - affichage du formulaire de connexion');
     return <LoginForm />;
   }
 
-  // Si utilisateur connecté, afficher l'application
-  console.log('🏠 Affichage de l\'application pour:', user.email);
-  return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-background text-foreground">
-        <ModernSidebar 
-          isCollapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
-        />
+  // Si chargement en cours
+  if (loading) {
+    console.log('⏳ Chargement...');
+    return <PageLoader message="Connexion..." />;
+  }
 
-        <div 
-          className={`min-h-screen transition-all duration-300 ease-out ${
-            sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
-          }`}
-        >
-          <ModernHeader 
-            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            showMenuButton={true}
-          />
-          
-          <main className="flex-1">
-            <div className="page-container">
-              <Suspense fallback={<PageLoader message="Chargement du module..." />}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/fleet" element={<Fleet />} />
-                  <Route path="/drivers" element={<Drivers />} />
-                  <Route path="/missions" element={<Missions />} />
-                  <Route path="/cargo" element={<Cargo />} />
-                  <Route path="/billing" element={<Billing />} />
-                  <Route path="/rh" element={<RH />} />
-                  <Route path="/validations" element={<Validations />} />
-                  <Route path="/administration" element={<Administration />} />
-                  <Route path="/documents" element={<DocumentStock />} />
-                  <Route path="/guide" element={<Guide />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </div>
-          </main>
-        </div>
+  // Si utilisateur connecté, afficher l'application
+  console.log('🏠 Affichage de l\'application pour:', user?.email);
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <ModernSidebar 
+        isCollapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+      />
+
+      <div 
+        className={`min-h-screen transition-all duration-300 ease-out ${
+          sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
+        }`}
+      >
+        <ModernHeader 
+          onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          showMenuButton={true}
+        />
+        
+        <main className="flex-1">
+          <div className="page-container">
+            <Suspense fallback={<PageLoader message="Chargement du module..." />}>
+              {children}
+            </Suspense>
+          </div>
+        </main>
       </div>
-      <Toaster />
-    </BrowserRouter>
+    </div>
   );
 };
 
-// Composant principal
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <AppContent />
+        <BrowserRouter>
+          <ModernAppLayout>
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/fleet" element={<Fleet />} />
+              <Route path="/drivers" element={<Drivers />} />
+              <Route path="/missions" element={<Missions />} />
+              <Route path="/cargo" element={<Cargo />} />
+              <Route path="/billing" element={<Billing />} />
+              <Route path="/rh" element={<RH />} />
+              <Route path="/validations" element={<Validations />} />
+              <Route path="/administration" element={<Administration />} />
+              <Route path="/documents" element={<DocumentStock />} />
+              <Route path="/guide" element={<Guide />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ModernAppLayout>
+          <Toaster />
+        </BrowserRouter>
       </AuthProvider>
     </QueryClientProvider>
   );

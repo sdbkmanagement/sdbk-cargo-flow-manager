@@ -1,7 +1,6 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import type { Session, User } from '@supabase/supabase-js';
 
 interface AuthUser {
   id: string;
@@ -23,89 +22,65 @@ interface AuthContextType {
   hasRole: (role: string) => boolean;
 }
 
-// Créer le contexte avec une valeur par défaut
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  login: async () => ({ success: false }),
-  logout: async () => {},
-  hasPermission: () => false,
-  hasRole: () => false,
-});
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  return context; // Pas besoin de vérifier undefined car on a une valeur par défaut
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    console.log('🔍 Initialisation de l\'authentification');
-    
-    let mounted = true;
+  const fetchUserData = async (supabaseUserId: string, email: string) => {
+    try {
+      console.log('🔍 Récupération des données utilisateur pour:', email);
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('status', 'active')
+        .single();
 
-    // Fonction pour traiter une session Supabase
-    const handleSession = (session: Session | null) => {
-      if (!mounted) return;
-      
-      console.log('📊 Traitement de la session:', !!session);
-      
-      if (session?.user) {
-        // Créer un utilisateur admin par défaut pour les utilisateurs connectés
-        const authUser: AuthUser = {
-          id: session.user.id,
-          email: session.user.email || '',
-          nom: 'Admin',
-          prenom: 'Utilisateur',
-          role: 'admin',
-          roles: ['admin'],
-          module_permissions: ['dashboard', 'fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin'],
-          permissions: ['read', 'write', 'delete', 'validate', 'export', 'admin']
-        };
+      if (error) {
+        console.error('❌ Erreur lors de la récupération des données utilisateur:', error);
+        return null;
+      }
+
+      if (data) {
+        console.log('✅ Données utilisateur récupérées:', data);
         
-        console.log('✅ Utilisateur connecté:', authUser.email);
-        setUser(authUser);
-      } else {
-        console.log('🚪 Aucune session active');
-        setUser(null);
-      }
-      
-      setLoading(false);
-    };
+        const authUser: AuthUser = {
+          id: supabaseUserId,
+          email: data.email,
+          nom: data.last_name || '',
+          prenom: data.first_name || '',
+          role: data.roles?.[0] || 'transport',
+          roles: data.roles || ['transport'],
+          module_permissions: data.module_permissions || ['dashboard'],
+          permissions: ['read', 'write']
+        };
 
-    // Écouter les changements d'authentification en premier
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('🔔 Changement d\'état auth:', event);
-      handleSession(session);
-    });
-
-    // Vérifier la session actuelle
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('❌ Erreur lors de la récupération de session:', error);
-          if (mounted) setLoading(false);
-          return;
+        // Donner tous les accès aux admins
+        if (authUser.roles?.includes('admin')) {
+          authUser.module_permissions = ['fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin', 'dashboard'];
+          authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
         }
-        handleSession(session);
-      } catch (error) {
-        console.error('❌ Exception lors de la vérification de session:', error);
-        if (mounted) setLoading(false);
+
+        return authUser;
       }
-    };
 
-    checkSession();
-
-    // Cleanup
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
+      return null;
+    } catch (error) {
+      console.error('❌ Exception lors de la récupération des données utilisateur:', error);
+      return null;
+    }
+  };
 
   const login = async (email: string, password: string) => {
     console.log('🔐 Tentative de connexion pour:', email);
@@ -118,15 +93,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error('❌ Erreur de connexion:', error.message);
+        console.error('❌ Erreur de connexion:', error);
         setLoading(false);
         return { success: false, error: error.message };
       }
 
       if (data.user) {
-        console.log('✅ Connexion réussie');
-        // L'utilisateur sera traité dans onAuthStateChange
-        return { success: true };
+        console.log('✅ Connexion Supabase réussie, récupération des données...');
+        
+        // Récupérer les données utilisateur depuis la base
+        const userData = await fetchUserData(data.user.id, data.user.email || '');
+        
+        if (userData) {
+          console.log('✅ Utilisateur connecté:', userData);
+          setUser(userData);
+          setLoading(false);
+          return { success: true };
+        } else {
+          console.error('❌ Impossible de récupérer les données utilisateur');
+          setLoading(false);
+          return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
+        }
       }
 
       setLoading(false);
@@ -140,11 +127,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      console.log('🚪 Déconnexion...');
+      setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
+      setLoading(false);
     } catch (error) {
       console.error('❌ Erreur de déconnexion:', error);
+      setLoading(false);
     }
   };
 
@@ -164,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return basePermissions.includes(permission) ||
            userPermissions.includes(permission) ||
            modulePermissions.includes(permission) ||
-           permission.endsWith('_read');
+           permission.endsWith('_read'); // Permet la lecture par défaut
   };
 
   const hasRole = (role: string): boolean => {
@@ -178,17 +167,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return userRoles.includes(role);
   };
 
-  const value = {
-    user,
-    loading,
-    login,
-    logout,
-    hasPermission,
-    hasRole
-  };
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      login,
+      logout,
+      hasPermission,
+      hasRole
+    }}>
       {children}
     </AuthContext.Provider>
   );

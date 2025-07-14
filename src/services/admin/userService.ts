@@ -24,7 +24,7 @@ interface UpdateUserData {
 
 export const userService = {
   async getUsers(): Promise<SystemUser[]> {
-    console.log('🔧 userService.getUsers - Début');
+    console.log('🔧 Fetching all users');
     
     const { data: users, error } = await supabase
       .from('users')
@@ -32,13 +32,11 @@ export const userService = {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('🔧 userService.getUsers - Erreur:', error);
+      console.error('Error fetching users:', error);
       throw new Error(`Erreur lors de la récupération des utilisateurs: ${error.message}`);
     }
 
-    console.log('🔧 userService.getUsers - Utilisateurs récupérés:', users?.length || 0);
-
-    return (users || []).map(user => ({
+    return users.map(user => ({
       id: user.id,
       email: user.email,
       nom: user.last_name || '',
@@ -54,82 +52,67 @@ export const userService = {
   },
 
   async createUser(userData: CreateUserData): Promise<SystemUser> {
-    console.log('🔧 userService.createUser - Début avec données:', userData);
+    console.log('🔧 Creating user with data:', userData);
     
-    try {
-      // 1. Créer l'utilisateur dans Supabase Auth
-      console.log('🔧 Création utilisateur Auth avec email:', userData.email);
-      
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: userData.email,
-        password: userData.password || 'TempPassword123!',
-        email_confirm: true,
-        user_metadata: {
-          first_name: userData.prenom,
-          last_name: userData.nom
-        }
-      });
-
-      if (authError) {
-        console.error('🔧 Erreur création Auth:', authError);
-        throw new Error(`Erreur lors de la création du compte: ${authError.message}`);
+    // 1. Créer l'utilisateur dans Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      password: userData.password || 'TempPassword123!',
+      email_confirm: true,
+      user_metadata: {
+        first_name: userData.prenom,
+        last_name: userData.nom
       }
+    });
 
-      if (!authData.user) {
-        throw new Error('Aucun utilisateur créé par Supabase Auth');
-      }
-
-      console.log('✅ Utilisateur Auth créé avec ID:', authData.user.id);
-
-      // 2. Créer l'enregistrement dans la table users
-      const { data: dbUser, error: dbError } = await supabase
-        .from('users')
-        .insert({
-          id: authData.user.id,
-          email: userData.email,
-          first_name: userData.prenom,
-          last_name: userData.nom,
-          roles: userData.roles as any,
-          module_permissions: userData.module_permissions,
-          status: userData.statut === 'actif' ? 'active' : userData.statut
-        })
-        .select()
-        .single();
-
-      if (dbError) {
-        console.error('🔧 Erreur création DB:', dbError);
-        // Nettoyer l'utilisateur auth si la création DB échoue
-        try {
-          await supabase.auth.admin.deleteUser(authData.user.id);
-        } catch (cleanupError) {
-          console.error('🔧 Erreur nettoyage Auth:', cleanupError);
-        }
-        throw new Error(`Erreur lors de la création en base: ${dbError.message}`);
-      }
-
-      console.log('✅ Utilisateur DB créé:', dbUser.id);
-
-      return {
-        id: dbUser.id,
-        email: dbUser.email,
-        nom: dbUser.last_name,
-        prenom: dbUser.first_name,
-        role: dbUser.roles[0] || 'transport',
-        roles: dbUser.roles,
-        module_permissions: dbUser.module_permissions,
-        statut: dbUser.status === 'active' ? 'actif' as const : 
-                dbUser.status === 'inactive' ? 'inactif' as const : 'suspendu' as const,
-        created_at: dbUser.created_at,
-        updated_at: dbUser.updated_at
-      };
-    } catch (error) {
-      console.error('🔧 userService.createUser - Erreur complète:', error);
-      throw error;
+    if (authError) {
+      console.error('Auth creation error:', authError);
+      throw new Error(`Erreur lors de la création du compte: ${authError.message}`);
     }
+
+    console.log('✅ Auth user created:', authData.user?.id);
+
+    // 2. Créer l'enregistrement dans la table users
+    const { data: dbUser, error: dbError } = await supabase
+      .from('users')
+      .insert({
+        id: authData.user!.id,
+        email: userData.email,
+        first_name: userData.prenom,
+        last_name: userData.nom,
+        roles: userData.roles as any,
+        module_permissions: userData.module_permissions,
+        status: userData.statut === 'actif' ? 'active' : userData.statut
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('DB creation error:', dbError);
+      // Nettoyer l'utilisateur auth si la création DB échoue
+      await supabase.auth.admin.deleteUser(authData.user!.id);
+      throw new Error(`Erreur lors de la création en base: ${dbError.message}`);
+    }
+
+    console.log('✅ DB user created:', dbUser);
+
+    return {
+      id: dbUser.id,
+      email: dbUser.email,
+      nom: dbUser.last_name,
+      prenom: dbUser.first_name,
+      role: dbUser.roles[0] || 'transport',
+      roles: dbUser.roles,
+      module_permissions: dbUser.module_permissions,
+      statut: dbUser.status === 'active' ? 'actif' as const : 
+              dbUser.status === 'inactive' ? 'inactif' as const : 'suspendu' as const,
+      created_at: dbUser.created_at,
+      updated_at: dbUser.updated_at
+    };
   },
 
   async updateUser(userId: string, userData: UpdateUserData): Promise<SystemUser> {
-    console.log('🔧 userService.updateUser - Début:', { userId, userData });
+    console.log('🔧 Updating user:', { userId, userData });
     
     const { data: dbUser, error: dbError } = await supabase
       .from('users')
@@ -146,7 +129,7 @@ export const userService = {
       .single();
 
     if (dbError) {
-      console.error('🔧 userService.updateUser - Erreur:', dbError);
+      console.error('Update error:', dbError);
       throw new Error(`Erreur lors de la mise à jour: ${dbError.message}`);
     }
 
@@ -166,7 +149,7 @@ export const userService = {
   },
 
   async deleteUser(userId: string): Promise<void> {
-    console.log('🔧 userService.deleteUser - Début:', userId);
+    console.log('🔧 Deleting user:', userId);
     
     const { error } = await supabase
       .from('users')
@@ -174,19 +157,19 @@ export const userService = {
       .eq('id', userId);
 
     if (error) {
-      console.error('🔧 userService.deleteUser - Erreur:', error);
+      console.error('Delete error:', error);
       throw new Error(`Erreur lors de la suppression: ${error.message}`);
     }
 
     // Supprimer aussi de Supabase Auth
     const { error: authError } = await supabase.auth.admin.deleteUser(userId);
     if (authError) {
-      console.warn('🔧 Avertissement suppression Auth:', authError);
+      console.warn('Auth delete warning:', authError);
     }
   },
 
   async toggleUserStatus(userId: string, status: SystemUser['statut']): Promise<void> {
-    console.log('🔧 userService.toggleUserStatus - Début:', { userId, status });
+    console.log('🔧 Toggling user status:', { userId, status });
     
     const { error } = await supabase
       .from('users')
@@ -197,13 +180,13 @@ export const userService = {
       .eq('id', userId);
 
     if (error) {
-      console.error('🔧 userService.toggleUserStatus - Erreur:', error);
+      console.error('Status toggle error:', error);
       throw new Error(`Erreur lors du changement de statut: ${error.message}`);
     }
   },
 
   async resetPassword(userId: string): Promise<void> {
-    console.log('🔧 userService.resetPassword - Début:', userId);
+    console.log('🔧 Resetting password for user:', userId);
     
     // Récupérer l'email de l'utilisateur
     const { data: user, error: userError } = await supabase
@@ -220,7 +203,7 @@ export const userService = {
     const { error } = await supabase.auth.resetPasswordForEmail(user.email);
     
     if (error) {
-      console.error('🔧 userService.resetPassword - Erreur:', error);
+      console.error('Password reset error:', error);
       throw new Error(`Erreur lors de la réinitialisation: ${error.message}`);
     }
   }

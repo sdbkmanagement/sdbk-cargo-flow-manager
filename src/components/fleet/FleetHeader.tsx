@@ -1,42 +1,26 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload } from 'lucide-react';
+import { Plus } from 'lucide-react';
 
 interface FleetHeaderProps {
   onAddVehicle: () => void;
-  onImportVehicles: () => void;
+  vehicleCount: number;
 }
 
-export const FleetHeader: React.FC<FleetHeaderProps> = ({
-  onAddVehicle,
-  onImportVehicles
-}) => {
+export const FleetHeader = ({ onAddVehicle, vehicleCount }: FleetHeaderProps) => {
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex justify-between items-center">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Gestion de la Flotte</h1>
-        <p className="text-gray-600 mt-2">
-          Gérez vos véhicules, leur maintenance et leur statut
+        <h1 className="text-3xl font-bold">Gestion de la flotte</h1>
+        <p className="text-muted-foreground">
+          Gérez vos véhicules, maintenance et documentations ({vehicleCount} véhicules)
         </p>
       </div>
-      <div className="flex gap-3">
-        <Button
-          onClick={onImportVehicles}
-          variant="outline"
-          className="flex items-center gap-2"
-        >
-          <Upload className="h-4 w-4" />
-          Importer
-        </Button>
-        <Button
-          onClick={onAddVehicle}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600"
-        >
-          <Plus className="h-4 w-4" />
-          Nouveau véhicule
-        </Button>
-      </div>
+      <Button onClick={onAddVehicle}>
+        <Plus className="mr-2 h-4 w-4" />
+        Nouveau véhicule
+      </Button>
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Activity, Shield } from 'lucide-react';
-import { auditService } from '@/services/admin/auditService';
+import { adminService } from '@/services/admin';
 import type { AdminAuditLog, LoginAttempt } from '@/types/admin';
 import { AuditFilters } from './audit/AuditFilters';
 import { AuditLogTable } from './audit/AuditLogTable';
@@ -17,14 +17,12 @@ export const AuditLogs = () => {
 
   const { data: auditLogs = [], isLoading: auditLoading } = useQuery({
     queryKey: ['admin-audit-logs'],
-    queryFn: () => auditService.getAuditLogs(200),
-    refetchOnWindowFocus: false,
+    queryFn: () => adminService.getAuditLogs(200),
   });
 
   const { data: loginAttempts = [], isLoading: loginLoading } = useQuery({
     queryKey: ['login-attempts', emailFilter],
-    queryFn: () => auditService.getLoginAttempts(emailFilter || undefined, 100),
-    refetchOnWindowFocus: false,
+    queryFn: () => adminService.getLoginAttempts(emailFilter || undefined, 100),
   });
 
   const filteredAuditLogs = auditLogs.filter(log => {
