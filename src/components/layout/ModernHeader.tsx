@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { UserMenu } from '@/components/layout/UserMenu';
-import { Bell, Search, Menu } from 'lucide-react';
+import { Search, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ModernHeaderProps {
@@ -16,21 +16,21 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
   showMenuButton = false
 }) => {
   return (
-    <header className="bg-gradient-to-r from-white via-sdbk-light to-white border-b border-sdbk-medium/20 px-6 py-4 shadow-soft backdrop-blur-sm">
+    <header className="bg-gradient-to-r from-slate-50 via-blue-50/50 to-slate-50 border-b border-slate-200/60 px-6 py-4 shadow-sm backdrop-blur-sm">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {showMenuButton && (
             <button
               onClick={onMenuClick}
-              className="p-3 rounded-xl hover:bg-sdbk-accent/10 transition-all duration-300 lg:hidden border border-sdbk-medium/20 hover:border-sdbk-accent/30 hover:shadow-soft"
+              className="p-3 rounded-xl hover:bg-blue-100/80 transition-all duration-300 lg:hidden border border-slate-200/60 hover:border-blue-300/50 hover:shadow-sm"
               aria-label="Toggle menu"
             >
-              <Menu className="w-5 h-5 text-sdbk-primary" />
+              <Menu className="w-5 h-5 text-slate-700" />
             </button>
           )}
           
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-sdbk-primary to-sdbk-accent bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
               {title}
             </h1>
           </div>
@@ -39,21 +39,13 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
         <div className="flex items-center gap-4">
           {/* Barre de recherche */}
           <div className="relative hidden md:block">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-sdbk-medium" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
             <input
               type="text"
               placeholder="Rechercher..."
-              className="pl-12 pr-4 py-3 w-80 rounded-xl border border-sdbk-medium/30 bg-white/70 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-sdbk-accent/50 focus:border-sdbk-accent transition-all duration-300 text-sdbk-primary placeholder-sdbk-medium hover:shadow-soft"
+              className="pl-12 pr-4 py-3 w-80 rounded-xl border border-slate-200/80 bg-white/90 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all duration-300 text-slate-700 placeholder-slate-500 hover:shadow-sm"
             />
           </div>
-
-          {/* Notifications */}
-          <button className="relative p-3 rounded-xl hover:bg-sdbk-accent/10 transition-all duration-300 border border-sdbk-medium/20 hover:border-sdbk-accent/30 hover:shadow-soft group">
-            <Bell className="w-5 h-5 text-sdbk-medium group-hover:text-sdbk-accent transition-colors duration-300" />
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-gradient-to-r from-sdbk-danger to-red-500 rounded-full border-2 border-white shadow-sm animate-pulse-soft">
-              <div className="w-full h-full rounded-full bg-gradient-to-r from-sdbk-danger to-red-500 animate-ping opacity-75"></div>
-            </div>
-          </button>
 
           {/* Menu utilisateur */}
           <UserMenu />
