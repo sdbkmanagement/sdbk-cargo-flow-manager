@@ -28,8 +28,8 @@ export const UserMenu = () => {
 
   if (loading) {
     return (
-      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-        <Loader2 className="h-4 w-4 animate-spin" />
+      <Button variant="ghost" className="relative h-12 w-12 rounded-xl border border-sdbk-medium/20 hover:border-sdbk-accent/30 hover:shadow-soft">
+        <Loader2 className="h-5 w-5 animate-spin text-sdbk-accent" />
       </Button>
     );
   }
@@ -41,40 +41,54 @@ export const UserMenu = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-sdbk-blue text-white">
+        <Button variant="ghost" className="relative h-12 w-12 rounded-xl border border-sdbk-medium/20 hover:border-sdbk-accent/30 hover:shadow-soft transition-all duration-300">
+          <Avatar className="h-10 w-10 border-2 border-sdbk-accent/20">
+            <AvatarFallback className="bg-gradient-to-br from-sdbk-accent via-sdbk-primary to-sdbk-secondary text-white font-bold text-sm">
               {initials}
             </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {user.prenom} {user.nom}
-            </p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
-            </p>
-            <p className="text-xs leading-none text-sdbk-blue capitalize font-medium">
-              {user.role}
-            </p>
+      <DropdownMenuContent className="w-64 bg-white/95 backdrop-blur-md border border-sdbk-medium/20 shadow-elegant rounded-xl" align="end" forceMount>
+        <DropdownMenuLabel className="font-normal p-4">
+          <div className="flex flex-col space-y-2">
+            <div className="flex items-center gap-3">
+              <Avatar className="h-10 w-10 border-2 border-sdbk-accent/30">
+                <AvatarFallback className="bg-gradient-to-br from-sdbk-accent to-sdbk-primary text-white font-semibold">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-semibold text-sdbk-primary">
+                  {user.prenom} {user.nom}
+                </p>
+                <p className="text-xs text-sdbk-medium">
+                  {user.email}
+                </p>
+              </div>
+            </div>
+            <div className="px-3 py-1 rounded-lg bg-gradient-to-r from-sdbk-accent/10 to-sdbk-primary/10 border border-sdbk-accent/20">
+              <p className="text-xs font-medium text-sdbk-accent capitalize">
+                {user.role}
+              </p>
+            </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem disabled>
-          <User className="mr-2 h-4 w-4" />
-          <span>Profil</span>
+        <DropdownMenuSeparator className="bg-sdbk-medium/20" />
+        <DropdownMenuItem disabled className="px-4 py-3 cursor-not-allowed opacity-60">
+          <User className="mr-3 h-4 w-4 text-sdbk-medium" />
+          <span className="text-sdbk-medium">Profil</span>
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Paramètres</span>
+        <DropdownMenuItem disabled className="px-4 py-3 cursor-not-allowed opacity-60">
+          <Settings className="mr-3 h-4 w-4 text-sdbk-medium" />
+          <span className="text-sdbk-medium">Paramètres</span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-          <LogOut className="mr-2 h-4 w-4" />
+        <DropdownMenuSeparator className="bg-sdbk-medium/20" />
+        <DropdownMenuItem 
+          onClick={handleLogout} 
+          className="px-4 py-3 text-sdbk-danger hover:bg-red-50 hover:text-red-700 focus:bg-red-50 focus:text-red-700 transition-colors duration-200"
+        >
+          <LogOut className="mr-3 h-4 w-4" />
           <span>Se déconnecter</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

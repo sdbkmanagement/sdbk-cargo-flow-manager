@@ -32,23 +32,25 @@ export const DriversTabNavigation = ({
   ];
 
   return (
-    <div className="border-b border-gray-200">
-      <nav className="-mb-px flex space-x-8">
+    <div className="border-b border-sdbk-medium/20 bg-gradient-to-r from-sdbk-light/50 to-white">
+      <nav className="-mb-px flex space-x-2 px-6 py-2">
         {tabs.map(tab => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          const baseClasses = "whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center";
-          const activeClasses = isActive 
-            ? "border-orange-500 text-orange-600" 
-            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300";
           
           return (
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`${baseClasses} ${activeClasses}`}
+              className={`
+                whitespace-nowrap py-3 px-6 border-b-3 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all duration-300 hover:shadow-soft
+                ${isActive 
+                  ? "border-sdbk-accent text-sdbk-accent bg-white shadow-soft" 
+                  : "border-transparent text-sdbk-medium hover:text-sdbk-primary hover:border-sdbk-accent/30 hover:bg-white/70"
+                }
+              `}
             >
-              <Icon className="w-4 h-4 mr-2" />
+              <Icon className={`w-4 h-4 transition-all duration-300 ${isActive ? 'text-sdbk-accent scale-110' : 'text-sdbk-medium group-hover:text-sdbk-primary'}`} />
               {tab.label}
             </button>
           );
