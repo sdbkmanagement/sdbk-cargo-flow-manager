@@ -9,9 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ROLES, ROLE_LABELS, MODULE_PERMISSIONS, MODULE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { userService } from '@/services/admin/userService';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface OptimizedUserFormProps {
   user?: SystemUser;
@@ -46,7 +45,7 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
     onSuccess: () => {
       toast({
         title: "Utilisateur créé",
-        description: "Le nouvel utilisateur a été créé avec succès. Il pourra se connecter en réinitialisant son mot de passe."
+        description: "Le nouvel utilisateur a été créé avec succès."
       });
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       onSuccess();
@@ -130,6 +129,15 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
       return;
     }
 
+    if (!isEdit && (!formData.password || formData.password.trim() === '')) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez définir un mot de passe pour le nouvel utilisateur.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (formData.roles.length === 0) {
       toast({
         title: "Erreur de validation",
@@ -148,15 +156,6 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
 
   return (
     <div className="space-y-6">
-      {!isEdit && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            L'utilisateur recevra ses identifiants par email et pourra définir son mot de passe lors de sa première connexion.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Informations de base */}
         <Card>
@@ -198,6 +197,31 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
                 placeholder="email@example.com"
               />
             </div>
+            
+            {!isEdit && (
+              <div className="md:col-span-2">
+                <Label htmlFor="password">Mot de passe *</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    required
+                    disabled={isLoading}
+                    placeholder="Définir un mot de passe sécurisé"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <div className="md:col-span-2">
               <Label htmlFor="statut">Statut</Label>
               <Select value={formData.statut} onValueChange={(value) => handleInputChange('statut', value)}>
