@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -66,7 +66,7 @@ export const DriversDashboard = () => {
     const loadAlerts = async () => {
       try {
         const { data, error } = await supabase
-          .from('alertes_documents_chauffeurs_v2')
+          .from('alertes_documents_chauffeurs')
           .select('id', { count: 'exact' });
 
         if (!error && data) {
@@ -88,17 +88,8 @@ export const DriversDashboard = () => {
         .update({ statut: statusChange.nouveauStatut })
         .eq('id', statusChange.chauffeurId);
 
-      // Ajouter un enregistrement d'historique
-      await supabase
-        .from('statuts_chauffeurs')
-        .insert({
-          chauffeur_id: statusChange.chauffeurId,
-          statut: statusChange.nouveauStatut,
-          date_debut: statusChange.dateDebut,
-          date_fin: statusChange.dateFin || null,
-          motif: statusChange.motif
-        });
-
+      // Note: Pour l'historique des statuts, nous utiliserons la table existante ou l'ajouterons plus tard
+      
       toast({
         title: 'Statut modifié',
         description: 'Le statut du chauffeur a été mis à jour avec succès'

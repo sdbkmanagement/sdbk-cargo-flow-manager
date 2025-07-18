@@ -27,10 +27,12 @@ export const DriversAlerts = () => {
   const loadAlerts = async () => {
     try {
       setLoading(true);
+      
+      // Utiliser la vue existante qui fonctionne
       const { data, error } = await supabase
-        .from('alertes_documents_chauffeurs_v2')
+        .from('alertes_documents_chauffeurs')
         .select('*')
-        .order('jours_restants', { ascending: true, nullsLast: false });
+        .order('jours_restants', { ascending: true });
 
       if (error) {
         console.error('Erreur lors du chargement des alertes:', error);
@@ -42,7 +44,19 @@ export const DriversAlerts = () => {
         return;
       }
 
-      setAlerts(data || []);
+      // Transformer les données pour correspondre à notre interface
+      const alertsData = data?.map(alert => ({
+        id: alert.id || '',
+        chauffeur_nom: alert.chauffeur_nom || 'Chauffeur inconnu',
+        document_nom: alert.document_nom || '',
+        document_type: alert.document_type || '',
+        date_expiration: alert.date_expiration,
+        jours_restants: alert.jours_restants,
+        statut: alert.statut || 'inconnu',
+        niveau_alerte: alert.niveau_alerte || 'INFO'
+      })) || [];
+
+      setAlerts(alertsData);
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
@@ -58,12 +72,6 @@ export const DriversAlerts = () => {
     if (niveau.includes('URGENT')) return XCircle;
     if (niveau.includes('ATTENTION')) return AlertTriangle;
     return Clock;
-  };
-
-  const getAlertColor = (niveau: string) => {
-    if (niveau.includes('URGENT')) return 'destructive';
-    if (niveau.includes('ATTENTION')) return 'secondary';
-    return 'default';
   };
 
   const getStatusBadge = (statut: string) => {

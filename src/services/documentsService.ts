@@ -27,9 +27,9 @@ export const documentsService = {
   // Récupérer les alertes de documents
   async getAlerts(): Promise<any[]> {
     const { data, error } = await supabase
-      .from('alertes_documents_chauffeurs_v2')
+      .from('alertes_documents_chauffeurs')
       .select('*')
-      .order('jours_restants', { ascending: true, nullsLast: false })
+      .order('jours_restants', { ascending: true })
 
     if (error) {
       console.error('Erreur lors de la récupération des alertes:', error)
@@ -128,37 +128,35 @@ export const documentsService = {
   // Assigner automatiquement les documents requis à un chauffeur
   async assignRequiredDocuments(chauffeurId: string): Promise<void> {
     try {
-      // Récupérer les types de documents requis
-      const { data: typesDocuments, error: typesError } = await supabase
-        .from('types_documents_chauffeurs')
-        .select('*')
-        .eq('requis_par_defaut', true)
+      // Pour l'instant, nous créons les documents de base manuellement
+      // En attendant que la table types_documents_chauffeurs soit reconnue
+      const requiredDocuments = [
+        { nom: 'Carte de qualification conducteur', type: 'carte_qualification_conducteur' },
+        { nom: 'Carte conducteur', type: 'carte_conducteur' },
+        { nom: 'Certificat de capacité professionnelle', type: 'certificat_capacite_professionnelle' },
+        { nom: 'Attestation de formation', type: 'attestation_formation' },
+        { nom: 'Certificat médical d\'aptitude', type: 'certificat_medical_aptitude' },
+        { nom: 'Permis de conduire', type: 'permis_conduire' },
+        { nom: 'Visite médicale', type: 'visite_medicale' }
+      ]
 
-      if (typesError) {
-        throw typesError
-      }
-
-      // Créer les documents assignés
-      const documentsToCreate = typesDocuments?.map(typeDoc => ({
+      const documentsToCreate = requiredDocuments.map(doc => ({
         entity_type: 'chauffeur',
         entity_id: chauffeurId,
-        nom: typeDoc.description || typeDoc.nom,
-        type: typeDoc.nom,
+        nom: doc.nom,
+        type: doc.type,
         url: '',
         document_requis: true,
         assigne_automatiquement: true,
-        date_assignation: new Date().toISOString(),
         statut: 'manquant'
-      })) || []
+      }))
 
-      if (documentsToCreate.length > 0) {
-        const { error } = await supabase
-          .from('documents')
-          .insert(documentsToCreate)
+      const { error } = await supabase
+        .from('documents')
+        .insert(documentsToCreate)
 
-        if (error) {
-          throw error
-        }
+      if (error) {
+        throw error
       }
     } catch (error) {
       console.error('Erreur lors de l\'assignation des documents:', error)
@@ -170,13 +168,23 @@ export const documentsService = {
   async checkDriverCompliance(chauffeurId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
-        .rpc('chauffeur_est_conforme', { chauffeur_id: chauffeurId })
+        .from('documents')
+        .select('*')
+        .eq('entity_id', chauffeurId)
+        .eq('entity_type', 'chauffeur')
+        .eq('document_requis', true)
 
       if (error) {
         throw error
       }
 
-      return data || false
+      // Vérifier s'il y a des documents non conformes
+      const nonCompliantDocs = data?.filter(doc => 
+        !doc.url || doc.url === '' || 
+        (doc.date_expiration && new Date(doc.date_expiration) < new Date())
+      ) || []
+
+      return nonCompliantDocs.length === 0
     } catch (error) {
       console.error('Erreur lors de la vérification de conformité:', error)
       return false

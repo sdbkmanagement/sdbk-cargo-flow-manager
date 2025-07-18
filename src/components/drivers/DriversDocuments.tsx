@@ -39,20 +39,16 @@ export const DriversDocuments = () => {
   const loadDocuments = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      
+      // Requête simplifiée pour éviter les erreurs de relation
+      const { data: documentsData, error: documentsError } = await supabase
         .from('documents')
-        .select(`
-          *,
-          chauffeurs!entity_id (
-            nom,
-            prenom
-          )
-        `)
+        .select('*')
         .eq('entity_type', 'chauffeur')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Erreur lors du chargement des documents:', error);
+      if (documentsError) {
+        console.error('Erreur lors du chargement des documents:', documentsError);
         toast({
           title: 'Erreur',
           description: 'Impossible de charger les documents',
@@ -61,12 +57,23 @@ export const DriversDocuments = () => {
         return;
       }
 
-      const documentsWithNames = data?.map(doc => ({
-        ...doc,
-        chauffeur_nom: doc.chauffeurs ? 
-          `${doc.chauffeurs.prenom} ${doc.chauffeurs.nom}` : 
-          'Chauffeur inconnu'
-      })) || [];
+      // Charger les noms des chauffeurs séparément
+      const chauffeurIds = [...new Set(documentsData?.map(doc => doc.entity_id))];
+      const { data: chauffeursData } = await supabase
+        .from('chauffeurs')
+        .select('id, nom, prenom')
+        .in('id', chauffeurIds);
+
+      // Combiner les données
+      const documentsWithNames = documentsData?.map(doc => {
+        const chauffeur = chauffeursData?.find(c => c.id === doc.entity_id);
+        return {
+          ...doc,
+          chauffeur_nom: chauffeur ? 
+            `${chauffeur.prenom} ${chauffeur.nom}` : 
+            'Chauffeur inconnu'
+        };
+      }) || [];
 
       setDocuments(documentsWithNames);
     } catch (error) {
