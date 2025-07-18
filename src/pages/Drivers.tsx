@@ -62,6 +62,11 @@ const Drivers = () => {
     setSelectedChauffeur(chauffeur);
   };
 
+  const handleAddChauffeur = () => {
+    console.log('Ajouter nouveau chauffeur');
+    // TODO: Implémenter l'ouverture du formulaire de création de chauffeur
+  };
+
   if (!hasPermission('drivers_read')) {
     return (
       <div className="p-6">
@@ -109,9 +114,16 @@ const Drivers = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Gestion des chauffeurs</h1>
           <p className="text-gray-600 mt-1">
-            Gestion complète du personnel de conduite
+            Gestion complète du personnel de conduite ({chauffeurs.length} chauffeurs)
           </p>
         </div>
+        <Button 
+          onClick={handleAddChauffeur} 
+          className="gap-2 bg-orange-500 hover:bg-orange-600 text-white"
+        >
+          <Plus className="h-4 w-4" />
+          Nouveau chauffeur
+        </Button>
       </div>
 
       <DriversStats {...stats} />

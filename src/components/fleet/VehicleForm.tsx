@@ -13,6 +13,7 @@ import { MaintenanceFields } from './form/MaintenanceFields';
 import { TransportStatusFields } from './form/TransportStatusFields';
 import { TracteurFields } from './form/TracteurFields';
 import { RemorqueFields } from './form/RemorqueFields';
+import { FormNavigation } from '../drivers/form/FormNavigation';
 
 import { vehiculesService } from '@/services/vehicules';
 
@@ -120,8 +121,19 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
   };
 
   const totalSteps = 5;
-  const isLastStep = currentStep === totalSteps;
   const vehicleType = form.watch('type_vehicule');
+
+  const handleNext = () => {
+    setCurrentStep(Math.min(totalSteps, currentStep + 1));
+  };
+
+  const handlePrevious = () => {
+    setCurrentStep(Math.max(1, currentStep - 1));
+  };
+
+  const handleSubmitForm = () => {
+    form.handleSubmit(onSubmit)();
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -135,7 +147,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form className="space-y-8">
           {currentStep === 1 && (
             <BasicInfoFields 
               register={form.register}
@@ -173,36 +185,15 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
             />
           )}
 
-          <div className="flex justify-between pt-6 border-t">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCurrentStep(Math.max(1, currentStep - 1))}
-              disabled={currentStep === 1}
-            >
-              Précédent
-            </Button>
-
-            {!isLastStep ? (
-              <Button
-                type="button"
-                onClick={() => setCurrentStep(Math.min(totalSteps, currentStep + 1))}
-              >
-                Suivant
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                disabled={createVehicleMutation.isPending || updateVehicleMutation.isPending}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
-                {createVehicleMutation.isPending || updateVehicleMutation.isPending
-                  ? 'Sauvegarde...' 
-                  : vehicule ? 'Modifier' : 'Créer'
-                }
-              </Button>
-            )}
-          </div>
+          <FormNavigation
+            currentStep={currentStep}
+            totalSteps={totalSteps}
+            onNext={handleNext}
+            onPrevious={handlePrevious}
+            onSubmit={handleSubmitForm}
+            onCancel={onSuccess}
+            isSubmitting={createVehicleMutation.isPending || updateVehicleMutation.isPending}
+          />
         </form>
       </Form>
     </div>

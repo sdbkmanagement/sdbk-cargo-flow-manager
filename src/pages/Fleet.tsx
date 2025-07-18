@@ -1,11 +1,9 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Search, Truck, Settings, Wrench, CheckCircle } from 'lucide-react';
+import { Search, Truck, Settings, Wrench, CheckCircle } from 'lucide-react';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
@@ -41,9 +39,9 @@ const Fleet = () => {
     validation_requise: vehicles.filter(v => v.statut === 'validation_requise').length,
     hydrocarbures: vehicles.filter(v => v.type_transport === 'hydrocarbures').length,
     bauxite: vehicles.filter(v => v.type_transport === 'bauxite').length,
-    maintenance_urgente: 0, // To be calculated based on maintenance dates
-    bases: [], // To be calculated from vehicle bases
-    types_transport: [] // To be calculated from vehicle transport types
+    maintenance_urgente: 0,
+    bases: [],
+    types_transport: []
   };
 
   const handleVehicleCreated = () => {
@@ -108,26 +106,6 @@ const Fleet = () => {
             />
           </div>
         </div>
-        
-        <Dialog open={showVehicleForm} onOpenChange={setShowVehicleForm}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 bg-orange-500 hover:bg-orange-600 text-white">
-              <Plus className="h-4 w-4" />
-              Nouveau véhicule
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Ajouter un nouveau véhicule</DialogTitle>
-            </DialogHeader>
-            <VehicleForm 
-              onSuccess={() => {
-                setShowVehicleForm(false);
-                handleVehicleCreated();
-              }}
-            />
-          </DialogContent>
-        </Dialog>
       </div>
 
       <FleetStats stats={stats} />
@@ -200,6 +178,21 @@ const Fleet = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog pour le formulaire de véhicule */}
+      <Dialog open={showVehicleForm} onOpenChange={setShowVehicleForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Ajouter un nouveau véhicule</DialogTitle>
+          </DialogHeader>
+          <VehicleForm 
+            onSuccess={() => {
+              setShowVehicleForm(false);
+              handleVehicleCreated();
+            }}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* Dialog pour la gestion des documents */}
       <Dialog open={showDocumentManager} onOpenChange={setShowDocumentManager}>
