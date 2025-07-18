@@ -128,8 +128,7 @@ export const documentsService = {
   // Assigner automatiquement les documents requis à un chauffeur
   async assignRequiredDocuments(chauffeurId: string): Promise<void> {
     try {
-      // Pour l'instant, nous créons les documents de base manuellement
-      // En attendant que la table types_documents_chauffeurs soit reconnue
+      // Documents requis standard avec valeurs par défaut complètes
       const requiredDocuments = [
         { nom: 'Carte de qualification conducteur', type: 'carte_qualification_conducteur' },
         { nom: 'Carte conducteur', type: 'carte_conducteur' },
@@ -146,6 +145,7 @@ export const documentsService = {
         nom: doc.nom,
         type: doc.type,
         url: '',
+        taille: 0, // Valeur par défaut requise
         document_requis: true,
         assigne_automatiquement: true,
         statut: 'manquant'

@@ -167,7 +167,7 @@ export const documentService = {
     return data || [];
   },
 
-  // Statistiques des documents
+  // Statistiques des documents - version simplifiée pour éviter la récursion
   async getStats(): Promise<{
     total: number;
     byType: Record<string, number>;
@@ -197,7 +197,9 @@ export const documentService = {
 
     docs.forEach(doc => {
       // Compter par type
-      stats.byType[doc.type] = (stats.byType[doc.type] || 0) + 1;
+      if (doc.type) {
+        stats.byType[doc.type] = (stats.byType[doc.type] || 0) + 1;
+      }
       
       // Compter par statut
       if (doc.statut) {

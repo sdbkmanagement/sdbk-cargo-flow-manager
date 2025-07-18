@@ -40,7 +40,7 @@ export const DriversDocuments = () => {
     try {
       setLoading(true);
       
-      // Requête simplifiée pour éviter les erreurs de relation
+      // Charger les documents des chauffeurs
       const { data: documentsData, error: documentsError } = await supabase
         .from('documents')
         .select('*')
@@ -68,7 +68,16 @@ export const DriversDocuments = () => {
       const documentsWithNames = documentsData?.map(doc => {
         const chauffeur = chauffeursData?.find(c => c.id === doc.entity_id);
         return {
-          ...doc,
+          id: doc.id,
+          entity_id: doc.entity_id || '',
+          nom: doc.nom,
+          type: doc.type,
+          url: doc.url,
+          date_expiration: doc.date_expiration,
+          date_delivrance: doc.date_delivrance,
+          statut: doc.statut || 'valide',
+          document_requis: doc.document_requis || false,
+          assigne_automatiquement: doc.assigne_automatiquement || false,
           chauffeur_nom: chauffeur ? 
             `${chauffeur.prenom} ${chauffeur.nom}` : 
             'Chauffeur inconnu'
