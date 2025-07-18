@@ -23,7 +23,6 @@ interface VehicleFormProps {
 
 export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
-  const { toast: showToast } = toast();
   const queryClient = useQueryClient();
 
   const form = useForm({
@@ -70,7 +69,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
     mutationFn: vehiculesService.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicules'] });
-      showToast({
+      toast({
         title: "Véhicule créé",
         description: "Le véhicule a été ajouté avec succès.",
       });
@@ -78,7 +77,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
     },
     onError: (error) => {
       console.error('Erreur création véhicule:', error);
-      showToast({
+      toast({
         title: "Erreur",
         description: "Impossible de créer le véhicule.",
         variant: "destructive"
@@ -90,7 +89,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
     mutationFn: ({ id, data }: { id: string; data: any }) => vehiculesService.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicules'] });
-      showToast({
+      toast({
         title: "Véhicule modifié",
         description: "Les informations ont été mises à jour.",
       });
@@ -98,7 +97,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
     },
     onError: (error) => {
       console.error('Erreur modification véhicule:', error);
-      showToast({
+      toast({
         title: "Erreur",
         description: "Impossible de modifier le véhicule.",
         variant: "destructive"
@@ -137,13 +136,42 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {currentStep === 1 && <BasicInfoFields form={form} />}
-          {currentStep === 2 && <SpecificationsFields form={form} />}
-          {currentStep === 3 && vehicleType === 'tracteur_remorque' && <TracteurFields form={form} />}
-          {currentStep === 3 && vehicleType === 'tracteur_remorque' && <RemorqueFields form={form} />}
-          {currentStep === 3 && vehicleType === 'porteur' && <OperationalFields form={form} />}
-          {currentStep === 4 && <MaintenanceFields form={form} />}
-          {currentStep === 5 && <TransportStatusFields form={form} />}
+          {currentStep === 1 && (
+            <BasicInfoFields 
+              register={form.register}
+              errors={form.formState.errors}
+              watch={form.watch}
+              setValue={form.setValue}
+            />
+          )}
+          {currentStep === 2 && (
+            <SpecificationsFields register={form.register} />
+          )}
+          {currentStep === 3 && vehicleType === 'tracteur_remorque' && (
+            <>
+              <TracteurFields 
+                register={form.register}
+                errors={form.formState.errors}
+              />
+              <RemorqueFields 
+                register={form.register}
+                errors={form.formState.errors}
+              />
+            </>
+          )}
+          {currentStep === 3 && vehicleType === 'porteur' && (
+            <OperationalFields register={form.register} />
+          )}
+          {currentStep === 4 && (
+            <MaintenanceFields register={form.register} />
+          )}
+          {currentStep === 5 && (
+            <TransportStatusFields 
+              setValue={form.setValue}
+              watch={form.watch}
+              chauffeurs={[]}
+            />
+          )}
 
           <div className="flex justify-between pt-6 border-t">
             <Button

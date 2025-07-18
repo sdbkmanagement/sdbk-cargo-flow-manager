@@ -23,6 +23,7 @@ const Fleet = () => {
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [showDocumentManager, setShowDocumentManager] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [selectedVehicleNumero, setSelectedVehicleNumero] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch vehicles and calculate stats
@@ -52,8 +53,9 @@ const Fleet = () => {
     });
   };
 
-  const handleManageDocuments = (vehicleId: string) => {
-    setSelectedVehicleId(vehicleId);
+  const handleManageDocuments = (vehicle: any) => {
+    setSelectedVehicleId(vehicle.id);
+    setSelectedVehicleNumero(vehicle.numero);
     setShowDocumentManager(true);
   };
 
@@ -88,7 +90,10 @@ const Fleet = () => {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <FleetHeader />
+      <FleetHeader 
+        onAddVehicle={() => setShowVehicleForm(true)}
+        vehicleCount={vehicles.length}
+      />
 
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
         <div className="flex gap-2 items-center">
@@ -124,7 +129,7 @@ const Fleet = () => {
         </Dialog>
       </div>
 
-      <FleetStats stats={stats} />
+      <FleetStats stats={stats} key={refreshKey} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -171,11 +176,11 @@ const Fleet = () => {
         </TabsContent>
 
         <TabsContent value="validation" className="space-y-6">
-          <ValidationTab />
+          <ValidationTab vehicles={vehicles} />
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-6">
-          <MaintenanceTab />
+          <MaintenanceTab vehicles={vehicles} />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
@@ -203,6 +208,7 @@ const Fleet = () => {
           </DialogHeader>
           <DocumentManagerVehicule
             vehiculeId={selectedVehicleId}
+            vehiculeNumero={selectedVehicleNumero}
           />
         </DialogContent>
       </Dialog>
