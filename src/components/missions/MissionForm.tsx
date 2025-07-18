@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
-import { ArrowLeft, Save, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Save, Info } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MissionFormProps {
@@ -36,7 +36,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     statut: mission?.statut || 'en_attente'
   });
 
-  const [availabilityCheck, setAvailabilityCheck] = useState(null);
+  const [availabilityInfo, setAvailabilityInfo] = useState(null);
 
   // Récupérer les véhicules disponibles
   const { data: vehicules = [] } = useQuery({
@@ -75,8 +75,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     }
   });
 
-  // Vérifier la disponibilité des ressources
-  const checkAvailability = async () => {
+  // Vérifier la disponibilité des ressources (informatif seulement)
+  const checkAvailabilityInfo = async () => {
     if (formData.vehicule_id && formData.chauffeur_id && 
         formData.date_heure_depart && formData.date_heure_arrivee_prevue) {
       try {
@@ -86,30 +86,25 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           formData.date_heure_depart,
           formData.date_heure_arrivee_prevue
         );
-        setAvailabilityCheck(result);
+        setAvailabilityInfo(result);
       } catch (error) {
         console.error('Erreur lors de la vérification:', error);
+        setAvailabilityInfo(null);
       }
+    } else {
+      setAvailabilityInfo(null);
     }
   };
 
   useEffect(() => {
-    const timeoutId = setTimeout(checkAvailability, 500);
+    const timeoutId = setTimeout(checkAvailabilityInfo, 500);
     return () => clearTimeout(timeoutId);
   }, [formData.vehicule_id, formData.chauffeur_id, formData.date_heure_depart, formData.date_heure_arrivee_prevue]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!availabilityCheck?.vehicule_disponible || !availabilityCheck?.chauffeur_disponible) {
-      toast({
-        title: 'Ressources non disponibles',
-        description: availabilityCheck?.message || 'Vérifiez la disponibilité des ressources.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
+    // Supprimer la vérification bloquante - permettre toute assignation
     const submitData = {
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
@@ -117,6 +112,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       date_heure_arrivee_prevue: new Date(formData.date_heure_arrivee_prevue).toISOString()
     };
 
+    console.log('Sauvegarde de la mission:', submitData);
     saveMutation.mutate(submitData);
   };
 
@@ -304,16 +300,12 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </Select>
               </div>
 
-              {/* Vérification de disponibilité */}
-              {availabilityCheck && (
-                <Alert className={
-                  (availabilityCheck.vehicule_disponible && availabilityCheck.chauffeur_disponible) 
-                    ? 'border-green-200 bg-green-50' 
-                    : 'border-red-200 bg-red-50'
-                }>
-                  <AlertTriangle className="h-4 w-4" />
+              {/* Information de disponibilité (non-bloquante) */}
+              {availabilityInfo && (
+                <Alert className="border-blue-200 bg-blue-50">
+                  <Info className="h-4 w-4" />
                   <AlertDescription>
-                    {availabilityCheck.message}
+                    <strong>Information planning:</strong> {availabilityInfo.message}
                   </AlertDescription>
                 </Alert>
               )}

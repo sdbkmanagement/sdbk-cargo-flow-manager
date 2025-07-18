@@ -1,180 +1,149 @@
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Eye, Phone, Mail, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-
-interface Chauffeur {
-  id: string;
-  nom: string;
-  prenom: string;
-  telephone: string;
-  email?: string;
-  statut: string;
-  type_permis: string[];
-  date_expiration_permis: string;
-  vehicule_assigne?: string;
-  photo_url?: string;
-}
+import { 
+  Search, 
+  Edit, 
+  Trash2, 
+  Eye,
+  Phone,
+  Mail,
+  Calendar,
+  User
+} from 'lucide-react';
+import { ChauffeurDetailDialog } from './ChauffeurDetailDialog';
 
 interface ChauffeursListProps {
-  chauffeurs: Chauffeur[];
-  onSelectChauffeur: (chauffeur: Chauffeur) => void;
-  onEditChauffeur: (chauffeur: Chauffeur) => void;
+  chauffeurs: any[];
+  onSelectChauffeur: (chauffeur: any) => void;
+  onEditChauffeur: (chauffeur: any) => void;
   searchTerm: string;
-  hasWritePermission?: boolean;
+  hasWritePermission: boolean;
 }
 
 export const ChauffeursList = ({ 
   chauffeurs, 
   onSelectChauffeur, 
-  onEditChauffeur,
-  searchTerm,
-  hasWritePermission = false 
+  onEditChauffeur, 
+  searchTerm, 
+  hasWritePermission 
 }: ChauffeursListProps) => {
-  const { toast } = useToast();
+  const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
 
-  const handleModify = (chauffeur: Chauffeur) => {
-    console.log('Modification du chauffeur:', chauffeur);
-    if (!hasWritePermission) {
-      toast({
-        title: 'Accès refusé',
-        description: 'Vous n\'avez pas les permissions pour modifier les chauffeurs.',
-        variant: 'destructive'
-      });
-      return;
-    }
-    onEditChauffeur(chauffeur);
-  };
-
-  const getStatutBadge = (statut: string) => {
-    if (statut === 'actif') {
-      return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
-    }
-    return <Badge className="bg-gray-100 text-gray-800">Inactif</Badge>;
-  };
-
-  const getAlerteBadge = (dateExpiration: string) => {
-    const today = new Date();
-    const expiration = new Date(dateExpiration);
-    const diffTime = expiration.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays <= 0) {
-      return <Badge className="bg-red-100 text-red-800">Expiré</Badge>;
-    } else if (diffDays <= 30) {
-      return <Badge className="bg-orange-100 text-orange-800">Expire bientôt</Badge>;
-    }
-    return null;
-  };
-
-  // Filter chauffeurs based on searchTerm
-  const filteredChauffeurs = chauffeurs.filter(chauffeur => 
-    chauffeur.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chauffeur.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chauffeur.telephone.includes(searchTerm)
+  const filteredChauffeurs = chauffeurs.filter(chauffeur =>
+    chauffeur.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chauffeur.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chauffeur.telephone?.includes(searchTerm) ||
+    chauffeur.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (filteredChauffeurs.length === 0) {
-    return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <p className="text-gray-500">Aucun chauffeur trouvé</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleViewDetails = (chauffeur: any) => {
+    console.log('Affichage des détails du chauffeur:', chauffeur.id);
+    setSelectedChauffeur(chauffeur);
+    setShowDetailDialog(true);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'actif':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'inactif':
+        return 'bg-red-100 text-red-800 border-red-200';
+      case 'suspendu':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
 
   return (
-    <div className="grid gap-4">
-      {filteredChauffeurs.map((chauffeur) => (
-        <Card key={chauffeur.id} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-start">
-              <div className="flex items-start space-x-4">
-                {chauffeur.photo_url && (
-                  <img
-                    src={chauffeur.photo_url}
-                    alt={`${chauffeur.prenom} ${chauffeur.nom}`}
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                )}
-                <div>
-                  <CardTitle className="text-lg">
-                    {chauffeur.prenom} {chauffeur.nom}
-                  </CardTitle>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getStatutBadge(chauffeur.statut)}
-                    {getAlerteBadge(chauffeur.date_expiration_permis)}
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredChauffeurs.map((chauffeur) => (
+          <Card key={chauffeur.id} className="hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-orange-600" />
                   </div>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-700">Contact</p>
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1 text-sm">
-                    <Phone className="w-3 h-3" />
-                    {chauffeur.telephone}
-                  </div>
-                  {chauffeur.email && (
-                    <div className="flex items-center gap-1 text-sm">
-                      <Mail className="w-3 h-3" />
-                      {chauffeur.email}
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div>
-                <p className="text-sm font-medium text-gray-700">Permis</p>
-                <div className="flex flex-wrap gap-1">
-                  {chauffeur.type_permis.map((permis) => (
-                    <Badge key={permis} variant="outline" className="text-xs">
-                      {permis}
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {chauffeur.prenom} {chauffeur.nom}
+                    </h3>
+                    <Badge className={`text-xs ${getStatusColor(chauffeur.statut)}`}>
+                      {chauffeur.statut}
                     </Badge>
-                  ))}
+                  </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Expire le {new Date(chauffeur.date_expiration_permis).toLocaleDateString()}
-                </p>
               </div>
-              
-              <div>
-                <p className="text-sm font-medium text-gray-700">Véhicule assigné</p>
-                <p className="text-sm">{chauffeur.vehicule_assigne || 'Aucun'}</p>
+
+              <div className="space-y-2 text-sm text-gray-600 mb-4">
+                <div className="flex items-center">
+                  <Phone className="w-4 h-4 mr-2" />
+                  <span>{chauffeur.telephone}</span>
+                </div>
+                {chauffeur.email && (
+                  <div className="flex items-center">
+                    <Mail className="w-4 h-4 mr-2" />
+                    <span className="truncate">{chauffeur.email}</span>
+                  </div>
+                )}
+                <div className="flex items-center">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  <span>
+                    Permis expire: {chauffeur.date_expiration_permis ? 
+                      new Date(chauffeur.date_expiration_permis).toLocaleDateString('fr-FR') : 
+                      'Non renseigné'}
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleModify(chauffeur)}
-                className="flex items-center gap-1"
-              >
-                <Edit className="w-4 h-4" />
-                Modifier
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onSelectChauffeur(chauffeur)}
-                className="flex items-center gap-1"
-              >
-                <Eye className="w-4 h-4" />
-                Voir détails
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewDetails(chauffeur)}
+                  className="flex-1"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  Voir détails
+                </Button>
+                {hasWritePermission && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEditChauffeur(chauffeur)}
+                    className="flex-1"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Modifier
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredChauffeurs.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Aucun chauffeur trouvé</p>
+        </div>
+      )}
+
+      {/* Dialog de détails du chauffeur */}
+      {selectedChauffeur && (
+        <ChauffeurDetailDialog
+          chauffeur={selectedChauffeur}
+          open={showDetailDialog}
+          onOpenChange={setShowDetailDialog}
+        />
+      )}
+    </>
   );
 };

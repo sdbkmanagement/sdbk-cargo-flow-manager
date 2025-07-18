@@ -1,58 +1,40 @@
 
 import React from 'react';
-import { Users, AlertTriangle, Calendar, Plus, Settings } from 'lucide-react';
-
-interface Tab {
-  id: string;
-  label: string;
-  icon: React.ComponentType<any>;
-}
+import { Button } from '@/components/ui/button';
+import { Users, Calendar, FileText, BarChart3 } from 'lucide-react';
 
 interface DriversTabNavigationProps {
   activeTab: string;
-  hasWritePermission: boolean;
-  selectedChauffeur: any;
-  onTabChange: (tabId: string) => void;
+  onTabChange: (tab: string) => void;
 }
 
-export const DriversTabNavigation = ({ 
-  activeTab, 
-  hasWritePermission, 
-  selectedChauffeur, 
-  onTabChange 
-}: DriversTabNavigationProps) => {
-  const tabs: Tab[] = [
-    { id: 'liste', label: 'Liste des chauffeurs', icon: Users },
-    { id: 'alertes', label: 'Alertes documents', icon: AlertTriangle },
+export const DriversTabNavigation = ({ activeTab, onTabChange }: DriversTabNavigationProps) => {
+  const tabs = [
+    { id: 'drivers', label: 'Chauffeurs', icon: Users },
     { id: 'planning', label: 'Planning', icon: Calendar },
-    ...(hasWritePermission ? [
-      { id: 'nouveau', label: 'Nouveau', icon: Plus },
-      ...(selectedChauffeur ? [{ id: 'modifier', label: 'Modifier', icon: Settings }] : [])
-    ] : [])
+    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'stats', label: 'Statistiques', icon: BarChart3 }
   ];
 
   return (
-    <div className="border-b border-sdbk-medium/20 bg-gradient-to-r from-sdbk-light/50 to-white">
-      <nav className="-mb-px flex space-x-2 px-6 py-2">
+    <div className="border-b border-gray-200 mb-6">
+      <nav className="-mb-px flex space-x-8">
         {tabs.map(tab => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          
           return (
-            <button
+            <Button
               key={tab.id}
+              variant="ghost"
               onClick={() => onTabChange(tab.id)}
-              className={`
-                whitespace-nowrap py-3 px-6 border-b-3 font-medium text-sm flex items-center gap-2 rounded-t-lg transition-all duration-300 hover:shadow-soft
-                ${isActive 
-                  ? "border-sdbk-accent text-sdbk-accent bg-white shadow-soft" 
-                  : "border-transparent text-sdbk-medium hover:text-sdbk-primary hover:border-sdbk-accent/30 hover:bg-white/70"
-                }
-              `}
+              className={`${
+                activeTab === tab.id
+                  ? 'border-orange-500 text-orange-600 border-b-2'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
             >
-              <Icon className={`w-4 h-4 transition-all duration-300 ${isActive ? 'text-sdbk-accent scale-110' : 'text-sdbk-medium group-hover:text-sdbk-primary'}`} />
+              <Icon className="w-4 h-4 mr-2" />
               {tab.label}
-            </button>
+            </Button>
           );
         })}
       </nav>

@@ -15,20 +15,26 @@ const Missions = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedMission, setSelectedMission] = useState(null);
 
+  // Actualisation automatique toutes les 30 secondes
   const { data: missions = [], isLoading, error, isError } = useQuery({
     queryKey: ['missions'],
     queryFn: missionsService.getAll,
     retry: 3,
     retryDelay: 1000,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 secondes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchInterval: 30 * 1000, // Actualisation toutes les 30 secondes
+    refetchIntervalInBackground: true, // Continue même en arrière-plan
   });
 
+  // Actualisation automatique des stats
   const { data: stats } = useQuery({
     queryKey: ['missions-stats'],
     queryFn: missionsService.getStats,
     retry: 2,
     enabled: !isError,
+    refetchInterval: 30 * 1000, // Actualisation toutes les 30 secondes
+    refetchIntervalInBackground: true,
   });
 
   const handleCreateMission = () => {
@@ -44,6 +50,7 @@ const Missions = () => {
   const handleFormSuccess = () => {
     setShowForm(false);
     setSelectedMission(null);
+    // Actualisation immédiate après modification
     queryClient.invalidateQueries({ queryKey: ['missions'] });
     queryClient.invalidateQueries({ queryKey: ['missions-stats'] });
   };
