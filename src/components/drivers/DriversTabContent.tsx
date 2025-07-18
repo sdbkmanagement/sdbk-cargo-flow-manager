@@ -1,88 +1,81 @@
 
-import React from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Search, Filter } from 'lucide-react';
+import { Users, Plus } from 'lucide-react';
 import { ChauffeursList } from './ChauffeursList';
 import { ChauffeurForm } from './ChauffeurForm';
-import { AlertesDocuments } from './AlertesDocuments';
-import { PlanningModule } from './planning/PlanningModule';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 
 interface DriversTabContentProps {
-  activeTab: string;
   searchTerm: string;
-  selectedChauffeur: any;
-  hasWritePermission: boolean;
-  onSearchChange: (term: string) => void;
   onSelectChauffeur: (chauffeur: any) => void;
-  onFormSuccess: () => void;
-  onBackToList: () => void;
 }
 
-export const DriversTabContent = ({
-  activeTab,
-  searchTerm,
-  selectedChauffeur,
-  hasWritePermission,
-  onSearchChange,
-  onSelectChauffeur,
-  onFormSuccess,
-  onBackToList
-}: DriversTabContentProps) => {
-  if (activeTab === 'liste') {
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Rechercher un chauffeur..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10"
-            />
+export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabContentProps) => {
+  const [showForm, setShowForm] = useState(false);
+  const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
+
+  const handleCreateSuccess = () => {
+    setShowForm(false);
+    toast({
+      title: "Chauffeur créé",
+      description: "Le chauffeur a été ajouté avec succès.",
+    });
+  };
+
+  const handleEditChauffeur = (chauffeur: any) => {
+    setSelectedChauffeur(chauffeur);
+    setShowForm(true);
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Liste des chauffeurs
+              </CardTitle>
+              <CardDescription>
+                Gestion des chauffeurs et de leurs informations
+              </CardDescription>
+            </div>
+            <Button onClick={() => setShowForm(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nouveau chauffeur
+            </Button>
           </div>
-          <Button variant="outline">
-            <Filter className="w-4 h-4 mr-2" />
-            Filtres
-          </Button>
-        </div>
-        <ChauffeursList 
-          searchTerm={searchTerm}
-          onSelectChauffeur={onSelectChauffeur}
-        />
-      </div>
-    );
-  }
+        </CardHeader>
+        <CardContent>
+          <ChauffeursList 
+            onSelectChauffeur={onSelectChauffeur}
+            onEditChauffeur={handleEditChauffeur}
+            searchTerm={searchTerm}
+          />
+        </CardContent>
+      </Card>
 
-  if (activeTab === 'alertes') {
-    return <AlertesDocuments />;
-  }
-
-  if (activeTab === 'planning') {
-    return <PlanningModule />;
-  }
-
-  if (activeTab === 'nouveau' && hasWritePermission) {
-    return <ChauffeurForm onSuccess={onFormSuccess} />;
-  }
-
-  if (activeTab === 'modifier' && hasWritePermission && selectedChauffeur) {
-    return (
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Modifier le chauffeur</h2>
-          <Button variant="outline" onClick={onBackToList}>
-            Retour à la liste
-          </Button>
-        </div>
-        <ChauffeurForm 
-          chauffeur={selectedChauffeur} 
-          onSuccess={onFormSuccess} 
-        />
-      </div>
-    );
-  }
-
-  return null;
+      <Dialog open={showForm} onOpenChange={setShowForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedChauffeur ? 'Modifier le chauffeur' : 'Nouveau chauffeur'}
+            </DialogTitle>
+          </DialogHeader>
+          <ChauffeurForm 
+            chauffeur={selectedChauffeur}
+            onSuccess={handleCreateSuccess}
+            onCancel={() => {
+              setShowForm(false);
+              setSelectedChauffeur(null);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 };
