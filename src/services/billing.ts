@@ -1,187 +1,160 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
-export type Facture = Tables<'factures'>;
-export type Devis = Tables<'devis'>;
-export type Client = Tables<'clients'>;
-export type FactureLigne = Tables<'facture_lignes'>;
+export interface Devis {
+  id: string;
+  numero: string;
+  client_nom: string;
+  client_societe?: string;
+  client_email?: string;
+  description: string;
+  date_creation: string;
+  date_validite: string;
+  montant_ht: number;
+  montant_tva: number;
+  montant_ttc: number;
+  statut: 'en_attente' | 'accepte' | 'refuse' | 'expire';
+  observations?: string;
+  created_at: string;
+  updated_at: string;
+}
 
-export const billingService = {
-  // Factures
-  async createFacture(factureData: TablesInsert<'factures'>, lignes: Omit<TablesInsert<'facture_lignes'>, 'facture_id'>[]) {
-    const { data: facture, error: factureError } = await supabase
-      .from('factures')
-      .insert(factureData)
-      .select()
-      .single();
+export interface CreateDevisData {
+  client_nom: string;
+  client_societe?: string;
+  client_email?: string;
+  description: string;
+  date_validite: string;
+  montant_ht: number;
+  observations?: string;
+}
 
-    if (factureError) throw factureError;
+const billingService = {
+  async createDevis(data: CreateDevisData): Promise<Devis> {
+    try {
+      // Generate numero
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, '0');
+      const day = today.getDate().toString().padStart(2, '0');
+      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const numero = `DEV${year}${month}${day}-${random}`;
 
-    if (lignes.length > 0) {
-      const lignesWithFactureId = lignes.map(ligne => ({
-        ...ligne,
-        facture_id: facture.id
-      }));
+      // Calculate TVA and TTC
+      const montant_tva = data.montant_ht * 0.18; // 18% TVA
+      const montant_ttc = data.montant_ht + montant_tva;
 
-      const { error: lignesError } = await supabase
-        .from('facture_lignes')
-        .insert(lignesWithFactureId);
+      const devisData = {
+        numero,
+        client_nom: data.client_nom,
+        client_societe: data.client_societe || null,
+        client_email: data.client_email || null,
+        description: data.description,
+        date_creation: today.toISOString().split('T')[0],
+        date_validite: data.date_validite,
+        montant_ht: data.montant_ht,
+        montant_tva,
+        montant_ttc,
+        statut: 'en_attente' as const,
+        observations: data.observations || null,
+      };
 
-      if (lignesError) throw lignesError;
+      const { data: result, error } = await supabase
+        .from('devis')
+        .insert([devisData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur création devis:', error);
+        throw new Error(`Erreur lors de la création du devis: ${error.message}`);
+      }
+
+      return result;
+    } catch (error) {
+      console.error('Erreur service billing:', error);
+      throw error;
     }
-
-    return facture;
   },
 
-  async getFactures() {
-    const { data, error } = await supabase
-      .from('factures')
-      .select('*')
-      .order('created_at', { ascending: false });
+  async getAll(): Promise<Devis[]> {
+    try {
+      const { data, error } = await supabase
+        .from('devis')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.error('Erreur récupération devis:', error);
+        throw new Error(`Erreur lors de la récupération des devis: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Erreur service billing getAll:', error);
+      throw error;
+    }
   },
 
-  async getFacture(id: string) {
-    const { data, error } = await supabase
-      .from('factures')
-      .select(`
-        *,
-        facture_lignes (*)
-      `)
-      .eq('id', id)
-      .single();
+  async getById(id: string): Promise<Devis | null> {
+    try {
+      const { data, error } = await supabase
+        .from('devis')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.error('Erreur récupération devis par ID:', error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur service billing getById:', error);
+      return null;
+    }
   },
 
-  async updateFacture(id: string, factureData: TablesUpdate<'factures'>) {
-    const { data, error } = await supabase
-      .from('factures')
-      .update(factureData)
-      .eq('id', id)
-      .select()
-      .single();
+  async update(id: string, updates: Partial<Devis>): Promise<Devis | null> {
+    try {
+      const { data, error } = await supabase
+        .from('devis')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return data;
+      if (error) {
+        console.error('Erreur mise à jour devis:', error);
+        throw new Error(`Erreur lors de la mise à jour du devis: ${error.message}`);
+      }
+
+      return data;
+    } catch (error) {
+      console.error('Erreur service billing update:', error);
+      throw error;
+    }
   },
 
-  async deleteFacture(id: string) {
-    const { error } = await supabase
-      .from('factures')
-      .delete()
-      .eq('id', id);
+  async delete(id: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('devis')
+        .delete()
+        .eq('id', id);
 
-    if (error) throw error;
-  },
+      if (error) {
+        console.error('Erreur suppression devis:', error);
+        throw new Error(`Erreur lors de la suppression du devis: ${error.message}`);
+      }
 
-  // Devis
-  async createDevis(devisData: TablesInsert<'devis'>) {
-    const { data, error } = await supabase
-      .from('devis')
-      .insert(devisData)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
-  async getDevis() {
-    const { data, error } = await supabase
-      .from('devis')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data;
-  },
-
-  async updateDevis(id: string, devisData: TablesUpdate<'devis'>) {
-    const { data, error } = await supabase
-      .from('devis')
-      .update(devisData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
-  async updateDevisStatus(id: string, statut: string) {
-    const { data, error } = await supabase
-      .from('devis')
-      .update({ statut })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
-  async deleteDevis(id: string) {
-    const { error } = await supabase
-      .from('devis')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
-  },
-
-  // Clients
-  async createClient(clientData: TablesInsert<'clients'>) {
-    const { data, error } = await supabase
-      .from('clients')
-      .insert(clientData)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  },
-
-  async getClients() {
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('nom');
-
-    if (error) throw error;
-    return data;
-  },
-
-  // Statistiques
-  async getStats() {
-    const [facturesResult, devisResult] = await Promise.all([
-      supabase.from('factures').select('montant_ttc, statut'),
-      supabase.from('devis').select('montant_ttc, statut')
-    ]);
-
-    if (facturesResult.error) throw facturesResult.error;
-    if (devisResult.error) throw devisResult.error;
-
-    const factures = facturesResult.data;
-    const devis = devisResult.data;
-
-    const totalFacture = factures.reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
-    const facturesEnAttente = factures.filter(f => f.statut === 'en_attente').length;
-    const facturesEnRetard = factures.filter(f => f.statut === 'en_retard').length;
-    const facturesReglees = factures.filter(f => f.statut === 'paye').length;
-    const totalDevis = devis.length;
-
-    return {
-      totalFacture,
-      facturesEnAttente,
-      facturesEnRetard,
-      facturesReglees,
-      totalDevis,
-      chiffreAffaireMois: totalFacture // Simplification pour l'instant
-    };
+      return true;
+    } catch (error) {
+      console.error('Erreur service billing delete:', error);
+      throw error;
+    }
   }
 };
+
+export default billingService;

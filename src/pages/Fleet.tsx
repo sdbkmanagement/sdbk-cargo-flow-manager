@@ -1,16 +1,16 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Download, Upload, AlertTriangle } from 'lucide-react';
+import { Plus, AlertTriangle } from 'lucide-react';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
 import { SearchInput } from '@/components/fleet/SearchInput';
 import { VehicleFilters } from '@/components/fleet/VehicleFilters';
+import { DocumentManagerVehicule } from '@/components/fleet/DocumentManagerVehicule';
 import vehiculesService from '@/services/vehicules';
 import type { Vehicule, FleetStatsData } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
@@ -24,20 +24,20 @@ const Fleet = () => {
   const [categorieFilter, setCategorieFilter] = useState('all');
   const [baseFilter, setBaseFilter] = useState('all');
   const [activeTab, setActiveTab] = useState('list');
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [showDocuments, setShowDocuments] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Récupération des véhicules avec gestion d'erreur améliorée
   const { data: vehicles = [], isLoading, error, isError } = useQuery({
     queryKey: ['vehicles'],
     queryFn: vehiculesService.getAll,
     retry: 3,
     retryDelay: 1000,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // Récupération des statistiques
   const { data: stats } = useQuery({
     queryKey: ['fleet-stats'],
     queryFn: vehiculesService.getFleetStats,
@@ -45,7 +45,6 @@ const Fleet = () => {
     enabled: !isError,
   });
 
-  // Récupération des bases
   const { data: bases = [] } = useQuery({
     queryKey: ['vehicle-bases'],
     queryFn: vehiculesService.getBases,
@@ -53,9 +52,53 @@ const Fleet = () => {
     enabled: !isError,
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: vehiculesService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['fleet-stats'] });
+      toast({
+        title: 'Succès',
+        description: 'Véhicule supprimé avec succès',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer le véhicule',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleEdit = (vehicle: Vehicule) => {
+    console.log('Édition du véhicule:', vehicle);
     setEditingVehicle(vehicle);
     setShowForm(true);
+  };
+
+  const handleDelete = async (vehicleId: string) => {
+    await deleteMutation.mutateAsync(vehicleId);
+  };
+
+  const handleViewDocuments = (vehicleId: string) => {
+    console.log('Affichage des documents pour:', vehicleId);
+    setSelectedVehicleId(vehicleId);
+    setShowDocuments(true);
+  };
+
+  const handleViewMaintenance = (vehicleId: string) => {
+    console.log('Affichage de la maintenance pour:', vehicleId);
+    setActiveTab('maintenance');
+  };
+
+  const handleViewPostMissionWorkflow = (vehicleId: string) => {
+    console.log('Workflow post-mission pour:', vehicleId);
+    // TODO: Implement post-mission workflow
+    toast({
+      title: 'Information',
+      description: 'Fonctionnalité en cours de développement',
+    });
   };
 
   const handleFormClose = () => {
@@ -73,7 +116,6 @@ const Fleet = () => {
     });
   };
 
-  // Filtrage des véhicules avec type guards
   const filteredVehicles = vehicles.filter((vehicle: Vehicule) => {
     const matchesSearch = 
       vehicle.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -175,10 +217,10 @@ const Fleet = () => {
               <VehicleListTab 
                 vehicles={filteredVehicles}
                 onEdit={handleEdit}
-                onDelete={async () => {}}
-                onViewDocuments={() => {}}
-                onViewMaintenance={() => {}}
-                onViewPostMissionWorkflow={() => {}}
+                onDelete={handleDelete}
+                onViewDocuments={handleViewDocuments}
+                onViewMaintenance={handleViewMaintenance}
+                onViewPostMissionWorkflow={handleViewPostMissionWorkflow}
               />
             </TabsContent>
             
@@ -194,6 +236,16 @@ const Fleet = () => {
           vehicle={editingVehicle}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+        />
+      )}
+
+      {showDocuments && selectedVehicleId && (
+        <DocumentManagerVehicule
+          vehicleId={selectedVehicleId}
+          onClose={() => {
+            setShowDocuments(false);
+            setSelectedVehicleId(null);
+          }}
         />
       )}
     </div>

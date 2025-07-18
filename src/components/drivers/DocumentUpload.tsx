@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Upload, File, X, FileText, Image } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { chauffeursService } from '@/services/chauffeurs';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UploadedFile {
   id: string;
@@ -17,7 +17,7 @@ interface UploadedFile {
 interface DocumentUploadProps {
   onFilesChange: (files: UploadedFile[]) => void;
   maxFiles?: number;
-  maxSizePerFile?: number; // en MB
+  maxSizePerFile?: number;
   acceptedTypes?: string[];
 }
 
@@ -48,24 +48,43 @@ export const DocumentUpload = ({
   };
 
   const validateFile = (file: File): string | null => {
-    // Vérifier le type de fichier
     if (!acceptedTypes.includes(file.type)) {
       return `Type de fichier non autorisé. Formats acceptés: ${acceptedTypes.map(type => 
         type.split('/')[1].toUpperCase()).join(', ')}`;
     }
 
-    // Vérifier la taille
     const fileSizeInMB = file.size / (1024 * 1024);
     if (fileSizeInMB > maxSizePerFile) {
       return `Fichier trop volumineux. Taille maximum: ${maxSizePerFile}MB`;
     }
 
-    // Vérifier le nombre de fichiers
     if (files.length >= maxFiles) {
       return `Nombre maximum de fichiers atteint (${maxFiles})`;
     }
 
     return null;
+  };
+
+  const uploadFileToStorage = async (file: File): Promise<string> => {
+    const fileName = `chauffeurs/${Date.now()}_${file.name}`;
+    
+    const { data, error } = await supabase.storage
+      .from('documents')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Erreur upload Supabase:', error);
+      throw new Error('Erreur lors de l\'upload du fichier');
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('documents')
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
   };
 
   const handleFileSelect = async (selectedFiles: FileList) => {
@@ -85,9 +104,7 @@ export const DocumentUpload = ({
       }
 
       try {
-        // Upload du fichier vers Supabase Storage
-        const tempChauffeurId = 'temp_' + Date.now(); // ID temporaire pour l'upload
-        const fileUrl = await chauffeursService.uploadFile(file, `${tempChauffeurId}/${file.name}`);
+        const fileUrl = await uploadFileToStorage(file);
         
         const newFile: UploadedFile = {
           id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
@@ -118,7 +135,23 @@ export const DocumentUpload = ({
     setUploading(false);
   };
 
-  const removeFile = (fileId: string) => {
+  const removeFile = async (fileId: string) => {
+    const fileToRemove = files.find(f => f.id === fileId);
+    if (fileToRemove) {
+      try {
+        // Extract file path from URL for deletion
+        const urlParts = fileToRemove.url.split('/documents/');
+        if (urlParts.length > 1) {
+          const filePath = urlParts[1];
+          await supabase.storage
+            .from('documents')
+            .remove([filePath]);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la suppression:', error);
+      }
+    }
+
     const updatedFiles = files.filter(f => f.id !== fileId);
     setFiles(updatedFiles);
     onFilesChange(updatedFiles);
@@ -155,7 +188,6 @@ export const DocumentUpload = ({
 
   return (
     <div className="space-y-4">
-      {/* Zone de téléchargement */}
       <div
         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
           isDragging 
@@ -185,7 +217,6 @@ export const DocumentUpload = ({
         </div>
       </div>
 
-      {/* Input caché */}
       <input
         ref={fileInputRef}
         type="file"
@@ -195,7 +226,6 @@ export const DocumentUpload = ({
         className="hidden"
       />
 
-      {/* Liste des fichiers téléchargés */}
       {files.length > 0 && (
         <div className="space-y-2">
           <h4 className="text-sm font-medium">Documents téléchargés:</h4>
