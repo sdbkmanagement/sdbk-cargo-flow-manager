@@ -14,6 +14,8 @@ import { DocumentManagerVehicule } from '@/components/fleet/DocumentManagerVehic
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
 import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { vehiculesService } from '@/services/vehicules';
 
 const Fleet = () => {
   const [activeTab, setActiveTab] = useState('vehicles');
@@ -22,6 +24,25 @@ const Fleet = () => {
   const [showDocumentManager, setShowDocumentManager] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Fetch vehicles and calculate stats
+  const { data: vehicles = [], isLoading } = useQuery({
+    queryKey: ['vehicules', refreshKey],
+    queryFn: vehiculesService.getAll,
+  });
+
+  const stats = {
+    total: vehicles.length,
+    disponibles: vehicles.filter(v => v.statut === 'disponible').length,
+    en_mission: vehicles.filter(v => v.statut === 'en_mission').length,
+    maintenance: vehicles.filter(v => v.statut === 'maintenance').length,
+    validation_requise: vehicles.filter(v => v.statut === 'validation_requise').length,
+    hydrocarbures: vehicles.filter(v => v.type_transport === 'hydrocarbures').length,
+    bauxite: vehicles.filter(v => v.type_transport === 'bauxite').length,
+    maintenance_urgente: 0, // To be calculated based on maintenance dates
+    bases: [], // To be calculated from vehicle bases
+    types_transport: [] // To be calculated from vehicle transport types
+  };
 
   const handleVehicleCreated = () => {
     setRefreshKey(prev => prev + 1);
@@ -51,6 +72,19 @@ const Fleet = () => {
       description: "La gestion de maintenance sera disponible prochainement.",
     });
   };
+
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    try {
+      await vehiculesService.delete(vehicleId);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center p-8">Chargement des véhicules...</div>;
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
@@ -85,13 +119,12 @@ const Fleet = () => {
                 setShowVehicleForm(false);
                 handleVehicleCreated();
               }}
-              onCancel={() => setShowVehicleForm(false)}
             />
           </DialogContent>
         </Dialog>
       </div>
 
-      <FleetStats key={refreshKey} />
+      <FleetStats stats={stats} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -123,22 +156,26 @@ const Fleet = () => {
             </CardHeader>
             <CardContent>
               <VehicleListTab 
-                searchTerm={searchTerm}
-                refreshKey={refreshKey}
-                onManageDocuments={handleManageDocuments}
-                onModifyVehicle={handleModifyVehicle}
-                onMaintenanceVehicle={handleMaintenanceVehicle}
+                vehicles={vehicles.filter(vehicle => 
+                  vehicle.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  vehicle.immatriculation?.toLowerCase().includes(searchTerm.toLowerCase())
+                )}
+                onEdit={handleModifyVehicle}
+                onDelete={handleDeleteVehicle}
+                onViewDocuments={handleManageDocuments}
+                onViewMaintenance={handleMaintenanceVehicle}
+                onViewPostMissionWorkflow={(vehicleId) => console.log('Post-mission workflow:', vehicleId)}
               />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="validation" className="space-y-6">
-          <ValidationTab refreshKey={refreshKey} />
+          <ValidationTab />
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-6">
-          <MaintenanceTab refreshKey={refreshKey} />
+          <MaintenanceTab />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-6">
@@ -166,7 +203,6 @@ const Fleet = () => {
           </DialogHeader>
           <DocumentManagerVehicule
             vehiculeId={selectedVehicleId}
-            onClose={() => setShowDocumentManager(false)}
           />
         </DialogContent>
       </Dialog>

@@ -7,6 +7,8 @@ import { ChauffeursList } from './ChauffeursList';
 import { ChauffeurForm } from './ChauffeurForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { chauffeursService } from '@/services/chauffeurs';
 
 interface DriversTabContentProps {
   searchTerm: string;
@@ -17,8 +19,14 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
   const [showForm, setShowForm] = useState(false);
   const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
 
+  const { data: chauffeurs = [], isLoading, error } = useQuery({
+    queryKey: ['chauffeurs'],
+    queryFn: chauffeursService.getAll,
+  });
+
   const handleCreateSuccess = () => {
     setShowForm(false);
+    setSelectedChauffeur(null);
     toast({
       title: "Chauffeur créé",
       description: "Le chauffeur a été ajouté avec succès.",
@@ -29,6 +37,19 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
     setSelectedChauffeur(chauffeur);
     setShowForm(true);
   };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setSelectedChauffeur(null);
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center p-8">Chargement des chauffeurs...</div>;
+  }
+
+  if (error) {
+    return <div className="flex justify-center p-8 text-red-600">Erreur lors du chargement des chauffeurs</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -52,9 +73,11 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
         </CardHeader>
         <CardContent>
           <ChauffeursList 
+            chauffeurs={chauffeurs}
             onSelectChauffeur={onSelectChauffeur}
             onEditChauffeur={handleEditChauffeur}
             searchTerm={searchTerm}
+            hasWritePermission={true}
           />
         </CardContent>
       </Card>
@@ -69,10 +92,7 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
           <ChauffeurForm 
             chauffeur={selectedChauffeur}
             onSuccess={handleCreateSuccess}
-            onCancel={() => {
-              setShowForm(false);
-              setSelectedChauffeur(null);
-            }}
+            onCancel={handleFormCancel}
           />
         </DialogContent>
       </Dialog>

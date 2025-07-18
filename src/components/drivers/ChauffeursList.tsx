@@ -22,12 +22,16 @@ interface Chauffeur {
 interface ChauffeursListProps {
   chauffeurs: Chauffeur[];
   onSelectChauffeur: (chauffeur: Chauffeur) => void;
+  onEditChauffeur: (chauffeur: Chauffeur) => void;
+  searchTerm: string;
   hasWritePermission?: boolean;
 }
 
 export const ChauffeursList = ({ 
   chauffeurs, 
   onSelectChauffeur, 
+  onEditChauffeur,
+  searchTerm,
   hasWritePermission = false 
 }: ChauffeursListProps) => {
   const { toast } = useToast();
@@ -42,7 +46,7 @@ export const ChauffeursList = ({
       });
       return;
     }
-    onSelectChauffeur(chauffeur);
+    onEditChauffeur(chauffeur);
   };
 
   const getStatutBadge = (statut: string) => {
@@ -66,7 +70,14 @@ export const ChauffeursList = ({
     return null;
   };
 
-  if (chauffeurs.length === 0) {
+  // Filter chauffeurs based on searchTerm
+  const filteredChauffeurs = chauffeurs.filter(chauffeur => 
+    chauffeur.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chauffeur.prenom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chauffeur.telephone.includes(searchTerm)
+  );
+
+  if (filteredChauffeurs.length === 0) {
     return (
       <Card>
         <CardContent className="text-center py-8">
@@ -78,7 +89,7 @@ export const ChauffeursList = ({
 
   return (
     <div className="grid gap-4">
-      {chauffeurs.map((chauffeur) => (
+      {filteredChauffeurs.map((chauffeur) => (
         <Card key={chauffeur.id} className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-3">
             <div className="flex justify-between items-start">

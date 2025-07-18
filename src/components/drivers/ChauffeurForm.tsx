@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Form } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
@@ -15,6 +16,7 @@ import { chauffeursService } from '@/services/chauffeurs';
 interface ChauffeurFormProps {
   chauffeur?: any;
   onSuccess: () => void;
+  onCancel?: () => void;
 }
 
 interface UploadedFile {
@@ -25,7 +27,7 @@ interface UploadedFile {
   url: string;
 }
 
-export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
+export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedFile[]>([]);
   const [profilePhoto, setProfilePhoto] = useState<UploadedFile | null>(null);
@@ -197,6 +199,12 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
     form.handleSubmit(onSubmit)();
   };
 
+  const handleCancel = () => {
+    if (onCancel) {
+      onCancel();
+    }
+  };
+
   const formValues = form.watch();
 
   return (
@@ -238,6 +246,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess }: ChauffeurFormProps) => {
             onPrevious={handlePrevious}
             onNext={handleNext}
             onSubmit={handleFormSubmit}
+            onCancel={handleCancel}
             isSubmitting={createChauffeurMutation.isPending || updateChauffeurMutation.isPending}
           />
         </div>

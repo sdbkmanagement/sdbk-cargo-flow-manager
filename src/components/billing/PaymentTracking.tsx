@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,7 @@ import {
   CheckCircle,
   Clock
 } from 'lucide-react';
-import { billingService, type Facture } from '@/services/billing';
+import billingService, { type Facture } from '@/services/billing';
 import { exportInvoicesToCSV } from '@/utils/exportUtils';
 import { toast } from '@/hooks/use-toast';
 
@@ -79,7 +80,7 @@ export const PaymentTracking = () => {
     return diffDays > 0 ? diffDays : 0;
   };
 
-  const handleStatusChange = async (invoiceId: string, newStatus: string) => {
+  const handleStatusChange = async (invoiceId: string, newStatus: 'en_attente' | 'paye' | 'en_retard') => {
     try {
       await billingService.updateFacture(invoiceId, { statut: newStatus });
       toast({

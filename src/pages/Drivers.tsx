@@ -8,11 +8,12 @@ import { DriversTabContent } from '@/components/drivers/DriversTabContent';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 const Drivers = () => {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('liste');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChauffeur, setSelectedChauffeur] = useState(null);
 
@@ -59,18 +60,6 @@ const Drivers = () => {
 
   const handleSelectChauffeur = (chauffeur: any) => {
     setSelectedChauffeur(chauffeur);
-    setActiveTab('modifier');
-  };
-
-  const handleFormSuccess = () => {
-    setSelectedChauffeur(null);
-    setActiveTab('liste');
-    queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
-  };
-
-  const handleNewChauffeur = () => {
-    setSelectedChauffeur(null);
-    setActiveTab('nouveau');
   };
 
   if (!hasPermission('drivers_read')) {
@@ -123,36 +112,28 @@ const Drivers = () => {
             Gestion complète du personnel de conduite
           </p>
         </div>
-        {hasPermission('drivers_write') && (
-          <Button 
-            onClick={handleNewChauffeur}
-            className="bg-orange-500 hover:bg-orange-600"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nouveau chauffeur
-          </Button>
-        )}
       </div>
 
       <DriversStats {...stats} />
 
-      <DriversTabNavigation
-        activeTab={activeTab}
-        hasWritePermission={hasPermission('drivers_write')}
-        selectedChauffeur={selectedChauffeur}
-        onTabChange={setActiveTab}
-      />
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="flex gap-2 items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un chauffeur..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
+        </div>
+      </div>
 
       <div className="mt-6">
         <DriversTabContent
-          activeTab={activeTab}
           searchTerm={searchTerm}
-          selectedChauffeur={selectedChauffeur}
-          hasWritePermission={hasPermission('drivers_write')}
-          onSearchChange={setSearchTerm}
           onSelectChauffeur={handleSelectChauffeur}
-          onFormSuccess={handleFormSuccess}
-          onBackToList={() => setActiveTab('liste')}
         />
       </div>
     </div>

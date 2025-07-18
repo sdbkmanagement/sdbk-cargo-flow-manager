@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Save, X } from 'lucide-react';
 
 interface FormNavigationProps {
   currentStep: number;
@@ -9,7 +9,8 @@ interface FormNavigationProps {
   onPrevious: () => void;
   onNext: () => void;
   onSubmit: () => void;
-  isSubmitting: boolean;
+  onCancel?: () => void;
+  isSubmitting?: boolean;
 }
 
 export const FormNavigation = ({
@@ -18,55 +19,62 @@ export const FormNavigation = ({
   onPrevious,
   onNext,
   onSubmit,
-  isSubmitting
+  onCancel,
+  isSubmitting = false
 }: FormNavigationProps) => {
-  const handleNext = () => {
-    console.log('Navigation: étape actuelle', currentStep, 'vers étape', currentStep + 1);
-    onNext();
-  };
-
-  const handleSubmit = () => {
-    console.log('Soumission du formulaire depuis l\'étape', currentStep);
-    onSubmit();
-  };
+  const isFirstStep = currentStep === 1;
+  const isLastStep = currentStep === totalSteps;
 
   return (
     <div className="flex justify-between items-center pt-6 border-t">
-      <Button
-        type="button"
-        variant="outline"
-        onClick={onPrevious}
-        disabled={currentStep === 1}
-        className="flex items-center"
-      >
-        <ChevronLeft className="w-4 h-4 mr-2" />
-        Précédent
-      </Button>
-
-      <div className="text-sm text-gray-500">
-        Étape {currentStep} sur {totalSteps}
+      <div className="flex gap-2">
+        {!isFirstStep && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onPrevious}
+            className="flex items-center gap-2"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Précédent
+          </Button>
+        )}
+        
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="flex items-center gap-2"
+          >
+            <X className="h-4 w-4" />
+            Annuler
+          </Button>
+        )}
       </div>
 
-      {currentStep < totalSteps ? (
-        <Button
-          type="button"
-          onClick={handleNext}
-          className="flex items-center bg-orange-500 hover:bg-orange-600"
-        >
-          Suivant
-          <ChevronRight className="w-4 h-4 ml-2" />
-        </Button>
-      ) : (
-        <Button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          className="flex items-center bg-green-600 hover:bg-green-700"
-        >
-          <Save className="w-4 h-4 mr-2" />
-          {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder'}
-        </Button>
-      )}
+      <div className="flex gap-2">
+        {!isLastStep ? (
+          <Button
+            type="button"
+            onClick={onNext}
+            className="flex items-center gap-2"
+          >
+            Suivant
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600"
+          >
+            <Save className="h-4 w-4" />
+            {isSubmitting ? 'Sauvegarde...' : 'Enregistrer'}
+          </Button>
+        )}
+      </div>
     </div>
   );
 };
