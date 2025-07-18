@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, FileText, BarChart3 } from 'lucide-react';
+import { Users, Calendar, FileText, AlertTriangle, BarChart3 } from 'lucide-react';
 
 interface DriversTabNavigationProps {
   activeTab: string;
@@ -10,34 +10,33 @@ interface DriversTabNavigationProps {
 
 export const DriversTabNavigation = ({ activeTab, onTabChange }: DriversTabNavigationProps) => {
   const tabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'drivers', label: 'Chauffeurs', icon: Users },
     { id: 'planning', label: 'Planning', icon: Calendar },
+    { id: 'alertes', label: 'Alertes', icon: AlertTriangle },
     { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'stats', label: 'Statistiques', icon: BarChart3 }
   ];
 
   return (
-    <div className="border-b border-gray-200 mb-6">
-      <nav className="-mb-px flex space-x-8">
-        {tabs.map(tab => {
-          const Icon = tab.icon;
-          return (
-            <Button
-              key={tab.id}
-              variant="ghost"
-              onClick={() => onTabChange(tab.id)}
-              className={`${
-                activeTab === tab.id
-                  ? 'border-orange-500 text-orange-600 border-b-2'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
-            >
-              <Icon className="w-4 h-4 mr-2" />
-              {tab.label}
-            </Button>
-          );
-        })}
-      </nav>
+    <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        return (
+          <Button
+            key={tab.id}
+            variant={activeTab === tab.id ? "default" : "ghost"}
+            onClick={() => onTabChange(tab.id)}
+            className={`flex items-center space-x-2 ${
+              activeTab === tab.id 
+                ? 'bg-orange-500 text-white hover:bg-orange-600' 
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            <span>{tab.label}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 };

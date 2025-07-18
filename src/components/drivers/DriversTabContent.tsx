@@ -22,6 +22,7 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
   const { data: chauffeurs = [], isLoading, error } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll,
+    refetchInterval: 30000, // Actualisation automatique
   });
 
   const handleCreateSuccess = () => {
@@ -29,7 +30,7 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
     setSelectedChauffeur(null);
     toast({
       title: "Chauffeur créé",
-      description: "Le chauffeur a été ajouté avec succès.",
+      description: "Le chauffeur a été ajouté avec succès et les documents requis ont été assignés automatiquement.",
     });
   };
 
@@ -65,7 +66,7 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
                 Gestion des chauffeurs et de leurs informations
               </CardDescription>
             </div>
-            <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Button onClick={() => setShowForm(true)} className="gap-2 bg-orange-500 hover:bg-orange-600">
               <Plus className="h-4 w-4" />
               Nouveau chauffeur
             </Button>

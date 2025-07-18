@@ -5,13 +5,16 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search } from 'lucide-react';
 import { DriversTabNavigation } from '@/components/drivers/DriversTabNavigation';
 import { DriversTabContent } from '@/components/drivers/DriversTabContent';
+import { DriversDashboard } from '@/components/drivers/DriversDashboard';
+import { DriversAlerts } from '@/components/drivers/DriversAlerts';
+import { DriversDocuments } from '@/components/drivers/DriversDocuments';
 import { PlanningView } from '@/components/drivers/planning/PlanningView';
 import { ChauffeurDetailDialog } from '@/components/drivers/ChauffeurDetailDialog';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
 
 const Drivers = () => {
-  const [activeTab, setActiveTab] = useState('drivers');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
@@ -31,6 +34,8 @@ const Drivers = () => {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'dashboard':
+        return <DriversDashboard />;
       case 'drivers':
         return (
           <DriversTabContent 
@@ -40,18 +45,10 @@ const Drivers = () => {
         );
       case 'planning':
         return <PlanningView chauffeurs={chauffeurs} />;
+      case 'alertes':
+        return <DriversAlerts />;
       case 'documents':
-        return (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Gestion des documents des chauffeurs - En cours de développement</p>
-          </div>
-        );
-      case 'stats':
-        return (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Statistiques des chauffeurs - En cours de développement</p>
-          </div>
-        );
+        return <DriversDocuments />;
       default:
         return null;
     }
@@ -63,7 +60,7 @@ const Drivers = () => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Gestion des chauffeurs</h1>
           <p className="text-gray-600 mt-1">
-            Gestion des chauffeurs, planning et documents
+            Dashboard, planning, documents et alertes de conformité
           </p>
         </div>
         <Button className="bg-orange-500 hover:bg-orange-600">
