@@ -10,12 +10,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-sdbk-green text-white hover:bg-sdbk-green/90 shadow-sdbk-green hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
-        destructive: "bg-sdbk-red text-white hover:bg-sdbk-red/90 shadow-sdbk-red hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
-        outline: "border border-gray-200 bg-white hover:bg-gray-50 hover:text-sdbk-blue hover:border-sdbk-blue/50",
-        secondary: "bg-sdbk-blue text-white hover:bg-sdbk-blue/90 shadow-sdbk-blue hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
-        ghost: "hover:bg-gray-100 hover:text-sdbk-blue",
-        link: "text-sdbk-blue underline-offset-4 hover:underline",
+        default: "bg-orange-500 text-white hover:bg-orange-600 shadow-orange-500 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
+        destructive: "bg-red-500 text-white hover:bg-red-600 shadow-red-500 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
+        outline: "border border-orange-200 bg-white hover:bg-orange-50 hover:text-orange-600 hover:border-orange-500",
+        secondary: "bg-orange-600 text-white hover:bg-orange-700 shadow-orange-600 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
+        ghost: "hover:bg-orange-100 hover:text-orange-600",
+        link: "text-orange-600 underline-offset-4 hover:underline",
       },
       size: {
         default: "h-11 px-6 py-3",

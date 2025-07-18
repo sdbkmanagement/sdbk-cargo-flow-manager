@@ -1,26 +1,38 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
-import { User } from 'lucide-react';
 import { UseFormReturn } from 'react-hook-form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 
 interface PersonalInfoStepProps {
   form: UseFormReturn<any>;
 }
 
+const permisTypes = ['A', 'B', 'C', 'CE', 'D', 'DE'];
+
 export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
+  const selectedPermis = form.watch('typePermis') || [];
+
+  const togglePermisType = (type: string) => {
+    const current = form.getValues('typePermis') || [];
+    const updated = current.includes(type)
+      ? current.filter((t: string) => t !== type)
+      : [...current, type];
+    form.setValue('typePermis', updated);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <User className="w-5 h-5 mr-2" />
-          Informations personnelles
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Informations personnelles</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="nom"
@@ -28,13 +40,13 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
               <FormItem>
                 <FormLabel>Nom *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Nom de famille" {...field} />
+                  <Input placeholder="Nom du chauffeur" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="prenom"
@@ -42,19 +54,19 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
               <FormItem>
                 <FormLabel>Prénom *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Prénom" {...field} />
+                  <Input placeholder="Prénom du chauffeur" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="dateNaissance"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date de naissance *</FormLabel>
+                <FormLabel>Date de naissance</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -62,7 +74,7 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="telephone"
@@ -70,13 +82,13 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
               <FormItem>
                 <FormLabel>Téléphone *</FormLabel>
                 <FormControl>
-                  <Input placeholder="+225 XX XX XX XX XX" {...field} />
+                  <Input placeholder="+224 XX XX XX XX" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="email"
@@ -90,50 +102,96 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
             name="adresse"
             render={({ field }) => (
-              <FormItem>
+              <FormItem className="md:col-span-2">
                 <FormLabel>Adresse</FormLabel>
                 <FormControl>
-                  <Input placeholder="Adresse complète" {...field} />
+                  <Textarea placeholder="Adresse complète" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </CardContent>
+      </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Informations du permis</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            name="ville"
+            name="numeroPermis"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Ville</FormLabel>
+                <FormLabel>Numéro de permis *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ville" {...field} />
+                  <Input placeholder="Numéro du permis de conduire" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-
+          
           <FormField
             control={form.control}
-            name="codePostal"
+            name="dateExpirationPermis"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Code postal</FormLabel>
+                <FormLabel>Date d'expiration du permis *</FormLabel>
                 <FormControl>
-                  <Input placeholder="Code postal" {...field} />
+                  <Input type="date" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        </div>
-      </CardContent>
-    </Card>
+          
+          <div className="md:col-span-2">
+            <FormLabel>Types de permis autorisés</FormLabel>
+            <div className="mt-2 space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {permisTypes.map((type) => (
+                  <Button
+                    key={type}
+                    type="button"
+                    variant={selectedPermis.includes(type) ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => togglePermisType(type)}
+                  >
+                    {type}
+                  </Button>
+                ))}
+              </div>
+              
+              {selectedPermis.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-sm text-gray-600">Sélectionnés:</span>
+                  {selectedPermis.map((type: string) => (
+                    <Badge key={type} variant="default" className="flex items-center gap-1">
+                      {type}
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-4 w-4 p-0 hover:bg-transparent"
+                        onClick={() => togglePermisType(type)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };

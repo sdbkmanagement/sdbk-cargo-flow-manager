@@ -7,11 +7,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { StepIndicator } from './form/StepIndicator';
 import { PersonalInfoStep } from './form/PersonalInfoStep';
 import { DocumentsStep } from './form/DocumentsStep';
+import { DocumentsUploadStep } from './form/DocumentsUploadStep';
 import { PhotoSignatureStep } from './form/PhotoSignatureStep';
 import { FormNavigation } from './form/FormNavigation';
 import { ProfileHeader } from './ProfileHeader';
 import { formSteps } from './form/steps';
 import { chauffeursService } from '@/services/chauffeurs';
+import { documentsService } from '@/services/documentsService';
 
 interface ChauffeurFormProps {
   chauffeur?: any;
@@ -27,9 +29,19 @@ interface UploadedFile {
   url: string;
 }
 
+interface DocumentUpload {
+  id: string;
+  titre: string;
+  dateEmission: string;
+  dateExpiration: string;
+  file?: File;
+  url?: string;
+}
+
 export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadedDocuments, setUploadedDocuments] = useState<UploadedFile[]>([]);
+  const [customDocuments, setCustomDocuments] = useState<DocumentUpload[]>([]);
   const [profilePhoto, setProfilePhoto] = useState<UploadedFile | null>(null);
   const [signature, setSignature] = useState<UploadedFile | null>(null);
   const { toast } = useToast();
@@ -76,10 +88,38 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
   const createChauffeurMutation = useMutation({
     mutationFn: chauffeursService.create,
     onSuccess: async (createdChauffeur) => {
-      // Sauvegarder les documents après création du chauffeur
       try {
+        // Sauvegarder les documents obligatoires
         if (uploadedDocuments.length > 0) {
           await chauffeursService.saveDocuments(createdChauffeur.id, uploadedDocuments);
+        }
+        
+        // Sauvegarder les documents personnalisés
+        for (const doc of customDocuments) {
+          if (doc.file && doc.titre) {
+            try {
+              const fileUrl = await documentsService.uploadFile(
+                doc.file, 
+                'chauffeur', 
+                createdChauffeur.id, 
+                'document_personnalise'
+              );
+              
+              await documentsService.create({
+                entity_type: 'chauffeur',
+                entity_id: createdChauffeur.id,
+                nom: doc.titre,
+                type: 'document_personnalise',
+                url: fileUrl,
+                taille: doc.file.size,
+                date_delivrance: doc.dateEmission || null,
+                date_expiration: doc.dateExpiration || null,
+                statut: 'valide'
+              });
+            } catch (error) {
+              console.error('Erreur lors de l\'upload du document personnalisé:', error);
+            }
+          }
         }
         
         queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
@@ -164,6 +204,11 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
     setUploadedDocuments(files);
   };
 
+  const handleCustomDocumentsChange = (documents: DocumentUpload[]) => {
+    console.log('Documents personnalisés:', documents);
+    setCustomDocuments(documents);
+  };
+
   const handlePhotoChange = (files: UploadedFile[]) => {
     console.log('Photo changée:', files);
     if (files.length > 0) {
@@ -231,6 +276,13 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
           )}
           
           {currentStep === 3 && (
+            <DocumentsUploadStep
+              documents={customDocuments}
+              onDocumentsChange={handleCustomDocumentsChange}
+            />
+          )}
+          
+          {currentStep === 4 && (
             <PhotoSignatureStep
               profilePhoto={profilePhoto}
               signature={signature}
