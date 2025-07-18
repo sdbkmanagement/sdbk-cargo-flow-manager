@@ -1,8 +1,14 @@
 
 import React from 'react';
 
+interface Step {
+  id: number;
+  title: string;
+  icon: React.ComponentType<any>;
+}
+
 interface StepIndicatorProps {
-  steps: Array<{ id: number; title: string; icon: React.ComponentType<any> }>;
+  steps: Step[];
   currentStep: number;
 }
 
