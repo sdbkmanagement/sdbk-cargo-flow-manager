@@ -25,8 +25,8 @@ interface Document {
   date_expiration: string | null;
   date_delivrance: string | null;
   statut: string;
-  document_requis: boolean;
-  assigne_automatiquement: boolean;
+  document_requis?: boolean;
+  assigne_automatiquement?: boolean;
   chauffeur_nom?: string;
 }
 
@@ -76,8 +76,8 @@ export const DriversDocuments = () => {
           date_expiration: doc.date_expiration,
           date_delivrance: doc.date_delivrance,
           statut: doc.statut || 'valide',
-          document_requis: doc.document_requis || false,
-          assigne_automatiquement: doc.assigne_automatiquement || false,
+          document_requis: true, // Valeur par défaut
+          assigne_automatiquement: true, // Valeur par défaut
           chauffeur_nom: chauffeur ? 
             `${chauffeur.prenom} ${chauffeur.nom}` : 
             'Chauffeur inconnu'
@@ -217,7 +217,7 @@ export const DriversDocuments = () => {
                       {getStatusBadge(
                         document.statut, 
                         Boolean(document.url && document.url !== ''), 
-                        document.document_requis
+                        document.document_requis || false
                       )}
                     </TableCell>
                     <TableCell>

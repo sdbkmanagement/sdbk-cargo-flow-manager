@@ -139,15 +139,13 @@ export const documentsService = {
         { nom: 'Visite médicale', type: 'visite_medicale' }
       ]
 
-      const documentsToCreate = requiredDocuments.map(doc => ({
+      const documentsToCreate: DocumentInsert[] = requiredDocuments.map(doc => ({
         entity_type: 'chauffeur',
         entity_id: chauffeurId,
         nom: doc.nom,
         type: doc.type,
         url: '',
-        taille: 0, // Valeur par défaut requise
-        document_requis: true,
-        assigne_automatiquement: true,
+        taille: 0,
         statut: 'manquant'
       }))
 
@@ -164,15 +162,14 @@ export const documentsService = {
     }
   },
 
-  // Vérifier la conformité d'un chauffeur
+  // Vérifier la conformité d'un chauffeur - version simplifiée
   async checkDriverCompliance(chauffeurId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
         .from('documents')
-        .select('*')
+        .select('id, url, date_expiration')
         .eq('entity_id', chauffeurId)
         .eq('entity_type', 'chauffeur')
-        .eq('document_requis', true)
 
       if (error) {
         throw error
