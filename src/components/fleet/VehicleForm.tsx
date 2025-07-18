@@ -2,12 +2,17 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Truck, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { VehicleBasicInfo } from './form/VehicleBasicInfo';
 import { VehicleTracteurInfo } from './form/VehicleTracteurInfo';
 import { VehicleRemorqueInfo } from './form/VehicleRemorqueInfo';
+import { VehicleDocuments } from './form/VehicleDocuments';
 import { VehicleStepIndicator } from './form/VehicleStepIndicator';
 import { FormNavigation } from '../drivers/form/FormNavigation';
 
@@ -26,19 +31,20 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
     defaultValues: {
       // Informations générales
       numero: vehicule?.numero || '',
-      numero_tracteur: vehicule?.numero_tracteur || '',
-      numero_remorque: vehicule?.numero_remorque || '',
       type_vehicule: vehicule?.type_vehicule || 'porteur',
-      categorie: vehicule?.categorie || '',
-      statut: vehicule?.statut || 'disponible',
       base: vehicule?.base || '',
+      
+      // Plaques d'immatriculation
+      immatriculation: vehicule?.immatriculation || '',
+      tracteur_immatriculation: vehicule?.tracteur_immatriculation || '',
+      remorque_immatriculation: vehicule?.remorque_immatriculation || '',
       
       // Tracteur fields
       tracteur_marque: vehicule?.tracteur_marque || '',
       tracteur_modele: vehicule?.tracteur_modele || '',
       tracteur_configuration: vehicule?.tracteur_configuration || '',
       tracteur_numero_chassis: vehicule?.tracteur_numero_chassis || '',
-      tracteur_annee_fabrication: vehicule?.tracteur_annee_fabrication || null,
+      tracteur_date_fabrication: vehicule?.tracteur_date_fabrication || '',
       tracteur_date_mise_circulation: vehicule?.tracteur_date_mise_circulation || '',
       
       // Remorque fields
@@ -47,15 +53,14 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       remorque_modele: vehicule?.remorque_modele || '',
       remorque_configuration: vehicule?.remorque_configuration || '',
       remorque_numero_chassis: vehicule?.remorque_numero_chassis || '',
-      remorque_annee_fabrication: vehicule?.remorque_annee_fabrication || null,
+      remorque_date_fabrication: vehicule?.remorque_date_fabrication || '',
       remorque_date_mise_circulation: vehicule?.remorque_date_mise_circulation || '',
       
       // Pour les porteurs
       marque: vehicule?.marque || '',
       modele: vehicule?.modele || '',
-      immatriculation: vehicule?.immatriculation || '',
       numero_chassis: vehicule?.numero_chassis || '',
-      annee_fabrication: vehicule?.annee_fabrication || null,
+      date_fabrication: vehicule?.date_fabrication || '',
     }
   });
 
@@ -114,7 +119,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
   };
 
   const vehicleType = form.watch('type_vehicule');
-  const totalSteps = vehicleType === 'tracteur_remorque' ? 3 : 2;
+  const totalSteps = vehicleType === 'tracteur_remorque' ? 4 : 3;
 
   const handleNext = () => {
     setCurrentStep(Math.min(totalSteps, currentStep + 1));
@@ -157,7 +162,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
             />
           )}
 
-          {/* Étape 2: Tracteur (pour tracteur+remorque) ou Véhicule (pour porteur) */}
+          {/* Étape 2: Informations véhicule */}
           {currentStep === 2 && vehicleType === 'tracteur_remorque' && (
             <VehicleTracteurInfo 
               register={form.register}
@@ -166,72 +171,66 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
           )}
 
           {currentStep === 2 && vehicleType === 'porteur' && (
-            <div className="space-y-6">
-              <h3 className="text-xl font-semibold mb-4">Informations du véhicule porteur</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="marque" className="text-sm font-medium">Marque *</label>
-                  <input
-                    id="marque"
-                    {...form.register('marque', { required: 'La marque est requise' })}
-                    placeholder="Ex: Mercedes, Volvo"
-                    className="w-full p-2 border rounded-md"
-                  />
-                  {form.formState.errors.marque && (
-                    <p className="text-sm text-destructive">{form.formState.errors.marque.message?.toString()}</p>
-                  )}
-                </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Truck className="h-5 w-5" />
+                  Informations du véhicule porteur
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="marque" className="text-sm font-medium flex items-center gap-1">
+                      Marque
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                    </Label>
+                    <Input
+                      id="marque"
+                      {...form.register('marque', { required: 'La marque est requise' })}
+                      placeholder="Ex: Mercedes, Volvo"
+                    />
+                    {form.formState.errors.marque && (
+                      <p className="text-sm text-destructive">{form.formState.errors.marque.message?.toString()}</p>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="modele" className="text-sm font-medium">Modèle *</label>
-                  <input
-                    id="modele"
-                    {...form.register('modele', { required: 'Le modèle est requis' })}
-                    placeholder="Ex: Actros, FH"
-                    className="w-full p-2 border rounded-md"
-                  />
-                  {form.formState.errors.modele && (
-                    <p className="text-sm text-destructive">{form.formState.errors.modele.message?.toString()}</p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="modele" className="text-sm font-medium flex items-center gap-1">
+                      Modèle
+                      <AlertCircle className="h-4 w-4 text-destructive" />
+                    </Label>
+                    <Input
+                      id="modele"
+                      {...form.register('modele', { required: 'Le modèle est requis' })}
+                      placeholder="Ex: Actros, FH"
+                    />
+                    {form.formState.errors.modele && (
+                      <p className="text-sm text-destructive">{form.formState.errors.modele.message?.toString()}</p>
+                    )}
+                  </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="immatriculation" className="text-sm font-medium">Immatriculation *</label>
-                  <input
-                    id="immatriculation"
-                    {...form.register('immatriculation', { required: 'L\'immatriculation est requise' })}
-                    placeholder="Ex: AB-123-CD"
-                    className="w-full p-2 border rounded-md"
-                  />
-                  {form.formState.errors.immatriculation && (
-                    <p className="text-sm text-destructive">{form.formState.errors.immatriculation.message?.toString()}</p>
-                  )}
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="numero_chassis" className="text-sm font-medium">Numéro de châssis</Label>
+                    <Input
+                      id="numero_chassis"
+                      {...form.register('numero_chassis')}
+                      placeholder="Ex: WDB9640261L123456"
+                      className="font-mono"
+                    />
+                  </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="numero_chassis" className="text-sm font-medium">Numéro de châssis</label>
-                  <input
-                    id="numero_chassis"
-                    {...form.register('numero_chassis')}
-                    placeholder="Ex: WDB9640261L123456"
-                    className="w-full p-2 border rounded-md font-mono"
-                  />
+                  <div className="space-y-2">
+                    <Label htmlFor="date_fabrication" className="text-sm font-medium">Date de fabrication</Label>
+                    <Input
+                      id="date_fabrication"
+                      type="date"
+                      {...form.register('date_fabrication')}
+                    />
+                  </div>
                 </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="annee_fabrication" className="text-sm font-medium">Année de fabrication</label>
-                  <input
-                    id="annee_fabrication"
-                    type="number"
-                    {...form.register('annee_fabrication')}
-                    placeholder="Ex: 2020"
-                    min="1990"
-                    max={new Date().getFullYear()}
-                    className="w-full p-2 border rounded-md"
-                  />
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Étape 3: Remorque (uniquement pour tracteur+remorque) */}
@@ -239,6 +238,16 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
             <VehicleRemorqueInfo 
               register={form.register}
               errors={form.formState.errors}
+            />
+          )}
+
+          {/* Étape 3/4: Documents */}
+          {((currentStep === 3 && vehicleType === 'porteur') || 
+            (currentStep === 4 && vehicleType === 'tracteur_remorque')) && (
+            <VehicleDocuments 
+              register={form.register}
+              errors={form.formState.errors}
+              watch={form.watch}
             />
           )}
 

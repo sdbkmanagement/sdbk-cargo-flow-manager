@@ -103,23 +103,14 @@ export const VehicleRemorqueInfo = ({ register, errors }: VehicleRemorqueInfoPro
             />
           </div>
           
-          {/* Année de fabrication */}
+          {/* Date de fabrication */}
           <div className="space-y-2">
-            <Label htmlFor="remorque_annee_fabrication" className="text-sm font-medium">Année de fabrication</Label>
+            <Label htmlFor="remorque_date_fabrication" className="text-sm font-medium">Date de fabrication</Label>
             <Input
-              id="remorque_annee_fabrication"
-              type="number"
-              {...register('remorque_annee_fabrication', {
-                min: { value: 1990, message: 'Année minimum: 1990' },
-                max: { value: new Date().getFullYear(), message: `Année maximum: ${new Date().getFullYear()}` }
-              })}
-              placeholder="Ex: 2020"
-              min="1990"
-              max={new Date().getFullYear()}
+              id="remorque_date_fabrication"
+              type="date"
+              {...register('remorque_date_fabrication')}
             />
-            {errors.remorque_annee_fabrication && (
-              <p className="text-sm text-destructive">{String(errors.remorque_annee_fabrication.message)}</p>
-            )}
           </div>
         </div>
 

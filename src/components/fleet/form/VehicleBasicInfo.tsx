@@ -16,19 +16,14 @@ interface VehicleBasicInfoProps {
 export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleBasicInfoProps) => {
   const typeVehicule = watch('type_vehicule');
 
-  // Auto-generate vehicle numbers based on type
+  // Auto-generate vehicle numbers with sequential format V001, V002, etc.
   useEffect(() => {
     if (typeVehicule) {
       const generateNumber = () => {
-        const year = new Date().getFullYear();
-        const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        
-        if (typeVehicule === 'tracteur_remorque') {
-          setValue('numero_tracteur', `V${randomSuffix}-TRACTEUR`);
-          setValue('numero_remorque', `V${randomSuffix}-REMORQUE`);
-        } else {
-          setValue('numero', `V${randomSuffix}-${typeVehicule.toUpperCase()}`);
-        }
+        // Generate sequential number (in real app, this would come from backend)
+        const nextNumber = Math.floor(Math.random() * 999) + 1;
+        const formattedNumber = `V${nextNumber.toString().padStart(3, '0')}`;
+        setValue('numero', formattedNumber);
       };
       
       generateNumber();
@@ -68,102 +63,84 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleB
             )}
           </div>
 
-          {/* Catégorie */}
-          <div className="space-y-2">
-            <Label htmlFor="categorie" className="text-sm font-medium">Catégorie</Label>
-            <Select onValueChange={(value) => setValue('categorie', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner la catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="transport_hydrocarbures">Transport Hydrocarbures</SelectItem>
-                <SelectItem value="transport_marchandises">Transport Marchandises</SelectItem>
-                <SelectItem value="livraison_urbaine">Livraison Urbaine</SelectItem>
-                <SelectItem value="longue_distance">Longue Distance</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Statut */}
-          <div className="space-y-2">
-            <Label htmlFor="statut" className="text-sm font-medium flex items-center gap-1">
-              Statut du véhicule
-              <AlertCircle className="h-4 w-4 text-destructive" />
-            </Label>
-            <Select 
-              value={watch('statut') || 'disponible'} 
-              onValueChange={(value) => setValue('statut', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner le statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="disponible">Disponible</SelectItem>
-                <SelectItem value="en_mission">En mission</SelectItem>
-                <SelectItem value="maintenance">En maintenance</SelectItem>
-                <SelectItem value="hors_service">Hors service</SelectItem>
-                <SelectItem value="validation_requise">Validation requise</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.statut && (
-              <p className="text-sm text-destructive">{errors.statut.message?.toString()}</p>
-            )}
-          </div>
-
           {/* Base d'intégration */}
           <div className="space-y-2">
-            <Label htmlFor="base" className="text-sm font-medium">Base d'intégration</Label>
+            <Label htmlFor="base" className="text-sm font-medium">Base</Label>
             <Select onValueChange={(value) => setValue('base', value)}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner la base" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="abidjan">Abidjan</SelectItem>
-                <SelectItem value="bouake">Bouaké</SelectItem>
-                <SelectItem value="yamoussoukro">Yamoussoukro</SelectItem>
-                <SelectItem value="san_pedro">San Pedro</SelectItem>
-                <SelectItem value="korhogo">Korhogo</SelectItem>
+                <SelectItem value="conakry">Conakry</SelectItem>
+                <SelectItem value="kamsar">Kamsar</SelectItem>
+                <SelectItem value="nzerekore">N'Zérékoré</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
-        {/* Numéros automatisés */}
-        {typeVehicule === 'tracteur_remorque' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Plaques d'immatriculation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {typeVehicule === 'tracteur_remorque' ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="tracteur_immatriculation" className="text-sm font-medium flex items-center gap-1">
+                  Plaque d'immatriculation tracteur
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                </Label>
+                <Input
+                  id="tracteur_immatriculation"
+                  {...register('tracteur_immatriculation', { required: 'La plaque du tracteur est requise' })}
+                  placeholder="Ex: AB-123-CD"
+                />
+                {errors.tracteur_immatriculation && (
+                  <p className="text-sm text-destructive">{errors.tracteur_immatriculation.message?.toString()}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="remorque_immatriculation" className="text-sm font-medium flex items-center gap-1">
+                  Plaque d'immatriculation remorque
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                </Label>
+                <Input
+                  id="remorque_immatriculation"
+                  {...register('remorque_immatriculation', { required: 'La plaque de la remorque est requise' })}
+                  placeholder="Ex: EF-456-GH"
+                />
+                {errors.remorque_immatriculation && (
+                  <p className="text-sm text-destructive">{errors.remorque_immatriculation.message?.toString()}</p>
+                )}
+              </div>
+            </>
+          ) : (
             <div className="space-y-2">
-              <Label htmlFor="numero_tracteur" className="text-sm font-medium">Numéro de tracteur (automatisé)</Label>
+              <Label htmlFor="immatriculation" className="text-sm font-medium flex items-center gap-1">
+                Plaque d'immatriculation
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </Label>
               <Input
-                id="numero_tracteur"
-                {...register('numero_tracteur')}
-                placeholder="Auto-généré"
-                readOnly
-                className="bg-muted"
+                id="immatriculation"
+                {...register('immatriculation', { required: 'La plaque d\'immatriculation est requise' })}
+                placeholder="Ex: AB-123-CD"
               />
+              {errors.immatriculation && (
+                <p className="text-sm text-destructive">{errors.immatriculation.message?.toString()}</p>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="numero_remorque" className="text-sm font-medium">Numéro de remorque (automatisé)</Label>
-              <Input
-                id="numero_remorque"
-                {...register('numero_remorque')}
-                placeholder="Auto-généré"
-                readOnly
-                className="bg-muted"
-              />
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <Label htmlFor="numero" className="text-sm font-medium">Numéro du véhicule (automatisé)</Label>
-            <Input
-              id="numero"
-              {...register('numero')}
-              placeholder="Auto-généré selon le type"
-              readOnly
-              className="bg-muted"
-            />
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Numéro automatisé */}
+        <div className="space-y-2">
+          <Label htmlFor="numero" className="text-sm font-medium">Numéro du véhicule (automatisé)</Label>
+          <Input
+            id="numero"
+            {...register('numero')}
+            placeholder="Format: V001, V002, V003..."
+            readOnly
+            className="bg-muted"
+          />
+        </div>
       </CardContent>
     </Card>
   );
