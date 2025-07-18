@@ -9,9 +9,9 @@ import { useToast } from '@/hooks/use-toast';
 
 interface VehicleListTabProps {
   vehicles: Vehicule[];
-  onEdit: (vehicle: Vehicule) => void;
+  onEdit: (vehicleId: string) => void;
   onDelete: (vehicleId: string) => Promise<void>;
-  onViewDocuments: (vehicleId: string) => void;
+  onViewDocuments: (vehicle: Vehicule) => void;
   onViewMaintenance: (vehicleId: string) => void;
   onViewPostMissionWorkflow: (vehicleId: string) => void;
 }
@@ -26,9 +26,9 @@ export const VehicleListTab = ({
 }: VehicleListTabProps) => {
   const { toast } = useToast();
 
-  const handleEdit = (vehicle: Vehicule) => {
-    console.log('Modification du véhicule:', vehicle.id);
-    onEdit(vehicle);
+  const handleEdit = (vehicleId: string) => {
+    console.log('Modification du véhicule:', vehicleId);
+    onEdit(vehicleId);
   };
 
   const handleDelete = async (vehicleId: string) => {
@@ -49,9 +49,9 @@ export const VehicleListTab = ({
     }
   };
 
-  const handleViewDocuments = (vehicleId: string) => {
-    console.log('Affichage des documents pour:', vehicleId);
-    onViewDocuments(vehicleId);
+  const handleViewDocuments = (vehicle: Vehicule) => {
+    console.log('Affichage des documents pour:', vehicle.id);
+    onViewDocuments(vehicle);
   };
 
   const handleViewMaintenance = (vehicleId: string) => {
@@ -133,7 +133,7 @@ export const VehicleListTab = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleEdit(vehicle)}
+                onClick={() => handleEdit(vehicle.id)}
                 className="flex items-center gap-1"
               >
                 <Edit className="w-4 h-4" />
@@ -143,7 +143,7 @@ export const VehicleListTab = ({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => handleViewDocuments(vehicle.id)}
+                onClick={() => handleViewDocuments(vehicle)}
                 className="flex items-center gap-1"
               >
                 <FileText className="w-4 h-4" />

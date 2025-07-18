@@ -16,6 +16,7 @@ import { FleetHeader } from '@/components/fleet/FleetHeader';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { vehiculesService } from '@/services/vehicules';
+import type { Vehicule } from '@/services/vehicules';
 
 const Fleet = () => {
   const [activeTab, setActiveTab] = useState('vehicles');
@@ -53,7 +54,7 @@ const Fleet = () => {
     });
   };
 
-  const handleManageDocuments = (vehicle: any) => {
+  const handleManageDocuments = (vehicle: Vehicule) => {
     setSelectedVehicleId(vehicle.id);
     setSelectedVehicleNumero(vehicle.numero);
     setShowDocumentManager(true);
@@ -129,7 +130,7 @@ const Fleet = () => {
         </Dialog>
       </div>
 
-      <FleetStats stats={stats} key={refreshKey} />
+      <FleetStats stats={stats} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
