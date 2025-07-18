@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
@@ -77,6 +78,23 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleB
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Type de transport */}
+        <div className="space-y-2">
+          <Label htmlFor="type_transport" className="text-sm font-medium">Type de transport</Label>
+          <Select 
+            value={watch('type_transport') || 'hydrocarbures'} 
+            onValueChange={(value) => setValue('type_transport', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner le type de transport" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
+              <SelectItem value="bauxite">Bauxite</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Plaques d'immatriculation */}

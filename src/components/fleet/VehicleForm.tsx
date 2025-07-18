@@ -2,10 +2,6 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Truck, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -32,6 +28,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       // Informations générales
       numero: vehicule?.numero || '',
       type_vehicule: vehicule?.type_vehicule || 'porteur',
+      type_transport: vehicule?.type_transport || 'hydrocarbures',
       base: vehicule?.base || '',
       
       // Plaques d'immatriculation
@@ -65,7 +62,48 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
   });
 
   const createVehicleMutation = useMutation({
-    mutationFn: vehiculesService.create,
+    mutationFn: async (data: any) => {
+      console.log('Données envoyées à la création:', data);
+      
+      // Nettoyer les données pour s'assurer qu'elles correspondent à la structure de la DB
+      const cleanedData = {
+        numero: data.numero,
+        type_vehicule: data.type_vehicule || 'porteur',
+        type_transport: data.type_transport || 'hydrocarbures',
+        statut: 'validation_requise', // Valeur par défaut
+        base: data.base,
+        
+        // Plaques d'immatriculation
+        immatriculation: data.type_vehicule === 'porteur' ? data.immatriculation : null,
+        tracteur_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_immatriculation : null,
+        remorque_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.remorque_immatriculation : null,
+        
+        // Informations tracteur
+        tracteur_marque: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_marque : null,
+        tracteur_modele: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_modele : null,
+        tracteur_configuration: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_configuration : null,
+        tracteur_numero_chassis: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_numero_chassis : null,
+        tracteur_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_fabrication ? data.tracteur_date_fabrication : null,
+        tracteur_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_mise_circulation ? data.tracteur_date_mise_circulation : null,
+        
+        // Informations remorque
+        remorque_volume_litres: data.type_vehicule === 'tracteur_remorque' && data.remorque_volume_litres ? Number(data.remorque_volume_litres) : null,
+        remorque_marque: data.type_vehicule === 'tracteur_remorque' ? data.remorque_marque : null,
+        remorque_modele: data.type_vehicule === 'tracteur_remorque' ? data.remorque_modele : null,
+        remorque_configuration: data.type_vehicule === 'tracteur_remorque' ? data.remorque_configuration : null,
+        remorque_numero_chassis: data.type_vehicule === 'tracteur_remorque' ? data.remorque_numero_chassis : null,
+        remorque_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_fabrication ? data.remorque_date_fabrication : null,
+        remorque_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_mise_circulation ? data.remorque_date_mise_circulation : null,
+        
+        // Informations porteur
+        marque: data.type_vehicule === 'porteur' ? data.marque : null,
+        modele: data.type_vehicule === 'porteur' ? data.modele : null,
+        numero_chassis: data.type_vehicule === 'porteur' ? data.numero_chassis : null,
+        date_fabrication: data.type_vehicule === 'porteur' && data.date_fabrication ? data.date_fabrication : null,
+      };
+
+      return vehiculesService.create(cleanedData);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicules'] });
       toast({
@@ -78,7 +116,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       console.error('Erreur création véhicule:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de créer le véhicule.",
+        description: "Impossible de créer le véhicule. Vérifiez les informations saisies.",
         variant: "destructive"
       });
     }
@@ -171,66 +209,58 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
           )}
 
           {currentStep === 2 && vehicleType === 'porteur' && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Truck className="h-5 w-5" />
-                  Informations du véhicule porteur
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="marque" className="text-sm font-medium flex items-center gap-1">
-                      Marque
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                    </Label>
-                    <Input
-                      id="marque"
-                      {...form.register('marque', { required: 'La marque est requise' })}
-                      placeholder="Ex: Mercedes, Volvo"
-                    />
-                    {form.formState.errors.marque && (
-                      <p className="text-sm text-destructive">{form.formState.errors.marque.message?.toString()}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="modele" className="text-sm font-medium flex items-center gap-1">
-                      Modèle
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                    </Label>
-                    <Input
-                      id="modele"
-                      {...form.register('modele', { required: 'Le modèle est requis' })}
-                      placeholder="Ex: Actros, FH"
-                    />
-                    {form.formState.errors.modele && (
-                      <p className="text-sm text-destructive">{form.formState.errors.modele.message?.toString()}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="numero_chassis" className="text-sm font-medium">Numéro de châssis</Label>
-                    <Input
-                      id="numero_chassis"
-                      {...form.register('numero_chassis')}
-                      placeholder="Ex: WDB9640261L123456"
-                      className="font-mono"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="date_fabrication" className="text-sm font-medium">Date de fabrication</Label>
-                    <Input
-                      id="date_fabrication"
-                      type="date"
-                      {...form.register('date_fabrication')}
-                    />
-                  </div>
+            <div className="space-y-6">
+              {/* Informations porteur - implémentation directe ici pour éviter un autre composant */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-1">
+                    Marque
+                    <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    {...form.register('marque', { required: 'La marque est requise' })}
+                    placeholder="Ex: Mercedes, Volvo"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {form.formState.errors.marque && (
+                    <p className="text-sm text-destructive">{form.formState.errors.marque.message?.toString()}</p>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-1">
+                    Modèle
+                    <span className="text-destructive">*</span>
+                  </label>
+                  <input
+                    {...form.register('modele', { required: 'Le modèle est requis' })}
+                    placeholder="Ex: Actros, FH"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  {form.formState.errors.modele && (
+                    <p className="text-sm text-destructive">{form.formState.errors.modele.message?.toString()}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Numéro de châssis</label>
+                  <input
+                    {...form.register('numero_chassis')}
+                    placeholder="Ex: WDB9640261L123456"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Date de fabrication</label>
+                  <input
+                    type="date"
+                    {...form.register('date_fabrication')}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
+            </div>
           )}
 
           {/* Étape 3: Remorque (uniquement pour tracteur+remorque) */}
