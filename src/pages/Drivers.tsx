@@ -10,6 +10,9 @@ import { DriversAlerts } from '@/components/drivers/DriversAlerts';
 import { DriversDocuments } from '@/components/drivers/DriversDocuments';
 import { PlanningView } from '@/components/drivers/planning/PlanningView';
 import { ChauffeurDetailDialog } from '@/components/drivers/ChauffeurDetailDialog';
+import { ChauffeurForm } from '@/components/drivers/ChauffeurForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
 
@@ -18,6 +21,7 @@ const Drivers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showNewChauffeurForm, setShowNewChauffeurForm] = useState(false);
 
   // Récupération des chauffeurs avec actualisation automatique
   const { data: chauffeurs = [] } = useQuery({
@@ -30,6 +34,23 @@ const Drivers = () => {
   const handleSelectChauffeur = (chauffeur: any) => {
     setSelectedChauffeur(chauffeur);
     setShowDetailDialog(true);
+  };
+
+  const handleNewChauffeur = () => {
+    console.log('Bouton Nouveau chauffeur (header) cliqué');
+    setShowNewChauffeurForm(true);
+  };
+
+  const handleCreateSuccess = () => {
+    setShowNewChauffeurForm(false);
+    toast({
+      title: "Chauffeur créé",
+      description: "Le chauffeur a été ajouté avec succès.",
+    });
+  };
+
+  const handleFormCancel = () => {
+    setShowNewChauffeurForm(false);
   };
 
   const renderTabContent = () => {
@@ -63,7 +84,10 @@ const Drivers = () => {
             Dashboard, planning, documents et alertes de conformité
           </p>
         </div>
-        <Button className="bg-orange-500 hover:bg-orange-600">
+        <Button 
+          onClick={handleNewChauffeur}
+          className="bg-orange-500 hover:bg-orange-600"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nouveau chauffeur
         </Button>
@@ -98,6 +122,19 @@ const Drivers = () => {
           onOpenChange={setShowDetailDialog}
         />
       )}
+
+      {/* Dialog pour nouveau chauffeur */}
+      <Dialog open={showNewChauffeurForm} onOpenChange={setShowNewChauffeurForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nouveau chauffeur</DialogTitle>
+          </DialogHeader>
+          <ChauffeurForm 
+            onSuccess={handleCreateSuccess}
+            onCancel={handleFormCancel}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

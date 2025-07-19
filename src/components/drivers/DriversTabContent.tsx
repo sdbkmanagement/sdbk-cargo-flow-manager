@@ -44,6 +44,12 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
     setSelectedChauffeur(null);
   };
 
+  const handleNewChauffeur = () => {
+    console.log('Bouton Nouveau chauffeur cliqué');
+    setSelectedChauffeur(null);
+    setShowForm(true);
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Chargement des chauffeurs...</div>;
   }
@@ -66,7 +72,10 @@ export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabC
                 Gestion des chauffeurs et de leurs informations
               </CardDescription>
             </div>
-            <Button onClick={() => setShowForm(true)} className="gap-2 bg-orange-500 hover:bg-orange-600">
+            <Button 
+              onClick={handleNewChauffeur} 
+              className="gap-2 bg-orange-500 hover:bg-orange-600"
+            >
               <Plus className="h-4 w-4" />
               Nouveau chauffeur
             </Button>
