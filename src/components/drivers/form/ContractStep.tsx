@@ -120,8 +120,8 @@ export const ContractStep = ({
               onUpload={handlePhotoUpload}
               onCancel={() => setShowPhotoUpload(false)}
               acceptedTypes=".jpg,.jpeg,.png"
-              maxSize={5 * 1024 * 1024} // 5MB
-              title="Télécharger une photo de profil"
+              maxSize={5 * 1024 * 1024}
+              showExpirationDate={false}
             />
           )}
         </CardContent>
@@ -191,8 +191,8 @@ export const ContractStep = ({
               onUpload={handleContractUpload}
               onCancel={() => setShowContractUpload(false)}
               acceptedTypes=".pdf,.doc,.docx"
-              maxSize={10 * 1024 * 1024} // 10MB
-              title="Télécharger le contrat signé"
+              maxSize={10 * 1024 * 1024}
+              showExpirationDate={false}
             />
           )}
         </CardContent>
