@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,16 +39,19 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
   };
 
   const getTransportBadge = (type: string) => {
-    const variants: { [key: string]: 'default' | 'secondary' } = {
-      'hydrocarbures': 'default',
-      'marchandise': 'secondary'
-    };
-
-    return (
-      <Badge variant={variants[type] || 'default'}>
-        {type === 'hydrocarbures' ? 'Hydrocarbures' : 'Marchandise'}
-      </Badge>
-    );
+    if (type === 'hydrocarbures') {
+      return (
+        <Badge className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700">
+          Hydrocarbures
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge variant="secondary" className="bg-gray-100 text-gray-900 border-gray-300">
+          Marchandise
+        </Badge>
+      );
+    }
   };
 
   const handleDelete = async (vehicleId: string) => {
