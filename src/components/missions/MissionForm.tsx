@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +36,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   });
 
   const [availabilityInfo, setAvailabilityInfo] = useState(null);
+  const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
 
   // Récupérer les véhicules disponibles
   const { data: vehicules = [] } = useQuery({
@@ -49,6 +49,37 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     queryKey: ['active-chauffeurs'],
     queryFn: missionsService.getActiveChauffeurs
   });
+
+  // Récupérer les chauffeurs assignés au véhicule sélectionné
+  const { data: chauffeursAssignesVehicule = [] } = useQuery({
+    queryKey: ['chauffeurs-assignes-vehicule', formData.vehicule_id],
+    queryFn: () => missionsService.getChauffeursAssignesVehicule(formData.vehicule_id),
+    enabled: !!formData.vehicule_id
+  });
+
+  // Auto-sélection du chauffeur quand un véhicule est choisi
+  useEffect(() => {
+    if (chauffeursAssignesVehicule.length > 0 && !mission?.id) {
+      // Si un seul chauffeur assigné, le sélectionner automatiquement
+      if (chauffeursAssignesVehicule.length === 1) {
+        setFormData(prev => ({ 
+          ...prev, 
+          chauffeur_id: chauffeursAssignesVehicule[0].id 
+        }));
+        toast({
+          title: 'Chauffeur auto-sélectionné',
+          description: `${chauffeursAssignesVehicule[0].prenom} ${chauffeursAssignesVehicule[0].nom} a été automatiquement sélectionné car il est assigné à ce véhicule.`
+        });
+      } else {
+        // Plusieurs chauffeurs assignés, informer l'utilisateur
+        toast({
+          title: 'Plusieurs chauffeurs disponibles',
+          description: `${chauffeursAssignesVehicule.length} chauffeurs sont assignés à ce véhicule. Veuillez en sélectionner un.`
+        });
+      }
+    }
+    setChauffeursAssignes(chauffeursAssignesVehicule);
+  }, [chauffeursAssignesVehicule, mission?.id, toast]);
 
   // Mutation pour créer/modifier une mission
   const saveMutation = useMutation({
@@ -118,6 +149,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Si le véhicule change, réinitialiser le chauffeur sauf si on modifie une mission existante
+    if (field === 'vehicule_id' && !mission?.id) {
+      setFormData(prev => ({ ...prev, chauffeur_id: '' }));
+    }
   };
 
   return (
@@ -291,13 +327,36 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                     <SelectValue placeholder="Sélectionner un chauffeur" />
                   </SelectTrigger>
                   <SelectContent>
-                    {chauffeurs.map(chauffeur => (
-                      <SelectItem key={chauffeur.id} value={chauffeur.id}>
-                        {chauffeur.prenom} {chauffeur.nom}
-                      </SelectItem>
-                    ))}
+                    {/* Prioriser les chauffeurs assignés au véhicule */}
+                    {chauffeursAssignes.length > 0 && (
+                      <>
+                        <SelectItem disabled value="assigned-drivers">
+                          <span className="font-semibold text-orange-600">Chauffeurs assignés au véhicule</span>
+                        </SelectItem>
+                        {chauffeursAssignes.map(chauffeur => (
+                          <SelectItem key={`assigned-${chauffeur.id}`} value={chauffeur.id}>
+                            <span className="text-orange-600">★ {chauffeur.prenom} {chauffeur.nom}</span>
+                          </SelectItem>
+                        ))}
+                        <SelectItem disabled value="other-drivers">
+                          <span className="font-semibold text-gray-500">Autres chauffeurs disponibles</span>
+                        </SelectItem>
+                      </>
+                    )}
+                    {chauffeurs
+                      .filter(chauffeur => !chauffeursAssignes.some(ca => ca.id === chauffeur.id))
+                      .map(chauffeur => (
+                        <SelectItem key={chauffeur.id} value={chauffeur.id}>
+                          {chauffeur.prenom} {chauffeur.nom}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
+                {chauffeursAssignes.length > 0 && (
+                  <p className="text-sm text-orange-600 mt-1">
+                    ★ Chauffeurs déjà assignés à ce véhicule
+                  </p>
+                )}
               </div>
 
               {/* Information de disponibilité (non-bloquante) */}

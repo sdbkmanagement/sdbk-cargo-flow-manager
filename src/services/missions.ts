@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Mission {
@@ -167,6 +166,35 @@ export const missionsService = {
         bauxite: 0,
         volume_total: 0
       }
+    }
+  },
+
+  // Récupérer les chauffeurs assignés à un véhicule
+  async getChauffeursAssignesVehicule(vehiculeId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('affectations_chauffeurs')
+        .select(`
+          chauffeur:chauffeurs(
+            id,
+            nom,
+            prenom,
+            telephone,
+            statut
+          )
+        `)
+        .eq('vehicule_id', vehiculeId)
+        .eq('statut', 'active');
+
+      if (error) {
+        console.error('Erreur lors du chargement des chauffeurs assignés:', error);
+        return [];
+      }
+
+      return data?.map(item => item.chauffeur).filter(Boolean) || [];
+    } catch (error) {
+      console.error('Erreur générale chauffeurs assignés:', error);
+      return [];
     }
   },
 
