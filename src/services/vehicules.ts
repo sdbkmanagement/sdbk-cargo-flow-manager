@@ -291,7 +291,7 @@ const vehiculesService = {
   async getDocuments(vehiculeId: string) {
     try {
       const { data, error } = await supabase
-        .from('documents_vehicules')
+        .from('documents_vehicules_temp')
         .select('*')
         .eq('vehicule_id', vehiculeId)
         .order('created_at', { ascending: false });

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +24,7 @@ const Fleet = () => {
   const [showDocumentManager, setShowDocumentManager] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [selectedVehicleNumero, setSelectedVehicleNumero] = useState<string>('');
+  const [selectedVehicleForEdit, setSelectedVehicleForEdit] = useState<Vehicule | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Fetch vehicles and calculate stats
@@ -58,12 +60,28 @@ const Fleet = () => {
     setShowDocumentManager(true);
   };
 
-  const handleModifyVehicle = (vehicleId: string) => {
+  const handleModifyVehicle = async (vehicleId: string) => {
     console.log('Modifier véhicule:', vehicleId);
-    toast({
-      title: "Fonctionnalité à venir",
-      description: "La modification de véhicule sera disponible prochainement.",
-    });
+    try {
+      const vehicle = await vehiculesService.getById(vehicleId);
+      if (vehicle) {
+        setSelectedVehicleForEdit(vehicle);
+        setShowVehicleForm(true);
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les données du véhicule.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement du véhicule:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les données du véhicule.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleMaintenanceVehicle = (vehicleId: string) => {
@@ -83,6 +101,12 @@ const Fleet = () => {
     }
   };
 
+  const handleFormClose = () => {
+    setShowVehicleForm(false);
+    setSelectedVehicleForEdit(null);
+    setRefreshKey(prev => prev + 1);
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Chargement des véhicules...</div>;
   }
@@ -90,7 +114,10 @@ const Fleet = () => {
   return (
     <div className="container mx-auto p-6 space-y-6">
       <FleetHeader 
-        onAddVehicle={() => setShowVehicleForm(true)}
+        onAddVehicle={() => {
+          setSelectedVehicleForEdit(null);
+          setShowVehicleForm(true);
+        }}
         vehicleCount={vehicles.length}
       />
 
@@ -183,13 +210,13 @@ const Fleet = () => {
       <Dialog open={showVehicleForm} onOpenChange={setShowVehicleForm}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Ajouter un nouveau véhicule</DialogTitle>
+            <DialogTitle>
+              {selectedVehicleForEdit ? 'Modifier le véhicule' : 'Ajouter un nouveau véhicule'}
+            </DialogTitle>
           </DialogHeader>
           <VehicleForm 
-            onSuccess={() => {
-              setShowVehicleForm(false);
-              handleVehicleCreated();
-            }}
+            vehicule={selectedVehicleForEdit}
+            onSuccess={handleFormClose}
           />
         </DialogContent>
       </Dialog>

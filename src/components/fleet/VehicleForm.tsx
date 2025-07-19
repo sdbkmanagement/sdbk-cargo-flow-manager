@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { toast } from '@/hooks/use-toast';
@@ -13,6 +13,7 @@ import { VehicleStepIndicator } from './form/VehicleStepIndicator';
 import { FormNavigation } from '../drivers/form/FormNavigation';
 
 import { vehiculesService } from '@/services/vehicules';
+import { documentUploadService } from '@/services/documentUploadService';
 
 interface VehicleFormProps {
   vehicule?: any;
@@ -102,7 +103,19 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         date_fabrication: data.type_vehicule === 'porteur' && data.date_fabrication ? data.date_fabrication : null,
       };
 
-      return vehiculesService.create(cleanedData);
+      const vehicleResult = await vehiculesService.create(cleanedData);
+      
+      // Si la création du véhicule réussit, traiter les documents
+      if (vehicleResult && vehicleResult.id) {
+        try {
+          await documentUploadService.processFormDocuments(data, vehicleResult.id);
+        } catch (docError) {
+          console.error('Erreur lors du traitement des documents:', docError);
+          // Ne pas faire échouer la création du véhicule si seuls les documents échouent
+        }
+      }
+      
+      return vehicleResult;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicules'] });
@@ -123,7 +136,54 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
   });
 
   const updateVehicleMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => vehiculesService.update(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      // Nettoyer les données pour la mise à jour
+      const cleanedData = {
+        numero: data.numero,
+        type_vehicule: data.type_vehicule || 'porteur',
+        type_transport: data.type_transport || 'hydrocarbures',
+        base: data.base,
+        
+        // Plaques d'immatriculation
+        immatriculation: data.type_vehicule === 'porteur' ? data.immatriculation : null,
+        tracteur_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_immatriculation : null,
+        remorque_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.remorque_immatriculation : null,
+        
+        // Informations tracteur
+        tracteur_marque: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_marque : null,
+        tracteur_modele: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_modele : null,
+        tracteur_configuration: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_configuration : null,
+        tracteur_numero_chassis: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_numero_chassis : null,
+        tracteur_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_fabrication ? data.tracteur_date_fabrication : null,
+        tracteur_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_mise_circulation ? data.tracteur_date_mise_circulation : null,
+        
+        // Informations remorque
+        remorque_volume_litres: data.type_vehicule === 'tracteur_remorque' && data.remorque_volume_litres ? Number(data.remorque_volume_litres) : null,
+        remorque_marque: data.type_vehicule === 'tracteur_remorque' ? data.remorque_marque : null,
+        remorque_modele: data.type_vehicule === 'tracteur_remorque' ? data.remorque_modele : null,
+        remorque_configuration: data.type_vehicule === 'tracteur_remorque' ? data.remorque_configuration : null,
+        remorque_numero_chassis: data.type_vehicule === 'tracteur_remorque' ? data.remorque_numero_chassis : null,
+        remorque_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_fabrication ? data.remorque_date_fabrication : null,
+        remorque_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_mise_circulation ? data.remorque_date_mise_circulation : null,
+        
+        // Informations porteur
+        marque: data.type_vehicule === 'porteur' ? data.marque : null,
+        modele: data.type_vehicule === 'porteur' ? data.modele : null,
+        numero_chassis: data.type_vehicule === 'porteur' ? data.numero_chassis : null,
+        date_fabrication: data.type_vehicule === 'porteur' && data.date_fabrication ? data.date_fabrication : null,
+      };
+
+      const result = await vehiculesService.update(id, cleanedData);
+      
+      // Traiter les documents si des nouveaux sont ajoutés
+      try {
+        await documentUploadService.processFormDocuments(data, id);
+      } catch (docError) {
+        console.error('Erreur lors du traitement des documents:', docError);
+      }
+      
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vehicules'] });
       toast({

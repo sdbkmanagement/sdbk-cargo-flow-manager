@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { UseFormRegister, FieldErrors, UseFormWatch } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
@@ -16,18 +17,6 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
   const typeVehicule = watch('type_vehicule');
 
   const documentsRequis = [
-    {
-      name: 'carte_grise',
-      label: 'Carte grise',
-      hasExpiration: false,
-      description: typeVehicule === 'tracteur_remorque' ? '2 cartes grises requises (tracteur + remorque)' : '1 carte grise'
-    },
-    {
-      name: 'assurance',
-      label: 'Assurance',
-      hasExpiration: false,
-      description: typeVehicule === 'tracteur_remorque' ? '2 assurances requises (tracteur + remorque)' : '1 assurance'
-    },
     {
       name: 'autorisation_transport',
       label: 'Autorisation transport (carte rouge ou bleue)',
@@ -82,6 +71,185 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
           </AlertDescription>
         </Alert>
 
+        {/* Section Carte Grise - Différenciée selon le type de véhicule */}
+        <div className="border rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium">Carte grise</h4>
+            <AlertCircle className="h-4 w-4 text-amber-500" />
+          </div>
+          
+          {typeVehicule === 'tracteur_remorque' ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">2 cartes grises requises (tracteur + remorque)</p>
+              
+              {/* Carte grise tracteur */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carte_grise_tracteur_file" className="text-sm">
+                    Carte grise tracteur
+                  </Label>
+                  <Input
+                    id="carte_grise_tracteur_file"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    {...register('carte_grise_tracteur_file')}
+                  />
+                </div>
+              </div>
+              
+              {/* Carte grise remorque */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carte_grise_remorque_file" className="text-sm">
+                    Carte grise remorque
+                  </Label>
+                  <Input
+                    id="carte_grise_remorque_file"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    {...register('carte_grise_remorque_file')}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">1 carte grise</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="carte_grise_file" className="text-sm">
+                    Fichier carte grise
+                  </Label>
+                  <Input
+                    id="carte_grise_file"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    {...register('carte_grise_file')}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Section Assurance - Différenciée selon le type de véhicule */}
+        <div className="border rounded-lg p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <h4 className="font-medium">Assurance</h4>
+            <AlertCircle className="h-4 w-4 text-destructive" />
+          </div>
+          
+          {typeVehicule === 'tracteur_remorque' ? (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">2 assurances requises (tracteur + remorque)</p>
+              
+              {/* Assurance tracteur */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="assurance_tracteur_file" className="text-sm">
+                    Assurance tracteur
+                  </Label>
+                  <Input
+                    id="assurance_tracteur_file"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    {...register('assurance_tracteur_file')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="assurance_tracteur_expiration" className="text-sm flex items-center gap-1">
+                    Date d'expiration assurance tracteur
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                  </Label>
+                  <Input
+                    id="assurance_tracteur_expiration"
+                    type="date"
+                    {...register('assurance_tracteur_expiration', {
+                      required: 'Date d\'expiration assurance tracteur requise'
+                    })}
+                  />
+                  {errors.assurance_tracteur_expiration && (
+                    <p className="text-sm text-destructive">
+                      {String(errors.assurance_tracteur_expiration?.message)}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Assurance remorque */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="assurance_remorque_file" className="text-sm">
+                    Assurance remorque
+                  </Label>
+                  <Input
+                    id="assurance_remorque_file"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    {...register('assurance_remorque_file')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="assurance_remorque_expiration" className="text-sm flex items-center gap-1">
+                    Date d'expiration assurance remorque
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                  </Label>
+                  <Input
+                    id="assurance_remorque_expiration"
+                    type="date"
+                    {...register('assurance_remorque_expiration', {
+                      required: 'Date d\'expiration assurance remorque requise'
+                    })}
+                  />
+                  {errors.assurance_remorque_expiration && (
+                    <p className="text-sm text-destructive">
+                      {String(errors.assurance_remorque_expiration?.message)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">1 assurance</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="assurance_file" className="text-sm">
+                    Fichier assurance
+                  </Label>
+                  <Input
+                    id="assurance_file"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    {...register('assurance_file')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="assurance_expiration" className="text-sm flex items-center gap-1">
+                    Date d'expiration assurance
+                    <AlertCircle className="h-4 w-4 text-destructive" />
+                  </Label>
+                  <Input
+                    id="assurance_expiration"
+                    type="date"
+                    {...register('assurance_expiration', {
+                      required: 'Date d\'expiration assurance requise'
+                    })}
+                  />
+                  {errors.assurance_expiration && (
+                    <p className="text-sm text-destructive">
+                      {String(errors.assurance_expiration?.message)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Autres documents */}
         <div className="space-y-6">
           {documentsRequis.map((doc) => (
             <div key={doc.name} className="border rounded-lg p-4 space-y-4">
@@ -89,10 +257,6 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
                 <h4 className="font-medium">{doc.label}</h4>
                 {doc.hasExpiration && <AlertCircle className="h-4 w-4 text-amber-500" />}
               </div>
-              
-              {doc.description && (
-                <p className="text-sm text-muted-foreground">{doc.description}</p>
-              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Upload du document */}

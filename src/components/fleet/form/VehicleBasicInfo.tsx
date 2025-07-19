@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, AlertCircle } from 'lucide-react';
+import { vehiculesService } from '@/services/vehicules';
 
 interface VehicleBasicInfoProps {
   register: UseFormRegister<any>;
@@ -17,19 +18,35 @@ interface VehicleBasicInfoProps {
 export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleBasicInfoProps) => {
   const typeVehicule = watch('type_vehicule');
 
-  // Auto-generate vehicle numbers with sequential format V001, V002, etc.
+  // Generate proper sequential vehicle numbers starting from V001
   useEffect(() => {
-    if (typeVehicule) {
-      const generateNumber = () => {
-        // Generate sequential number (in real app, this would come from backend)
-        const nextNumber = Math.floor(Math.random() * 999) + 1;
+    const generateSequentialNumber = async () => {
+      try {
+        const vehicles = await vehiculesService.getAll();
+        // Find the highest existing number
+        let maxNumber = 0;
+        vehicles.forEach(vehicle => {
+          if (vehicle.numero && vehicle.numero.startsWith('V')) {
+            const numberPart = parseInt(vehicle.numero.substring(1));
+            if (!isNaN(numberPart) && numberPart > maxNumber) {
+              maxNumber = numberPart;
+            }
+          }
+        });
+        
+        // Next number should be maxNumber + 1, starting from 1 if no vehicles exist
+        const nextNumber = maxNumber + 1;
         const formattedNumber = `V${nextNumber.toString().padStart(3, '0')}`;
         setValue('numero', formattedNumber);
-      };
-      
-      generateNumber();
-    }
-  }, [typeVehicule, setValue]);
+      } catch (error) {
+        console.error('Erreur lors de la génération du numéro:', error);
+        // Fallback to a basic sequential number
+        setValue('numero', 'V001');
+      }
+    };
+    
+    generateSequentialNumber();
+  }, [setValue]);
 
   return (
     <Card>
