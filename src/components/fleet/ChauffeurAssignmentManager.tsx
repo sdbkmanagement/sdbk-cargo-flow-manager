@@ -116,6 +116,9 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
     );
   }
 
+  const affectationsActives = affectations.filter(aff => aff.statut === 'active');
+  const affectationsInactives = affectations.filter(aff => aff.statut !== 'active');
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -192,7 +195,7 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
         </Dialog>
       </CardHeader>
       <CardContent>
-        {affectations.filter(aff => aff.statut === 'active').length === 0 ? (
+        {affectationsActives.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             <UserCheck className="h-12 w-12 mx-auto text-gray-300 mb-2" />
             <p>Aucun chauffeur assigné à ce véhicule</p>
@@ -200,85 +203,80 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
           </div>
         ) : (
           <div className="space-y-3">
-            {affectations
-              .filter(aff => aff.statut === 'active')
-              .map((affectation) => (
-                <div key={affectation.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="w-10 h-10">
+            {affectationsActives.map((affectation) => (
+              <div key={affectation.id} className="flex items-center justify-between p-3 border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage src={affectation.chauffeur?.photo_url || undefined} />
+                    <AvatarFallback className="bg-orange-100 text-orange-600">
+                      {affectation.chauffeur ? 
+                        getInitials(affectation.chauffeur.nom, affectation.chauffeur.prenom) : 
+                        'NC'
+                      }
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-medium">
+                      {affectation.chauffeur?.prenom} {affectation.chauffeur?.nom}
+                    </div>
+                    <div className="text-sm text-gray-500 flex items-center gap-2">
+                      <Calendar className="h-3 w-3" />
+                      Depuis le {new Date(affectation.date_debut).toLocaleDateString('fr-FR')}
+                    </div>
+                    {affectation.chauffeur?.telephone && (
+                      <div className="text-sm text-gray-500">
+                        📞 {affectation.chauffeur.telephone}
+                      </div>
+                    )}
+                    {affectation.chauffeur?.matricule && (
+                      <div className="text-sm text-gray-500">
+                        Matricule: {affectation.chauffeur.matricule}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="default">Assigné</Badge>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDesassignChauffeur(affectation.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {affectationsInactives.length > 0 && (
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">Historique des assignations</h4>
+            <div className="space-y-2">
+              {affectationsInactives.slice(0, 3).map((affectation) => (
+                <div key={affectation.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="w-6 h-6">
                       <AvatarImage src={affectation.chauffeur?.photo_url || undefined} />
-                      <AvatarFallback className="bg-orange-100 text-orange-600">
+                      <AvatarFallback className="text-xs">
                         {affectation.chauffeur ? 
                           getInitials(affectation.chauffeur.nom, affectation.chauffeur.prenom) : 
                           'NC'
                         }
                       </AvatarFallback>
                     </Avatar>
-                    <div>
-                      <div className="font-medium">
-                        {affectation.chauffeur?.prenom} {affectation.chauffeur?.nom}
-                      </div>
-                      <div className="text-sm text-gray-500 flex items-center gap-2">
-                        <Calendar className="h-3 w-3" />
-                        Depuis le {new Date(affectation.date_debut).toLocaleDateString('fr-FR')}
-                      </div>
-                      {affectation.chauffeur?.telephone && (
-                        <div className="text-sm text-gray-500">
-                          📞 {affectation.chauffeur.telephone}
-                        </div>
-                      )}
-                      {affectation.chauffeur?.matricule && (
-                        <div className="text-sm text-gray-500">
-                          Matricule: {affectation.chauffeur.matricule}
-                        </div>
-                      )}
-                    </div>
+                    <span>
+                      {affectation.chauffeur?.prenom} {affectation.chauffeur?.nom}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {affectation.date_debut} → {affectation.date_fin}
+                    </span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default">Assigné</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDesassignChauffeur(affectation.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Badge variant="secondary">Ancien</Badge>
                 </div>
               ))}
-          </div>
-        )}
-
-        {affectations.filter(aff => aff.statut === 'inactive').length > 0 && (
-          <div className="mt-6">
-            <h4 className="text-sm font-medium text-gray-700 mb-2">Historique des assignations</h4>
-            <div className="space-y-2">
-              {affectations
-                .filter(aff => aff.statut === 'inactive')
-                .slice(0, 3)
-                .map((affectation) => (
-                  <div key={affectation.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={affectation.chauffeur?.photo_url || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {affectation.chauffeur ? 
-                            getInitials(affectation.chauffeur.nom, affectation.chauffeur.prenom) : 
-                            'NC'
-                          }
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>
-                        {affectation.chauffeur?.prenom} {affectation.chauffeur?.nom}
-                      </span>
-                      <span className="text-xs text-gray-400">
-                        {affectation.date_debut} → {affectation.date_fin}
-                      </span>
-                    </div>
-                    <Badge variant="secondary">Ancien</Badge>
-                  </div>
-                ))}
             </div>
           </div>
         )}

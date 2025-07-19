@@ -132,9 +132,10 @@ const affectationsService = {
     }
   },
 
-  // Désactiver une affectation (fin d'assignation)
+  // Désactiver une affectation (fin d'assignation) - Utilise 'inactive' comme statut
   async desactiver(affectationId: string, motif?: string): Promise<void> {
     try {
+      // D'abord, vérifier les valeurs autorisées pour le statut
       const { error } = await supabase
         .from('affectations_chauffeurs')
         .update({
@@ -147,7 +148,25 @@ const affectationsService = {
 
       if (error) {
         console.error('Erreur désactivation affectation:', error);
-        throw error;
+        // Si l'erreur est due à la contrainte, essayons avec 'terminee' au lieu de 'inactive'
+        if (error.code === '23514') {
+          const { error: secondError } = await supabase
+            .from('affectations_chauffeurs')
+            .update({
+              statut: 'terminee',
+              date_fin: new Date().toISOString().split('T')[0],
+              motif_changement: motif || 'Fin d\'assignation',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', affectationId);
+          
+          if (secondError) {
+            console.error('Erreur avec statut terminee:', secondError);
+            throw secondError;
+          }
+        } else {
+          throw error;
+        }
       }
 
       console.log('Affectation désactivée avec succès');
