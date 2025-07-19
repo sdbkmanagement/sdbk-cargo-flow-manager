@@ -2,19 +2,20 @@
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { 
   Search, 
   Edit, 
-  Trash2, 
   Eye,
   Phone,
   Mail,
   Calendar,
-  User
+  User,
+  FileText
 } from 'lucide-react';
 import { ChauffeurDetailDialog } from './ChauffeurDetailDialog';
+import { ChauffeurDocumentManager } from './ChauffeurDocumentManager';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface ChauffeursListProps {
   chauffeurs: any[];
@@ -33,6 +34,7 @@ export const ChauffeursList = ({
 }: ChauffeursListProps) => {
   const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showDocumentDialog, setShowDocumentDialog] = useState(false);
 
   const filteredChauffeurs = chauffeurs.filter(chauffeur =>
     chauffeur.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -45,6 +47,12 @@ export const ChauffeursList = ({
     console.log('Affichage des détails du chauffeur:', chauffeur.id);
     setSelectedChauffeur(chauffeur);
     setShowDetailDialog(true);
+  };
+
+  const handleViewDocuments = (chauffeur: any) => {
+    console.log('Affichage des documents du chauffeur:', chauffeur.id);
+    setSelectedChauffeur(chauffeur);
+    setShowDocumentDialog(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -103,7 +111,7 @@ export const ChauffeursList = ({
                 </div>
               </div>
 
-              <div className="flex space-x-2">
+              <div className="flex space-x-1">
                 <Button
                   variant="outline"
                   size="sm"
@@ -111,7 +119,7 @@ export const ChauffeursList = ({
                   className="flex-1"
                 >
                   <Eye className="w-4 h-4 mr-1" />
-                  Voir détails
+                  Détails
                 </Button>
                 {hasWritePermission && (
                   <Button
@@ -124,6 +132,15 @@ export const ChauffeursList = ({
                     Modifier
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleViewDocuments(chauffeur)}
+                  className="flex-1"
+                >
+                  <FileText className="w-4 h-4 mr-1" />
+                  Documents
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -136,13 +153,33 @@ export const ChauffeursList = ({
         </div>
       )}
 
-      {/* Dialog de détails du chauffeur */}
+      {/* Dialog de détails du chauffeur - lecture seule */}
       {selectedChauffeur && (
         <ChauffeurDetailDialog
           chauffeur={selectedChauffeur}
           open={showDetailDialog}
           onOpenChange={setShowDetailDialog}
         />
+      )}
+
+      {/* Dialog de gestion des documents */}
+      {selectedChauffeur && (
+        <Dialog open={showDocumentDialog} onOpenChange={setShowDocumentDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Documents - {selectedChauffeur.prenom} {selectedChauffeur.nom}
+              </DialogTitle>
+            </DialogHeader>
+            <ChauffeurDocumentManager 
+              chauffeur={selectedChauffeur}
+              onUpdate={() => {
+                // Optionnellement rafraîchir les données
+              }}
+            />
+          </DialogContent>
+        </Dialog>
       )}
     </>
   );
