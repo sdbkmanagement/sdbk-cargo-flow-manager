@@ -1,41 +1,25 @@
 
 import React, { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   User, 
   Phone, 
   Mail, 
-  Calendar,
-  FileText,
-  Truck,
-  AlertTriangle,
-  Star,
+  MapPin, 
+  Calendar, 
+  IdCard, 
   Edit,
-  ExternalLink
+  FileText,
+  Activity
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { DocumentManager } from '../common/DocumentManager';
-
-// Types de documents spécifiques aux chauffeurs
-const chauffeurDocumentTypes = [
-  { value: 'permis_conduire', label: 'Permis de conduire' },
-  { value: 'visite_medicale', label: 'Visite médicale' },
-  { value: 'formation_adr', label: 'Formation ADR' },
-  { value: 'carte_professionnelle', label: 'Carte professionnelle' },
-  { value: 'carte_identite', label: 'Carte d\'identité' },
-  { value: 'attestation_assurance', label: 'Attestation d\'assurance' },
-  { value: 'contrat_travail', label: 'Contrat de travail' },
-  { value: 'autre', label: 'Autre document' }
-];
+import { ChauffeurForm } from './ChauffeurForm';
+import { ChauffeurDocumentManager } from './ChauffeurDocumentManager';
+import { ChauffeurStatutManager } from './ChauffeurStatutManager';
 
 interface ChauffeurDetailDialogProps {
   chauffeur: any;
@@ -44,204 +28,283 @@ interface ChauffeurDetailDialogProps {
 }
 
 export const ChauffeurDetailDialog = ({ chauffeur, open, onOpenChange }: ChauffeurDetailDialogProps) => {
-  const { hasPermission, hasRole } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('infos');
 
-  const tabs = [
-    { id: 'infos', label: 'Informations', icon: User },
-    { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'missions', label: 'Missions', icon: Truck },
-    { id: 'performance', label: 'Performance', icon: Star, restricted: true },
-    { id: 'incidents', label: 'Incidents', icon: AlertTriangle, restricted: true }
-  ];
+  const handleEditSuccess = () => {
+    setIsEditing(false);
+    // Le parent gérera le refresh des données
+  };
 
-  const filteredTabs = tabs.filter(tab => 
-    !tab.restricted || hasRole('rh') || hasRole('direction') || hasRole('admin')
-  );
+  const getStatutColor = (statut: string) => {
+    switch (statut) {
+      case 'actif': return 'bg-green-500';
+      case 'conge': return 'bg-blue-500';
+      case 'maladie': return 'bg-red-500';
+      case 'suspendu': return 'bg-gray-500';
+      default: return 'bg-gray-500';
+    }
+  };
+
+  const getDisponibiliteColor = (statut: string) => {
+    switch (statut) {
+      case 'disponible': return 'bg-green-500';
+      case 'en_conge': return 'bg-blue-500';
+      case 'maladie': return 'bg-red-500';
+      case 'indisponible': return 'bg-gray-500';
+      default: return 'bg-green-500';
+    }
+  };
+
+  if (isEditing) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier le chauffeur</DialogTitle>
+          </DialogHeader>
+          <ChauffeurForm
+            chauffeur={chauffeur}
+            onSuccess={handleEditSuccess}
+            onCancel={() => setIsEditing(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-orange-600" />
-            </div>
-            <div>
-              <div className="text-xl font-bold">{chauffeur.prenom} {chauffeur.nom}</div>
-              <div className="text-sm text-gray-500">{chauffeur.email}</div>
-            </div>
-          </DialogTitle>
-          <DialogDescription>
-            Fiche complète du chauffeur
-          </DialogDescription>
-        </DialogHeader>
-
-        {/* Navigation par onglets */}
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {filteredTabs.map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`${
-                    activeTab === tab.id
-                      ? 'border-orange-500 text-orange-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm flex items-center`}
-                >
-                  <Icon className="w-4 h-4 mr-2" />
-                  {tab.label}
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Contenu selon l'onglet actif */}
-        <div className="mt-6">
-          {activeTab === 'infos' && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Informations personnelles</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <Phone className="w-4 h-4 text-gray-500" />
-                      <span>{chauffeur.telephone}</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <span>{chauffeur.email}</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span>Permis expire le {chauffeur.date_expiration_permis ? new Date(chauffeur.date_expiration_permis).toLocaleDateString('fr-FR') : 'Non renseigné'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Statut et affectation</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span>Statut :</span>
-                      <Badge variant={chauffeur.statut === 'actif' ? 'default' : 'secondary'}>
-                        {chauffeur.statut?.charAt(0).toUpperCase() + chauffeur.statut?.slice(1)}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Véhicule assigné :</span>
-                      {chauffeur.vehicule_assigne ? (
-                        <Badge variant="outline">{chauffeur.vehicule_assigne}</Badge>
-                      ) : (
-                        <span className="text-gray-400">Non assigné</span>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Types de permis :</span>
-                      <div className="flex flex-wrap gap-1">
-                        {chauffeur.type_permis?.map((permis: string) => (
-                          <Badge key={permis} variant="outline" className="text-xs">
-                            {permis}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-4">
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={chauffeur.photo_url} />
+                <AvatarFallback>
+                  {chauffeur.nom?.[0]}{chauffeur.prenom?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <DialogTitle className="text-2xl">
+                  {chauffeur.prenom} {chauffeur.nom}
+                </DialogTitle>
+                <div className="flex gap-2 mt-2">
+                  <Badge className={`${getStatutColor(chauffeur.statut)} text-white`}>
+                    {chauffeur.statut}
+                  </Badge>
+                  <Badge className={`${getDisponibiliteColor(chauffeur.statut_disponibilite || 'disponible')} text-white`}>
+                    {chauffeur.statut_disponibilite || 'Disponible'}
+                  </Badge>
+                  {chauffeur.fonction && (
+                    <Badge variant="outline">
+                      {chauffeur.fonction.charAt(0).toUpperCase() + chauffeur.fonction.slice(1)}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
-          )}
-
-          {activeTab === 'documents' && (
-            <DocumentManager 
-              entityType="chauffeur"
-              entityId={chauffeur.id} 
-              entityName={`${chauffeur.prenom} ${chauffeur.nom}`}
-              documentTypes={chauffeurDocumentTypes}
-              readonly={!hasPermission('drivers_write')}
-            />
-          )}
-
-          {activeTab === 'missions' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Historique des missions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Aucune mission récente trouvée.</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {activeTab === 'performance' && (hasRole('rh') || hasRole('direction') || hasRole('admin')) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Évaluation de performance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span>Ponctualité :</span>
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star key={star} className="w-4 h-4 text-yellow-500 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Comportement :</span>
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4].map(star => (
-                        <Star key={star} className="w-4 h-4 text-yellow-500 fill-current" />
-                      ))}
-                      <Star className="w-4 h-4 text-gray-300" />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Sécurité :</span>
-                    <div className="flex items-center">
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <Star key={star} className="w-4 h-4 text-yellow-500 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {activeTab === 'incidents' && (hasRole('rh') || hasRole('direction') || hasRole('admin')) && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Incidents et remarques</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600">Aucun incident signalé.</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end space-x-2 mt-6">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Fermer
-          </Button>
-          {hasPermission('drivers_write') && (
-            <Button className="bg-orange-500 hover:bg-orange-600">
+            <Button onClick={() => setIsEditing(true)}>
               <Edit className="w-4 h-4 mr-2" />
               Modifier
             </Button>
-          )}
-        </div>
+          </div>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="infos" className="flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Informations
+            </TabsTrigger>
+            <TabsTrigger value="statut" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Statut
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Documents
+            </TabsTrigger>
+            <TabsTrigger value="historique" className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Historique
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="infos" className="space-y-6">
+            {/* Informations personnelles */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="w-5 h-5" />
+                  Informations personnelles
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  {chauffeur.matricule && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Matricule</p>
+                      <p>{chauffeur.matricule}</p>
+                    </div>
+                  )}
+                  {chauffeur.id_conducteur && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">ID Conducteur</p>
+                      <p>{chauffeur.id_conducteur}</p>
+                    </div>
+                  )}
+                  {chauffeur.date_naissance && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Date de naissance</p>
+                      <p>{new Date(chauffeur.date_naissance).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                  )}
+                  {chauffeur.lieu_naissance && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Lieu de naissance</p>
+                      <p>{chauffeur.lieu_naissance}</p>
+                    </div>
+                  )}
+                  {chauffeur.groupe_sanguin && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Groupe sanguin</p>
+                      <p>{chauffeur.groupe_sanguin}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-4">
+                  {chauffeur.base_chauffeur && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Base</p>
+                      <p className="capitalize">{chauffeur.base_chauffeur}</p>
+                    </div>
+                  )}
+                  {chauffeur.date_embauche && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Date d'embauche</p>
+                      <p>{new Date(chauffeur.date_embauche).toLocaleDateString('fr-FR')}</p>
+                    </div>
+                  )}
+                  {chauffeur.statut_matrimonial && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">Statut matrimonial</p>
+                      <p className="capitalize">{chauffeur.statut_matrimonial}</p>
+                    </div>
+                  )}
+                  {chauffeur.immatricule_cnss && (
+                    <div>
+                      <p className="text-sm font-medium text-gray-500">CNSS</p>
+                      <p>{chauffeur.immatricule_cnss}</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Contact */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="w-5 h-5" />
+                  Contact
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <span>{chauffeur.telephone}</span>
+                  </div>
+                  {chauffeur.email && (
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <span>{chauffeur.email}</span>
+                    </div>
+                  )}
+                </div>
+                {chauffeur.adresse && (
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-gray-500 mt-1" />
+                    <div>
+                      <p>{chauffeur.adresse}</p>
+                      {(chauffeur.ville || chauffeur.code_postal) && (
+                        <p className="text-sm text-gray-500">
+                          {chauffeur.ville} {chauffeur.code_postal}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Permis */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IdCard className="w-5 h-5" />
+                  Permis de conduire
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Numéro de permis</p>
+                    <p>{chauffeur.numero_permis}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Date d'expiration</p>
+                    <p>{new Date(chauffeur.date_expiration_permis).toLocaleDateString('fr-FR')}</p>
+                  </div>
+                </div>
+                {chauffeur.type_permis && chauffeur.type_permis.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 mb-2">Types de permis</p>
+                    <div className="flex gap-2">
+                      {chauffeur.type_permis.map((type: string) => (
+                        <Badge key={type} variant="outline">
+                          Permis {type}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="statut">
+            <ChauffeurStatutManager
+              chauffeur={chauffeur}
+              onUpdate={() => {
+                // Refresh des données - à implémenter
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="documents">
+            <ChauffeurDocumentManager
+              chauffeur={chauffeur}
+              onUpdate={() => {
+                // Refresh des données - à implémenter
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="historique">
+            <Card>
+              <CardHeader>
+                <CardTitle>Historique des activités</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-center text-gray-500 py-8">
+                  Fonctionnalité d'historique en cours de développement
+                </p>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
