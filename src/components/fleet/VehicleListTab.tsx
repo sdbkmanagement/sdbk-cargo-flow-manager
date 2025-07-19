@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +53,17 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
         </Badge>
       );
     }
+  };
+
+  const getVolumeDisplay = (vehicle: Vehicule) => {
+    if (vehicle.type_vehicule === 'tracteur_remorque' && vehicle.remorque_volume_litres) {
+      const unit = vehicle.type_transport === 'hydrocarbures' ? 'L' : 't';
+      return `${vehicle.remorque_volume_litres}${unit}`;
+    } else if (vehicle.type_vehicule === 'porteur' && vehicle.volume_tonnes) {
+      const unit = vehicle.type_transport === 'hydrocarbures' ? 'L' : 't';
+      return `${vehicle.volume_tonnes}${unit}`;
+    }
+    return 'Non défini';
   };
 
   const handleDelete = async (vehicleId: string) => {
@@ -125,11 +137,9 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
                           : `${vehicle.tracteur_marque} ${vehicle.tracteur_modele}`
                         }
                       </span>
-                      {vehicle.type_vehicule === 'porteur' && vehicle.volume_tonnes && (
-                        <span className="text-xs text-muted-foreground">
-                          Volume: {vehicle.volume_tonnes}t
-                        </span>
-                      )}
+                      <span className="text-xs text-muted-foreground">
+                        Volume: {getVolumeDisplay(vehicle)}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
