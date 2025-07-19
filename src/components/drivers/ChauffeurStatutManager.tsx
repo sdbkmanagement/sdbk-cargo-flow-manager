@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,9 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
     setIsLoading(true);
 
     try {
+      // Construire l'objet de mise à jour avec tous les champs existants
       const updateData = {
+        ...chauffeur, // Reprendre toutes les données existantes
         statut_disponibilite: newStatut,
         date_debut_statut: dateDebut || null,
         date_fin_statut: dateFin || null

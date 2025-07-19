@@ -9,8 +9,8 @@ import { PersonalInfoStep } from './form/PersonalInfoStep';
 import { PhotoSignatureStep } from './form/PhotoSignatureStep';
 import { FormNavigation } from './form/FormNavigation';
 import { ProfileHeader } from './ProfileHeader';
-import { formSteps } from './form/steps';
 import { chauffeursService } from '@/services/chauffeurs';
+import { User, Camera } from 'lucide-react';
 
 interface ChauffeurFormProps {
   chauffeur?: any;
@@ -225,10 +225,20 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
 
   const formValues = form.watch();
 
-  // Étapes réduites à 2 (infos personnelles + photo/signature)
+  // Steps corrigés avec les bonnes propriétés
   const steps = [
-    { number: 1, title: 'Informations personnelles', description: 'Coordonnées et détails' },
-    { number: 2, title: 'Photo et signature', description: 'Documents visuels' }
+    { 
+      id: 1, 
+      title: 'Informations personnelles', 
+      description: 'Coordonnées et détails',
+      icon: User
+    },
+    { 
+      id: 2, 
+      title: 'Photo et signature', 
+      description: 'Documents visuels',
+      icon: Camera
+    }
   ];
 
   return (
