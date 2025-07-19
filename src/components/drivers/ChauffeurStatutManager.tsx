@@ -35,32 +35,45 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Les dates sont TOUJOURS obligatoires maintenant
-    if (!dateDebut || dateDebut.trim() === '') {
+    console.log('Tentative de soumission avec:', { dateDebut, dateFin });
+    
+    // Validation stricte des dates - elles sont OBLIGATOIRES
+    if (!dateDebut) {
+      console.log('Date de début manquante');
       toast({
-        title: "Erreur",
-        description: "La date de début est obligatoire",
+        title: "Erreur de validation",
+        description: "La date de début est obligatoire pour changer le statut",
         variant: "destructive",
       });
       return;
     }
     
-    if (!dateFin || dateFin.trim() === '') {
+    if (!dateFin) {
+      console.log('Date de fin manquante');
       toast({
-        title: "Erreur",
-        description: "La date de fin est obligatoire",
+        title: "Erreur de validation", 
+        description: "La date de fin est obligatoire pour changer le statut",
         variant: "destructive",
       });
       return;
     }
 
-    // Vérifier que la date de fin est après la date de début
+    // Vérifier que les dates sont valides
     const debut = new Date(dateDebut);
     const fin = new Date(dateFin);
     
+    if (isNaN(debut.getTime()) || isNaN(fin.getTime())) {
+      toast({
+        title: "Erreur de validation",
+        description: "Les dates saisies ne sont pas valides",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (fin <= debut) {
       toast({
-        title: "Erreur",
+        title: "Erreur de validation",
         description: "La date de fin doit être postérieure à la date de début",
         variant: "destructive",
       });
@@ -77,6 +90,8 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
         date_debut_statut: dateDebut,
         date_fin_statut: dateFin
       };
+
+      console.log('Mise à jour du statut avec:', updateData);
 
       await chauffeursService.update(chauffeur.id, updateData);
       
@@ -110,6 +125,9 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
     setDateFin('');
     setMotif('');
   };
+
+  // Vérifier si le formulaire est valide
+  const isFormValid = dateDebut && dateFin && dateDebut.trim() !== '' && dateFin.trim() !== '';
 
   const currentStatut = chauffeur.statut_disponibilite || 'disponible';
   const statutConfig = STATUT_OPTIONS[currentStatut as keyof typeof STATUT_OPTIONS];
@@ -172,9 +190,16 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
                 <Input
                   type="date"
                   value={dateDebut}
-                  onChange={(e) => setDateDebut(e.target.value)}
+                  onChange={(e) => {
+                    console.log('Date début changée:', e.target.value);
+                    setDateDebut(e.target.value);
+                  }}
                   required
+                  className="border-red-200 focus:border-red-500"
                 />
+                {!dateDebut && (
+                  <p className="text-xs text-red-500">Ce champ est obligatoire</p>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -182,9 +207,16 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
                 <Input
                   type="date"
                   value={dateFin}
-                  onChange={(e) => setDateFin(e.target.value)}
+                  onChange={(e) => {
+                    console.log('Date fin changée:', e.target.value);
+                    setDateFin(e.target.value);
+                  }}
                   required
+                  className="border-red-200 focus:border-red-500"
                 />
+                {!dateFin && (
+                  <p className="text-xs text-red-500">Ce champ est obligatoire</p>
+                )}
               </div>
             </div>
 
@@ -198,8 +230,20 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
               />
             </div>
 
+            {!isFormValid && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">
+                  ⚠️ Les dates de début et de fin sont obligatoires pour changer le statut
+                </p>
+              </div>
+            )}
+
             <div className="flex gap-2">
-              <Button type="submit" disabled={isLoading || !dateDebut || !dateFin}>
+              <Button 
+                type="submit" 
+                disabled={isLoading || !isFormValid}
+                className={!isFormValid ? 'opacity-50 cursor-not-allowed' : ''}
+              >
                 {isLoading ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
               <Button 
