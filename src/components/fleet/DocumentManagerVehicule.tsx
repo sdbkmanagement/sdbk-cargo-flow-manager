@@ -247,14 +247,14 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
     }
   };
 
-  const handleView = (document: DocumentVehicule) => {
-    window.open(document.url, '_blank');
+  const handleView = (docItem: DocumentVehicule) => {
+    window.open(docItem.url, '_blank');
   };
 
-  const handleDownload = async (document: DocumentVehicule) => {
+  const handleDownload = async (docItem: DocumentVehicule) => {
     try {
       // Récupérer le fichier depuis Supabase Storage
-      const response = await fetch(document.url);
+      const response = await fetch(docItem.url);
       
       if (!response.ok) {
         throw new Error('Impossible de télécharger le fichier');
@@ -267,23 +267,23 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
       const blobUrl = window.URL.createObjectURL(blob);
       
       // Créer un lien de téléchargement
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = blobUrl;
-      link.download = document.nom;
+      link.download = docItem.nom;
       
       // Ajouter le lien au DOM temporairement
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       
       // Déclencher le téléchargement
       link.click();
       
       // Nettoyer
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
       
       toast({
         title: 'Téléchargement lancé',
-        description: `Le document ${document.nom} est en cours de téléchargement`
+        description: `Le document ${docItem.nom} est en cours de téléchargement`
       });
     } catch (error) {
       console.error('Erreur lors du téléchargement:', error);
@@ -474,32 +474,32 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
               </TableRow>
             </TableHeader>
             <TableBody>
-              {documents.map((document) => (
-                <TableRow key={document.id}>
+              {documents.map((docItem) => (
+                <TableRow key={docItem.id}>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       <FileText className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium">{document.nom}</span>
+                      <span className="font-medium">{docItem.nom}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {getDocumentTypeLabel(document.type)}
+                      {getDocumentTypeLabel(docItem.type)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={getDocumentBadgeVariant(document.statut || 'valide')}>
-                      {getStatusText(document.statut || 'valide')}
+                    <Badge variant={getDocumentBadgeVariant(docItem.statut || 'valide')}>
+                      {getStatusText(docItem.statut || 'valide')}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {document.date_expiration ? (
+                    {docItem.date_expiration ? (
                       <div className="text-sm">
-                        <div>{new Date(document.date_expiration).toLocaleDateString('fr-FR')}</div>
-                        {document.statut === 'expire' && (
+                        <div>{new Date(docItem.date_expiration).toLocaleDateString('fr-FR')}</div>
+                        {docItem.statut === 'expire' && (
                           <div className="text-destructive text-xs">Expiré</div>
                         )}
-                        {document.statut === 'a_renouveler' && (
+                        {docItem.statut === 'a_renouveler' && (
                           <div className="text-warning text-xs">À renouveler</div>
                         )}
                       </div>
@@ -508,14 +508,14 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
                     )}
                   </TableCell>
                   <TableCell>
-                    {formatFileSize(document.taille || 0)}
+                    {formatFileSize(docItem.taille || 0)}
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleView(document)}
+                        onClick={() => handleView(docItem)}
                         title="Voir le document"
                       >
                         <Eye className="w-4 h-4" />
@@ -523,7 +523,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
                       <Button
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleDownload(document)}
+                        onClick={() => handleDownload(docItem)}
                         title="Télécharger le document"
                       >
                         <Download className="w-4 h-4" />
@@ -531,7 +531,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
                       <Button
                         variant="outline" 
                         size="sm"
-                        onClick={() => handleDelete(document)}
+                        onClick={() => handleDelete(docItem)}
                         title="Supprimer le document"
                         className="text-red-600 hover:text-red-800"
                       >
