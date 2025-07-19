@@ -450,61 +450,115 @@ export type Database = {
       chauffeurs: {
         Row: {
           adresse: string | null
+          age: number | null
+          base_chauffeur: string | null
           code_postal: string | null
+          contrat_url: string | null
           created_at: string | null
+          date_embauche: string | null
           date_expiration_permis: string
           date_naissance: string | null
+          date_obtention_permis: string | null
           email: string | null
+          filiation: string | null
+          fonction: string | null
+          groupe_sanguin: string | null
           id: string
+          id_conducteur: string | null
+          immatricule_cnss: string | null
+          lieu_naissance: string | null
+          matricule: string | null
+          nationalite: string | null
           nom: string
           numero_permis: string
           photo_url: string | null
           prenom: string
           signature_url: string | null
           statut: string | null
+          statut_matrimonial: string | null
           telephone: string
+          type_contrat: string | null
           type_permis: string[]
           updated_at: string | null
+          urgence_nom: string | null
+          urgence_prenom: string | null
+          urgence_telephone: string | null
           vehicule_assigne: string | null
           ville: string | null
         }
         Insert: {
           adresse?: string | null
+          age?: number | null
+          base_chauffeur?: string | null
           code_postal?: string | null
+          contrat_url?: string | null
           created_at?: string | null
+          date_embauche?: string | null
           date_expiration_permis: string
           date_naissance?: string | null
+          date_obtention_permis?: string | null
           email?: string | null
+          filiation?: string | null
+          fonction?: string | null
+          groupe_sanguin?: string | null
           id?: string
+          id_conducteur?: string | null
+          immatricule_cnss?: string | null
+          lieu_naissance?: string | null
+          matricule?: string | null
+          nationalite?: string | null
           nom: string
           numero_permis: string
           photo_url?: string | null
           prenom: string
           signature_url?: string | null
           statut?: string | null
+          statut_matrimonial?: string | null
           telephone: string
+          type_contrat?: string | null
           type_permis?: string[]
           updated_at?: string | null
+          urgence_nom?: string | null
+          urgence_prenom?: string | null
+          urgence_telephone?: string | null
           vehicule_assigne?: string | null
           ville?: string | null
         }
         Update: {
           adresse?: string | null
+          age?: number | null
+          base_chauffeur?: string | null
           code_postal?: string | null
+          contrat_url?: string | null
           created_at?: string | null
+          date_embauche?: string | null
           date_expiration_permis?: string
           date_naissance?: string | null
+          date_obtention_permis?: string | null
           email?: string | null
+          filiation?: string | null
+          fonction?: string | null
+          groupe_sanguin?: string | null
           id?: string
+          id_conducteur?: string | null
+          immatricule_cnss?: string | null
+          lieu_naissance?: string | null
+          matricule?: string | null
+          nationalite?: string | null
           nom?: string
           numero_permis?: string
           photo_url?: string | null
           prenom?: string
           signature_url?: string | null
           statut?: string | null
+          statut_matrimonial?: string | null
           telephone?: string
+          type_contrat?: string | null
           type_permis?: string[]
           updated_at?: string | null
+          urgence_nom?: string | null
+          urgence_prenom?: string | null
+          urgence_telephone?: string | null
           vehicule_assigne?: string | null
           ville?: string | null
         }

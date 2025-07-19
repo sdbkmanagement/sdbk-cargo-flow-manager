@@ -5,13 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, IdCard, MapPin, Calendar, Phone, Mail } from 'lucide-react';
+import { User, IdCard, MapPin, Calendar, Phone, Mail, Heart } from 'lucide-react';
 
 interface PersonalInfoStepProps {
   form: any;
+  calculateAnciennete: (dateEmbauche: string) => string;
 }
 
-export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
+export const PersonalInfoStep = ({ form, calculateAnciennete }: PersonalInfoStepProps) => {
   // Calculer l'âge automatiquement à partir de la date de naissance
   const calculateAge = (birthDate: string) => {
     if (!birthDate) return '';
@@ -26,6 +27,8 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
   };
 
   const watchedBirthDate = form.watch('dateNaissance');
+  const watchedDateEmbauche = form.watch('date_embauche');
+
   React.useEffect(() => {
     if (watchedBirthDate) {
       const age = calculateAge(watchedBirthDate);
@@ -129,7 +132,7 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <FormField
               control={form.control}
               name="dateNaissance"
@@ -138,20 +141,6 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
                   <FormLabel>Date de Naissance</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="age"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Âge</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Calculé automatiquement" {...field} readOnly />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -171,9 +160,35 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
                 </FormItem>
               )}
             />
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FormField
+              control={form.control}
+              name="nationalite"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nationalité</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Sélectionner la nationalité" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Guinéenne">Guinéenne</SelectItem>
+                        <SelectItem value="Malienne">Malienne</SelectItem>
+                        <SelectItem value="Sénégalaise">Sénégalaise</SelectItem>
+                        <SelectItem value="Ivoirienne">Ivoirienne</SelectItem>
+                        <SelectItem value="Libérienne">Libérienne</SelectItem>
+                        <SelectItem value="Sierra-Léonaise">Sierra-Léonaise</SelectItem>
+                        <SelectItem value="Française">Française</SelectItem>
+                        <SelectItem value="Autre">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="groupe_sanguin"
@@ -183,7 +198,7 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
                   <FormControl>
                     <Select value={field.value} onValueChange={field.onChange}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner le groupe sanguin" />
+                        <SelectValue placeholder="Groupe sanguin" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="A+">A+</SelectItem>
@@ -201,31 +216,31 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
                 </FormItem>
               )}
             />
-
-            <FormField
-              control={form.control}
-              name="statut_matrimonial"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Statut Matrimonial</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Sélectionner le statut" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="celibataire">Célibataire</SelectItem>
-                        <SelectItem value="marie">Marié(e)</SelectItem>
-                        <SelectItem value="divorce">Divorcé(e)</SelectItem>
-                        <SelectItem value="veuf">Veuf/Veuve</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
           </div>
+
+          <FormField
+            control={form.control}
+            name="statut_matrimonial"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Statut Matrimonial</FormLabel>
+                <FormControl>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner le statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="celibataire">Célibataire</SelectItem>
+                      <SelectItem value="marie">Marié(e)</SelectItem>
+                      <SelectItem value="divorce">Divorcé(e)</SelectItem>
+                      <SelectItem value="veuf">Veuf/Veuve</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
           <FormField
             control={form.control}
@@ -256,7 +271,7 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <FormField
               control={form.control}
               name="fonction"
@@ -316,7 +331,38 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="type_contrat"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type de Contrat</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Type de contrat" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CDI">CDI</SelectItem>
+                        <SelectItem value="CDD">CDD</SelectItem>
+                        <SelectItem value="CA">CA</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
+
+          {watchedDateEmbauche && (
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <p className="text-sm font-medium text-blue-800">
+                Ancienneté: {calculateAnciennete(watchedDateEmbauche)}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -394,6 +440,59 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
         </CardContent>
       </Card>
 
+      {/* Personne à contacter en cas d'urgence */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Heart className="w-5 h-5" />
+            Personne à contacter en cas d'urgence
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <FormField
+            control={form.control}
+            name="urgence_nom"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nom</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nom de la personne" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="urgence_prenom"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Prénom</FormLabel>
+                <FormControl>
+                  <Input placeholder="Prénom de la personne" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="urgence_telephone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Téléphone</FormLabel>
+                <FormControl>
+                  <Input placeholder="+224 XXX XXX XXX" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </CardContent>
+      </Card>
+
       {/* Permis de conduire */}
       <Card>
         <CardHeader>
@@ -403,7 +502,7 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FormField
               control={form.control}
               name="numeroPermis"
@@ -413,6 +512,20 @@ export const PersonalInfoStep = ({ form }: PersonalInfoStepProps) => {
                   <FormLabel>Numéro de permis *</FormLabel>
                   <FormControl>
                     <Input placeholder="Numéro du permis de conduire" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateObtentionPermis"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Date d'obtention</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

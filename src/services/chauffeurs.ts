@@ -38,6 +38,8 @@ export const chauffeursService = {
   // Créer un nouveau chauffeur
   async create(chauffeurData: ChauffeurInsert): Promise<Chauffeur | null> {
     try {
+      console.log('Création chauffeur avec données:', chauffeurData)
+      
       const { data, error } = await supabase
         .from('chauffeurs')
         .insert([chauffeurData])
@@ -49,6 +51,7 @@ export const chauffeursService = {
         throw error
       }
 
+      console.log('Chauffeur créé avec succès:', data)
       return data
     } catch (error) {
       console.error('Erreur lors de la création du chauffeur:', error)
@@ -130,11 +133,15 @@ export const chauffeursService = {
   },
 
   // Upload d'un fichier
-  async uploadFile(file: File, path: string): Promise<string> {
+  async uploadFile(file: File, chauffeurId: string, type: 'photo' | 'contrat'): Promise<string> {
     try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${chauffeurId}_${type}_${Date.now()}.${fileExt}`
+      const filePath = `chauffeurs/${fileName}`
+
       const { data, error } = await supabase.storage
         .from('documents')
-        .upload(path, file, {
+        .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         })

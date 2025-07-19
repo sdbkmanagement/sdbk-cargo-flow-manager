@@ -6,11 +6,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { StepIndicator } from './form/StepIndicator';
 import { PersonalInfoStep } from './form/PersonalInfoStep';
-import { PhotoSignatureStep } from './form/PhotoSignatureStep';
+import { ContractStep } from './form/ContractStep';
 import { FormNavigation } from './form/FormNavigation';
 import { ProfileHeader } from './ProfileHeader';
 import { chauffeursService } from '@/services/chauffeurs';
-import { User, Camera } from 'lucide-react';
+import { User, FileText, Camera } from 'lucide-react';
 
 interface ChauffeurFormProps {
   chauffeur?: any;
@@ -29,7 +29,7 @@ interface UploadedFile {
 export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [profilePhoto, setProfilePhoto] = useState<UploadedFile | null>(null);
-  const [signature, setSignature] = useState<UploadedFile | null>(null);
+  const [contractFile, setContractFile] = useState<UploadedFile | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -44,8 +44,8 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
       nom: chauffeur?.nom || '',
       prenom: chauffeur?.prenom || '',
       dateNaissance: chauffeur?.date_naissance || '',
-      age: chauffeur?.age?.toString() || '',
       lieu_naissance: chauffeur?.lieu_naissance || '',
+      nationalite: chauffeur?.nationalite || 'Guinéenne',
       groupe_sanguin: chauffeur?.groupe_sanguin || '',
       filiation: chauffeur?.filiation || '',
       statut_matrimonial: chauffeur?.statut_matrimonial || '',
@@ -54,6 +54,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
       fonction: chauffeur?.fonction || '',
       base_chauffeur: chauffeur?.base_chauffeur || '',
       date_embauche: chauffeur?.date_embauche || '',
+      type_contrat: chauffeur?.type_contrat || 'CDI',
       
       // Contact
       telephone: chauffeur?.telephone || '',
@@ -62,10 +63,16 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
       ville: chauffeur?.ville || '',
       codePostal: chauffeur?.code_postal || '',
       
+      // Personne à contacter en cas d'urgence
+      urgence_nom: chauffeur?.urgence_nom || '',
+      urgence_prenom: chauffeur?.urgence_prenom || '',
+      urgence_telephone: chauffeur?.urgence_telephone || '',
+      
       // Permis
       numeroPermis: chauffeur?.numero_permis || '',
       typePermis: chauffeur?.type_permis || [],
       dateExpirationPermis: chauffeur?.date_expiration_permis || '',
+      dateObtentionPermis: chauffeur?.date_obtention_permis || '',
       
       // Statut
       statut: chauffeur?.statut || 'actif'
@@ -82,13 +89,13 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
         url: chauffeur.photo_url
       });
     }
-    if (chauffeur?.signature_url) {
-      setSignature({
-        id: 'existing-signature',
-        name: 'Signature existante',
+    if (chauffeur?.contrat_url) {
+      setContractFile({
+        id: 'existing-contract',
+        name: 'Contrat existant',
         size: 0,
-        type: 'image/jpeg',
-        url: chauffeur.signature_url
+        type: 'application/pdf',
+        url: chauffeur.contrat_url
       });
     }
   }, [chauffeur]);
@@ -134,10 +141,41 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
     }
   });
 
+  // Calculer l'ancienneté automatiquement
+  const calculateAnciennete = (dateEmbauche: string) => {
+    if (!dateEmbauche) return '';
+    const today = new Date();
+    const embauche = new Date(dateEmbauche);
+    const diffTime = Math.abs(today.getTime() - embauche.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    
+    if (years > 0) {
+      return `${years} an${years > 1 ? 's' : ''} ${months > 0 ? `et ${months} mois` : ''}`;
+    } else if (months > 0) {
+      return `${months} mois`;
+    } else {
+      return `${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+    }
+  };
+
   const onSubmit = async (data: any) => {
     console.log('Soumission du formulaire, données:', data);
     
     try {
+      // Calculer l'âge automatiquement
+      let age = null;
+      if (data.dateNaissance) {
+        const today = new Date();
+        const birth = new Date(data.dateNaissance);
+        age = today.getFullYear() - birth.getFullYear();
+        const monthDiff = today.getMonth() - birth.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+          age--;
+        }
+      }
+
       const chauffeurData = {
         // Informations administratives
         matricule: data.matricule || null,
@@ -148,8 +186,9 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
         nom: data.nom,
         prenom: data.prenom,
         date_naissance: data.dateNaissance || null,
-        age: data.age ? parseInt(data.age) : null,
+        age: age,
         lieu_naissance: data.lieu_naissance || null,
+        nationalite: data.nationalite || null,
         groupe_sanguin: data.groupe_sanguin || null,
         filiation: data.filiation || null,
         statut_matrimonial: data.statut_matrimonial || null,
@@ -158,6 +197,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
         fonction: data.fonction || null,
         base_chauffeur: data.base_chauffeur || null,
         date_embauche: data.date_embauche || null,
+        type_contrat: data.type_contrat || 'CDI',
         
         // Contact
         telephone: data.telephone,
@@ -166,15 +206,21 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
         ville: data.ville || null,
         code_postal: data.codePostal || null,
         
+        // Personne à contacter en cas d'urgence
+        urgence_nom: data.urgence_nom || null,
+        urgence_prenom: data.urgence_prenom || null,
+        urgence_telephone: data.urgence_telephone || null,
+        
         // Permis
         numero_permis: data.numeroPermis,
         type_permis: data.typePermis || [],
         date_expiration_permis: data.dateExpirationPermis,
+        date_obtention_permis: data.dateObtentionPermis || null,
         
-        // Statut et photos
+        // Statut et documents
         statut: data.statut || 'actif',
         photo_url: profilePhoto?.url || null,
-        signature_url: signature?.url || null,
+        contrat_url: contractFile?.url || null,
       };
 
       if (chauffeur?.id) {
@@ -195,11 +241,11 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
     }
   };
 
-  const handleSignatureChange = (files: UploadedFile[]) => {
+  const handleContractChange = (files: UploadedFile[]) => {
     if (files.length > 0) {
-      setSignature(files[0]);
+      setContractFile(files[0]);
     } else {
-      setSignature(null);
+      setContractFile(null);
     }
   };
 
@@ -225,7 +271,7 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
 
   const formValues = form.watch();
 
-  // Steps corrigés avec les bonnes propriétés
+  // Steps mis à jour
   const steps = [
     { 
       id: 1, 
@@ -235,9 +281,9 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
     },
     { 
       id: 2, 
-      title: 'Photo et signature', 
-      description: 'Documents visuels',
-      icon: Camera
+      title: 'Contrat et photo', 
+      description: 'Documents et signature',
+      icon: FileText
     }
   ];
 
@@ -253,14 +299,19 @@ export const ChauffeurForm = ({ chauffeur, onSuccess, onCancel }: ChauffeurFormP
 
       <Form {...form}>
         <div className="space-y-6">
-          {currentStep === 1 && <PersonalInfoStep form={form} />}
+          {currentStep === 1 && (
+            <PersonalInfoStep 
+              form={form} 
+              calculateAnciennete={calculateAnciennete}
+            />
+          )}
           
           {currentStep === 2 && (
-            <PhotoSignatureStep
+            <ContractStep
               profilePhoto={profilePhoto}
-              signature={signature}
+              contractFile={contractFile}
               onPhotoChange={handlePhotoChange}
-              onSignatureChange={handleSignatureChange}
+              onContractChange={handleContractChange}
               chauffeurData={formValues}
             />
           )}
