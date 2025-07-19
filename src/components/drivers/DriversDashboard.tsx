@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +40,8 @@ export const DriversDashboard = () => {
     dateFin: '',
     motif: ''
   });
+  const [dateDebutError, setDateDebutError] = useState('');
+  const [dateFinError, setDateFinError] = useState('');
   const [alertsCount, setAlertsCount] = useState(0);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -51,7 +52,6 @@ export const DriversDashboard = () => {
     refetchInterval: 30000,
   });
 
-  // Calculer les statistiques
   const stats = {
     total: chauffeurs.length,
     disponibles: chauffeurs.filter(c => c.statut === 'actif').length,
@@ -61,7 +61,6 @@ export const DriversDashboard = () => {
     alertes: alertsCount
   };
 
-  // Charger les alertes
   useEffect(() => {
     const loadAlerts = async () => {
       try {
@@ -80,16 +79,66 @@ export const DriversDashboard = () => {
     loadAlerts();
   }, []);
 
+  const validateDates = () => {
+    let isValid = true;
+    setDateDebutError('');
+    setDateFinError('');
+
+    if (!statusChange.dateDebut || statusChange.dateDebut.trim() === '') {
+      setDateDebutError('La date de début est obligatoire');
+      isValid = false;
+    }
+
+    if (!statusChange.dateFin || statusChange.dateFin.trim() === '') {
+      setDateFinError('La date de fin est obligatoire');
+      isValid = false;
+    }
+
+    if (statusChange.dateDebut && statusChange.dateFin) {
+      const debut = new Date(statusChange.dateDebut);
+      const fin = new Date(statusChange.dateFin);
+      
+      if (isNaN(debut.getTime()) || isNaN(fin.getTime())) {
+        if (isNaN(debut.getTime())) setDateDebutError('Date de début invalide');
+        if (isNaN(fin.getTime())) setDateFinError('Date de fin invalide');
+        isValid = false;
+      } else if (fin <= debut) {
+        setDateFinError('La date de fin doit être postérieure à la date de début');
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  };
+
   const handleStatusChange = async () => {
+    console.log('Tentative de changement de statut avec:', statusChange);
+    
+    if (!validateDates()) {
+      toast({
+        title: "Erreur de validation",
+        description: "Veuillez corriger les erreurs dans le formulaire",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      // Mettre à jour le statut du chauffeur
+      // Mettre à jour le statut du chauffeur avec les nouvelles dates
+      const updateData = {
+        statut: statusChange.nouveauStatut,
+        statut_disponibilite: statusChange.nouveauStatut,
+        date_debut_statut: statusChange.dateDebut,
+        date_fin_statut: statusChange.dateFin
+      };
+
+      console.log('Mise à jour du chauffeur avec:', updateData);
+
       await supabase
         .from('chauffeurs')
-        .update({ statut: statusChange.nouveauStatut })
+        .update(updateData)
         .eq('id', statusChange.chauffeurId);
 
-      // Note: Pour l'historique des statuts, nous utiliserons la table existante ou l'ajouterons plus tard
-      
       toast({
         title: 'Statut modifié',
         description: 'Le statut du chauffeur a été mis à jour avec succès'
@@ -103,6 +152,8 @@ export const DriversDashboard = () => {
         dateFin: '',
         motif: ''
       });
+      setDateDebutError('');
+      setDateFinError('');
 
       // Actualiser les données
       queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
@@ -113,6 +164,22 @@ export const DriversDashboard = () => {
         description: 'Impossible de modifier le statut',
         variant: 'destructive'
       });
+    }
+  };
+
+  const handleDateDebutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setStatusChange({...statusChange, dateDebut: value});
+    if (dateDebutError && value.trim() !== '') {
+      setDateDebutError('');
+    }
+  };
+
+  const handleDateFinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setStatusChange({...statusChange, dateFin: value});
+    if (dateFinError && value.trim() !== '') {
+      setDateFinError('');
     }
   };
 
@@ -139,8 +206,13 @@ export const DriversDashboard = () => {
       dateFin: '',
       motif: ''
     });
+    setDateDebutError('');
+    setDateFinError('');
     setStatusDialog(true);
   };
+
+  // Le formulaire est valide seulement si les deux dates sont renseignées ET valides
+  const canSubmit = statusChange.dateDebut && statusChange.dateFin && statusChange.dateDebut.trim() !== '' && statusChange.dateFin.trim() !== '' && !dateDebutError && !dateFinError && statusChange.nouveauStatut;
 
   if (isLoading) {
     return (
@@ -209,7 +281,7 @@ export const DriversDashboard = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="status">Nouveau statut</Label>
+              <Label htmlFor="status">Nouveau statut <span className="text-red-500">*</span></Label>
               <Select
                 value={statusChange.nouveauStatut}
                 onValueChange={(value) => setStatusChange({...statusChange, nouveauStatut: value})}
@@ -227,28 +299,38 @@ export const DriversDashboard = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="dateDebut">Date de début</Label>
+              <div className="space-y-2">
+                <Label htmlFor="dateDebut">Date de début <span className="text-red-500">*</span></Label>
                 <Input
                   id="dateDebut"
                   type="date"
                   value={statusChange.dateDebut}
-                  onChange={(e) => setStatusChange({...statusChange, dateDebut: e.target.value})}
+                  onChange={handleDateDebutChange}
+                  required
+                  className={`${dateDebutError ? 'border-red-500 focus:border-red-500' : 'border-gray-200'}`}
                 />
+                {dateDebutError && (
+                  <p className="text-xs text-red-500">{dateDebutError}</p>
+                )}
               </div>
-              <div>
-                <Label htmlFor="dateFin">Date de fin (optionnel)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="dateFin">Date de fin <span className="text-red-500">*</span></Label>
                 <Input
                   id="dateFin"
                   type="date"
                   value={statusChange.dateFin}
-                  onChange={(e) => setStatusChange({...statusChange, dateFin: e.target.value})}
+                  onChange={handleDateFinChange}
+                  required
+                  className={`${dateFinError ? 'border-red-500 focus:border-red-500' : 'border-gray-200'}`}
                 />
+                {dateFinError && (
+                  <p className="text-xs text-red-500">{dateFinError}</p>
+                )}
               </div>
             </div>
 
             <div>
-              <Label htmlFor="motif">Motif</Label>
+              <Label htmlFor="motif">Motif (optionnel)</Label>
               <Textarea
                 id="motif"
                 placeholder="Motif du changement de statut..."
@@ -257,6 +339,14 @@ export const DriversDashboard = () => {
               />
             </div>
 
+            {(!statusChange.dateDebut || !statusChange.dateFin || dateDebutError || dateFinError) && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">
+                  ⚠️ Les dates de début et de fin sont obligatoires pour changer le statut
+                </p>
+              </div>
+            )}
+
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setStatusDialog(false)}>
                 Annuler
@@ -264,7 +354,7 @@ export const DriversDashboard = () => {
               <Button 
                 onClick={handleStatusChange}
                 className="bg-orange-500 hover:bg-orange-600"
-                disabled={!statusChange.nouveauStatut}
+                disabled={!canSubmit}
               >
                 Confirmer
               </Button>
