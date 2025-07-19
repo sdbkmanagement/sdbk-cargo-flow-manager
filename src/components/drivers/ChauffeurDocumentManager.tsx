@@ -64,7 +64,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
         url: url,
         taille: file.size,
         date_expiration: dateExpiration || null,
-        statut: 'valide'
+        statut: getStatutFromExpiration(dateExpiration)
       };
 
       if (editingDocument) {
@@ -120,6 +120,18 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getStatutFromExpiration = (dateExpiration?: string) => {
+    if (!dateExpiration) return 'valide';
+    
+    const now = new Date();
+    const expDate = new Date(dateExpiration);
+    const daysUntilExpiry = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilExpiry < 0) return 'expire';
+    if (daysUntilExpiry <= 30) return 'a_renouveler';
+    return 'valide';
   };
 
   const getDocumentStatus = (document: any) => {
@@ -178,6 +190,9 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                   <div className="flex justify-between items-start mb-3">
                     <div>
                       <h4 className="font-medium">{config.label}</h4>
+                      {config.obligatoire && (
+                        <span className="text-xs text-red-600">Obligatoire</span>
+                      )}
                       {config.duree_mois && (
                         <p className="text-sm text-gray-500">
                           Durée: {config.duree_mois} mois
@@ -257,8 +272,8 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
               </DialogTitle>
             </DialogHeader>
             <DocumentUpload
-              onUpload={(file) => {
-                const defaultExpiration = getExpirationDate(showUpload);
+              onUpload={(file, expirationDate) => {
+                const defaultExpiration = expirationDate || getExpirationDate(showUpload);
                 handleUpload(showUpload, file, defaultExpiration);
               }}
               onCancel={() => {
@@ -268,7 +283,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
               acceptedTypes=".pdf,.jpg,.jpeg,.png"
               maxSize={10 * 1024 * 1024}
               showExpirationDate={!!CHAUFFEUR_DOCUMENT_TYPES[showUpload as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].duree_mois}
-              defaultExpirationDate={getExpirationDate(showUpload)}
+              defaultExpirationDate={editingDocument?.date_expiration || getExpirationDate(showUpload)}
             />
           </DialogContent>
         </Dialog>

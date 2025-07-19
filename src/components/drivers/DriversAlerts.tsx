@@ -4,9 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Clock, XCircle, Eye, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, Eye, RefreshCw, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
 
 interface DocumentAlert {
   id: string;
@@ -17,6 +18,7 @@ interface DocumentAlert {
   jours_restants: number | null;
   statut: string;
   niveau_alerte: string;
+  chauffeur_id?: string;
 }
 
 export const DriversAlerts = () => {
@@ -28,11 +30,11 @@ export const DriversAlerts = () => {
     try {
       setLoading(true);
       
-      // Utiliser la vue existante qui fonctionne
+      // Récupérer les documents avec alertes depuis la vue
       const { data, error } = await supabase
         .from('alertes_documents_chauffeurs')
         .select('*')
-        .order('jours_restants', { ascending: true });
+        .order('jours_restants', { ascending: true, nullsLast: true });
 
       if (error) {
         console.error('Erreur lors du chargement des alertes:', error);
@@ -44,7 +46,7 @@ export const DriversAlerts = () => {
         return;
       }
 
-      // Transformer les données pour correspondre à notre interface
+      // Transformer les données
       const alertsData = data?.map(alert => ({
         id: alert.id || '',
         chauffeur_nom: alert.chauffeur_nom || 'Chauffeur inconnu',
@@ -53,10 +55,16 @@ export const DriversAlerts = () => {
         date_expiration: alert.date_expiration,
         jours_restants: alert.jours_restants,
         statut: alert.statut || 'inconnu',
-        niveau_alerte: alert.niveau_alerte || 'INFO'
+        niveau_alerte: alert.niveau_alerte || 'INFO',
+        chauffeur_id: alert.chauffeur_id
       })) || [];
 
-      setAlerts(alertsData);
+      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
+      const filteredAlerts = alertsData.filter(alert => 
+        alert.jours_restants !== null && alert.jours_restants <= 30
+      );
+
+      setAlerts(filteredAlerts);
     } catch (error) {
       console.error('Erreur:', error);
     } finally {
@@ -87,6 +95,19 @@ export const DriversAlerts = () => {
     }
   };
 
+  const getDocumentLabel = (documentType: string) => {
+    const config = CHAUFFEUR_DOCUMENT_TYPES[documentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES];
+    return config ? config.label : documentType;
+  };
+
+  const getNiveauAlerte = (joursRestants: number | null) => {
+    if (joursRestants === null) return 'INFO';
+    if (joursRestants < 0) return 'URGENT - EXPIRÉ';
+    if (joursRestants <= 7) return 'URGENT';
+    if (joursRestants <= 30) return 'ATTENTION';
+    return 'INFO';
+  };
+
   if (loading) {
     return (
       <Card>
@@ -104,7 +125,7 @@ export const DriversAlerts = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Alertes Documents</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Alertes Documents Chauffeurs</h2>
           <p className="text-gray-600">
             {alerts.length} alerte(s) détectée(s)
           </p>
@@ -113,6 +134,51 @@ export const DriversAlerts = () => {
           <RefreshCw className="w-4 h-4 mr-2" />
           Actualiser
         </Button>
+      </div>
+
+      {/* Résumé des alertes */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Documents expirés</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {alerts.filter(a => a.jours_restants !== null && a.jours_restants < 0).length}
+                </p>
+              </div>
+              <XCircle className="w-8 h-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Expire sous 7 jours</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {alerts.filter(a => a.jours_restants !== null && a.jours_restants >= 0 && a.jours_restants <= 7).length}
+                </p>
+              </div>
+              <AlertTriangle className="w-8 h-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Expire sous 30 jours</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {alerts.filter(a => a.jours_restants !== null && a.jours_restants > 7 && a.jours_restants <= 30).length}
+                </p>
+              </div>
+              <Clock className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {alerts.length === 0 ? (
@@ -131,31 +197,45 @@ export const DriversAlerts = () => {
         <div className="space-y-4">
           {alerts.map((alert) => {
             const AlertIcon = getAlertIcon(alert.niveau_alerte);
+            const niveauCalcule = getNiveauAlerte(alert.jours_restants);
+            
             return (
-              <Alert key={alert.id} className="border-l-4 border-l-orange-500">
+              <Alert key={alert.id} className={`border-l-4 ${
+                alert.jours_restants !== null && alert.jours_restants < 0 
+                  ? 'border-l-red-500' 
+                  : alert.jours_restants !== null && alert.jours_restants <= 7
+                  ? 'border-l-orange-500'
+                  : 'border-l-blue-500'
+              }`}>
                 <AlertIcon className="h-4 w-4" />
                 <AlertDescription>
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-4 mb-2">
-                        <span className="font-semibold text-gray-900">
-                          {alert.chauffeur_nom}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4" />
+                          <span className="font-semibold text-gray-900">
+                            {alert.chauffeur_nom}
+                          </span>
+                        </div>
                         <span className="text-gray-600">
-                          {alert.document_nom}
+                          {getDocumentLabel(alert.document_type)}
                         </span>
                         {getStatusBadge(alert.statut)}
                       </div>
                       <div className="text-sm text-gray-600">
-                        <span className="font-medium">{alert.niveau_alerte}</span>
+                        <span className="font-medium">{niveauCalcule}</span>
                         {alert.date_expiration && (
                           <span className="ml-2">
                             • Expiration: {new Date(alert.date_expiration).toLocaleDateString('fr-FR')}
                           </span>
                         )}
-                        {alert.jours_restants !== null && alert.jours_restants < 999 && (
+                        {alert.jours_restants !== null && (
                           <span className="ml-2">
-                            • {alert.jours_restants} jour(s) restant(s)
+                            • {alert.jours_restants < 0 
+                              ? `Expiré depuis ${Math.abs(alert.jours_restants)} jour(s)`
+                              : `${alert.jours_restants} jour(s) restant(s)`
+                            }
                           </span>
                         )}
                       </div>

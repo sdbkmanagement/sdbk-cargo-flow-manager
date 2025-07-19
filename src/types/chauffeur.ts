@@ -27,7 +27,7 @@ export const CHAUFFEUR_DOCUMENT_TYPES = {
   },
   certificat_medical: {
     label: 'Certificat médical',
-    duree_mois: 6, // 6 mois
+    duree_mois: 12, // 1 an
     obligatoire: true
   },
   carte_professionnelle: {
@@ -42,7 +42,7 @@ export const CHAUFFEUR_DOCUMENT_TYPES = {
   },
   attestation_assurance: {
     label: 'Attestation d\'assurance',
-    duree_mois: null, // Pas d'expiration automatique
+    duree_mois: 12, // 1 an
     obligatoire: false
   },
   contrat_travail: {
