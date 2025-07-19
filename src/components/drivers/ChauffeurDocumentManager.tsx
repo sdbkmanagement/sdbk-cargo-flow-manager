@@ -170,6 +170,10 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
     setShowUpload(documentType);
   };
 
+  const isExpirationRequired = (documentType: string) => {
+    return documentType !== 'photo_profil' && documentType !== 'contrat_travail';
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -282,7 +286,8 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
               }}
               acceptedTypes=".pdf,.jpg,.jpeg,.png"
               maxSize={10 * 1024 * 1024}
-              showExpirationDate={!!CHAUFFEUR_DOCUMENT_TYPES[showUpload as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].duree_mois}
+              showExpirationDate={isExpirationRequired(showUpload)}
+              requiredExpirationDate={isExpirationRequired(showUpload)}
               defaultExpirationDate={editingDocument?.date_expiration || getExpirationDate(showUpload)}
             />
           </DialogContent>
