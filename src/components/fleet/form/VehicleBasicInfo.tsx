@@ -90,7 +90,7 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleB
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="conakry">Conakry</SelectItem>
-                <SelectItem value="kamsar">Kamsar</SelectItem>
+                <SelectItem value="kankan">Kankan</SelectItem>
                 <SelectItem value="nzerekore">N'Zérékoré</SelectItem>
               </SelectContent>
             </Select>
@@ -109,10 +109,44 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleB
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
-              <SelectItem value="bauxite">Bauxite</SelectItem>
+              <SelectItem value="marchandise">Marchandise</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        {/* Informations du propriétaire */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="proprietaire_nom" className="text-sm font-medium">Nom du propriétaire</Label>
+            <Input
+              id="proprietaire_nom"
+              {...register('proprietaire_nom')}
+              placeholder="Nom du propriétaire"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="proprietaire_prenom" className="text-sm font-medium">Prénom du propriétaire</Label>
+            <Input
+              id="proprietaire_prenom"
+              {...register('proprietaire_prenom')}
+              placeholder="Prénom du propriétaire"
+            />
+          </div>
+        </div>
+
+        {/* Volume pour les porteurs */}
+        {typeVehicule === 'porteur' && (
+          <div className="space-y-2">
+            <Label htmlFor="volume_tonnes" className="text-sm font-medium">Volume (en tonnes)</Label>
+            <Input
+              id="volume_tonnes"
+              type="number"
+              step="0.1"
+              {...register('volume_tonnes')}
+              placeholder="Ex: 25.5"
+            />
+          </div>
+        )}
 
         {/* Plaques d'immatriculation */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

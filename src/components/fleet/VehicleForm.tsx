@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
@@ -29,6 +28,9 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       type_vehicule: vehicule?.type_vehicule || 'porteur',
       type_transport: vehicule?.type_transport || 'hydrocarbures',
       base: vehicule?.base || '',
+      proprietaire_nom: vehicule?.proprietaire_nom || '',
+      proprietaire_prenom: vehicule?.proprietaire_prenom || '',
+      volume_tonnes: vehicule?.volume_tonnes || '',
       
       // Plaques d'immatriculation
       immatriculation: vehicule?.immatriculation || '',
@@ -69,15 +71,16 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         numero: data.numero,
         type_vehicule: data.type_vehicule || 'porteur',
         type_transport: data.type_transport || 'hydrocarbures',
-        statut: 'validation_requise', // Valeur par défaut
+        statut: 'validation_requise',
         base: data.base,
+        proprietaire_nom: data.proprietaire_nom,
+        proprietaire_prenom: data.proprietaire_prenom,
+        volume_tonnes: data.volume_tonnes ? Number(data.volume_tonnes) : null,
         
-        // Plaques d'immatriculation
         immatriculation: data.type_vehicule === 'porteur' ? data.immatriculation : null,
         tracteur_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_immatriculation : null,
         remorque_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.remorque_immatriculation : null,
         
-        // Informations tracteur
         tracteur_marque: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_marque : null,
         tracteur_modele: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_modele : null,
         tracteur_configuration: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_configuration : null,
@@ -85,7 +88,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         tracteur_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_fabrication ? data.tracteur_date_fabrication : null,
         tracteur_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_mise_circulation ? data.tracteur_date_mise_circulation : null,
         
-        // Informations remorque
         remorque_volume_litres: data.type_vehicule === 'tracteur_remorque' && data.remorque_volume_litres ? Number(data.remorque_volume_litres) : null,
         remorque_marque: data.type_vehicule === 'tracteur_remorque' ? data.remorque_marque : null,
         remorque_modele: data.type_vehicule === 'tracteur_remorque' ? data.remorque_modele : null,
@@ -94,7 +96,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         remorque_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_fabrication ? data.remorque_date_fabrication : null,
         remorque_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_mise_circulation ? data.remorque_date_mise_circulation : null,
         
-        // Informations porteur
         marque: data.type_vehicule === 'porteur' ? data.marque : null,
         modele: data.type_vehicule === 'porteur' ? data.modele : null,
         numero_chassis: data.type_vehicule === 'porteur' ? data.numero_chassis : null,
@@ -130,13 +131,14 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         type_vehicule: data.type_vehicule || 'porteur',
         type_transport: data.type_transport || 'hydrocarbures',
         base: data.base,
+        proprietaire_nom: data.proprietaire_nom,
+        proprietaire_prenom: data.proprietaire_prenom,
+        volume_tonnes: data.volume_tonnes ? Number(data.volume_tonnes) : null,
         
-        // Plaques d'immatriculation
         immatriculation: data.type_vehicule === 'porteur' ? data.immatriculation : null,
         tracteur_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_immatriculation : null,
         remorque_immatriculation: data.type_vehicule === 'tracteur_remorque' ? data.remorque_immatriculation : null,
         
-        // Informations tracteur
         tracteur_marque: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_marque : null,
         tracteur_modele: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_modele : null,
         tracteur_configuration: data.type_vehicule === 'tracteur_remorque' ? data.tracteur_configuration : null,
@@ -144,7 +146,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         tracteur_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_fabrication ? data.tracteur_date_fabrication : null,
         tracteur_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.tracteur_date_mise_circulation ? data.tracteur_date_mise_circulation : null,
         
-        // Informations remorque
         remorque_volume_litres: data.type_vehicule === 'tracteur_remorque' && data.remorque_volume_litres ? Number(data.remorque_volume_litres) : null,
         remorque_marque: data.type_vehicule === 'tracteur_remorque' ? data.remorque_marque : null,
         remorque_modele: data.type_vehicule === 'tracteur_remorque' ? data.remorque_modele : null,
@@ -153,7 +154,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         remorque_date_fabrication: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_fabrication ? data.remorque_date_fabrication : null,
         remorque_date_mise_circulation: data.type_vehicule === 'tracteur_remorque' && data.remorque_date_mise_circulation ? data.remorque_date_mise_circulation : null,
         
-        // Informations porteur
         marque: data.type_vehicule === 'porteur' ? data.marque : null,
         modele: data.type_vehicule === 'porteur' ? data.modele : null,
         numero_chassis: data.type_vehicule === 'porteur' ? data.numero_chassis : null,

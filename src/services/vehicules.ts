@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Vehicule {
@@ -26,6 +25,11 @@ export interface Vehicule {
   associe_id?: string;
   kilometrage?: number;
   consommation_moyenne?: number;
+  // Nouveaux champs propriétaire
+  proprietaire_nom?: string;
+  proprietaire_prenom?: string;
+  // Nouveau champ volume pour porteurs
+  volume_tonnes?: number;
   // Tracteur
   tracteur_immatriculation?: string;
   tracteur_marque?: string;
@@ -212,7 +216,7 @@ const vehiculesService = {
       const maintenance = vehicles?.filter(v => v.statut === 'maintenance').length || 0;
       const validation_requise = vehicles?.filter(v => v.statut === 'validation_requise').length || 0;
       const hydrocarbures = vehicles?.filter(v => v.type_transport === 'hydrocarbures').length || 0;
-      const bauxite = vehicles?.filter(v => v.type_transport === 'bauxite').length || 0;
+      const bauxite = vehicles?.filter(v => v.type_transport === 'marchandise').length || 0;
       const maintenance_urgente = 0; // TODO: Calculate based on maintenance dates
 
       // Calcul des statistiques par base

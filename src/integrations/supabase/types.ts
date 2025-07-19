@@ -1930,6 +1930,8 @@ export type Database = {
           numero: string
           numero_chassis: string | null
           prochaine_maintenance: string | null
+          proprietaire_nom: string | null
+          proprietaire_prenom: string | null
           remorque_configuration: string | null
           remorque_date_fabrication: string | null
           remorque_date_mise_circulation: string | null
@@ -1951,6 +1953,7 @@ export type Database = {
           unite_capacite: string | null
           updated_at: string
           validation_requise: boolean | null
+          volume_tonnes: number | null
         }
         Insert: {
           associe_id?: string | null
@@ -1970,6 +1973,8 @@ export type Database = {
           numero: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null
+          proprietaire_nom?: string | null
+          proprietaire_prenom?: string | null
           remorque_configuration?: string | null
           remorque_date_fabrication?: string | null
           remorque_date_mise_circulation?: string | null
@@ -1991,6 +1996,7 @@ export type Database = {
           unite_capacite?: string | null
           updated_at?: string
           validation_requise?: boolean | null
+          volume_tonnes?: number | null
         }
         Update: {
           associe_id?: string | null
@@ -2010,6 +2016,8 @@ export type Database = {
           numero?: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null
+          proprietaire_nom?: string | null
+          proprietaire_prenom?: string | null
           remorque_configuration?: string | null
           remorque_date_fabrication?: string | null
           remorque_date_mise_circulation?: string | null
@@ -2031,6 +2039,7 @@ export type Database = {
           unite_capacite?: string | null
           updated_at?: string
           validation_requise?: boolean | null
+          volume_tonnes?: number | null
         }
         Relationships: [
           {
