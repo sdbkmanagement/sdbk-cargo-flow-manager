@@ -8,7 +8,7 @@ import { Search, Truck, CheckCircle, Wrench, AlertTriangle } from 'lucide-react'
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
-import { VehicleFormSimple } from '@/components/fleet/VehicleFormSimple';
+import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { DocumentManagerVehicule } from '@/components/fleet/DocumentManagerVehicule';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
@@ -203,7 +203,7 @@ const Fleet = () => {
               {selectedVehicleForEdit ? 'Modifier le véhicule' : 'Ajouter un nouveau véhicule'}
             </DialogTitle>
           </DialogHeader>
-          <VehicleFormSimple 
+          <VehicleForm 
             vehicule={selectedVehicleForEdit}
             onSuccess={handleFormClose}
           />

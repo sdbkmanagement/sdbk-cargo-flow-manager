@@ -8,12 +8,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { VehicleBasicInfo } from './form/VehicleBasicInfo';
 import { VehicleTracteurInfo } from './form/VehicleTracteurInfo';
 import { VehicleRemorqueInfo } from './form/VehicleRemorqueInfo';
-import { VehicleDocuments } from './form/VehicleDocuments';
 import { VehicleStepIndicator } from './form/VehicleStepIndicator';
 import { FormNavigation } from '../drivers/form/FormNavigation';
 
 import { vehiculesService } from '@/services/vehicules';
-import { documentUploadService } from '@/services/documentUploadService';
 
 interface VehicleFormProps {
   vehicule?: any;
@@ -104,17 +102,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       };
 
       const vehicleResult = await vehiculesService.create(cleanedData);
-      
-      // Si la création du véhicule réussit, traiter les documents
-      if (vehicleResult && vehicleResult.id) {
-        try {
-          await documentUploadService.processFormDocuments(data, vehicleResult.id);
-        } catch (docError) {
-          console.error('Erreur lors du traitement des documents:', docError);
-          // Ne pas faire échouer la création du véhicule si seuls les documents échouent
-        }
-      }
-      
       return vehicleResult;
     },
     onSuccess: () => {
@@ -174,14 +161,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       };
 
       const result = await vehiculesService.update(id, cleanedData);
-      
-      // Traiter les documents si des nouveaux sont ajoutés
-      try {
-        await documentUploadService.processFormDocuments(data, id);
-      } catch (docError) {
-        console.error('Erreur lors du traitement des documents:', docError);
-      }
-      
       return result;
     },
     onSuccess: () => {
@@ -217,7 +196,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
   };
 
   const vehicleType = form.watch('type_vehicule');
-  const totalSteps = vehicleType === 'tracteur_remorque' ? 4 : 3;
+  const totalSteps = vehicleType === 'tracteur_remorque' ? 3 : 2;
 
   const handleNext = () => {
     setCurrentStep(Math.min(totalSteps, currentStep + 1));
@@ -270,7 +249,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
 
           {currentStep === 2 && vehicleType === 'porteur' && (
             <div className="space-y-6">
-              {/* Informations porteur - implémentation directe ici pour éviter un autre composant */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium flex items-center gap-1">
@@ -328,16 +306,6 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
             <VehicleRemorqueInfo 
               register={form.register}
               errors={form.formState.errors}
-            />
-          )}
-
-          {/* Étape 3/4: Documents */}
-          {((currentStep === 3 && vehicleType === 'porteur') || 
-            (currentStep === 4 && vehicleType === 'tracteur_remorque')) && (
-            <VehicleDocuments 
-              register={form.register}
-              errors={form.formState.errors}
-              watch={form.watch}
             />
           )}
 
