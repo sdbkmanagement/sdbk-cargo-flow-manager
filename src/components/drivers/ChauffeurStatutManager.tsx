@@ -34,6 +34,39 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validation des dates obligatoires
+    if (!dateDebut) {
+      toast({
+        title: "Erreur",
+        description: "La date de début est obligatoire",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!dateFin) {
+      toast({
+        title: "Erreur",
+        description: "La date de fin est obligatoire",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Vérifier que la date de fin est après la date de début
+    const debut = new Date(dateDebut);
+    const fin = new Date(dateFin);
+    
+    if (fin <= debut) {
+      toast({
+        title: "Erreur",
+        description: "La date de fin doit être postérieure à la date de début",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -41,8 +74,8 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
       const updateData = {
         ...chauffeur, // Reprendre toutes les données existantes
         statut_disponibilite: newStatut,
-        date_debut_statut: dateDebut || null,
-        date_fin_statut: dateFin || null
+        date_debut_statut: dateDebut,
+        date_fin_statut: dateFin
       };
 
       await chauffeursService.update(chauffeur.id, updateData);
@@ -123,7 +156,7 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Date de début</Label>
+                <Label>Date de début <span className="text-red-500">*</span></Label>
                 <Input
                   type="date"
                   value={dateDebut}
@@ -132,16 +165,15 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
                 />
               </div>
               
-              {newStatut !== 'disponible' && (
-                <div className="space-y-2">
-                  <Label>Date de fin (optionnelle)</Label>
-                  <Input
-                    type="date"
-                    value={dateFin}
-                    onChange={(e) => setDateFin(e.target.value)}
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label>Date de fin <span className="text-red-500">*</span></Label>
+                <Input
+                  type="date"
+                  value={dateFin}
+                  onChange={(e) => setDateFin(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
