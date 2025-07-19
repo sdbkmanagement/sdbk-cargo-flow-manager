@@ -1,28 +1,17 @@
+
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Clock, FileText, Eye } from 'lucide-react';
-import { documentService } from '@/services/documentService';
-
-interface AlerteDocumentVehicule {
-  id: string;
-  vehicule_id: string;
-  vehicule_numero: string;
-  immatriculation: string;
-  document_nom: string;
-  document_type: string;
-  date_expiration: string;
-  niveau_alerte: 'expire' | 'a_renouveler' | 'valide';
-  jours_restants: number;
-}
+import { alertesService, AlerteDocument } from '@/services/alertesService';
 
 interface AlertesDocumentsVehiculesProps {
   onSelectVehicule?: (vehiculeId: string) => void;
 }
 
 export const AlertesDocumentsVehicules = ({ onSelectVehicule }: AlertesDocumentsVehiculesProps) => {
-  const [alertes, setAlertes] = useState<AlerteDocumentVehicule[]>([]);
+  const [alertes, setAlertes] = useState<AlerteDocument[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +21,7 @@ export const AlertesDocumentsVehicules = ({ onSelectVehicule }: AlertesDocuments
   const loadAlertes = async () => {
     try {
       setLoading(true);
-      const data = await documentService.getAlertesVehicules();
+      const data = await alertesService.getAlertesVehicules();
       setAlertes(data);
     } catch (error) {
       console.error('Erreur lors du chargement des alertes:', error);
@@ -149,7 +138,7 @@ export const AlertesDocumentsVehicules = ({ onSelectVehicule }: AlertesDocuments
                       onClick={() => onSelectVehicule(alerte.vehicule_id)}
                     >
                       <Eye className="w-4 h-4 mr-1" />
-                      Voir
+                      Gérer
                     </Button>
                   )}
                 </div>

@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Truck, CheckCircle, Wrench } from 'lucide-react';
+import { Search, Truck, CheckCircle, Wrench, AlertTriangle } from 'lucide-react';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
@@ -12,6 +12,7 @@ import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { DocumentManagerVehicule } from '@/components/fleet/DocumentManagerVehicule';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
+import { AlertesDocumentsVehicules } from '@/components/fleet/AlertesDocumentsVehicules';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { vehiculesService } from '@/services/vehicules';
@@ -94,6 +95,13 @@ const Fleet = () => {
     setRefreshKey(prev => prev + 1);
   };
 
+  const handleSelectVehicleForAlerts = (vehiculeId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehiculeId);
+    if (vehicle) {
+      handleManageDocuments(vehicle);
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Chargement des véhicules...</div>;
   }
@@ -125,7 +133,7 @@ const Fleet = () => {
       <FleetStats stats={stats} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="vehicles" className="gap-2">
             <Truck className="h-4 w-4" />
             Véhicules
@@ -137,6 +145,10 @@ const Fleet = () => {
           <TabsTrigger value="maintenance" className="gap-2">
             <Wrench className="h-4 w-4" />
             Maintenance
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Alertes
           </TabsTrigger>
         </TabsList>
 
@@ -169,6 +181,10 @@ const Fleet = () => {
         <TabsContent value="maintenance" className="space-y-6">
           <MaintenanceTab vehicles={vehicles} />
         </TabsContent>
+
+        <TabsContent value="alerts" className="space-y-6">
+          <AlertesDocumentsVehicules onSelectVehicule={handleSelectVehicleForAlerts} />
+        </TabsContent>
       </Tabs>
 
       {/* Dialog pour le formulaire de véhicule */}
@@ -190,7 +206,7 @@ const Fleet = () => {
       <Dialog open={showDocumentManager} onOpenChange={setShowDocumentManager}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Gestion des documents</DialogTitle>
+            <DialogTitle>Gestion des documents - {selectedVehicleNumero}</DialogTitle>
           </DialogHeader>
           <DocumentManagerVehicule
             vehiculeId={selectedVehicleId}

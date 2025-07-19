@@ -47,14 +47,16 @@ export const documentUploadService = {
   }) {
     try {
       const { data, error } = await supabase
-        .from('documents_vehicules_temp')
+        .from('documents_vehicules')
         .insert([{
           vehicule_id: vehiculeId,
           nom: documentData.nom,
           type: documentData.type,
           url: documentData.url,
           date_expiration: documentData.dateExpiration || null,
-          has_expiration: documentData.hasExpiration
+          statut: documentData.dateExpiration ? 
+            (new Date(documentData.dateExpiration) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'a_renouveler' : 'valide') : 
+            'valide'
         }])
         .select()
         .single();
@@ -118,8 +120,8 @@ export const documentUploadService = {
       uploadPromises.push(
         this.saveDocumentRecord(vehiculeId, {
           nom: 'Numéro de police',
-          type: 'numero_police',
-          url: '', // Pas de fichier, juste une valeur texte
+          type: 'numero_police_text',
+          url: formData.numero_police_value, // Stocker la valeur dans l'URL pour les champs texte
           hasExpiration: false
         })
       );
