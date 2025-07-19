@@ -91,7 +91,7 @@ export const VehicleListTab = ({
                 <p className="text-sm text-gray-600">
                   {vehicle.type_vehicule === 'porteur' 
                     ? `${vehicle.marque} ${vehicle.modele} (${vehicle.immatriculation})`
-                    : `Tracteur: ${vehicle.tracteur_im<continue>matriculation} / Remorque: ${vehicle.remorque_immatriculation}`
+                    : `Tracteur: ${vehicle.tracteur_immatriculation} / Remorque: ${vehicle.remorque_immatriculation}`
                   }
                 </p>
               </div>
