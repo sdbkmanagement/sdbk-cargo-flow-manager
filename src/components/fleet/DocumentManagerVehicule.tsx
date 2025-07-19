@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -252,11 +251,48 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
     window.open(document.url, '_blank');
   };
 
-  const handleDownload = (document: DocumentVehicule) => {
-    const link = window.document.createElement('a');
-    link.href = document.url;
-    link.download = document.nom;
-    link.click();
+  const handleDownload = async (document: DocumentVehicule) => {
+    try {
+      // Récupérer le fichier depuis Supabase Storage
+      const response = await fetch(document.url);
+      
+      if (!response.ok) {
+        throw new Error('Impossible de télécharger le fichier');
+      }
+      
+      // Convertir en blob
+      const blob = await response.blob();
+      
+      // Créer un URL temporaire pour le blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Créer un lien de téléchargement
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = document.nom;
+      
+      // Ajouter le lien au DOM temporairement
+      document.body.appendChild(link);
+      
+      // Déclencher le téléchargement
+      link.click();
+      
+      // Nettoyer
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      
+      toast({
+        title: 'Téléchargement lancé',
+        description: `Le document ${document.nom} est en cours de téléchargement`
+      });
+    } catch (error) {
+      console.error('Erreur lors du téléchargement:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de télécharger le document',
+        variant: 'destructive'
+      });
+    }
   };
 
   const getDocumentTypeLabel = (type: string) => {
