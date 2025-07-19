@@ -3,11 +3,27 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Upload, Eye, Download, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { FileText, Upload, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { DocumentUpload } from '@/components/common/DocumentUpload';
 import { useToast } from '@/hooks/use-toast';
 import { documentsService } from '@/services/documentsService';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface ChauffeurDocumentManagerProps {
   chauffeur: any;
@@ -18,6 +34,8 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showUpload, setShowUpload] = useState<string | null>(null);
+  const [editingDocument, setEditingDocument] = useState<any>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,12 +67,20 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
         statut: 'valide'
       };
 
-      await documentsService.create(documentData);
-      
-      toast({
-        title: "Document ajouté",
-        description: "Le document a été téléchargé avec succès",
-      });
+      if (editingDocument) {
+        await documentsService.update(editingDocument.id, documentData);
+        toast({
+          title: "Document modifié",
+          description: "Le document a été mis à jour avec succès",
+        });
+        setEditingDocument(null);
+      } else {
+        await documentsService.create(documentData);
+        toast({
+          title: "Document ajouté",
+          description: "Le document a été téléchargé avec succès",
+        });
+      }
       
       setShowUpload(null);
       loadDocuments();
@@ -64,6 +90,31 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
       toast({
         title: "Erreur",
         description: "Impossible de télécharger le document",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (document: any) => {
+    try {
+      setIsLoading(true);
+      await documentsService.delete(document.id);
+      
+      toast({
+        title: "Document supprimé",
+        description: "Le document a été supprimé avec succès",
+      });
+      
+      setDocumentToDelete(null);
+      loadDocuments();
+      onUpdate();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le document",
         variant: "destructive",
       });
     } finally {
@@ -100,6 +151,11 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
     const expiration = new Date(now);
     expiration.setMonth(expiration.getMonth() + config.duree_mois);
     return expiration.toISOString().split('T')[0];
+  };
+
+  const startEdit = (document: any, documentType: string) => {
+    setEditingDocument(document);
+    setShowUpload(documentType);
   };
 
   return (
@@ -143,7 +199,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                           Expire le: {new Date(existingDoc.date_expiration).toLocaleDateString('fr-FR')}
                         </p>
                       )}
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 flex-wrap">
                         <Button
                           size="sm"
                           variant="outline"
@@ -155,10 +211,19 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setShowUpload(key)}
+                          onClick={() => startEdit(existingDoc, key)}
                         >
-                          <Upload className="w-4 h-4 mr-1" />
-                          Remplacer
+                          <Edit className="w-4 h-4 mr-1" />
+                          Modifier
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setDocumentToDelete(existingDoc)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Supprimer
                         </Button>
                       </div>
                     </div>
@@ -179,28 +244,56 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
         </CardContent>
       </Card>
 
+      {/* Dialog d'upload/modification */}
       {showUpload && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Télécharger: {CHAUFFEUR_DOCUMENT_TYPES[showUpload as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].label}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Dialog open={!!showUpload} onOpenChange={() => {
+          setShowUpload(null);
+          setEditingDocument(null);
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {editingDocument ? 'Modifier' : 'Télécharger'}: {CHAUFFEUR_DOCUMENT_TYPES[showUpload as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].label}
+              </DialogTitle>
+            </DialogHeader>
             <DocumentUpload
               onUpload={(file) => {
                 const defaultExpiration = getExpirationDate(showUpload);
                 handleUpload(showUpload, file, defaultExpiration);
               }}
-              onCancel={() => setShowUpload(null)}
+              onCancel={() => {
+                setShowUpload(null);
+                setEditingDocument(null);
+              }}
               acceptedTypes=".pdf,.jpg,.jpeg,.png"
-              maxSize={10 * 1024 * 1024} // 10MB
+              maxSize={10 * 1024 * 1024}
               showExpirationDate={!!CHAUFFEUR_DOCUMENT_TYPES[showUpload as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].duree_mois}
               defaultExpirationDate={getExpirationDate(showUpload)}
             />
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
       )}
+
+      {/* Dialog de confirmation de suppression */}
+      <AlertDialog open={!!documentToDelete} onOpenChange={() => setDocumentToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => documentToDelete && handleDelete(documentToDelete)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

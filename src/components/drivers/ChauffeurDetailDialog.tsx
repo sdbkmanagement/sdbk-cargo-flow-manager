@@ -1,25 +1,27 @@
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import { 
   User, 
   Phone, 
   Mail, 
   MapPin, 
-  Calendar, 
-  IdCard, 
-  Edit,
+  Calendar,
   FileText,
-  Activity
+  Car,
+  Edit,
+  CreditCard,
+  AlertTriangle
 } from 'lucide-react';
-import { ChauffeurForm } from './ChauffeurForm';
 import { ChauffeurDocumentManager } from './ChauffeurDocumentManager';
-import { ChauffeurStatutManager } from './ChauffeurStatutManager';
 
 interface ChauffeurDetailDialogProps {
   chauffeur: any;
@@ -27,282 +29,304 @@ interface ChauffeurDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const ChauffeurDetailDialog = ({ chauffeur, open, onOpenChange }: ChauffeurDetailDialogProps) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [activeTab, setActiveTab] = useState('infos');
+export const ChauffeurDetailDialog = ({ 
+  chauffeur, 
+  open, 
+  onOpenChange 
+}: ChauffeurDetailDialogProps) => {
+  const [activeTab, setActiveTab] = useState('general');
 
-  const handleEditSuccess = () => {
-    setIsEditing(false);
-    // Le parent gérera le refresh des données
-  };
+  if (!chauffeur) return null;
 
-  const getStatutColor = (statut: string) => {
+  const getStatutBadge = (statut: string) => {
     switch (statut) {
-      case 'actif': return 'bg-green-500';
-      case 'conge': return 'bg-blue-500';
-      case 'maladie': return 'bg-red-500';
-      case 'suspendu': return 'bg-gray-500';
-      default: return 'bg-gray-500';
+      case 'actif':
+        return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
+      case 'inactif':
+        return <Badge variant="secondary">Inactif</Badge>;
+      case 'suspendu':
+        return <Badge variant="destructive">Suspendu</Badge>;
+      default:
+        return <Badge variant="outline">{statut}</Badge>;
     }
   };
 
-  const getDisponibiliteColor = (statut: string) => {
-    switch (statut) {
-      case 'disponible': return 'bg-green-500';
-      case 'en_conge': return 'bg-blue-500';
-      case 'maladie': return 'bg-red-500';
-      case 'indisponible': return 'bg-gray-500';
-      default: return 'bg-green-500';
+  const calculateAge = (dateNaissance: string) => {
+    if (!dateNaissance) return null;
+    const today = new Date();
+    const birthDate = new Date(dateNaissance);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
+    return age;
   };
 
-  if (isEditing) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Modifier le chauffeur</DialogTitle>
-          </DialogHeader>
-          <ChauffeurForm
-            chauffeur={chauffeur}
-            onSuccess={handleEditSuccess}
-            onCancel={() => setIsEditing(false)}
-          />
-        </DialogContent>
-      </Dialog>
-    );
-  }
+  const calculateAnciennete = (dateEmbauche: string) => {
+    if (!dateEmbauche) return null;
+    const today = new Date();
+    const hireDate = new Date(dateEmbauche);
+    const diffTime = Math.abs(today.getTime() - hireDate.getTime());
+    const diffYears = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 365));
+    return diffYears;
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16">
-                <AvatarImage src={chauffeur.photo_url} />
-                <AvatarFallback>
-                  {chauffeur.nom?.[0]}{chauffeur.prenom?.[0]}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <DialogTitle className="text-2xl">
-                  {chauffeur.prenom} {chauffeur.nom}
-                </DialogTitle>
-                <div className="flex gap-2 mt-2">
-                  <Badge className={`${getStatutColor(chauffeur.statut)} text-white`}>
-                    {chauffeur.statut}
-                  </Badge>
-                  <Badge className={`${getDisponibiliteColor(chauffeur.statut_disponibilite || 'disponible')} text-white`}>
-                    {chauffeur.statut_disponibilite || 'Disponible'}
-                  </Badge>
-                  {chauffeur.fonction && (
-                    <Badge variant="outline">
-                      {chauffeur.fonction.charAt(0).toUpperCase() + chauffeur.fonction.slice(1)}
-                    </Badge>
+          <DialogTitle className="flex items-center gap-3">
+            <User className="w-6 h-6" />
+            {chauffeur.prenom} {chauffeur.nom}
+            {getStatutBadge(chauffeur.statut)}
+          </DialogTitle>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="general">Général</TabsTrigger>
+            <TabsTrigger value="permis">Permis</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="contrat">Contrat</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="general" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Informations personnelles */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Informations personnelles</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium">Nom:</span>
+                    <span>{chauffeur.prenom} {chauffeur.nom}</span>
+                  </div>
+                  
+                  {chauffeur.date_naissance && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <span className="font-medium">Âge:</span>
+                      <span>{calculateAge(chauffeur.date_naissance)} ans</span>
+                    </div>
+                  )}
+
+                  {chauffeur.nationalite && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Nationalité:</span>
+                      <span>{chauffeur.nationalite}</span>
+                    </div>
+                  )}
+
+                  {chauffeur.lieu_naissance && (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span className="font-medium">Lieu de naissance:</span>
+                      <span>{chauffeur.lieu_naissance}</span>
+                    </div>
+                  )}
+
+                  {chauffeur.groupe_sanguin && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Groupe sanguin:</span>
+                      <span>{chauffeur.groupe_sanguin}</span>
+                    </div>
                   )}
                 </div>
               </div>
-            </div>
-            <Button onClick={() => setIsEditing(true)}>
-              <Edit className="w-4 h-4 mr-2" />
-              Modifier
-            </Button>
-          </div>
-        </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="infos" className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              Informations
-            </TabsTrigger>
-            <TabsTrigger value="statut" className="flex items-center gap-2">
-              <Activity className="w-4 h-4" />
-              Statut
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Documents
-            </TabsTrigger>
-            <TabsTrigger value="historique" className="flex items-center gap-2">
-              <Calendar className="w-4 h-4" />
-              Historique
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="infos" className="space-y-6">
-            {/* Informations personnelles */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  Informations personnelles
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  {chauffeur.matricule && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Matricule</p>
-                      <p>{chauffeur.matricule}</p>
-                    </div>
-                  )}
-                  {chauffeur.id_conducteur && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">ID Conducteur</p>
-                      <p>{chauffeur.id_conducteur}</p>
-                    </div>
-                  )}
-                  {chauffeur.date_naissance && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Date de naissance</p>
-                      <p>{new Date(chauffeur.date_naissance).toLocaleDateString('fr-FR')}</p>
-                    </div>
-                  )}
-                  {chauffeur.lieu_naissance && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Lieu de naissance</p>
-                      <p>{chauffeur.lieu_naissance}</p>
-                    </div>
-                  )}
-                  {chauffeur.groupe_sanguin && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Groupe sanguin</p>
-                      <p>{chauffeur.groupe_sanguin}</p>
-                    </div>
-                  )}
-                </div>
-                <div className="space-y-4">
-                  {chauffeur.base_chauffeur && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Base</p>
-                      <p className="capitalize">{chauffeur.base_chauffeur}</p>
-                    </div>
-                  )}
-                  {chauffeur.date_embauche && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Date d'embauche</p>
-                      <p>{new Date(chauffeur.date_embauche).toLocaleDateString('fr-FR')}</p>
-                    </div>
-                  )}
-                  {chauffeur.statut_matrimonial && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Statut matrimonial</p>
-                      <p className="capitalize">{chauffeur.statut_matrimonial}</p>
-                    </div>
-                  )}
-                  {chauffeur.immatricule_cnss && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">CNSS</p>
-                      <p>{chauffeur.immatricule_cnss}</p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Contact */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="w-5 h-5" />
-                  Contact
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
+              {/* Contact */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Contact</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium">Téléphone:</span>
                     <span>{chauffeur.telephone}</span>
                   </div>
+                  
                   {chauffeur.email && (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <Mail className="w-4 h-4 text-gray-500" />
+                      <span className="font-medium">Email:</span>
                       <span>{chauffeur.email}</span>
                     </div>
                   )}
-                </div>
-                {chauffeur.adresse && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-4 h-4 text-gray-500 mt-1" />
-                    <div>
-                      <p>{chauffeur.adresse}</p>
-                      {(chauffeur.ville || chauffeur.code_postal) && (
-                        <p className="text-sm text-gray-500">
-                          {chauffeur.ville} {chauffeur.code_postal}
-                        </p>
-                      )}
+                  
+                  {chauffeur.adresse && (
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500 mt-1" />
+                      <div>
+                        <span className="font-medium">Adresse:</span>
+                        <p className="text-sm">{chauffeur.adresse}</p>
+                        {chauffeur.ville && chauffeur.code_postal && (
+                          <p className="text-sm">{chauffeur.code_postal} {chauffeur.ville}</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </div>
+              </div>
 
-            {/* Permis */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <IdCard className="w-5 h-5" />
-                  Permis de conduire
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Numéro de permis</p>
-                    <p>{chauffeur.numero_permis}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-500">Date d'expiration</p>
-                    <p>{new Date(chauffeur.date_expiration_permis).toLocaleDateString('fr-FR')}</p>
+              {/* Informations professionnelles */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold">Informations professionnelles</h3>
+                <div className="space-y-3">
+                  {chauffeur.matricule && (
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-gray-500" />
+                      <span className="font-medium">Matricule:</span>
+                      <span>{chauffeur.matricule}</span>
+                    </div>
+                  )}
+
+                  {chauffeur.date_embauche && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <span className="font-medium">Date d'embauche:</span>
+                      <span>{new Date(chauffeur.date_embauche).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                  )}
+
+                  {chauffeur.date_embauche && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Ancienneté:</span>
+                      <span>{calculateAnciennete(chauffeur.date_embauche)} ans</span>
+                    </div>
+                  )}
+
+                  {chauffeur.type_contrat && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Type de contrat:</span>
+                      <Badge variant="outline">{chauffeur.type_contrat}</Badge>
+                    </div>
+                  )}
+
+                  {chauffeur.fonction && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Fonction:</span>
+                      <span>{chauffeur.fonction}</span>
+                    </div>
+                  )}
+
+                  {chauffeur.base_chauffeur && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">Base:</span>
+                      <span>{chauffeur.base_chauffeur}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Contact d'urgence */}
+              {(chauffeur.urgence_nom || chauffeur.urgence_prenom || chauffeur.urgence_telephone) && (
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5 text-orange-500" />
+                    Contact d'urgence
+                  </h3>
+                  <div className="space-y-3">
+                    {(chauffeur.urgence_nom || chauffeur.urgence_prenom) && (
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span className="font-medium">Nom:</span>
+                        <span>{chauffeur.urgence_prenom} {chauffeur.urgence_nom}</span>
+                      </div>
+                    )}
+                    
+                    {chauffeur.urgence_telephone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-500" />
+                        <span className="font-medium">Téléphone:</span>
+                        <span>{chauffeur.urgence_telephone}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                {chauffeur.type_permis && chauffeur.type_permis.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium text-gray-500 mb-2">Types de permis</p>
-                    <div className="flex gap-2">
-                      {chauffeur.type_permis.map((type: string) => (
-                        <Badge key={type} variant="outline">
-                          Permis {type}
-                        </Badge>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="permis" className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CreditCard className="w-5 h-5" />
+                Informations sur le permis
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Numéro de permis:</span>
+                    <span>{chauffeur.numero_permis}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">Types de permis:</span>
+                    <div className="flex gap-1">
+                      {chauffeur.type_permis?.map((type: string, index: number) => (
+                        <Badge key={index} variant="outline">{type}</Badge>
                       ))}
                     </div>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  
+                  {chauffeur.date_obtention_permis && (
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-gray-500" />
+                      <span className="font-medium">Date d'obtention:</span>
+                      <span>{new Date(chauffeur.date_obtention_permis).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span className="font-medium">Date d'expiration:</span>
+                    <span>{new Date(chauffeur.date_expiration_permis).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
-          <TabsContent value="statut">
-            <ChauffeurStatutManager
-              chauffeur={chauffeur}
+          <TabsContent value="documents" className="space-y-6">
+            <ChauffeurDocumentManager 
+              chauffeur={chauffeur} 
               onUpdate={() => {
-                // Refresh des données - à implémenter
+                // Callback pour rafraîchir les données si nécessaire
               }}
             />
           </TabsContent>
 
-          <TabsContent value="documents">
-            <ChauffeurDocumentManager
-              chauffeur={chauffeur}
-              onUpdate={() => {
-                // Refresh des données - à implémenter
-              }}
-            />
-          </TabsContent>
-
-          <TabsContent value="historique">
-            <Card>
-              <CardHeader>
-                <CardTitle>Historique des activités</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-center text-gray-500 py-8">
-                  Fonctionnalité d'historique en cours de développement
-                </p>
-              </CardContent>
-            </Card>
+          <TabsContent value="contrat" className="space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Contrat de travail
+              </h3>
+              
+              {chauffeur.contrat_url ? (
+                <div className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Contrat signé</p>
+                      <p className="text-sm text-gray-500">Document téléchargé</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => window.open(chauffeur.contrat_url, '_blank')}
+                    >
+                      <FileText className="w-4 h-4 mr-2" />
+                      Voir le contrat
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="border rounded-lg p-4 text-center">
+                  <FileText className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                  <p className="text-gray-500">Aucun contrat téléchargé</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </DialogContent>

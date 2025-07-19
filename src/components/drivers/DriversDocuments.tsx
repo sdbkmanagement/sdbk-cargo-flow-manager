@@ -12,9 +12,25 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FileText, Search, Eye, Download, Upload, Plus } from 'lucide-react';
+import { FileText, Search, Eye, Edit, Trash2, Upload, Plus, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { DocumentUpload } from '@/components/common/DocumentUpload';
+import { documentsService } from '@/services/documentsService';
 
 interface Document {
   id: string;
@@ -25,8 +41,6 @@ interface Document {
   date_expiration: string | null;
   date_delivrance: string | null;
   statut: string;
-  document_requis?: boolean;
-  assigne_automatiquement?: boolean;
   chauffeur_nom?: string;
 }
 
@@ -34,6 +48,10 @@ export const DriversDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [selectedChauffeur, setSelectedChauffeur] = useState('');
+  const [selectedDocumentType, setSelectedDocumentType] = useState('');
+  const [chauffeurs, setChauffeurs] = useState<any[]>([]);
   const { toast } = useToast();
 
   const loadDocuments = async () => {
@@ -57,7 +75,7 @@ export const DriversDocuments = () => {
         return;
       }
 
-      // Charger les noms des chauffeurs séparément
+      // Charger les noms des chauffeurs
       const chauffeurIds = [...new Set(documentsData?.map(doc => doc.entity_id))];
       const { data: chauffeursData } = await supabase
         .from('chauffeurs')
@@ -65,24 +83,12 @@ export const DriversDocuments = () => {
         .in('id', chauffeurIds);
 
       // Combiner les données
-      const documentsWithNames = documentsData?.map(doc => {
-        const chauffeur = chauffeursData?.find(c => c.id === doc.entity_id);
-        return {
-          id: doc.id,
-          entity_id: doc.entity_id || '',
-          nom: doc.nom,
-          type: doc.type,
-          url: doc.url,
-          date_expiration: doc.date_expiration,
-          date_delivrance: doc.date_delivrance,
-          statut: doc.statut || 'valide',
-          document_requis: true, // Valeur par défaut
-          assigne_automatiquement: true, // Valeur par défaut
-          chauffeur_nom: chauffeur ? 
-            `${chauffeur.prenom} ${chauffeur.nom}` : 
-            'Chauffeur inconnu'
-        };
-      }) || [];
+      const documentsWithNames = documentsData?.map(doc => ({
+        ...doc,
+        chauffeur_nom: chauffeursData?.find(c => c.id === doc.entity_id)
+          ? `${chauffeursData.find(c => c.id === doc.entity_id)?.prenom} ${chauffeursData.find(c => c.id === doc.entity_id)?.nom}`
+          : 'Chauffeur inconnu'
+      })) || [];
 
       setDocuments(documentsWithNames);
     } catch (error) {
@@ -92,8 +98,24 @@ export const DriversDocuments = () => {
     }
   };
 
+  const loadChauffeurs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chauffeurs')
+        .select('id, nom, prenom, statut')
+        .eq('statut', 'actif')
+        .order('nom');
+
+      if (error) throw error;
+      setChauffeurs(data || []);
+    } catch (error) {
+      console.error('Erreur lors du chargement des chauffeurs:', error);
+    }
+  };
+
   useEffect(() => {
     loadDocuments();
+    loadChauffeurs();
   }, []);
 
   const filteredDocuments = documents.filter(doc =>
@@ -102,20 +124,21 @@ export const DriversDocuments = () => {
     doc.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getStatusBadge = (statut: string, hasFile: boolean, isRequired: boolean) => {
-    if (!hasFile && isRequired) {
-      return <Badge variant="outline" className="border-red-500 text-red-700">Manquant</Badge>;
+  const getStatusBadge = (document: Document) => {
+    if (!document.date_expiration) {
+      return <Badge variant="secondary">Permanent</Badge>;
     }
     
-    switch (statut) {
-      case 'expire':
-        return <Badge variant="destructive">Expiré</Badge>;
-      case 'a_renouveler':
-        return <Badge variant="secondary">À renouveler</Badge>;
-      case 'manquant':
-        return <Badge variant="outline" className="border-red-500 text-red-700">Manquant</Badge>;
-      default:
-        return <Badge variant="default">Valide</Badge>;
+    const now = new Date();
+    const expDate = new Date(document.date_expiration);
+    const daysUntilExpiry = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilExpiry < 0) {
+      return <Badge variant="destructive">Expiré</Badge>;
+    } else if (daysUntilExpiry <= 30) {
+      return <Badge className="bg-orange-100 text-orange-800">À renouveler</Badge>;
+    } else {
+      return <Badge className="bg-green-100 text-green-800">Valide</Badge>;
     }
   };
 
@@ -129,6 +152,64 @@ export const DriversDocuments = () => {
         variant: 'destructive'
       });
     }
+  };
+
+  const handleAssignDocument = async (file: File) => {
+    if (!selectedChauffeur || !selectedDocumentType) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez sélectionner un chauffeur et un type de document',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      const url = await documentsService.uploadFile(file, 'chauffeur', selectedChauffeur, selectedDocumentType);
+      
+      const documentData = {
+        entity_type: 'chauffeur',
+        entity_id: selectedChauffeur,
+        nom: CHAUFFEUR_DOCUMENT_TYPES[selectedDocumentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].label,
+        type: selectedDocumentType,
+        url: url,
+        taille: file.size,
+        statut: 'valide'
+      };
+
+      await documentsService.create(documentData);
+      
+      toast({
+        title: "Document assigné",
+        description: "Le document a été assigné avec succès",
+      });
+      
+      setShowAssignDialog(false);
+      setSelectedChauffeur('');
+      setSelectedDocumentType('');
+      loadDocuments();
+    } catch (error) {
+      console.error('Erreur lors de l\'assignation:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'assigner le document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getMissingDocumentsCount = () => {
+    return documents.filter(d => !d.url || d.url === '').length;
+  };
+
+  const getExpiringDocumentsCount = () => {
+    const now = new Date();
+    return documents.filter(d => {
+      if (!d.date_expiration) return false;
+      const expDate = new Date(d.date_expiration);
+      const daysUntilExpiry = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
+    }).length;
   };
 
   if (loading) {
@@ -147,12 +228,15 @@ export const DriversDocuments = () => {
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Gestion des Documents</h2>
           <p className="text-gray-600">
-            {documents.length} document(s) • {documents.filter(d => !d.url || d.url === '').length} manquant(s)
+            {documents.length} document(s) • {getMissingDocumentsCount()} manquant(s) • {getExpiringDocumentsCount()} expirant(s)
           </p>
         </div>
-        <Button className="bg-orange-500 hover:bg-orange-600">
+        <Button 
+          className="bg-orange-500 hover:bg-orange-600"
+          onClick={() => setShowAssignDialog(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
-          Assigner documents
+          Assigner document
         </Button>
       </div>
 
@@ -197,28 +281,18 @@ export const DriversDocuments = () => {
                   <TableRow key={document.id}>
                     <TableCell>
                       <div className="font-medium">{document.chauffeur_nom}</div>
-                      {document.assigne_automatiquement && (
-                        <div className="text-xs text-gray-500">Assigné automatiquement</div>
-                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <FileText className="w-4 h-4 text-blue-500" />
                         <span>{document.nom}</span>
-                        {document.document_requis && (
-                          <Badge variant="outline" className="text-xs">Requis</Badge>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{document.type}</Badge>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(
-                        document.statut, 
-                        Boolean(document.url && document.url !== ''), 
-                        document.document_requis || false
-                      )}
+                      {getStatusBadge(document)}
                     </TableCell>
                     <TableCell>
                       {document.date_expiration ? (
@@ -239,11 +313,6 @@ export const DriversDocuments = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {(!document.url || document.url === '') && (
-                          <Button variant="outline" size="sm">
-                            <Upload className="w-4 h-4" />
-                          </Button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -253,6 +322,59 @@ export const DriversDocuments = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog d'assignation de document */}
+      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assigner un document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Chauffeur</label>
+              <Select value={selectedChauffeur} onValueChange={setSelectedChauffeur}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un chauffeur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {chauffeurs.map((chauffeur) => (
+                    <SelectItem key={chauffeur.id} value={chauffeur.id}>
+                      {chauffeur.prenom} {chauffeur.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Type de document</label>
+              <Select value={selectedDocumentType} onValueChange={setSelectedDocumentType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un type de document" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CHAUFFEUR_DOCUMENT_TYPES).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      {config.label}
+                      {config.obligatoire && <span className="text-red-500 ml-1">*</span>}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedChauffeur && selectedDocumentType && (
+              <DocumentUpload
+                onUpload={handleAssignDocument}
+                onCancel={() => setShowAssignDialog(false)}
+                acceptedTypes=".pdf,.jpg,.jpeg,.png"
+                maxSize={10 * 1024 * 1024}
+                showExpirationDate={false}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
