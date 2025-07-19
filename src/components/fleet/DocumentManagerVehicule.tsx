@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -39,15 +40,19 @@ interface DocumentManagerVehiculeProps {
 }
 
 const documentTypes = [
-  { value: 'carte_grise', label: 'Carte grise', requiresExpiration: false },
-  { value: 'assurance', label: 'Assurance', requiresExpiration: true },
-  { value: 'controle_technique', label: 'Contrôle technique', requiresExpiration: true },
-  { value: 'controle_annuel', label: 'Contrôle annuel', requiresExpiration: true },
-  { value: 'carte_rouge', label: 'Carte rouge', requiresExpiration: true },
-  { value: 'certificat_conformite', label: 'Certificat de conformité', requiresExpiration: false },
-  { value: 'adr', label: 'ADR', requiresExpiration: true },
-  { value: 'visite_periodique', label: 'Visite périodique', requiresExpiration: true },
-  { value: 'autre', label: 'Autre document', requiresExpiration: false }
+  { value: 'carte_grise_citerne_remorque', label: 'Carte grise Citerne/Remorque', requiresExpiration: false },
+  { value: 'carte_grise_tracteur', label: 'Carte grise Tracteur', requiresExpiration: false },
+  { value: 'carte_grise_porteur', label: 'Carte grise Porteur', requiresExpiration: false },
+  { value: 'assurance_citerne_remorque', label: 'Assurance Citerne/Remorque', requiresExpiration: true },
+  { value: 'assurance_tracteur', label: 'Assurance Tracteur', requiresExpiration: true },
+  { value: 'assurance_porteur', label: 'Assurance Porteur', requiresExpiration: true },
+  { value: 'autorisation_transport', label: 'Autorisation transport (carte rouge/bleu)', requiresExpiration: true },
+  { value: 'conformite', label: 'Conformité', requiresExpiration: true },
+  { value: 'controle_technique_annuel', label: 'Contrôle technique annuel', requiresExpiration: true },
+  { value: 'controle_socotac', label: 'Contrôle SOCOTAC', requiresExpiration: true },
+  { value: 'certificat_jaugeage', label: 'Certificat de jaugeage / Baremage', requiresExpiration: true },
+  { value: 'attestation_extincteurs', label: 'Attestation contrôle extincteurs', requiresExpiration: true },
+  { value: 'numero_police', label: 'Numéro de police', requiresExpiration: false }
 ];
 
 export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: DocumentManagerVehiculeProps) => {
@@ -113,6 +118,16 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
       return;
     }
 
+    const selectedDocType = documentTypes.find(dt => dt.value === documentType);
+    if (selectedDocType?.requiresExpiration && !dateExpiration) {
+      toast({
+        title: 'Erreur',
+        description: 'Une date d\'expiration est requise pour ce type de document',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     try {
       setUploading(true);
       
@@ -131,6 +146,21 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
         .from('documents')
         .getPublicUrl(uploadData.path);
 
+      // Calculer le statut du document
+      let statut = 'valide';
+      if (dateExpiration) {
+        const expDate = new Date(dateExpiration);
+        const today = new Date();
+        const oneMonthFromNow = new Date();
+        oneMonthFromNow.setMonth(oneMonthFromNow.getMonth() + 1);
+        
+        if (expDate < today) {
+          statut = 'expire';
+        } else if (expDate <= oneMonthFromNow) {
+          statut = 'a_renouveler';
+        }
+      }
+
       // Création de l'enregistrement en base
       const { error: insertError } = await supabase
         .from('documents_vehicules')
@@ -142,7 +172,8 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
           taille: selectedFile.size,
           date_delivrance: dateDelivrance || null,
           date_expiration: dateExpiration || null,
-          commentaire: commentaire || null
+          commentaire: commentaire || null,
+          statut: statut
         });
 
       if (insertError) {

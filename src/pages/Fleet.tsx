@@ -8,7 +8,7 @@ import { Search, Truck, CheckCircle, Wrench, AlertTriangle } from 'lucide-react'
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
-import { VehicleForm } from '@/components/fleet/VehicleForm';
+import { VehicleFormSimple } from '@/components/fleet/VehicleFormSimple';
 import { DocumentManagerVehicule } from '@/components/fleet/DocumentManagerVehicule';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
@@ -16,6 +16,7 @@ import { AlertesDocumentsVehicules } from '@/components/fleet/AlertesDocumentsVe
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { vehiculesService } from '@/services/vehicules';
+import { alertesService } from '@/services/alertesService';
 import type { Vehicule } from '@/services/vehicules';
 
 const Fleet = () => {
@@ -34,12 +35,19 @@ const Fleet = () => {
     queryFn: vehiculesService.getAll,
   });
 
+  // Fetch alerts
+  const { data: alertes = [] } = useQuery({
+    queryKey: ['alertes-documents-vehicules', refreshKey],
+    queryFn: alertesService.getAlertesVehicules,
+  });
+
   const stats = {
     total: vehicles.length,
     disponibles: vehicles.filter(v => v.statut === 'disponible').length,
     en_mission: vehicles.filter(v => v.statut === 'en_mission').length,
     maintenance: vehicles.filter(v => v.statut === 'maintenance').length,
     validation_requise: vehicles.filter(v => v.statut === 'validation_requise').length,
+    alertes: alertes.length,
   };
 
   const handleVehicleCreated = () => {
@@ -195,7 +203,7 @@ const Fleet = () => {
               {selectedVehicleForEdit ? 'Modifier le véhicule' : 'Ajouter un nouveau véhicule'}
             </DialogTitle>
           </DialogHeader>
-          <VehicleForm 
+          <VehicleFormSimple 
             vehicule={selectedVehicleForEdit}
             onSuccess={handleFormClose}
           />
