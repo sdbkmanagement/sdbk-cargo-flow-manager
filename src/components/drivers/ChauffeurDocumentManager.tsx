@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,6 +59,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
       const url = await documentsService.uploadFile(file, 'chauffeur', chauffeur.id, documentType);
       console.log('URL du fichier uploadé:', url);
       
+      // Créer les données du document SANS le champ statut pour éviter l'erreur PostgreSQL
       const documentData = {
         entity_type: 'chauffeur',
         entity_id: chauffeur.id,
@@ -65,9 +67,8 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
         type: documentType,
         url: url,
         taille: file.size,
-        date_expiration: dateExpiration || null,
-        // Calculer le statut côté client pour éviter l'erreur PostgreSQL
-        statut: dateExpiration ? getStatutFromExpiration(dateExpiration) : 'valide'
+        date_expiration: dateExpiration || null
+        // On supprime le calcul de statut côté client pour éviter l'erreur PostgreSQL
       };
 
       console.log('Données du document à créer:', documentData);
@@ -127,18 +128,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
     }
   };
 
-  const getStatutFromExpiration = (dateExpiration?: string) => {
-    if (!dateExpiration) return 'valide';
-    
-    const now = new Date();
-    const expDate = new Date(dateExpiration);
-    const daysUntilExpiry = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntilExpiry < 0) return 'expire';
-    if (daysUntilExpiry <= 30) return 'a_renouveler';
-    return 'valide';
-  };
-
+  // Calcul du statut côté client pour éviter les erreurs PostgreSQL
   const getDocumentStatus = (document: any) => {
     if (!document.date_expiration) return { status: 'permanent', label: 'Permanent', color: 'bg-blue-500' };
     

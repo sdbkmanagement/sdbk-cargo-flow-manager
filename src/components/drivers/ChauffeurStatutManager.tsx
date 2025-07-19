@@ -30,51 +30,51 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
   const [dateFin, setDateFin] = useState('');
   const [motif, setMotif] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dateDebutError, setDateDebutError] = useState('');
+  const [dateFinError, setDateFinError] = useState('');
   const { toast } = useToast();
+
+  const validateDates = () => {
+    let isValid = true;
+    setDateDebutError('');
+    setDateFinError('');
+
+    if (!dateDebut || dateDebut.trim() === '') {
+      setDateDebutError('La date de début est obligatoire');
+      isValid = false;
+    }
+
+    if (!dateFin || dateFin.trim() === '') {
+      setDateFinError('La date de fin est obligatoire');
+      isValid = false;
+    }
+
+    if (dateDebut && dateFin) {
+      const debut = new Date(dateDebut);
+      const fin = new Date(dateFin);
+      
+      if (isNaN(debut.getTime()) || isNaN(fin.getTime())) {
+        if (isNaN(debut.getTime())) setDateDebutError('Date de début invalide');
+        if (isNaN(fin.getTime())) setDateFinError('Date de fin invalide');
+        isValid = false;
+      } else if (fin <= debut) {
+        setDateFinError('La date de fin doit être postérieure à la date de début');
+        isValid = false;
+      }
+    }
+
+    return isValid;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log('Tentative de soumission avec:', { dateDebut, dateFin });
     
-    // Validation stricte des dates - elles sont OBLIGATOIRES
-    if (!dateDebut) {
-      console.log('Date de début manquante');
+    if (!validateDates()) {
       toast({
         title: "Erreur de validation",
-        description: "La date de début est obligatoire pour changer le statut",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!dateFin) {
-      console.log('Date de fin manquante');
-      toast({
-        title: "Erreur de validation", 
-        description: "La date de fin est obligatoire pour changer le statut",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Vérifier que les dates sont valides
-    const debut = new Date(dateDebut);
-    const fin = new Date(dateFin);
-    
-    if (isNaN(debut.getTime()) || isNaN(fin.getTime())) {
-      toast({
-        title: "Erreur de validation",
-        description: "Les dates saisies ne sont pas valides",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (fin <= debut) {
-      toast({
-        title: "Erreur de validation",
-        description: "La date de fin doit être postérieure à la date de début",
+        description: "Veuillez corriger les erreurs dans le formulaire",
         variant: "destructive",
       });
       return;
@@ -83,9 +83,8 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
     setIsLoading(true);
 
     try {
-      // Construire l'objet de mise à jour avec tous les champs existants
       const updateData = {
-        ...chauffeur, // Reprendre toutes les données existantes
+        ...chauffeur,
         statut_disponibilite: newStatut,
         date_debut_statut: dateDebut,
         date_fin_statut: dateFin
@@ -101,10 +100,11 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
       });
       
       setIsEditing(false);
-      // Reset des champs
       setDateDebut('');
       setDateFin('');
       setMotif('');
+      setDateDebutError('');
+      setDateFinError('');
       onUpdate();
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error);
@@ -124,10 +124,28 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
     setDateDebut('');
     setDateFin('');
     setMotif('');
+    setDateDebutError('');
+    setDateFinError('');
   };
 
-  // Vérifier si le formulaire est valide
-  const isFormValid = dateDebut && dateFin && dateDebut.trim() !== '' && dateFin.trim() !== '';
+  const handleDateDebutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDateDebut(value);
+    if (dateDebutError && value.trim() !== '') {
+      setDateDebutError('');
+    }
+  };
+
+  const handleDateFinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setDateFin(value);
+    if (dateFinError && value.trim() !== '') {
+      setDateFinError('');
+    }
+  };
+
+  // Le formulaire est valide seulement si les deux dates sont renseignées ET valides
+  const canSubmit = dateDebut && dateFin && dateDebut.trim() !== '' && dateFin.trim() !== '' && !dateDebutError && !dateFinError;
 
   const currentStatut = chauffeur.statut_disponibilite || 'disponible';
   const statutConfig = STATUT_OPTIONS[currentStatut as keyof typeof STATUT_OPTIONS];
@@ -190,15 +208,12 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
                 <Input
                   type="date"
                   value={dateDebut}
-                  onChange={(e) => {
-                    console.log('Date début changée:', e.target.value);
-                    setDateDebut(e.target.value);
-                  }}
+                  onChange={handleDateDebutChange}
                   required
-                  className="border-red-200 focus:border-red-500"
+                  className={`${dateDebutError ? 'border-red-500 focus:border-red-500' : 'border-gray-200'}`}
                 />
-                {!dateDebut && (
-                  <p className="text-xs text-red-500">Ce champ est obligatoire</p>
+                {dateDebutError && (
+                  <p className="text-xs text-red-500">{dateDebutError}</p>
                 )}
               </div>
               
@@ -207,15 +222,12 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
                 <Input
                   type="date"
                   value={dateFin}
-                  onChange={(e) => {
-                    console.log('Date fin changée:', e.target.value);
-                    setDateFin(e.target.value);
-                  }}
+                  onChange={handleDateFinChange}
                   required
-                  className="border-red-200 focus:border-red-500"
+                  className={`${dateFinError ? 'border-red-500 focus:border-red-500' : 'border-gray-200'}`}
                 />
-                {!dateFin && (
-                  <p className="text-xs text-red-500">Ce champ est obligatoire</p>
+                {dateFinError && (
+                  <p className="text-xs text-red-500">{dateFinError}</p>
                 )}
               </div>
             </div>
@@ -230,7 +242,7 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
               />
             </div>
 
-            {!isFormValid && (
+            {(!dateDebut || !dateFin || dateDebutError || dateFinError) && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">
                   ⚠️ Les dates de début et de fin sont obligatoires pour changer le statut
@@ -241,8 +253,8 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
             <div className="flex gap-2">
               <Button 
                 type="submit" 
-                disabled={isLoading || !isFormValid}
-                className={!isFormValid ? 'opacity-50 cursor-not-allowed' : ''}
+                disabled={isLoading || !canSubmit}
+                className={!canSubmit ? 'opacity-50 cursor-not-allowed' : ''}
               >
                 {isLoading ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
@@ -250,6 +262,7 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
                 type="button" 
                 variant="outline" 
                 onClick={handleCancel}
+                disabled={isLoading}
               >
                 Annuler
               </Button>
