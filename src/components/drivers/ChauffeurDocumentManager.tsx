@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,7 +53,10 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
   const handleUpload = async (documentType: string, file: File, dateExpiration?: string) => {
     setIsLoading(true);
     try {
+      console.log('Début upload document:', { documentType, fileName: file.name, dateExpiration });
+      
       const url = await documentsService.uploadFile(file, 'chauffeur', chauffeur.id, documentType);
+      console.log('URL du fichier uploadé:', url);
       
       const documentData = {
         entity_type: 'chauffeur',
@@ -64,8 +66,11 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
         url: url,
         taille: file.size,
         date_expiration: dateExpiration || null,
-        statut: getStatutFromExpiration(dateExpiration)
+        // Calculer le statut côté client pour éviter l'erreur PostgreSQL
+        statut: dateExpiration ? getStatutFromExpiration(dateExpiration) : 'valide'
       };
+
+      console.log('Données du document à créer:', documentData);
 
       if (editingDocument) {
         await documentsService.update(editingDocument.id, documentData);

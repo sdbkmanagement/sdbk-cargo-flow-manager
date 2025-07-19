@@ -35,8 +35,8 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation des dates obligatoires
-    if (!dateDebut) {
+    // Les dates sont TOUJOURS obligatoires maintenant
+    if (!dateDebut || dateDebut.trim() === '') {
       toast({
         title: "Erreur",
         description: "La date de début est obligatoire",
@@ -45,7 +45,7 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
       return;
     }
     
-    if (!dateFin) {
+    if (!dateFin || dateFin.trim() === '') {
       toast({
         title: "Erreur",
         description: "La date de fin est obligatoire",
@@ -86,6 +86,10 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
       });
       
       setIsEditing(false);
+      // Reset des champs
+      setDateDebut('');
+      setDateFin('');
+      setMotif('');
       onUpdate();
     } catch (error) {
       console.error('Erreur lors de la mise à jour du statut:', error);
@@ -97,6 +101,14 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setNewStatut(chauffeur.statut_disponibilite || 'disponible');
+    setDateDebut('');
+    setDateFin('');
+    setMotif('');
   };
 
   const currentStatut = chauffeur.statut_disponibilite || 'disponible';
@@ -187,13 +199,13 @@ export const ChauffeurStatutManager = ({ chauffeur, onUpdate }: ChauffeurStatutM
             </div>
 
             <div className="flex gap-2">
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !dateDebut || !dateFin}>
                 {isLoading ? 'Enregistrement...' : 'Enregistrer'}
               </Button>
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setIsEditing(false)}
+                onClick={handleCancel}
               >
                 Annuler
               </Button>
