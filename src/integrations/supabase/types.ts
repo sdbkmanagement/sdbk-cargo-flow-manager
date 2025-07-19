@@ -455,8 +455,10 @@ export type Database = {
           code_postal: string | null
           contrat_url: string | null
           created_at: string | null
+          date_debut_statut: string | null
           date_embauche: string | null
           date_expiration_permis: string
+          date_fin_statut: string | null
           date_naissance: string | null
           date_obtention_permis: string | null
           email: string | null
@@ -475,6 +477,7 @@ export type Database = {
           prenom: string
           signature_url: string | null
           statut: string | null
+          statut_disponibilite: string | null
           statut_matrimonial: string | null
           telephone: string
           type_contrat: string | null
@@ -493,8 +496,10 @@ export type Database = {
           code_postal?: string | null
           contrat_url?: string | null
           created_at?: string | null
+          date_debut_statut?: string | null
           date_embauche?: string | null
           date_expiration_permis: string
+          date_fin_statut?: string | null
           date_naissance?: string | null
           date_obtention_permis?: string | null
           email?: string | null
@@ -513,6 +518,7 @@ export type Database = {
           prenom: string
           signature_url?: string | null
           statut?: string | null
+          statut_disponibilite?: string | null
           statut_matrimonial?: string | null
           telephone: string
           type_contrat?: string | null
@@ -531,8 +537,10 @@ export type Database = {
           code_postal?: string | null
           contrat_url?: string | null
           created_at?: string | null
+          date_debut_statut?: string | null
           date_embauche?: string | null
           date_expiration_permis?: string
+          date_fin_statut?: string | null
           date_naissance?: string | null
           date_obtention_permis?: string | null
           email?: string | null
@@ -551,6 +559,7 @@ export type Database = {
           prenom?: string
           signature_url?: string | null
           statut?: string | null
+          statut_disponibilite?: string | null
           statut_matrimonial?: string | null
           telephone?: string
           type_contrat?: string | null
@@ -563,6 +572,50 @@ export type Database = {
           ville?: string | null
         }
         Relationships: []
+      }
+      chauffeurs_statut_historique: {
+        Row: {
+          ancien_statut: string | null
+          chauffeur_id: string | null
+          created_at: string | null
+          created_by: string | null
+          date_debut: string
+          date_fin: string | null
+          id: string
+          motif: string | null
+          nouveau_statut: string
+        }
+        Insert: {
+          ancien_statut?: string | null
+          chauffeur_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_debut: string
+          date_fin?: string | null
+          id?: string
+          motif?: string | null
+          nouveau_statut: string
+        }
+        Update: {
+          ancien_statut?: string | null
+          chauffeur_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          id?: string
+          motif?: string | null
+          nouveau_statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chauffeurs_statut_historique_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clients: {
         Row: {

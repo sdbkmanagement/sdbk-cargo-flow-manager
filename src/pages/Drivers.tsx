@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Upload } from 'lucide-react';
 import { DriversTabNavigation } from '@/components/drivers/DriversTabNavigation';
 import { DriversTabContent } from '@/components/drivers/DriversTabContent';
 import { DriversDashboard } from '@/components/drivers/DriversDashboard';
@@ -11,6 +11,7 @@ import { DriversDocuments } from '@/components/drivers/DriversDocuments';
 import { PlanningView } from '@/components/drivers/planning/PlanningView';
 import { ChauffeurDetailDialog } from '@/components/drivers/ChauffeurDetailDialog';
 import { ChauffeurForm } from '@/components/drivers/ChauffeurForm';
+import { DriversImport } from '@/components/drivers/DriversImport';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
@@ -22,9 +23,10 @@ const Drivers = () => {
   const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showNewChauffeurForm, setShowNewChauffeurForm] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Récupération des chauffeurs avec actualisation automatique
-  const { data: chauffeurs = [] } = useQuery({
+  const { data: chauffeurs = [], refetch } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll,
     refetchInterval: 30 * 1000, // Actualisation toutes les 30 secondes
@@ -41,11 +43,25 @@ const Drivers = () => {
     setShowNewChauffeurForm(true);
   };
 
+  const handleImport = () => {
+    setShowImportDialog(true);
+  };
+
   const handleCreateSuccess = () => {
     setShowNewChauffeurForm(false);
+    refetch();
     toast({
       title: "Chauffeur créé",
       description: "Le chauffeur a été ajouté avec succès.",
+    });
+  };
+
+  const handleImportSuccess = () => {
+    setShowImportDialog(false);
+    refetch();
+    toast({
+      title: "Import réussi",
+      description: "Les chauffeurs ont été importés avec succès.",
     });
   };
 
@@ -84,13 +100,23 @@ const Drivers = () => {
             Dashboard, planning, documents et alertes de conformité
           </p>
         </div>
-        <Button 
-          onClick={handleNewChauffeur}
-          className="bg-orange-500 hover:bg-orange-600"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nouveau chauffeur
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleImport}
+            variant="outline"
+            className="bg-green-500 hover:bg-green-600 text-white border-green-500"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importer Excel
+          </Button>
+          <Button 
+            onClick={handleNewChauffeur}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouveau chauffeur
+          </Button>
+        </div>
       </div>
 
       <DriversTabNavigation 
@@ -132,6 +158,19 @@ const Drivers = () => {
           <ChauffeurForm 
             onSuccess={handleCreateSuccess}
             onCancel={handleFormCancel}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour import Excel */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Importer des chauffeurs depuis Excel</DialogTitle>
+          </DialogHeader>
+          <DriversImport 
+            onSuccess={handleImportSuccess}
+            onClose={() => setShowImportDialog(false)}
           />
         </DialogContent>
       </Dialog>
