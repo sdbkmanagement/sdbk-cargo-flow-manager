@@ -1,125 +1,72 @@
 
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Truck, CheckCircle, Clock, Wrench, Fuel, Package, AlertTriangle } from 'lucide-react';
-
-interface FleetStatsData {
-  total: number;
-  disponibles: number;
-  en_mission: number;
-  maintenance: number;
-  validation_requise: number;
-  hydrocarbures: number;
-  bauxite: number;
-  maintenance_urgente: number;
-  bases: Array<{ nom: string; count: number }>;
-  types_transport: Array<{ nom: string; count: number }>;
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Truck, CheckCircle, Wrench, Clock } from 'lucide-react';
 
 interface FleetStatsProps {
-  stats: FleetStatsData;
+  stats: {
+    total: number;
+    disponibles: number;
+    en_mission: number;
+    maintenance: number;
+    validation_requise: number;
+  };
 }
 
 export const FleetStats = ({ stats }: FleetStatsProps) => {
+  const statCards = [
+    {
+      title: 'Total véhicules',
+      value: stats.total,
+      icon: Truck,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50'
+    },
+    {
+      title: 'Disponibles',
+      value: stats.disponibles,
+      icon: CheckCircle,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50'
+    },
+    {
+      title: 'En mission',
+      value: stats.en_mission,
+      icon: Clock,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50'
+    },
+    {
+      title: 'Maintenance',
+      value: stats.maintenance,
+      icon: Wrench,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50'
+    },
+    {
+      title: 'Validation requise',
+      value: stats.validation_requise,
+      icon: CheckCircle,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50'
+    }
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-8 gap-4">
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total véhicules</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <Truck className="w-8 h-8 text-blue-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Disponibles</p>
-              <p className="text-2xl font-bold text-green-600">{stats.disponibles}</p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">En mission</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.en_mission}</p>
-            </div>
-            <Clock className="w-8 h-8 text-blue-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Maintenance</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.maintenance}</p>
-            </div>
-            <Wrench className="w-8 h-8 text-orange-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Validation</p>
-              <p className="text-2xl font-bold text-yellow-600">{stats.validation_requise}</p>
-            </div>
-            <AlertTriangle className="w-8 h-8 text-yellow-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Hydrocarbures</p>
-              <p className="text-2xl font-bold text-red-600">{stats.hydrocarbures}</p>
-            </div>
-            <Fuel className="w-8 h-8 text-red-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Bauxite</p>
-              <p className="text-2xl font-bold text-amber-600">{stats.bauxite}</p>
-            </div>
-            <Package className="w-8 h-8 text-amber-600" />
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Alertes</p>
-              <p className="text-2xl font-bold text-red-600">{stats.maintenance_urgente}</p>
-              <p className="text-xs text-gray-500 mt-1">Maintenance &lt; 30j</p>
-            </div>
-            <AlertTriangle className="w-8 h-8 text-red-600" />
-          </div>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      {statCards.map((stat, index) => (
+        <Card key={index}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {stat.title}
+            </CardTitle>
+            <stat.icon className={`h-4 w-4 ${stat.color}`} />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stat.value}</div>
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 };

@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, FileText, Wrench, CheckCircle, Upload } from 'lucide-react';
+import { Edit, Trash2, FileText } from 'lucide-react';
 import type { Vehicule } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 
@@ -12,17 +12,13 @@ interface VehicleListTabProps {
   onEdit: (vehicleId: string) => void;
   onDelete: (vehicleId: string) => Promise<void>;
   onViewDocuments: (vehicle: Vehicule) => void;
-  onViewMaintenance: (vehicleId: string) => void;
-  onViewPostMissionWorkflow: (vehicleId: string) => void;
 }
 
 export const VehicleListTab = ({ 
   vehicles, 
   onEdit, 
   onDelete, 
-  onViewDocuments, 
-  onViewMaintenance, 
-  onViewPostMissionWorkflow 
+  onViewDocuments
 }: VehicleListTabProps) => {
   const { toast } = useToast();
 
@@ -52,11 +48,6 @@ export const VehicleListTab = ({
   const handleViewDocuments = (vehicle: Vehicule) => {
     console.log('Affichage des documents pour:', vehicle.id);
     onViewDocuments(vehicle);
-  };
-
-  const handleViewMaintenance = (vehicleId: string) => {
-    console.log('Affichage de la maintenance pour:', vehicleId);
-    onViewMaintenance(vehicleId);
   };
 
   const getStatusBadge = (statut: string) => {
@@ -100,7 +91,7 @@ export const VehicleListTab = ({
                 <p className="text-sm text-gray-600">
                   {vehicle.type_vehicule === 'porteur' 
                     ? `${vehicle.marque} ${vehicle.modele} (${vehicle.immatriculation})`
-                    : `Tracteur: ${vehicle.tracteur_immatriculation} / Remorque: ${vehicle.remorque_immatriculation}`
+                    : `Tracteur: ${vehicle.tracteur_im<continue>matriculation} / Remorque: ${vehicle.remorque_immatriculation}`
                   }
                 </p>
               </div>
@@ -148,26 +139,6 @@ export const VehicleListTab = ({
               >
                 <FileText className="w-4 h-4" />
                 Documents
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => handleViewMaintenance(vehicle.id)}
-                className="flex items-center gap-1"
-              >
-                <Wrench className="w-4 h-4" />
-                Maintenance
-              </Button>
-              
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => onViewPostMissionWorkflow(vehicle.id)}
-                className="flex items-center gap-1"
-              >
-                <CheckCircle className="w-4 h-4" />
-                Post-Mission
               </Button>
               
               <Button

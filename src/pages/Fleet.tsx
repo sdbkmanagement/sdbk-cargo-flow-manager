@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Truck, Settings, Wrench, CheckCircle } from 'lucide-react';
+import { Search, Truck, CheckCircle, Wrench } from 'lucide-react';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
@@ -39,11 +39,6 @@ const Fleet = () => {
     en_mission: vehicles.filter(v => v.statut === 'en_mission').length,
     maintenance: vehicles.filter(v => v.statut === 'maintenance').length,
     validation_requise: vehicles.filter(v => v.statut === 'validation_requise').length,
-    hydrocarbures: vehicles.filter(v => v.type_transport === 'hydrocarbures').length,
-    bauxite: vehicles.filter(v => v.type_transport === 'bauxite').length,
-    maintenance_urgente: 0,
-    bases: [],
-    types_transport: []
   };
 
   const handleVehicleCreated = () => {
@@ -82,14 +77,6 @@ const Fleet = () => {
         variant: "destructive"
       });
     }
-  };
-
-  const handleMaintenanceVehicle = (vehicleId: string) => {
-    console.log('Maintenance véhicule:', vehicleId);
-    toast({
-      title: "Fonctionnalité à venir",
-      description: "La gestion de maintenance sera disponible prochainement.",
-    });
   };
 
   const handleDeleteVehicle = async (vehicleId: string) => {
@@ -138,7 +125,7 @@ const Fleet = () => {
       <FleetStats stats={stats} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="vehicles" className="gap-2">
             <Truck className="h-4 w-4" />
             Véhicules
@@ -150,10 +137,6 @@ const Fleet = () => {
           <TabsTrigger value="maintenance" className="gap-2">
             <Wrench className="h-4 w-4" />
             Maintenance
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2">
-            <Settings className="h-4 w-4" />
-            Paramètres
           </TabsTrigger>
         </TabsList>
 
@@ -174,8 +157,6 @@ const Fleet = () => {
                 onEdit={handleModifyVehicle}
                 onDelete={handleDeleteVehicle}
                 onViewDocuments={handleManageDocuments}
-                onViewMaintenance={handleMaintenanceVehicle}
-                onViewPostMissionWorkflow={(vehicleId) => console.log('Post-mission workflow:', vehicleId)}
               />
             </CardContent>
           </Card>
@@ -187,22 +168,6 @@ const Fleet = () => {
 
         <TabsContent value="maintenance" className="space-y-6">
           <MaintenanceTab vehicles={vehicles} />
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Paramètres de la flotte</CardTitle>
-              <CardDescription>
-                Configuration et paramètres avancés
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Les paramètres de configuration seront disponibles prochainement.
-              </p>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
 
