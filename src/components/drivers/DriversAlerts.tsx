@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +33,7 @@ export const DriversAlerts = () => {
       const { data, error } = await supabase
         .from('alertes_documents_chauffeurs')
         .select('*')
-        .order('jours_restants', { ascending: true, nullsLast: true });
+        .order('jours_restants', { ascending: true, nullsFirst: false });
 
       if (error) {
         console.error('Erreur lors du chargement des alertes:', error);
