@@ -7,7 +7,7 @@ export interface Affectation {
   chauffeur_id: string;
   date_debut: string;
   date_fin?: string;
-  statut: 'active' | 'inactive';
+  statut: string; // Changed from 'active' | 'inactive' to string for flexibility
   motif_changement?: string;
   autorise_par?: string;
   created_at: string;
@@ -58,7 +58,7 @@ const affectationsService = {
       }
 
       console.log(`${data?.length || 0} affectations chargées`);
-      return data || [];
+      return (data || []) as Affectation[];
     } catch (error) {
       console.error('Erreur générale affectations:', error);
       return [];
@@ -91,7 +91,7 @@ const affectationsService = {
       }
 
       console.log(`${data?.length || 0} affectations chargées`);
-      return data || [];
+      return (data || []) as Affectation[];
     } catch (error) {
       console.error('Erreur générale affectations:', error);
       return [];
@@ -125,7 +125,7 @@ const affectationsService = {
       }
 
       console.log('Affectation créée avec succès:', data);
-      return data;
+      return data as Affectation;
     } catch (error) {
       console.error('Erreur lors de la création de l\'affectation:', error);
       throw error;

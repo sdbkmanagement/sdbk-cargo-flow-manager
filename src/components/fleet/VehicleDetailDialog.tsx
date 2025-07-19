@@ -150,7 +150,7 @@ export const VehicleDetailDialog = ({ vehicule, open, onOpenChange }: VehicleDet
             </TabsContent>
 
             <TabsContent value="maintenance" className="mt-4">
-              <VehicleMaintenanceHistory vehicule={vehicule} />
+              <VehicleMaintenanceHistory vehicle={vehicule} />
             </TabsContent>
           </Tabs>
         </div>
