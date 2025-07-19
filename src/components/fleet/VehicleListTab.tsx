@@ -1,12 +1,12 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
-import { Edit, Trash2, FileText, Truck, User } from 'lucide-react';
+import { Edit, Trash2, FileText, Truck, User, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
+import { VehicleDetailDialog } from './VehicleDetailDialog';
 import type { Vehicule } from '@/services/vehicules';
 
 interface VehicleListTabProps {
@@ -17,6 +17,9 @@ interface VehicleListTabProps {
 }
 
 export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: VehicleListTabProps) => {
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicule | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+
   const getStatusBadge = (statut: string) => {
     const variants: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
       'disponible': 'default',
@@ -80,6 +83,11 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
         variant: "destructive"
       });
     }
+  };
+
+  const handleViewDetails = (vehicle: Vehicule) => {
+    setSelectedVehicle(vehicle);
+    setShowDetailDialog(true);
   };
 
   if (vehicles.length === 0) {
@@ -168,6 +176,15 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => handleViewDetails(vehicle)}
+                        className="flex items-center gap-1"
+                      >
+                        <Eye className="h-4 w-4" />
+                        Détails
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => onViewDocuments(vehicle)}
                         className="flex items-center gap-1"
                       >
@@ -216,6 +233,12 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
           </Table>
         </CardContent>
       </Card>
+
+      <VehicleDetailDialog
+        vehicule={selectedVehicle}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+      />
     </div>
   );
 };
