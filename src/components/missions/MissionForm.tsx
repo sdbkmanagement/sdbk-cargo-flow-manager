@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
-import { ArrowLeft, Save, Info } from 'lucide-react';
+import { ArrowLeft, Save, Info, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface MissionFormProps {
@@ -66,7 +66,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       // Pour une nouvelle mission (pas de modification)
       if (!mission?.id) {
         if (chauffeursAssignesVehicule.length === 1) {
-          // Un seul chauffeur assigné => sélection automatique obligatoire
+          // Un seul chauffeur assigné => sélection automatique OBLIGATOIRE + champ désactivé
           const chauffeurAssigne = chauffeursAssignesVehicule[0];
           setFormData(prev => ({ 
             ...prev, 
@@ -76,13 +76,13 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           
           toast({
             title: 'Chauffeur assigné automatiquement',
-            description: `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est le chauffeur assigné à ce véhicule.`
+            description: `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est le seul chauffeur assigné à ce véhicule.`
           });
         } else {
-          // Plusieurs chauffeurs assignés => informer l'utilisateur
+          // Plusieurs chauffeurs assignés => choix obligatoire parmi les assignés
           setChauffeurAutoSelectionne(false);
           toast({
-            title: 'Chauffeurs disponibles',
+            title: 'Choix requis',
             description: `${chauffeursAssignesVehicule.length} chauffeurs sont assignés à ce véhicule. Veuillez en sélectionner un.`
           });
         }
@@ -153,6 +153,16 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Vérification obligatoire : un chauffeur doit être sélectionné
+    if (!formData.chauffeur_id) {
+      toast({
+        title: 'Erreur',
+        description: 'Vous devez sélectionner un chauffeur pour cette mission.',
+        variant: 'destructive'
+      });
+      return;
+    }
     
     const submitData = {
       ...formData,
@@ -350,41 +360,18 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                     <SelectValue placeholder="Sélectionner un chauffeur" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* Afficher les chauffeurs assignés au véhicule en priorité */}
+                    {/* Afficher UNIQUEMENT les chauffeurs assignés au véhicule */}
                     {chauffeursAssignes.length > 0 ? (
-                      <>
-                        {chauffeursAssignes.length === 1 ? (
-                          <SelectItem value={chauffeursAssignes[0].id}>
-                            <span className="text-orange-600 font-semibold">
-                              ★ {chauffeursAssignes[0].prenom} {chauffeursAssignes[0].nom} (Assigné)
-                            </span>
-                          </SelectItem>
-                        ) : (
-                          <>
-                            <SelectItem disabled value="assigned-drivers">
-                              <span className="font-semibold text-orange-600">Chauffeurs assignés au véhicule</span>
-                            </SelectItem>
-                            {chauffeursAssignes.map(chauffeur => (
-                              <SelectItem key={`assigned-${chauffeur.id}`} value={chauffeur.id}>
-                                <span className="text-orange-600">★ {chauffeur.prenom} {chauffeur.nom}</span>
-                              </SelectItem>
-                            ))}
-                            <SelectItem disabled value="other-drivers">
-                              <span className="font-semibold text-gray-500">Autres chauffeurs disponibles</span>
-                            </SelectItem>
-                            {chauffeurs
-                              .filter(chauffeur => !chauffeursAssignes.some(ca => ca.id === chauffeur.id))
-                              .map(chauffeur => (
-                                <SelectItem key={chauffeur.id} value={chauffeur.id}>
-                                  {chauffeur.prenom} {chauffeur.nom}
-                                </SelectItem>
-                              ))}
-                          </>
-                        )}
-                      </>
+                      chauffeursAssignes.map(chauffeur => (
+                        <SelectItem key={chauffeur.id} value={chauffeur.id}>
+                          <span className="text-orange-600 font-semibold">
+                            ★ {chauffeur.prenom} {chauffeur.nom}
+                          </span>
+                        </SelectItem>
+                      ))
                     ) : (
-                      // Aucun chauffeur assigné - afficher tous les chauffeurs disponibles
-                      chauffeurs.map(chauffeur => (
+                      // Si aucun véhicule sélectionné, afficher tous les chauffeurs (cas de modification de mission existante)
+                      !formData.vehicule_id && chauffeurs.map(chauffeur => (
                         <SelectItem key={chauffeur.id} value={chauffeur.id}>
                           {chauffeur.prenom} {chauffeur.nom}
                         </SelectItem>
@@ -393,22 +380,27 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                   </SelectContent>
                 </Select>
                 
+                {/* Messages informatifs */}
                 {chauffeursAssignes.length === 1 && chauffeurAutoSelectionne && (
                   <p className="text-sm text-orange-600 mt-1">
-                    ★ Chauffeur assigné automatiquement à ce véhicule
+                    ★ Chauffeur assigné automatiquement à ce véhicule (pas de choix possible)
                   </p>
                 )}
                 
                 {chauffeursAssignes.length > 1 && (
                   <p className="text-sm text-orange-600 mt-1">
-                    ★ {chauffeursAssignes.length} chauffeurs assignés à ce véhicule
+                    ★ Choisissez parmi les {chauffeursAssignes.length} chauffeurs assignés à ce véhicule
                   </p>
                 )}
                 
                 {formData.vehicule_id && chauffeursAssignes.length === 0 && (
-                  <p className="text-sm text-amber-600 mt-1">
-                    ⚠️ Aucun chauffeur assigné à ce véhicule
-                  </p>
+                  <Alert className="mt-2 border-amber-200 bg-amber-50">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="text-amber-700">
+                      <strong>Attention :</strong> Aucun chauffeur n'est assigné à ce véhicule. 
+                      Veuillez d'abord assigner un chauffeur dans le module Flotte.
+                    </AlertDescription>
+                  </Alert>
                 )}
               </div>
 
