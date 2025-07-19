@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { 
   Search, 
   Edit, 
@@ -68,6 +69,10 @@ export const ChauffeursList = ({
     }
   };
 
+  const getInitials = (nom: string, prenom: string) => {
+    return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -76,9 +81,16 @@ export const ChauffeursList = ({
             <CardContent className="p-4">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-orange-600" />
-                  </div>
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage 
+                      src={chauffeur.photo_url || undefined} 
+                      alt={`${chauffeur.prenom} ${chauffeur.nom}`}
+                      className="object-cover"
+                    />
+                    <AvatarFallback className="bg-orange-100 text-orange-600 text-sm font-semibold">
+                      {getInitials(chauffeur.nom, chauffeur.prenom)}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <h3 className="font-semibold text-gray-900">
                       {chauffeur.prenom} {chauffeur.nom}
