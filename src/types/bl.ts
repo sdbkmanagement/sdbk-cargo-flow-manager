@@ -1,8 +1,8 @@
 
+
 export interface BonLivraison {
   id?: string;
   numero: string;
-  client_nom: string;
   client_code?: string;
   client_code_total?: string;
   destination: string;
@@ -46,3 +46,4 @@ export interface BonLivraison {
   saisi_par?: string;
   transitaire_nom?: string;
 }
+

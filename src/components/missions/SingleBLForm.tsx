@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,6 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
 
   // Log des valeurs actuelles du BL
   console.log(`📊 BL ${index} - État actuel complet:`, {
-    client_nom: bl.client_nom || 'VIDE',
     destination: bl.destination || 'VIDE',
     lieu_depart: bl.lieu_depart || 'VIDE',
     lieu_arrivee: bl.lieu_arrivee || 'VIDE',
@@ -122,7 +122,6 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
           {/* Affichage debug pour voir les valeurs en temps réel */}
           <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-600">
             <p><strong>Debug BL #{index + 1}:</strong></p>
-            <p>client_nom: "{bl.client_nom || 'VIDE'}"</p>
             <p>lieu_arrivee: "{bl.lieu_arrivee || 'VIDE'}"</p>
             <p>lieu_depart: "{bl.lieu_depart || 'VIDE'}"</p>
             <p>quantite_prevue: {bl.quantite_prevue || 0}</p>
@@ -215,3 +214,4 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
     </Card>
   );
 };
+

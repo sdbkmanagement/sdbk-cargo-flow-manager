@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +19,6 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   const ajouterBL = () => {
     const nouveauBL: BonLivraison = {
       numero: `BL-${Date.now()}`, // Temporary numero, will be replaced by database trigger
-      client_nom: '',
       destination: '',
       lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
       lieu_arrivee: '',
@@ -48,7 +48,6 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     
     // Log détaillé après modification
     console.log(`📋 BL ${index} après modification:`, {
-      client_nom: nouveauxBLs[index].client_nom || 'VIDE',
       lieu_arrivee: nouveauxBLs[index].lieu_arrivee || 'VIDE',
       lieu_depart: nouveauxBLs[index].lieu_depart || 'VIDE',
       date_emission: nouveauxBLs[index].date_emission || 'VIDE',
@@ -59,9 +58,9 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // NOUVELLE VALIDATION : Basée sur lieu_arrivee au lieu de client_nom
+  // Validation basée sur lieu_arrivee au lieu de client_nom
   const blsIncomplets = bls.filter((bl, blIndex) => {
-    // Vérifications basées sur lieu_arrivee au lieu de client_nom
+    // Vérifications basées sur lieu_arrivee
     const lieuArriveeValide = bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '';
     const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
     const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
@@ -69,7 +68,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     
     const estComplet = lieuArriveeValide && dateValide && quantiteValide && lieuDepartValide;
     
-    console.log(`🔍 NOUVELLE Validation BL ${blIndex}:`, {
+    console.log(`🔍 Validation BL ${blIndex}:`, {
       lieuArriveeValide: lieuArriveeValide ? 'OUI' : 'NON',
       dateValide: dateValide ? 'OUI' : 'NON', 
       quantiteValide: quantiteValide ? 'OUI' : 'NON',
@@ -86,7 +85,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     return !estComplet;
   });
 
-  console.log(`📊 NOUVELLE Validation globale: ${blsIncomplets.length}/${bls.length} BL incomplets`);
+  console.log(`📊 Validation globale: ${blsIncomplets.length}/${bls.length} BL incomplets`);
 
   return (
     <Card>
@@ -106,7 +105,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
         </div>
       </CardHeader>
       <CardContent>
-        {/* Alerte si des BL sont incomplets - MISE À JOUR */}
+        {/* Alerte si des BL sont incomplets */}
         {blsIncomplets.length > 0 && (
           <Alert className="mb-6 border-amber-200 bg-amber-50">
             <AlertCircle className="h-4 w-4 text-amber-600" />
@@ -179,3 +178,4 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     </Card>
   );
 };
+
