@@ -99,9 +99,7 @@ export const ClientSelector = ({
           <SelectTrigger>
             <SelectValue 
               placeholder={selectedVille ? "Sélectionner un client" : "Sélectionnez d'abord une ville"}
-            >
-              {selectedClient || (selectedVille ? "Sélectionner un client" : "Sélectionnez d'abord une ville")}
-            </SelectValue>
+            />
           </SelectTrigger>
           <SelectContent className="max-h-60">
             {clientsForVille.length > 0 ? (
