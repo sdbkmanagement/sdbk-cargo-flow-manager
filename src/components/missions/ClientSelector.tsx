@@ -22,54 +22,36 @@ export const ClientSelector = ({
   blIndex,
   hideDestinationField = false
 }: ClientSelectorProps) => {
+  // États locaux pour gérer ville et lieu séparément
   const [selectedVille, setSelectedVille] = useState('');
+  const [selectedLieuNom, setSelectedLieuNom] = useState('');
 
-  // Obtenir les lieux de livraison pour la ville sélectionnée (sans inclure la ville elle-même)
+  // Obtenir les lieux de livraison pour la ville sélectionnée
   const lieuxLivraisonForVille = useMemo(() => {
     if (selectedVille) {
       const clientsForVille = getClientsByVille(selectedVille);
-      // Filtrer pour ne garder que les stations/entreprises (pas la ville)
       return clientsForVille.filter(client => client.type !== 'ville');
     }
     return [];
   }, [selectedVille]);
 
-  // Détecter la ville du client sélectionné
-  const villeFromClient = useMemo(() => {
-    if (selectedClient) {
+  // Initialiser les valeurs depuis selectedClient au premier rendu
+  React.useEffect(() => {
+    if (selectedClient && !selectedVille) {
       const allClients = getAllClients();
-      const client = allClients.find(c => c.nom === selectedClient);
+      const client = allClients.find(c => `${c.ville} ${c.nom}` === selectedClient);
       if (client) {
-        return client.ville;
+        setSelectedVille(client.ville);
+        setSelectedLieuNom(client.nom);
       }
     }
-    return '';
-  }, [selectedClient]);
-
-  // Synchroniser la ville sélectionnée avec la ville du client
-  React.useEffect(() => {
-    if (villeFromClient && villeFromClient !== selectedVille) {
-      setSelectedVille(villeFromClient);
-    }
-  }, [villeFromClient, selectedVille]);
-
-  // Extraire le nom du lieu de livraison depuis le client sélectionné - SIMPLIFIÉ
-  const selectedLieuNom = useMemo(() => {
-    if (selectedClient && selectedVille) {
-      // Le client est au format "VILLE LieuSpécifique"
-      const lieuName = selectedClient.replace(`${selectedVille} `, '');
-      console.log('Extraction simplifiée:', { selectedClient, selectedVille, lieuName });
-      
-      // Retourner directement le nom extrait sans vérification supplémentaire
-      return lieuName;
-    }
-    return '';
   }, [selectedClient, selectedVille]);
 
   const handleVilleSelection = (ville: string) => {
     console.log('Ville sélectionnée:', ville);
     setSelectedVille(ville);
-    // Réinitialiser la sélection du lieu de livraison quand on change de ville
+    setSelectedLieuNom(''); // Réinitialiser le lieu
+    // Réinitialiser les props parent
     onClientChange('');
     onDestinationChange('');
   };
@@ -77,15 +59,16 @@ export const ClientSelector = ({
   const handleLieuLivraisonSelection = (lieuNom: string) => {
     console.log('Lieu de livraison sélectionné:', lieuNom);
     
+    setSelectedLieuNom(lieuNom);
+    
     // Créer la destination complète : "VILLE LieuSpécifique"
     const destinationComplete = `${selectedVille} ${lieuNom}`;
     
-    // Mettre à jour les deux champs avec les mêmes informations
+    // Mettre à jour les props parent
     onClientChange(destinationComplete);
     onDestinationChange(destinationComplete);
     
     console.log('Destination complète créée:', destinationComplete);
-    console.log('selectedLieuNom après sélection devrait être:', lieuNom);
   };
 
   return (
@@ -154,7 +137,7 @@ export const ClientSelector = ({
         {/* Debug info */}
         {selectedClient && (
           <div className="mt-2 text-xs text-gray-500">
-            Debug: selectedLieuNom = "{selectedLieuNom}" | selectedClient = "{selectedClient}"
+            Debug: selectedLieuNom = "{selectedLieuNom}" | selectedVille = "{selectedVille}" | selectedClient = "{selectedClient}"
           </div>
         )}
         
