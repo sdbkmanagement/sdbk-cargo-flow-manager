@@ -57,7 +57,9 @@ export const ClientSelector = ({
   const selectedLieuNom = useMemo(() => {
     if (selectedClient && selectedVille) {
       // Le client est au format "VILLE LieuSpécifique"
-      return selectedClient.replace(`${selectedVille} `, '');
+      const lieuName = selectedClient.replace(`${selectedVille} `, '');
+      console.log('selectedClient:', selectedClient, 'selectedVille:', selectedVille, 'lieuName:', lieuName);
+      return lieuName;
     }
     return '';
   }, [selectedClient, selectedVille]);
