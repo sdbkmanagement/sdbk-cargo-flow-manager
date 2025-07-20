@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { BonLivraison } from '@/types/bl';
 
-// Simplified conversion functions
+// Simple conversion functions without complex typing
 const convertFromDatabase = (dbRecord: any): BonLivraison => {
   return {
     id: dbRecord.id,
@@ -14,7 +14,7 @@ const convertFromDatabase = (dbRecord: any): BonLivraison => {
     vehicule_id: dbRecord.vehicule_id,
     chauffeur_id: dbRecord.chauffeur_id,
     date_emission: dbRecord.date_emission,
-    produit: dbRecord.produit as 'essence' | 'gasoil',
+    produit: dbRecord.produit,
     quantite_prevue: dbRecord.quantite_prevue,
     unite_mesure: dbRecord.unite_mesure || 'litres',
     numero_tournee: dbRecord.numero_tournee,
@@ -33,7 +33,7 @@ const convertFromDatabase = (dbRecord: any): BonLivraison => {
     montant_facture: dbRecord.montant_facture,
     associe_id: dbRecord.associe_id,
     chiffre_affaire_associe: dbRecord.chiffre_affaire_associe,
-    statut: dbRecord.statut as 'emis' | 'charge' | 'en_route' | 'livre' | 'termine',
+    statut: dbRecord.statut,
     observations: dbRecord.observations,
     facture: dbRecord.facture,
     mission_id: dbRecord.mission_id,
@@ -42,12 +42,6 @@ const convertFromDatabase = (dbRecord: any): BonLivraison => {
     saisi_par: dbRecord.saisi_par,
     transitaire_nom: dbRecord.transitaire_nom
   };
-};
-
-const convertToDatabase = (bl: any) => {
-  // Remove conversion functions and let Supabase handle the types
-  const { ...dbRecord } = bl;
-  return dbRecord;
 };
 
 export const bonsLivraisonService = {
@@ -75,44 +69,46 @@ export const bonsLivraisonService = {
   // Créer un nouveau BL
   async create(blData: Omit<BonLivraison, 'id' | 'created_at' | 'updated_at'>): Promise<BonLivraison> {
     try {
-      // Directly pass the data without complex conversion
+      // Create the insert object with explicit typing
+      const insertData = {
+        numero: blData.numero,
+        client_nom: blData.client_nom,
+        client_code: blData.client_code || null,
+        client_code_total: blData.client_code_total || null,
+        destination: blData.destination,
+        vehicule_id: blData.vehicule_id,
+        chauffeur_id: blData.chauffeur_id,
+        date_emission: blData.date_emission,
+        produit: blData.produit,
+        quantite_prevue: blData.quantite_prevue,
+        unite_mesure: blData.unite_mesure || 'litres',
+        statut: blData.statut || 'emis',
+        mission_id: blData.mission_id || null,
+        numero_tournee: blData.numero_tournee || null,
+        date_chargement_prevue: blData.date_chargement_prevue || null,
+        date_chargement_reelle: blData.date_chargement_reelle || null,
+        date_depart: blData.date_depart || null,
+        date_arrivee_prevue: blData.date_arrivee_prevue || null,
+        date_arrivee_reelle: blData.date_arrivee_reelle || null,
+        date_dechargement: blData.date_dechargement || null,
+        quantite_livree: blData.quantite_livree || null,
+        manquant_cuve: blData.manquant_cuve || 0,
+        manquant_compteur: blData.manquant_compteur || 0,
+        manquant_total: blData.manquant_total || 0,
+        prix_unitaire: blData.prix_unitaire || null,
+        montant_total: blData.montant_total || null,
+        montant_facture: blData.montant_facture || null,
+        associe_id: blData.associe_id || null,
+        chiffre_affaire_associe: blData.chiffre_affaire_associe || null,
+        observations: blData.observations || null,
+        facture: blData.facture || false,
+        saisi_par: blData.saisi_par || null,
+        transitaire_nom: blData.transitaire_nom || null
+      };
+
       const { data, error } = await supabase
         .from('bons_livraison')
-        .insert({
-          numero: blData.numero,
-          client_nom: blData.client_nom,
-          client_code: blData.client_code,
-          client_code_total: blData.client_code_total,
-          destination: blData.destination,
-          vehicule_id: blData.vehicule_id,
-          chauffeur_id: blData.chauffeur_id,
-          date_emission: blData.date_emission,
-          produit: blData.produit,
-          quantite_prevue: blData.quantite_prevue,
-          unite_mesure: blData.unite_mesure || 'litres',
-          statut: blData.statut || 'emis',
-          mission_id: blData.mission_id,
-          numero_tournee: blData.numero_tournee,
-          date_chargement_prevue: blData.date_chargement_prevue,
-          date_chargement_reelle: blData.date_chargement_reelle,
-          date_depart: blData.date_depart,
-          date_arrivee_prevue: blData.date_arrivee_prevue,
-          date_arrivee_reelle: blData.date_arrivee_reelle,
-          date_dechargement: blData.date_dechargement,
-          quantite_livree: blData.quantite_livree,
-          manquant_cuve: blData.manquant_cuve || 0,
-          manquant_compteur: blData.manquant_compteur || 0,
-          manquant_total: blData.manquant_total || 0,
-          prix_unitaire: blData.prix_unitaire,
-          montant_total: blData.montant_total,
-          montant_facture: blData.montant_facture,
-          associe_id: blData.associe_id,
-          chiffre_affaire_associe: blData.chiffre_affaire_associe,
-          observations: blData.observations,
-          facture: blData.facture || false,
-          saisi_par: blData.saisi_par,
-          transitaire_nom: blData.transitaire_nom
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -174,7 +170,7 @@ export const bonsLivraisonService = {
     try {
       const { error } = await supabase
         .from('bons_livraison')
-        .update({ statut: statut as string, updated_at: new Date().toISOString() })
+        .update({ statut: statut, updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) {
