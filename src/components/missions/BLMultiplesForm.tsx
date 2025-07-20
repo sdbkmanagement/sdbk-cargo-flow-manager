@@ -44,14 +44,35 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation des BL - simplifiée car client_nom et destination sont synchronisés
+  // Validation des BL - logique corrigée
   const blsIncomplets = bls.filter(bl => {
-    // Vérifier que le client/destination est rempli (on vérifie juste client_nom maintenant)
+    console.log('Validation BL:', {
+      id: bl.id || 'nouveau',
+      client_nom: bl.client_nom,
+      destination: bl.destination,
+      date_emission: bl.date_emission,
+      quantite_prevue: bl.quantite_prevue,
+      lieu_depart: bl.lieu_depart
+    });
+    
+    // Vérifier que le client/destination est rempli
     const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
     const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
     const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
+    const lieuDepartManquant = !bl.lieu_depart || bl.lieu_depart.trim() === '';
     
-    return clientManquant || dateManquante || quantiteInvalide;
+    const estIncomplet = clientManquant || dateManquante || quantiteInvalide || lieuDepartManquant;
+    
+    if (estIncomplet) {
+      console.log('BL incomplet détecté:', {
+        clientManquant,
+        dateManquante,
+        quantiteInvalide,
+        lieuDepartManquant
+      });
+    }
+    
+    return estIncomplet;
   });
 
   return (
@@ -79,6 +100,9 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
             <AlertDescription className="text-amber-800">
               <strong>Attention:</strong> {blsIncomplets.length} BL{blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet{blsIncomplets.length > 1 ? 's' : ''}. 
               Veuillez remplir tous les champs obligatoires avant de sauvegarder la mission.
+              <div className="mt-2 text-xs">
+                Champs requis: Client/Destination, Date d'émission, Quantité > 0, Lieu de départ
+              </div>
             </AlertDescription>
           </Alert>
         )}

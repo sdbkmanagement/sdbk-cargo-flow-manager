@@ -217,21 +217,42 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
 
-    // Validation des BL - simplifiée car client_nom et destination sont synchronisés
+    // Validation des BL - logique corrigée et synchronisée
     if (formData.type_transport === 'hydrocarbures') {
       const blsIncomplets = bls.filter(bl => {
-        // Vérifier que le client/destination est rempli (on vérifie juste client_nom maintenant)
+        console.log('Validation finale BL:', {
+          id: bl.id || 'nouveau',
+          client_nom: bl.client_nom,
+          destination: bl.destination,
+          date_emission: bl.date_emission,
+          quantite_prevue: bl.quantite_prevue,
+          lieu_depart: bl.lieu_depart
+        });
+        
+        // Vérifier que le client/destination est rempli
         const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
         const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
         const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
+        const lieuDepartManquant = !bl.lieu_depart || bl.lieu_depart.trim() === '';
         
-        return clientManquant || dateManquante || quantiteInvalide;
+        const estIncomplet = clientManquant || dateManquante || quantiteInvalide || lieuDepartManquant;
+        
+        if (estIncomplet) {
+          console.log('BL incomplet lors de la validation finale:', {
+            clientManquant,
+            dateManquante,
+            quantiteInvalide,
+            lieuDepartManquant
+          });
+        }
+        
+        return estIncomplet;
       });
       
       if (blsIncomplets.length > 0) {
         toast({
-          title: 'Erreur',
-          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir tous les champs obligatoires.`,
+          title: 'Erreur de validation',
+          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Champs requis: Client/Destination, Date d'émission, Quantité > 0, Lieu de départ.`,
           variant: 'destructive'
         });
         return;
