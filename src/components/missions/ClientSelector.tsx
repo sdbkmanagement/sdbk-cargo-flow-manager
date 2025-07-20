@@ -58,11 +58,14 @@ export const ClientSelector = ({
     if (selectedClient && selectedVille) {
       // Le client est au format "VILLE LieuSpécifique"
       const lieuName = selectedClient.replace(`${selectedVille} `, '');
-      console.log('selectedClient:', selectedClient, 'selectedVille:', selectedVille, 'lieuName:', lieuName);
-      return lieuName;
+      console.log('Extraction:', { selectedClient, selectedVille, lieuName });
+      
+      // Trouver le lieu correspondant dans la liste pour s'assurer qu'il existe
+      const lieuCorrespondant = lieuxLivraisonForVille.find(lieu => lieu.nom === lieuName);
+      return lieuCorrespondant ? lieuName : '';
     }
     return '';
-  }, [selectedClient, selectedVille]);
+  }, [selectedClient, selectedVille, lieuxLivraisonForVille]);
 
   const handleVilleSelection = (ville: string) => {
     console.log('Ville sélectionnée:', ville);
@@ -81,6 +84,8 @@ export const ClientSelector = ({
     // Mettre à jour les deux champs avec les mêmes informations
     onClientChange(destinationComplete);
     onDestinationChange(destinationComplete);
+    
+    console.log('Destination complète créée:', destinationComplete);
   };
 
   return (
