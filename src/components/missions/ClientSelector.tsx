@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin } from 'lucide-react';
-import { getClientsByVille, DESTINATIONS } from '@/data/destinations';
+import { getClientsByVille, DESTINATIONS, getAllClients } from '@/data/destinations';
 
 interface ClientSelectorProps {
   selectedClient: string;
@@ -35,12 +35,11 @@ export const ClientSelector = ({
   // Détecter la ville du client sélectionné
   const villeFromClient = useMemo(() => {
     if (selectedClient) {
-      // Trouver la ville du client sélectionné
-      for (const destination of DESTINATIONS) {
-        const client = destination.clients.find(c => c.nom === selectedClient);
-        if (client) {
-          return destination.ville;
-        }
+      // Trouver la ville du client sélectionné parmi tous les clients
+      const allClients = getAllClients();
+      const client = allClients.find(c => c.nom === selectedClient);
+      if (client) {
+        return client.ville;
       }
     }
     return '';
