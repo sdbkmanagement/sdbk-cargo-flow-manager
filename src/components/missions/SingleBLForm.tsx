@@ -19,24 +19,13 @@ interface SingleBLFormProps {
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (clientNom: string) => {
-    console.log('=== SINGLE BL FORM CLIENT CHANGE ===');
-    console.log('Nouveau client:', clientNom);
-    console.log('BL Index:', index);
-    console.log('BL avant mise à jour:', JSON.stringify(bl, null, 2));
-    
-    // Mettre à jour le client
+    // Mettre à jour le client ET la destination avec la même valeur
     onUpdate('client_nom', clientNom);
-    // Définir la destination identique au client
     onUpdate('destination', clientNom);
-    
-    console.log('=== FIN MISE À JOUR CLIENT BL ===');
   };
 
   const handleDestinationChange = (destination: string) => {
-    console.log('=== SINGLE BL FORM DESTINATION CHANGE ===');
-    console.log('Nouvelle destination:', destination);
     onUpdate('destination', destination);
-    console.log('=== FIN MISE À JOUR DESTINATION BL ===');
   };
 
   return (

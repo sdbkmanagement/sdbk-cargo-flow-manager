@@ -46,18 +46,13 @@ export const ClientSelector = ({
   };
 
   const handleClientSelection = (clientNom: string) => {
-    console.log('=== CLIENT SELECTION START ===');
-    console.log('Client sélectionné:', clientNom);
-    console.log('BL Index:', blIndex);
-    
-    // Appeler immédiatement onClientChange
+    // Mettre à jour le client et la destination avec la même valeur
     onClientChange(clientNom);
-    
-    // Définir la destination identique au client
     onDestinationChange(clientNom);
-    
-    console.log('=== CLIENT SELECTION END ===');
   };
+
+  // Utiliser selectedClient comme source de vérité, avec selectedDestination comme fallback
+  const currentValue = selectedClient || selectedDestination || '';
 
   return (
     <div className="space-y-4">
@@ -108,7 +103,7 @@ export const ClientSelector = ({
         <div>
           <Label>Client *</Label>
           <Select 
-            value={selectedClient || ''} 
+            value={currentValue} 
             onValueChange={handleClientSelection}
           >
             <SelectTrigger>
@@ -118,7 +113,7 @@ export const ClientSelector = ({
               {filteredClients.length > 0 ? (
                 filteredClients.map((client, clientIndex) => (
                   <SelectItem 
-                    key={`${client.nom}-${clientIndex}`} 
+                    key={`${client.nom}-${client.ville}-${clientIndex}`} 
                     value={client.nom}
                   >
                     <div className="flex flex-col">
@@ -134,12 +129,6 @@ export const ClientSelector = ({
               )}
             </SelectContent>
           </Select>
-          
-          {/* Debug info - sera supprimé une fois le problème résolu */}
-          <div className="text-xs mt-1 p-2 bg-blue-50 rounded">
-            <div>Selected Client: "{selectedClient}"</div>
-            <div>Selected Destination: "{selectedDestination}"</div>
-          </div>
         </div>
 
         {/* Destination spécifique - masquée si hideDestinationField est true */}
