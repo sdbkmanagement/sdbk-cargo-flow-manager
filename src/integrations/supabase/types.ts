@@ -218,6 +218,7 @@ export type Database = {
           manquant_compteur: number | null
           manquant_cuve: number | null
           manquant_total: number | null
+          mission_id: string | null
           montant_facture: number | null
           montant_total: number | null
           numero: string
@@ -254,6 +255,7 @@ export type Database = {
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null
+          mission_id?: string | null
           montant_facture?: number | null
           montant_total?: number | null
           numero: string
@@ -290,6 +292,7 @@ export type Database = {
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null
+          mission_id?: string | null
           montant_facture?: number | null
           montant_total?: number | null
           numero?: string
@@ -318,6 +321,13 @@ export type Database = {
             columns: ["chauffeur_id"]
             isOneToOne: false
             referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_livraison_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
             referencedColumns: ["id"]
           },
           {

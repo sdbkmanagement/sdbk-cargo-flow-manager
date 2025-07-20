@@ -44,15 +44,15 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation des BL - correction de la logique de validation
+  // Validation des BL - le client ET la destination sont la même chose
   const blsIncomplets = bls.filter(bl => {
-    // Utiliser client_nom OU destination pour la validation client
-    const clientManquant = (!bl.client_nom || bl.client_nom.trim() === '') && 
-                           (!bl.destination || bl.destination.trim() === '');
+    // Vérifier que client_nom ET destination sont remplis (ils doivent être identiques)
+    const clientDestinationManquant = (!bl.client_nom || bl.client_nom.trim() === '') || 
+                                     (!bl.destination || bl.destination.trim() === '');
     const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
     const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
     
-    return clientManquant || dateManquante || quantiteInvalide;
+    return clientDestinationManquant || dateManquante || quantiteInvalide;
   });
 
   return (
