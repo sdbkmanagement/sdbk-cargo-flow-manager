@@ -24,7 +24,6 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     const nouveauBL: BonLivraison = {
       client_nom: '',
       destination: '',
-      ville: '',
       vehicule_id: vehiculeId,
       chauffeur_id: chauffeurId,
       date_emission: new Date().toISOString().split('T')[0],
@@ -45,13 +44,6 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   const modifierBL = (index: number, champ: keyof BonLivraison, valeur: any) => {
     const nouveauxBLs = [...bls];
     nouveauxBLs[index] = { ...nouveauxBLs[index], [champ]: valeur };
-    
-    // Si on change la ville, réinitialiser la destination
-    if (champ === 'ville') {
-      nouveauxBLs[index].destination = '';
-      setSelectedVilles(prev => ({ ...prev, [index]: valeur }));
-    }
-    
     onBLsChange(nouveauxBLs);
   };
 
@@ -118,8 +110,11 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
                     <div>
                       <Label>Ville de destination *</Label>
                       <Select
-                        value={bl.ville}
-                        onValueChange={(value) => modifierBL(index, 'ville', value)}
+                        value={selectedVilles[index] || ''}
+                        onValueChange={(value) => {
+                          setSelectedVilles(prev => ({ ...prev, [index]: value }));
+                          modifierBL(index, 'destination', value);
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Sélectionner une ville" />
@@ -174,7 +169,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
                     </div>
 
                     {/* Destination spécifique */}
-                    {bl.ville && (
+                    {selectedVilles[index] && (
                       <div>
                         <Label>Destination spécifique</Label>
                         <Select
@@ -185,8 +180,8 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
                             <SelectValue placeholder="Sélectionner une destination" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value={bl.ville}>{bl.ville} (Ville)</SelectItem>
-                            {getDestinationsForVille(bl.ville).map(station => (
+                            <SelectItem value={selectedVilles[index]}>{selectedVilles[index]} (Ville)</SelectItem>
+                            {getDestinationsForVille(selectedVilles[index]).map(station => (
                               <SelectItem key={station} value={station}>
                                 {station}
                               </SelectItem>

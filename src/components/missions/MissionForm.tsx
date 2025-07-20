@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
-import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Save, Info, AlertTriangle } from 'lucide-react';
+import { bonsLivraisonService } from '@/services/bonsLivraison';
+import { ArrowLeft, Save, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BLMultiplesForm } from './BLMultiplesForm';
 import { BLSuiviForm } from './BLSuiviForm';
@@ -38,52 +39,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   });
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
-  const [availabilityInfo, setAvailabilityInfo] = useState(null);
   const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
-
-  // Récupérer les lieux de chargement depuis les bons de livraison
-  const { data: lieuxChargement = [] } = useQuery({
-    queryKey: ['lieux-chargement'],
-    queryFn: async () => {
-      console.log('Chargement des lieux de chargement...');
-      const { data, error } = await supabase
-        .from('bons_livraison')
-        .select('destination')
-        .not('destination', 'is', null);
-      
-      if (error) {
-        console.error('Erreur lors du chargement des lieux de chargement:', error);
-        return [];
-      }
-      
-      // Extraire les destinations uniques des bons de livraison
-      const lieux = data && data.length > 0 ? [...new Set(data.map(item => item.destination).filter(Boolean))] : [];
-      console.log('Lieux de chargement chargés:', lieux);
-      return lieux;
-    }
-  });
-
-  // Récupérer les destinations depuis les clients TOTAL
-  const { data: destinations = [] } = useQuery({
-    queryKey: ['destinations-clients'],
-    queryFn: async () => {
-      console.log('Chargement des destinations...');
-      const { data, error } = await supabase
-        .from('clients_total')
-        .select('destination')
-        .not('destination', 'is', null);
-      
-      if (error) {
-        console.error('Erreur lors du chargement des destinations:', error);
-        return [];
-      }
-      
-      // Extraire les destinations uniques des clients
-      const destinationsUniques = data && data.length > 0 ? [...new Set(data.map(item => item.destination).filter(Boolean))] : [];
-      console.log('Destinations chargées:', destinationsUniques);
-      return destinationsUniques;
-    }
-  });
 
   // Récupérer les véhicules disponibles
   const { data: vehicules = [] } = useQuery({
@@ -143,13 +99,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   useEffect(() => {
     if (mission?.id) {
       const chargerBLs = async () => {
-        const { data, error } = await supabase
-          .from('bons_livraison')
-          .select('*')
-          .eq('mission_id', mission.id);
-        
-        if (!error && data) {
+        try {
+          const data = await bonsLivraisonService.getByMissionId(mission.id);
           setBls(data);
+        } catch (error) {
+          console.error('Erreur lors du chargement des BL:', error);
         }
       };
       chargerBLs();
@@ -174,9 +128,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
             };
             
             if (bl.id) {
-              await supabase.from('bons_livraison').update(blData).eq('id', bl.id);
+              await bonsLivraisonService.update(bl.id, blData);
             } else {
-              await supabase.from('bons_livraison').insert([blData]);
+              await bonsLivraisonService.create(blData);
             }
           }
         }
@@ -188,14 +142,16 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         
         // Créer les BL si c'est un transport d'hydrocarbures
         if (data.type_transport === 'hydrocarbures' && bls.length > 0) {
-          const blsToCreate = bls.map(bl => ({
-            ...bl,
-            mission_id: missionCreated.id,
-            vehicule_id: data.vehicule_id,
-            chauffeur_id: data.chauffeur_id
-          }));
-          
-          await supabase.from('bons_livraison').insert(blsToCreate);
+          for (const bl of bls) {
+            const blData = {
+              ...bl,
+              mission_id: missionCreated.id,
+              vehicule_id: data.vehicule_id,
+              chauffeur_id: data.chauffeur_id
+            };
+            
+            await bonsLivraisonService.create(blData);
+          }
         }
         
         return missionCreated;
