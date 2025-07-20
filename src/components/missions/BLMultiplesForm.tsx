@@ -101,7 +101,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
               <strong>Attention:</strong> {blsIncomplets.length} BL{blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet{blsIncomplets.length > 1 ? 's' : ''}. 
               Veuillez remplir tous les champs obligatoires avant de sauvegarder la mission.
               <div className="mt-2 text-xs">
-                Champs requis: Client/Destination, Date d'émission, Quantité > 0, Lieu de départ
+                Champs requis: Client/Destination, Date d&apos;émission, Quantité &gt; 0, Lieu de départ
               </div>
             </AlertDescription>
           </Alert>
