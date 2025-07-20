@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,7 @@ import { fr } from 'date-fns/locale';
 import { missionsService } from '@/services/missions';
 import { cn } from '@/lib/utils';
 import { MissionClosureDialog } from './MissionClosureDialog';
+import { MissionTrackingButton } from './MissionTrackingButton';
 
 interface MissionsTableProps {
   missions: any[];
@@ -268,6 +268,14 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
+                        
+                        {/* Nouveau bouton de suivi pour les missions en cours */}
+                        {mission.statut === 'en_cours' && (
+                          <MissionTrackingButton
+                            mission={mission}
+                            onSuccess={onRefresh}
+                          />
+                        )}
                         
                         {/* Bouton de clôture pour les missions en cours */}
                         {canCloseMission && mission.statut === 'en_cours' && (

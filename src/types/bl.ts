@@ -6,6 +6,8 @@ export interface BonLivraison {
   client_code?: string;
   client_code_total?: string;
   destination: string;
+  lieu_depart?: string; // Nouveau champ pour le lieu de départ
+  lieu_arrivee?: string; // Nouveau champ pour le lieu d'arrivée (client)
   vehicule_id: string;
   chauffeur_id: string;
   date_emission: string;

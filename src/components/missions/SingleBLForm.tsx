@@ -22,12 +22,14 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
     // Le client EST la destination - synchroniser les deux champs
     onUpdate('client_nom', clientNom);
     onUpdate('destination', clientNom);
+    onUpdate('lieu_arrivee', clientNom); // Nouveau : lieu d'arrivée = client
   };
 
   const handleDestinationChange = (destination: string) => {
     // Si on change la destination, synchroniser avec le client
     onUpdate('destination', destination);
     onUpdate('client_nom', destination);
+    onUpdate('lieu_arrivee', destination); // Nouveau : lieu d'arrivée = destination
   };
 
   return (
@@ -51,6 +53,38 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Lieux de départ et d'arrivée */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
+          <div>
+            <Label>Lieu de départ *</Label>
+            <Select
+              value={bl.lieu_depart || ''}
+              onValueChange={(value) => onUpdate('lieu_depart', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner le lieu de départ" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Conakry">Conakry</SelectItem>
+                <SelectItem value="Kankan">Kankan</SelectItem>
+                <SelectItem value="N'Zerekore">N'Zerekore</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Lieu d'arrivée (Client)</Label>
+            <Input
+              value={bl.lieu_arrivee || bl.client_nom || ''}
+              readOnly
+              className="bg-gray-100"
+              placeholder="Défini par le client sélectionné"
+            />
+            <p className="text-xs text-blue-600 mt-1">
+              Automatiquement défini par le client
+            </p>
+          </div>
+        </div>
+
         {/* Sélection client/destination */}
         <div>
           <Label>Client / Destination *</Label>
