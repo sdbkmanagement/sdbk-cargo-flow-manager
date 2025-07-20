@@ -39,9 +39,6 @@ export const ClientSelector = ({
     return getAllClients();
   }, [searchQuery, selectedVille]);
 
-  console.log('ClientSelector - selectedClient:', selectedClient);
-  console.log('ClientSelector - filteredClients:', filteredClients);
-
   // Obtenir les destinations pour la ville sélectionnée
   const getDestinationsForVille = (ville: string) => {
     const destination = DESTINATIONS.find(d => d.ville === ville);
@@ -49,7 +46,6 @@ export const ClientSelector = ({
   };
 
   const handleClientChange = (clientNom: string) => {
-    console.log('handleClientChange - clientNom:', clientNom);
     onClientChange(clientNom);
     onDestinationChange(clientNom); // Définir la destination identique au client
   };
@@ -107,8 +103,8 @@ export const ClientSelector = ({
               <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              {filteredClients.map(client => (
-                <SelectItem key={`${client.nom}-${client.ville}`} value={client.nom}>
+              {filteredClients.map((client, clientIndex) => (
+                <SelectItem key={`${client.nom}-${client.ville}-${clientIndex}`} value={client.nom}>
                   <div className="flex flex-col">
                     <span className="font-medium">{client.nom}</span>
                     <span className="text-xs text-gray-500">{client.ville}</span>
