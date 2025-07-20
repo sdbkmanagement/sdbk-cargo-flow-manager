@@ -2,13 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 import { BonLivraison } from '@/types/bl';
 
-// Define a simple interface for database records to avoid type complexity
-interface DatabaseBLRecord {
-  [key: string]: any;
-}
-
 // Helper function to safely convert database record to BonLivraison
-function mapDatabaseRecordToBL(record: DatabaseBLRecord): BonLivraison {
+function mapDatabaseRecordToBL(record: any): BonLivraison {
   return {
     id: record.id,
     numero: record.numero,
@@ -64,12 +59,11 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      // Use a more explicit approach to avoid type inference issues
       if (!data) return [];
       
       const result: BonLivraison[] = [];
       for (const item of data) {
-        result.push(mapDatabaseRecordToBL(item as DatabaseBLRecord));
+        result.push(mapDatabaseRecordToBL(item));
       }
       return result;
     } catch (error) {
