@@ -46,7 +46,7 @@ export const ClientSelector = ({
   };
 
   const handleClientSelection = (clientNom: string) => {
-    // Mettre à jour le client et la destination avec la même valeur
+    // Appeler les deux callbacks pour maintenir la synchronisation
     onClientChange(clientNom);
     onDestinationChange(clientNom);
   };

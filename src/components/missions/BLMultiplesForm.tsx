@@ -39,21 +39,20 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   };
 
   const modifierBL = (index: number, champ: keyof BonLivraison, valeur: any) => {
-    console.log('modifierBL appelé:', { index, champ, valeur });
     const nouveauxBLs = [...bls];
     nouveauxBLs[index] = { ...nouveauxBLs[index], [champ]: valeur };
-    console.log('BL après modification:', nouveauxBLs[index]);
     onBLsChange(nouveauxBLs);
   };
 
   // Validation des BL - correction de la logique de validation
   const blsIncomplets = bls.filter(bl => {
-    const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
-    const destinationManquante = !bl.destination || bl.destination.trim() === '';
+    // Utiliser client_nom OU destination pour la validation client
+    const clientManquant = (!bl.client_nom || bl.client_nom.trim() === '') && 
+                           (!bl.destination || bl.destination.trim() === '');
     const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
     const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
     
-    return clientManquant || destinationManquante || dateManquante || quantiteInvalide;
+    return clientManquant || dateManquante || quantiteInvalide;
   });
 
   return (
@@ -74,11 +73,6 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
         </div>
       </CardHeader>
       <CardContent>
-        {/* Debug info */}
-        <div className="mb-4 text-xs text-gray-500 bg-blue-50 p-2 rounded">
-          Debug - Nombre de BLs: {bls.length} | BLs incomplets: {blsIncomplets.length}
-        </div>
-
         {/* Alerte si des BL sont incomplets */}
         {blsIncomplets.length > 0 && (
           <Alert className="mb-6 border-amber-200 bg-amber-50">

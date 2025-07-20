@@ -19,13 +19,15 @@ interface SingleBLFormProps {
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (clientNom: string) => {
-    // Mettre à jour le client ET la destination avec la même valeur
+    // Mettre à jour les deux champs simultanément pour éviter la désynchronisation
     onUpdate('client_nom', clientNom);
     onUpdate('destination', clientNom);
   };
 
   const handleDestinationChange = (destination: string) => {
+    // Si on change la destination, on met aussi à jour le client pour maintenir la cohérence
     onUpdate('destination', destination);
+    onUpdate('client_nom', destination);
   };
 
   return (
@@ -53,8 +55,8 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         <div>
           <Label>Client / Destination *</Label>
           <ClientSelector
-            selectedClient={bl.client_nom || ''}
-            selectedDestination={bl.destination || ''}
+            selectedClient={bl.client_nom || bl.destination || ''}
+            selectedDestination={bl.destination || bl.client_nom || ''}
             onClientChange={handleClientChange}
             onDestinationChange={handleDestinationChange}
             blIndex={index}
