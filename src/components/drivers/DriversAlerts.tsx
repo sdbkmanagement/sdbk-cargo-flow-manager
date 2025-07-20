@@ -6,11 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Clock, XCircle, RefreshCw, User, Edit, Trash2, Bug } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, RefreshCw, User, Edit, Trash2, Bug, Eye, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
 import { alertesService } from '@/services/alertesService';
+import { DocumentUpload } from '@/components/common/DocumentUpload';
+import { documentsService } from '@/services/documentsService';
 
 interface DocumentAlert {
   id: string;
@@ -30,14 +32,17 @@ interface EditDocumentData {
   date_expiration: string;
   chauffeur_id: string;
   chauffeur_nom: string;
+  url: string;
 }
 
 export const DriversAlerts = () => {
   const [alerts, setAlerts] = useState<DocumentAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [editDialog, setEditDialog] = useState(false);
+  const [replaceDialog, setReplaceDialog] = useState(false);
   const [editingDocument, setEditingDocument] = useState<EditDocumentData | null>(null);
   const [newExpirationDate, setNewExpirationDate] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
   const loadAlerts = async () => {
@@ -141,15 +146,41 @@ export const DriversAlerts = () => {
       return;
     }
 
-    setEditingDocument({
-      id: alert.id,
-      nom: alert.document_nom,
-      date_expiration: alert.date_expiration,
-      chauffeur_id: alert.chauffeur_id,
-      chauffeur_nom: alert.chauffeur_nom
-    });
-    setNewExpirationDate(alert.date_expiration);
-    setEditDialog(true);
+    // Récupérer les détails complets du document
+    try {
+      const { data: document, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('id', alert.id)
+        .single();
+
+      if (error || !document) {
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de récupérer les détails du document',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      setEditingDocument({
+        id: alert.id,
+        nom: alert.document_nom,
+        date_expiration: alert.date_expiration,
+        chauffeur_id: alert.chauffeur_id,
+        chauffeur_nom: alert.chauffeur_nom,
+        url: document.url
+      });
+      setNewExpirationDate(alert.date_expiration);
+      setEditDialog(true);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du document:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Erreur lors de la récupération du document',
+        variant: 'destructive'
+      });
+    }
   };
 
   const handleUpdateDocument = async () => {
@@ -201,6 +232,107 @@ export const DriversAlerts = () => {
         description: 'Erreur lors de la mise à jour du document',
         variant: 'destructive'
       });
+    }
+  };
+
+  const handleReplaceDocument = (alert: DocumentAlert) => {
+    if (!alert.chauffeur_id) {
+      toast({
+        title: 'Erreur',
+        description: 'Informations du document incomplètes',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Récupérer les détails complets du document pour le remplacement
+    supabase
+      .from('documents')
+      .select('*')
+      .eq('id', alert.id)
+      .single()
+      .then(({ data: document, error }) => {
+        if (error || !document) {
+          toast({
+            title: 'Erreur',
+            description: 'Impossible de récupérer les détails du document',
+            variant: 'destructive'
+          });
+          return;
+        }
+
+        setEditingDocument({
+          id: alert.id,
+          nom: alert.document_nom,
+          date_expiration: alert.date_expiration || '',
+          chauffeur_id: alert.chauffeur_id!,
+          chauffeur_nom: alert.chauffeur_nom,
+          url: document.url
+        });
+        setReplaceDialog(true);
+      });
+  };
+
+  const handleDocumentUpload = async (file: File, expirationDate?: string) => {
+    if (!editingDocument) return;
+
+    setIsUploading(true);
+    try {
+      console.log('Remplacement du document:', editingDocument.id);
+
+      // Upload du nouveau fichier
+      const newUrl = await documentsService.uploadFile(
+        file, 
+        'chauffeur', 
+        editingDocument.chauffeur_id, 
+        editingDocument.nom
+      );
+
+      // Supprimer l'ancien fichier du storage
+      if (editingDocument.url) {
+        await documentsService.deleteFile(editingDocument.url);
+      }
+
+      // Mettre à jour l'enregistrement du document
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          url: newUrl,
+          taille: file.size,
+          date_expiration: expirationDate || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingDocument.id);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de mettre à jour le document',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: 'Document remplacé',
+        description: 'Le nouveau document a été téléchargé avec succès'
+      });
+
+      setReplaceDialog(false);
+      setEditingDocument(null);
+      
+      // Recharger les alertes
+      loadAlerts();
+    } catch (error) {
+      console.error('Erreur lors du remplacement:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Erreur lors du remplacement du document',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -425,7 +557,16 @@ export const DriversAlerts = () => {
                         onClick={() => handleEditDocument(alert)}
                       >
                         <Edit className="w-4 h-4 mr-1" />
-                        Modifier
+                        Modifier date
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleReplaceDocument(alert)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                      >
+                        <Upload className="w-4 h-4 mr-1" />
+                        Remplacer
                       </Button>
                       <Button 
                         variant="outline" 
@@ -445,7 +586,7 @@ export const DriversAlerts = () => {
         </div>
       )}
 
-      {/* Dialog de modification de document */}
+      {/* Dialog de modification de date d'expiration */}
       <Dialog open={editDialog} onOpenChange={setEditDialog}>
         <DialogContent>
           <DialogHeader>
@@ -461,11 +602,23 @@ export const DriversAlerts = () => {
               <Input value={editingDocument?.nom || ''} disabled />
             </div>
             <div>
-              <Label>Date d'expiration actuelle</Label>
-              <Input 
-                value={editingDocument?.date_expiration ? new Date(editingDocument.date_expiration).toLocaleDateString('fr-FR') : ''} 
-                disabled 
-              />
+              <Label>Document actuel</Label>
+              <div className="flex gap-2">
+                <Input 
+                  value={editingDocument?.date_expiration ? new Date(editingDocument.date_expiration).toLocaleDateString('fr-FR') : ''} 
+                  disabled 
+                />
+                {editingDocument?.url && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(editingDocument.url, '_blank')}
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    Voir
+                  </Button>
+                )}
+              </div>
             </div>
             <div>
               <Label htmlFor="newDate">Nouvelle date d'expiration</Label>
@@ -483,6 +636,61 @@ export const DriversAlerts = () => {
               <Button onClick={handleUpdateDocument}>
                 Mettre à jour
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de remplacement de document */}
+      <Dialog open={replaceDialog} onOpenChange={setReplaceDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Remplacer le document</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Chauffeur</Label>
+                <Input value={editingDocument?.chauffeur_nom || ''} disabled />
+              </div>
+              <div>
+                <Label>Type de document</Label>
+                <Input value={editingDocument?.nom || ''} disabled />
+              </div>
+            </div>
+            
+            {editingDocument?.url && (
+              <div>
+                <Label>Document actuel</Label>
+                <div className="flex gap-2 items-center p-3 bg-gray-50 border rounded">
+                  <span className="text-sm text-gray-600">Document expiré</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(editingDocument.url, '_blank')}
+                  >
+                    <Eye className="w-4 h-4 mr-1" />
+                    Consulter l'ancien
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t pt-4">
+              <Label className="text-base font-medium">Télécharger le nouveau document</Label>
+              <p className="text-sm text-gray-600 mb-4">
+                Le nouveau document remplacera automatiquement l'ancien et résoudra l'alerte.
+              </p>
+              
+              <DocumentUpload
+                onUpload={handleDocumentUpload}
+                onCancel={() => setReplaceDialog(false)}
+                acceptedTypes=".pdf,.jpg,.jpeg,.png"
+                maxSize={10 * 1024 * 1024}
+                showExpirationDate={true}
+                requiredExpirationDate={true}
+                isLoading={isUploading}
+              />
             </div>
           </div>
         </DialogContent>
