@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { alertesService } from '@/services/alertesService';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Chauffeur {
@@ -66,26 +67,12 @@ export const DriversDashboard = () => {
   const loadAlertes = async () => {
     try {
       console.log('Chargement des alertes chauffeurs pour le dashboard...');
-      const { data, error } = await supabase
-        .from('alertes_documents_chauffeurs')
-        .select('*')
-        .order('jours_restants', { ascending: true, nullsFirst: false });
-
-      if (error) {
-        console.error('Erreur lors du chargement des alertes chauffeurs:', error);
-        return;
-      }
-
-      console.log('Alertes chauffeurs chargées:', data);
+      const alertes = await alertesService.getAlertesChauffeurs();
       
-      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
-      const alertesFiltered = data?.filter(alert => {
-        if (alert.jours_restants === null) return false;
-        return alert.jours_restants <= 30;
-      }) || [];
-
-      setAlertesChauffeurs(alertesFiltered.slice(0, 5)); // Limiter à 5 pour le dashboard
-      setAlertsCount(alertesFiltered.length);
+      console.log('Alertes chauffeurs dashboard:', alertes);
+      
+      setAlertesChauffeurs(alertes.slice(0, 5)); // Limiter à 5 pour le dashboard
+      setAlertsCount(alertes.length);
     } catch (error) {
       console.error('Erreur lors du chargement des alertes:', error);
     }
@@ -143,7 +130,6 @@ export const DriversDashboard = () => {
     }
 
     try {
-      // Mettre à jour le statut du chauffeur avec les nouvelles dates
       const updateData = {
         statut: statusChange.nouveauStatut,
         statut_disponibilite: statusChange.nouveauStatut,
@@ -174,7 +160,6 @@ export const DriversDashboard = () => {
       setDateDebutError('');
       setDateFinError('');
 
-      // Actualiser les données
       queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
     } catch (error) {
       console.error('Erreur lors de la modification du statut:', error);
@@ -289,7 +274,7 @@ export const DriversDashboard = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
-              Alertes Documents Récentes
+              Alertes Documents Chauffeurs
               <Badge className="bg-orange-500 text-white">
                 {alertsCount}
               </Badge>
@@ -344,7 +329,7 @@ export const DriversDashboard = () => {
                 <div className="text-center">
                   <Button
                     variant="outline"
-                    onClick={() => window.location.href = '/drivers?tab=alertes'}
+                    onClick={() => window.location.href = '#'}
                     className="text-orange-600 border-orange-600 hover:bg-orange-50"
                   >
                     Voir toutes les alertes ({alertsCount})

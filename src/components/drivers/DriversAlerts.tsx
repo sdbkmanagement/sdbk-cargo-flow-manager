@@ -7,10 +7,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Clock, XCircle, Eye, RefreshCw, User, Edit, Trash2 } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, RefreshCw, User, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
+import { alertesService } from '@/services/alertesService';
 
 interface DocumentAlert {
   id: string;
@@ -45,26 +46,12 @@ export const DriversAlerts = () => {
       setLoading(true);
       console.log('Chargement des alertes documents chauffeurs...');
       
-      // Récupérer les documents avec alertes depuis la vue
-      const { data, error } = await supabase
-        .from('alertes_documents_chauffeurs')
-        .select('*')
-        .order('jours_restants', { ascending: true, nullsFirst: false });
+      const alertesData = await alertesService.getAlertesChauffeurs();
+      
+      console.log('Alertes chauffeurs récupérées pour l\'onglet Alertes:', alertesData);
 
-      if (error) {
-        console.error('Erreur lors du chargement des alertes:', error);
-        toast({
-          title: 'Erreur',
-          description: 'Impossible de charger les alertes',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      console.log('Données brutes des alertes:', data);
-
-      // Transformer les données
-      const alertsData = data?.map(alert => ({
+      // Transformer les données pour correspondre à l'interface
+      const alertsFormatted = alertesData.map(alert => ({
         id: alert.id || '',
         chauffeur_nom: alert.chauffeur_nom || 'Chauffeur inconnu',
         document_nom: alert.document_nom || '',
@@ -74,20 +61,17 @@ export const DriversAlerts = () => {
         statut: alert.statut || 'inconnu',
         niveau_alerte: alert.niveau_alerte || 'INFO',
         chauffeur_id: alert.chauffeur_id
-      })) || [];
+      }));
 
-      console.log('Alertes transformées:', alertsData);
-
-      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
-      const filteredAlerts = alertsData.filter(alert => {
-        if (alert.jours_restants === null) return false;
-        return alert.jours_restants <= 30;
-      });
-
-      console.log('Alertes filtrées (≤ 30 jours):', filteredAlerts);
-      setAlerts(filteredAlerts);
+      console.log('Alertes formatées pour affichage:', alertsFormatted);
+      setAlerts(alertsFormatted);
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur lors du chargement des alertes:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de charger les alertes',
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }

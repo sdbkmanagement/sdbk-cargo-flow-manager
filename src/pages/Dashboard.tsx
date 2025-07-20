@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,11 +14,13 @@ import {
   FileText,
   UserCheck,
   TrendingUp,
-  Calendar
+  Calendar,
+  XCircle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { alertesService } from '@/services/alertesService';
 
 interface DashboardStats {
   totalChauffeurs: number;
@@ -56,6 +59,7 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      console.log('Chargement des données du dashboard...');
       
       // Charger les statistiques
       const [
@@ -63,18 +67,17 @@ const Dashboard = () => {
         vehiculesResult,
         missionsResult,
         facturesResult,
-        chargementsResult,
-        alertesVehiculesResult,
-        alertesChauffeursResult
+        chargementsResult
       ] = await Promise.all([
         supabase.from('chauffeurs').select('id, statut'),
         supabase.from('vehicules').select('id, statut'),
         supabase.from('missions').select('id, statut'),
         supabase.from('factures').select('id, statut'),
-        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
-        supabase.from('alertes_documents_vehicules').select('*').lte('jours_restants', 30),
-        supabase.from('alertes_documents_chauffeurs').select('*').lte('jours_restants', 30)
+        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0])
       ]);
+
+      // Charger toutes les alertes en utilisant le service
+      const toutesAlertes = await alertesService.getToutesAlertes();
 
       // Calculer les statistiques
       const chauffeurs = chauffeursResult.data || [];
@@ -82,11 +85,8 @@ const Dashboard = () => {
       const missions = missionsResult.data || [];
       const factures = facturesResult.data || [];
       const chargements = chargementsResult.data || [];
-      const alertesVehicules = alertesVehiculesResult.data || [];
-      const alertesChauffeurs = alertesChauffeursResult.data || [];
 
-      console.log('Alertes chauffeurs trouvées:', alertesChauffeurs);
-      console.log('Alertes véhicules trouvées:', alertesVehicules);
+      console.log('Alertes pour le dashboard:', toutesAlertes);
 
       setStats({
         totalChauffeurs: chauffeurs.length,
@@ -94,28 +94,13 @@ const Dashboard = () => {
         totalVehicules: vehicules.length,
         vehiculesDisponibles: vehicules.filter((v: any) => v.statut === 'disponible').length,
         missionsEnCours: missions.filter((m: any) => m.statut === 'en_cours').length,
-        alertesDocuments: alertesVehicules.length + alertesChauffeurs.length,
+        alertesDocuments: toutesAlertes.length,
         facturesEnAttente: factures.filter((f: any) => f.statut === 'en_attente').length,
         chargementsAujourdhui: chargements.length
       });
 
-      // Fusionner et trier les alertes par priorité (les plus critiques d'abord)
-      const toutesAlertes = [
-        ...alertesVehicules.map((a: any) => ({ ...a, type: 'vehicule' })),
-        ...alertesChauffeurs.map((a: any) => ({ ...a, type: 'chauffeur' }))
-      ]
-      .filter(a => a.jours_restants !== null && a.jours_restants <= 30)
-      .sort((a, b) => {
-        // Trier par jours restants (les plus critiques d'abord)
-        if (a.jours_restants === null && b.jours_restants === null) return 0;
-        if (a.jours_restants === null) return 1;
-        if (b.jours_restants === null) return -1;
-        return a.jours_restants - b.jours_restants;
-      })
-      .slice(0, 10); // Limiter à 10 alertes
-
-      console.log('Alertes triées pour affichage:', toutesAlertes);
-      setAlertes(toutesAlertes);
+      // Limiter à 10 alertes pour l'affichage
+      setAlertes(toutesAlertes.slice(0, 10));
 
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
@@ -125,36 +110,19 @@ const Dashboard = () => {
     }
   };
 
-  const quickActions = [
-    {
-      title: 'Nouvelle Mission',
-      description: 'Créer une nouvelle mission de transport',
-      icon: Plus,
-      color: 'bg-blue-500',
-      onClick: () => navigate('/missions')
-    },
-    {
-      title: 'Ajouter Véhicule',
-      description: 'Enregistrer un nouveau véhicule',
-      icon: Truck,
-      color: 'bg-green-500',
-      onClick: () => navigate('/fleet')
-    },
-    {
-      title: 'Gérer Chauffeurs',
-      description: 'Gestion des chauffeurs et conducteurs',
-      icon: Users,
-      color: 'bg-orange-500',
-      onClick: () => navigate('/drivers')
-    },
-    {
-      title: 'Validations',
-      description: 'Processus de validation des véhicules',
-      icon: UserCheck,
-      color: 'bg-purple-500',
-      onClick: () => navigate('/validations')
-    }
-  ];
+  const getAlertIcon = (joursRestants: number | null) => {
+    if (joursRestants === null) return Clock;
+    if (joursRestants < 0) return XCircle;
+    if (joursRestants <= 7) return AlertTriangle;
+    return Clock;
+  };
+
+  const getAlertColor = (joursRestants: number | null) => {
+    if (joursRestants === null) return 'text-gray-500';
+    if (joursRestants < 0) return 'text-red-600';
+    if (joursRestants <= 7) return 'text-red-600';
+    return 'text-orange-600';
+  };
 
   if (loading) {
     return (
@@ -252,9 +220,7 @@ const Dashboard = () => {
               className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
               onClick={() => navigate('/missions')}
             >
-              <div className="bg-blue-500 text-white p-2 rounded-full">
-                <Plus className="h-5 w-5" />
-              </div>
+              <Plus className="h-5 w-5 text-blue-500" />
               <div className="text-center">
                 <div className="font-medium">Nouvelle Mission</div>
                 <div className="text-xs text-muted-foreground">Créer une nouvelle mission de transport</div>
@@ -265,9 +231,7 @@ const Dashboard = () => {
               className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
               onClick={() => navigate('/fleet')}
             >
-              <div className="bg-green-500 text-white p-2 rounded-full">
-                <Truck className="h-5 w-5" />
-              </div>
+              <Truck className="h-5 w-5 text-green-500" />
               <div className="text-center">
                 <div className="font-medium">Ajouter Véhicule</div>
                 <div className="text-xs text-muted-foreground">Enregistrer un nouveau véhicule</div>
@@ -278,9 +242,7 @@ const Dashboard = () => {
               className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
               onClick={() => navigate('/drivers')}
             >
-              <div className="bg-orange-500 text-white p-2 rounded-full">
-                <Users className="h-5 w-5" />
-              </div>
+              <Users className="h-5 w-5 text-orange-500" />
               <div className="text-center">
                 <div className="font-medium">Gérer Chauffeurs</div>
                 <div className="text-xs text-muted-foreground">Gestion des chauffeurs et conducteurs</div>
@@ -291,9 +253,7 @@ const Dashboard = () => {
               className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
               onClick={() => navigate('/validations')}
             >
-              <div className="bg-purple-500 text-white p-2 rounded-full">
-                <UserCheck className="h-5 w-5" />
-              </div>
+              <UserCheck className="h-5 w-5 text-purple-500" />
               <div className="text-center">
                 <div className="font-medium">Validations</div>
                 <div className="text-xs text-muted-foreground">Processus de validation des véhicules</div>
@@ -325,53 +285,57 @@ const Dashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {alertes.map((alerte, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg border-l-4 border-l-orange-500">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${
-                      alerte.jours_restants !== null && alerte.jours_restants < 0
-                        ? 'bg-red-100 text-red-600' 
+              {alertes.map((alerte, index) => {
+                const AlertIcon = getAlertIcon(alerte.jours_restants);
+                const alertColor = getAlertColor(alerte.jours_restants);
+                
+                return (
+                  <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg border-l-4 border-l-orange-500">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${
+                        alerte.jours_restants !== null && alerte.jours_restants < 0
+                          ? 'bg-red-100' 
+                          : alerte.jours_restants !== null && alerte.jours_restants <= 7
+                          ? 'bg-red-100'
+                          : 'bg-orange-100'
+                      }`}>
+                        <AlertIcon className={`h-4 w-4 ${alertColor}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {alerte.type === 'vehicule' ? alerte.vehicule_numero : alerte.chauffeur_nom}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {alerte.document_nom} - {
+                            alerte.jours_restants !== null && alerte.jours_restants < 0 
+                              ? 'Expiré' 
+                              : alerte.jours_restants !== null && alerte.jours_restants <= 7
+                              ? 'Critique'
+                              : 'À renouveler'
+                          }
+                        </p>
+                        {alerte.date_expiration && (
+                          <p className="text-xs text-muted-foreground">
+                            Expiration: {new Date(alerte.date_expiration).toLocaleDateString('fr-FR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Badge variant={
+                      alerte.jours_restants !== null && alerte.jours_restants < 0 
+                        ? 'destructive' 
                         : alerte.jours_restants !== null && alerte.jours_restants <= 7
-                        ? 'bg-red-100 text-red-600'
-                        : 'bg-orange-100 text-orange-600'
-                    }`}>
-                      {alerte.jours_restants !== null && alerte.jours_restants < 0 ? (
-                        <AlertTriangle className="h-4 w-4" />
-                      ) : alerte.jours_restants !== null && alerte.jours_restants <= 7 ? (
-                        <AlertTriangle className="h-4 w-4" />
-                      ) : (
-                        <Clock className="h-4 w-4" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {alerte.type === 'vehicule' ? alerte.vehicule_numero : alerte.chauffeur_nom}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {alerte.document_nom} - {
-                          alerte.jours_restants !== null && alerte.jours_restants < 0 
-                            ? 'Expiré' 
-                            : alerte.jours_restants !== null && alerte.jours_restants <= 7
-                            ? 'Critique'
-                            : 'À renouveler'
-                        }
-                      </p>
-                    </div>
+                        ? 'destructive'
+                        : 'secondary'
+                    }>
+                      {alerte.jours_restants !== null && alerte.jours_restants < 0 ? 
+                        `Expiré depuis ${Math.abs(alerte.jours_restants)} jours` : 
+                        `${alerte.jours_restants} jours restants`
+                      }
+                    </Badge>
                   </div>
-                  <Badge variant={
-                    alerte.jours_restants !== null && alerte.jours_restants < 0 
-                      ? 'destructive' 
-                      : alerte.jours_restants !== null && alerte.jours_restants <= 7
-                      ? 'destructive'
-                      : 'secondary'
-                  }>
-                    {alerte.jours_restants !== null && alerte.jours_restants < 0 ? 
-                      `Expiré depuis ${Math.abs(alerte.jours_restants)} jours` : 
-                      `${alerte.jours_restants} jours restants`
-                    }
-                  </Badge>
-                </div>
-              ))}
+                );
+              })}
               {stats.alertesDocuments > alertes.length && (
                 <div className="text-center">
                   <Button

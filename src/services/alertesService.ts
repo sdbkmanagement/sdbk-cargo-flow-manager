@@ -1,81 +1,92 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface AlerteDocument {
-  id: string;
-  vehicule_id: string;
-  vehicule_numero: string;
-  immatriculation: string;
-  document_nom: string;
-  document_type: string;
-  date_expiration: string;
-  niveau_alerte: 'expire' | 'a_renouveler' | 'valide';
-  jours_restants: number;
-}
-
 export const alertesService = {
-  async getAlertesVehicules(): Promise<AlerteDocument[]> {
+  // Récupérer toutes les alertes documents chauffeurs
+  async getAlertesChauffeurs() {
     try {
+      console.log('Chargement des alertes documents chauffeurs...');
+      
       const { data, error } = await supabase
-        .from('documents_vehicules')
-        .select(`
-          id,
-          vehicule_id,
-          nom,
-          type,
-          date_expiration,
-          vehicules!inner (
-            numero,
-            immatriculation,
-            tracteur_immatriculation,
-            type_vehicule
-          )
-        `)
-        .not('date_expiration', 'is', null);
+        .from('alertes_documents_chauffeurs')
+        .select('*')
+        .order('jours_restants', { ascending: true, nullsFirst: false });
 
       if (error) {
-        console.error('Erreur lors du chargement des alertes:', error);
+        console.error('Erreur lors du chargement des alertes chauffeurs:', error);
         return [];
       }
 
-      const alertes: AlerteDocument[] = [];
+      console.log('Alertes chauffeurs récupérées:', data);
 
-      data?.forEach(doc => {
-        const vehicule = doc.vehicules as any;
-        const dateExpiration = new Date(doc.date_expiration!);
-        const today = new Date();
-        const diffTime = dateExpiration.getTime() - today.getTime();
-        const joursRestants = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
+      const alertesFiltered = data?.filter(alert => {
+        if (alert.jours_restants === null) return false;
+        return alert.jours_restants <= 30;
+      }) || [];
 
-        let niveauAlerte: 'expire' | 'a_renouveler' | 'valide' = 'valide';
-        
-        if (joursRestants < 0) {
-          niveauAlerte = 'expire';
-        } else if (joursRestants <= 30) {
-          niveauAlerte = 'a_renouveler';
-        }
+      console.log('Alertes chauffeurs filtrées (≤ 30 jours):', alertesFiltered);
+      return alertesFiltered;
+    } catch (error) {
+      console.error('Erreur lors du chargement des alertes chauffeurs:', error);
+      return [];
+    }
+  },
 
-        // Only include documents that need attention
-        if (niveauAlerte !== 'valide') {
-          alertes.push({
-            id: doc.id,
-            vehicule_id: doc.vehicule_id,
-            vehicule_numero: vehicule.numero,
-            immatriculation: vehicule.type_vehicule === 'porteur' 
-              ? vehicule.immatriculation || ''
-              : vehicule.tracteur_immatriculation || '',
-            document_nom: doc.nom,
-            document_type: doc.type,
-            date_expiration: doc.date_expiration!,
-            niveau_alerte: niveauAlerte,
-            jours_restants: joursRestants
-          });
-        }
+  // Récupérer toutes les alertes documents véhicules
+  async getAlertesVehicules() {
+    try {
+      console.log('Chargement des alertes documents véhicules...');
+      
+      const { data, error } = await supabase
+        .from('alertes_documents_vehicules')
+        .select('*')
+        .order('jours_restants', { ascending: true, nullsFirst: false });
+
+      if (error) {
+        console.error('Erreur lors du chargement des alertes véhicules:', error);
+        return [];
+      }
+
+      console.log('Alertes véhicules récupérées:', data);
+
+      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
+      const alertesFiltered = data?.filter(alert => {
+        if (alert.jours_restants === null) return false;
+        return alert.jours_restants <= 30;
+      }) || [];
+
+      console.log('Alertes véhicules filtrées (≤ 30 jours):', alertesFiltered);
+      return alertesFiltered;
+    } catch (error) {
+      console.error('Erreur lors du chargement des alertes véhicules:', error);
+      return [];
+    }
+  },
+
+  // Récupérer toutes les alertes (chauffeurs + véhicules)
+  async getToutesAlertes() {
+    try {
+      const [alertesChauffeurs, alertesVehicules] = await Promise.all([
+        this.getAlertesChauffeurs(),
+        this.getAlertesVehicules()
+      ]);
+
+      const toutesAlertes = [
+        ...alertesChauffeurs.map((a: any) => ({ ...a, type: 'chauffeur' })),
+        ...alertesVehicules.map((a: any) => ({ ...a, type: 'vehicule' }))
+      ].sort((a, b) => {
+        // Trier par jours restants (les plus critiques d'abord)
+        if (a.jours_restants === null && b.jours_restants === null) return 0;
+        if (a.jours_restants === null) return 1;
+        if (b.jours_restants === null) return -1;
+        return a.jours_restants - b.jours_restants;
       });
 
-      return alertes;
+      console.log('Toutes les alertes fusionnées:', toutesAlertes);
+      return toutesAlertes;
     } catch (error) {
-      console.error('Erreur lors du chargement des alertes:', error);
+      console.error('Erreur lors de la récupération de toutes les alertes:', error);
       return [];
     }
   }
