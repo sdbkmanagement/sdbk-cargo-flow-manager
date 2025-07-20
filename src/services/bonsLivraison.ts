@@ -1,9 +1,13 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { BonLivraison } from '@/types/bl';
 
+// Simple interface for database records
+interface DatabaseRecord {
+  [key: string]: any;
+}
+
 // Helper function to safely convert database record to BonLivraison
-function mapDatabaseRecordToBL(record: Record<string, any>): BonLivraison {
+function mapDatabaseRecordToBL(record: DatabaseRecord): BonLivraison {
   return {
     id: record.id,
     numero: record.numero,
@@ -61,8 +65,13 @@ export const bonsLivraisonService = {
 
       if (!data) return [];
       
-      // Use simple array transformation without complex type inference
-      return (data as Record<string, any>[]).map(mapDatabaseRecordToBL);
+      // Manual conversion to avoid type inference issues
+      const results: BonLivraison[] = [];
+      for (let i = 0; i < data.length; i++) {
+        const record = data[i] as DatabaseRecord;
+        results.push(mapDatabaseRecordToBL(record));
+      }
+      return results;
     } catch (error) {
       console.error('Erreur générale BL:', error);
       throw error;
@@ -119,7 +128,8 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return mapDatabaseRecordToBL(data as Record<string, any>);
+      const record = data as DatabaseRecord;
+      return mapDatabaseRecordToBL(record);
     } catch (error) {
       console.error('Erreur lors de la création du BL:', error);
       throw error;
@@ -144,7 +154,8 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return mapDatabaseRecordToBL(data as Record<string, any>);
+      const record = data as DatabaseRecord;
+      return mapDatabaseRecordToBL(record);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du BL:', error);
       throw error;
