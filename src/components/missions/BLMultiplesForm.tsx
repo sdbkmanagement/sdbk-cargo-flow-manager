@@ -44,10 +44,26 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation des BL
-  const blsIncomplets = bls.filter(bl => 
-    !bl.client_nom || !bl.destination || !bl.date_emission || !bl.quantite_prevue || bl.quantite_prevue <= 0
-  );
+  // Validation des BL - correction de la logique de validation
+  const blsIncomplets = bls.filter(bl => {
+    const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
+    const destinationManquante = !bl.destination || bl.destination.trim() === '';
+    const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
+    const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
+    
+    console.log('Validation BL:', {
+      client_nom: bl.client_nom,
+      destination: bl.destination,
+      date_emission: bl.date_emission,
+      quantite_prevue: bl.quantite_prevue,
+      clientManquant,
+      destinationManquante,
+      dateManquante,
+      quantiteInvalide
+    });
+    
+    return clientManquant || destinationManquante || dateManquante || quantiteInvalide;
+  });
 
   return (
     <Card>

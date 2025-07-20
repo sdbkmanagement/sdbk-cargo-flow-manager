@@ -12,6 +12,7 @@ interface ClientSelectorProps {
   onClientChange: (client: string) => void;
   onDestinationChange: (destination: string) => void;
   blIndex: number;
+  hideDestinationField?: boolean;
 }
 
 export const ClientSelector = ({
@@ -19,7 +20,8 @@ export const ClientSelector = ({
   selectedDestination,
   onClientChange,
   onDestinationChange,
-  blIndex
+  blIndex,
+  hideDestinationField = false
 }: ClientSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVille, setSelectedVille] = useState('');
@@ -87,7 +89,7 @@ export const ClientSelector = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className={hideDestinationField ? "w-full" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
         {/* Sélection du client */}
         <div>
           <Label>Client *</Label>
@@ -108,43 +110,45 @@ export const ClientSelector = ({
           </Select>
         </div>
 
-        {/* Destination spécifique */}
-        <div>
-          <Label>Destination</Label>
-          <Select value={selectedDestination} onValueChange={onDestinationChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner une destination" />
-            </SelectTrigger>
-            <SelectContent>
-              {selectedVille && selectedVille !== 'all' && (
-                <>
-                  <SelectItem value={selectedVille}>
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {selectedVille} (Ville)
-                    </div>
-                  </SelectItem>
-                  {getDestinationsForVille(selectedVille).map(station => (
-                    <SelectItem key={station} value={station}>
+        {/* Destination spécifique - masquée si hideDestinationField est true */}
+        {!hideDestinationField && (
+          <div>
+            <Label>Destination</Label>
+            <Select value={selectedDestination} onValueChange={onDestinationChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une destination" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedVille && selectedVille !== 'all' && (
+                  <>
+                    <SelectItem value={selectedVille}>
                       <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2" />
-                        {station}
+                        {selectedVille} (Ville)
                       </div>
                     </SelectItem>
-                  ))}
-                </>
-              )}
-              {(!selectedVille || selectedVille === 'all') && DESTINATIONS.map(dest => (
-                <SelectItem key={dest.ville} value={dest.ville}>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {dest.ville}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+                    {getDestinationsForVille(selectedVille).map(station => (
+                      <SelectItem key={station} value={station}>
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          {station}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {(!selectedVille || selectedVille === 'all') && DESTINATIONS.map(dest => (
+                  <SelectItem key={dest.ville} value={dest.ville}>
+                    <div className="flex items-center">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {dest.ville}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
     </div>
   );

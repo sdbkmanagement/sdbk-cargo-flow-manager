@@ -39,14 +39,21 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Sélection client et destination */}
-        <ClientSelector
-          selectedClient={bl.client_nom}
-          selectedDestination={bl.destination}
-          onClientChange={(value) => onUpdate('client_nom', value)}
-          onDestinationChange={(value) => onUpdate('destination', value)}
-          blIndex={index}
-        />
+        {/* Sélection client uniquement */}
+        <div>
+          <Label>Client / Destination *</Label>
+          <ClientSelector
+            selectedClient={bl.client_nom}
+            selectedDestination={bl.destination}
+            onClientChange={(value) => {
+              onUpdate('client_nom', value);
+              onUpdate('destination', value); // Définir la destination identique au client
+            }}
+            onDestinationChange={(value) => onUpdate('destination', value)}
+            blIndex={index}
+            hideDestinationField={true}
+          />
+        </div>
 
         {/* Informations du BL */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
