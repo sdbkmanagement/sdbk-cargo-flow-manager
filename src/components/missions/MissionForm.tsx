@@ -100,7 +100,12 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       const chargerBLs = async () => {
         try {
           const data = await bonsLivraisonService.getByMissionId(mission.id);
-          setBls(data);
+          // Cast des données pour s'assurer du bon typage
+          const blsTyped = data.map(bl => ({
+            ...bl,
+            produit: bl.produit as 'essence' | 'gasoil'
+          }));
+          setBls(blsTyped);
         } catch (error) {
           console.error('Erreur lors du chargement des BL:', error);
         }
