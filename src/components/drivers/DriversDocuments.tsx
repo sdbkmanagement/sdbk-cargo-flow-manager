@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Table,
@@ -12,25 +11,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { FileText, Search, Eye, Edit, Trash2, Upload, Plus, AlertTriangle } from 'lucide-react';
+import { FileText, Search, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { DocumentUpload } from '@/components/common/DocumentUpload';
-import { documentsService } from '@/services/documentsService';
 
 interface Document {
   id: string;
@@ -48,10 +32,6 @@ export const DriversDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showAssignDialog, setShowAssignDialog] = useState(false);
-  const [selectedChauffeur, setSelectedChauffeur] = useState('');
-  const [selectedDocumentType, setSelectedDocumentType] = useState('');
-  const [chauffeurs, setChauffeurs] = useState<any[]>([]);
   const { toast } = useToast();
 
   const loadDocuments = async () => {
@@ -98,24 +78,8 @@ export const DriversDocuments = () => {
     }
   };
 
-  const loadChauffeurs = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('chauffeurs')
-        .select('id, nom, prenom, statut')
-        .eq('statut', 'actif')
-        .order('nom');
-
-      if (error) throw error;
-      setChauffeurs(data || []);
-    } catch (error) {
-      console.error('Erreur lors du chargement des chauffeurs:', error);
-    }
-  };
-
   useEffect(() => {
     loadDocuments();
-    loadChauffeurs();
   }, []);
 
   const filteredDocuments = documents.filter(doc =>
@@ -154,50 +118,6 @@ export const DriversDocuments = () => {
     }
   };
 
-  const handleAssignDocument = async (file: File) => {
-    if (!selectedChauffeur || !selectedDocumentType) {
-      toast({
-        title: 'Erreur',
-        description: 'Veuillez sélectionner un chauffeur et un type de document',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      const url = await documentsService.uploadFile(file, 'chauffeur', selectedChauffeur, selectedDocumentType);
-      
-      const documentData = {
-        entity_type: 'chauffeur',
-        entity_id: selectedChauffeur,
-        nom: CHAUFFEUR_DOCUMENT_TYPES[selectedDocumentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].label,
-        type: selectedDocumentType,
-        url: url,
-        taille: file.size,
-        statut: 'valide'
-      };
-
-      await documentsService.create(documentData);
-      
-      toast({
-        title: "Document assigné",
-        description: "Le document a été assigné avec succès",
-      });
-      
-      setShowAssignDialog(false);
-      setSelectedChauffeur('');
-      setSelectedDocumentType('');
-      loadDocuments();
-    } catch (error) {
-      console.error('Erreur lors de l\'assignation:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible d'assigner le document",
-        variant: "destructive",
-      });
-    }
-  };
-
   const getMissingDocumentsCount = () => {
     return documents.filter(d => !d.url || d.url === '').length;
   };
@@ -231,13 +151,6 @@ export const DriversDocuments = () => {
             {documents.length} document(s) • {getMissingDocumentsCount()} manquant(s) • {getExpiringDocumentsCount()} expirant(s)
           </p>
         </div>
-        <Button 
-          className="bg-orange-500 hover:bg-orange-600"
-          onClick={() => setShowAssignDialog(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Assigner document
-        </Button>
       </div>
 
       <Card>
@@ -305,14 +218,10 @@ export const DriversDocuments = () => {
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
+                        <Eye
+                          className="w-4 h-4 text-blue-500 cursor-pointer hover:text-blue-700"
                           onClick={() => handleViewDocument(document)}
-                          disabled={!document.url || document.url === ''}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -322,59 +231,6 @@ export const DriversDocuments = () => {
           )}
         </CardContent>
       </Card>
-
-      {/* Dialog d'assignation de document */}
-      <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assigner un document</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Chauffeur</label>
-              <Select value={selectedChauffeur} onValueChange={setSelectedChauffeur}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un chauffeur" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chauffeurs.map((chauffeur) => (
-                    <SelectItem key={chauffeur.id} value={chauffeur.id}>
-                      {chauffeur.prenom} {chauffeur.nom}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Type de document</label>
-              <Select value={selectedDocumentType} onValueChange={setSelectedDocumentType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un type de document" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(CHAUFFEUR_DOCUMENT_TYPES).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>
-                      {config.label}
-                      {config.obligatoire && <span className="text-red-500 ml-1">*</span>}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {selectedChauffeur && selectedDocumentType && (
-              <DocumentUpload
-                onUpload={handleAssignDocument}
-                onCancel={() => setShowAssignDialog(false)}
-                acceptedTypes=".pdf,.jpg,.jpeg,.png"
-                maxSize={10 * 1024 * 1024}
-                showExpirationDate={false}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

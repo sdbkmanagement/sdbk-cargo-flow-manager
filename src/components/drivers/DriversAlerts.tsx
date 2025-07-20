@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,6 +29,7 @@ export const DriversAlerts = () => {
   const loadAlerts = async () => {
     try {
       setLoading(true);
+      console.log('Chargement des alertes documents chauffeurs...');
       
       // Récupérer les documents avec alertes depuis la vue
       const { data, error } = await supabase
@@ -45,6 +47,8 @@ export const DriversAlerts = () => {
         return;
       }
 
+      console.log('Données brutes des alertes:', data);
+
       // Transformer les données
       const alertsData = data?.map(alert => ({
         id: alert.id || '',
@@ -58,11 +62,15 @@ export const DriversAlerts = () => {
         chauffeur_id: alert.chauffeur_id
       })) || [];
 
-      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
-      const filteredAlerts = alertsData.filter(alert => 
-        alert.jours_restants !== null && alert.jours_restants <= 30
-      );
+      console.log('Alertes transformées:', alertsData);
 
+      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
+      const filteredAlerts = alertsData.filter(alert => {
+        if (alert.jours_restants === null) return false;
+        return alert.jours_restants <= 30;
+      });
+
+      console.log('Alertes filtrées (≤ 30 jours):', filteredAlerts);
       setAlerts(filteredAlerts);
     } catch (error) {
       console.error('Erreur:', error);
@@ -73,6 +81,10 @@ export const DriversAlerts = () => {
 
   useEffect(() => {
     loadAlerts();
+    
+    // Actualiser les alertes toutes les 30 secondes
+    const interval = setInterval(loadAlerts, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const getAlertIcon = (niveau: string) => {
@@ -201,10 +213,10 @@ export const DriversAlerts = () => {
             return (
               <Alert key={alert.id} className={`border-l-4 ${
                 alert.jours_restants !== null && alert.jours_restants < 0 
-                  ? 'border-l-red-500' 
+                  ? 'border-l-red-500 bg-red-50' 
                   : alert.jours_restants !== null && alert.jours_restants <= 7
-                  ? 'border-l-orange-500'
-                  : 'border-l-blue-500'
+                  ? 'border-l-orange-500 bg-orange-50'
+                  : 'border-l-blue-500 bg-blue-50'
               }`}>
                 <AlertIcon className="h-4 w-4" />
                 <AlertDescription>

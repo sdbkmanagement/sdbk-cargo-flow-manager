@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -82,6 +81,9 @@ const Dashboard = () => {
       const alertesVehicules = alertesVehiculesResult.data || [];
       const alertesChauffeurs = alertesChauffeursResult.data || [];
 
+      console.log('Alertes chauffeurs trouvées:', alertesChauffeurs);
+      console.log('Alertes véhicules trouvées:', alertesVehicules);
+
       setStats({
         totalChauffeurs: chauffeurs.length,
         chauffeursActifs: chauffeurs.filter((c: any) => c.statut === 'actif').length,
@@ -93,12 +95,21 @@ const Dashboard = () => {
         chargementsAujourdhui: chargements.length
       });
 
-      // Fusionner les alertes
+      // Fusionner et trier les alertes par priorité (les plus critiques d'abord)
       const toutesAlertes = [
         ...alertesVehicules.map((a: any) => ({ ...a, type: 'vehicule' })),
         ...alertesChauffeurs.map((a: any) => ({ ...a, type: 'chauffeur' }))
-      ].slice(0, 5);
+      ]
+      .sort((a, b) => {
+        // Trier par jours restants (les plus critiques d'abord)
+        if (a.jours_restants === null && b.jours_restants === null) return 0;
+        if (a.jours_restants === null) return 1;
+        if (b.jours_restants === null) return -1;
+        return a.jours_restants - b.jours_restants;
+      })
+      .slice(0, 10); // Limiter à 10 alertes
 
+      console.log('Alertes triées pour affichage:', toutesAlertes);
       setAlertes(toutesAlertes);
 
     } catch (error) {
@@ -216,7 +227,7 @@ const Dashboard = () => {
             <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.alertesDocuments}</div>
+            <div className="text-2xl font-bold text-orange-600">{stats.alertesDocuments}</div>
             <p className="text-xs text-muted-foreground">
               {stats.facturesEnAttente} factures en attente
             </p>
@@ -231,22 +242,58 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {quickActions.map((action, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
-                onClick={action.onClick}
-              >
-                <div className={`${action.color} text-white p-2 rounded-full`}>
-                  <action.icon className="h-5 w-5" />
-                </div>
-                <div className="text-center">
-                  <div className="font-medium">{action.title}</div>
-                  <div className="text-xs text-muted-foreground">{action.description}</div>
-                </div>
-              </Button>
-            ))}
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
+              onClick={() => navigate('/missions')}
+            >
+              <div className="bg-blue-500 text-white p-2 rounded-full">
+                <Plus className="h-5 w-5" />
+              </div>
+              <div className="text-center">
+                <div className="font-medium">Nouvelle Mission</div>
+                <div className="text-xs text-muted-foreground">Créer une nouvelle mission de transport</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
+              onClick={() => navigate('/fleet')}
+            >
+              <div className="bg-green-500 text-white p-2 rounded-full">
+                <Truck className="h-5 w-5" />
+              </div>
+              <div className="text-center">
+                <div className="font-medium">Ajouter Véhicule</div>
+                <div className="text-xs text-muted-foreground">Enregistrer un nouveau véhicule</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
+              onClick={() => navigate('/drivers')}
+            >
+              <div className="bg-orange-500 text-white p-2 rounded-full">
+                <Users className="h-5 w-5" />
+              </div>
+              <div className="text-center">
+                <div className="font-medium">Gérer Chauffeurs</div>
+                <div className="text-xs text-muted-foreground">Gestion des chauffeurs et conducteurs</div>
+              </div>
+            </Button>
+            <Button
+              variant="outline"
+              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
+              onClick={() => navigate('/validations')}
+            >
+              <div className="bg-purple-500 text-white p-2 rounded-full">
+                <UserCheck className="h-5 w-5" />
+              </div>
+              <div className="text-center">
+                <div className="font-medium">Validations</div>
+                <div className="text-xs text-muted-foreground">Processus de validation des véhicules</div>
+              </div>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -256,7 +303,12 @@ const Dashboard = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5" />
-            Alertes Récentes
+            Alertes Documents Récentes
+            {stats.alertesDocuments > 0 && (
+              <Badge className="bg-orange-500 text-white">
+                {stats.alertesDocuments}
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -269,12 +321,18 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-4">
               {alertes.map((alerte, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg border-l-4 border-l-orange-500">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${
-                      alerte.niveau_alerte === 'expire' ? 'bg-red-100 text-red-600' : 'bg-orange-100 text-orange-600'
+                      alerte.jours_restants !== null && alerte.jours_restants < 0
+                        ? 'bg-red-100 text-red-600' 
+                        : alerte.jours_restants !== null && alerte.jours_restants <= 7
+                        ? 'bg-red-100 text-red-600'
+                        : 'bg-orange-100 text-orange-600'
                     }`}>
-                      {alerte.niveau_alerte === 'expire' ? (
+                      {alerte.jours_restants !== null && alerte.jours_restants < 0 ? (
+                        <AlertTriangle className="h-4 w-4" />
+                      ) : alerte.jours_restants !== null && alerte.jours_restants <= 7 ? (
                         <AlertTriangle className="h-4 w-4" />
                       ) : (
                         <Clock className="h-4 w-4" />
@@ -285,18 +343,41 @@ const Dashboard = () => {
                         {alerte.type === 'vehicule' ? alerte.vehicule_numero : alerte.chauffeur_nom}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {alerte.document_nom} - {alerte.niveau_alerte === 'expire' ? 'Expiré' : 'À renouveler'}
+                        {alerte.document_nom} - {
+                          alerte.jours_restants !== null && alerte.jours_restants < 0 
+                            ? 'Expiré' 
+                            : alerte.jours_restants !== null && alerte.jours_restants <= 7
+                            ? 'Critique'
+                            : 'À renouveler'
+                        }
                       </p>
                     </div>
                   </div>
-                  <Badge variant={alerte.niveau_alerte === 'expire' ? 'destructive' : 'secondary'}>
-                    {alerte.jours_restants < 0 ? 
+                  <Badge variant={
+                    alerte.jours_restants !== null && alerte.jours_restants < 0 
+                      ? 'destructive' 
+                      : alerte.jours_restants !== null && alerte.jours_restants <= 7
+                      ? 'destructive'
+                      : 'secondary'
+                  }>
+                    {alerte.jours_restants !== null && alerte.jours_restants < 0 ? 
                       `Expiré depuis ${Math.abs(alerte.jours_restants)} jours` : 
                       `${alerte.jours_restants} jours restants`
                     }
                   </Badge>
                 </div>
               ))}
+              {stats.alertesDocuments > alertes.length && (
+                <div className="text-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate('/drivers')}
+                    className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                  >
+                    Voir toutes les alertes ({stats.alertesDocuments})
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
