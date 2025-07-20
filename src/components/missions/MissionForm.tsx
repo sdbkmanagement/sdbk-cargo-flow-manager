@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
+import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Save, Info, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
@@ -32,11 +33,59 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     date_heure_arrivee_prevue: mission?.date_heure_arrivee_prevue ? 
       new Date(mission.date_heure_arrivee_prevue).toISOString().slice(0, 16) : '',
     observations: mission?.observations || '',
-    statut: mission?.statut || 'en_attente'
+    statut: mission?.statut || 'en_attente',
+    // Nouveaux champs pour hydrocarbures
+    date_emission_bl: mission?.date_emission_bl ? 
+      new Date(mission.date_emission_bl).toISOString().slice(0, 10) : '',
+    lieu_chargement: mission?.lieu_chargement || '',
+    destination: mission?.destination || '',
+    type_produit: mission?.type_produit || '',
+    quantite_litres: mission?.quantite_litres || ''
   });
 
   const [availabilityInfo, setAvailabilityInfo] = useState(null);
   const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
+
+  // Récupérer les lieux de départ depuis la facturation
+  const { data: lieuxDepart = [] } = useQuery({
+    queryKey: ['lieux-depart'],
+    queryFn: async () => {
+      console.log('Chargement des lieux de départ...');
+      const { data, error } = await supabase
+        .from('bons_livraison')
+        .select('destination')
+        .not('destination', 'is', null);
+      
+      if (error) {
+        console.error('Erreur lors du chargement des lieux de départ:', error);
+        return [];
+      }
+      
+      // Extraire les destinations uniques et les utiliser comme lieux de départ
+      const lieux = [...new Set(data?.map(item => item.destination).filter(Boolean))] || [];
+      console.log('Lieux de départ chargés:', lieux);
+      return lieux;
+    }
+  });
+
+  // Récupérer les destinations depuis la facturation
+  const { data: destinations = [] } = useQuery({
+    queryKey: ['destinations-facturation'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients_total')
+        .select('destination')
+        .not('destination', 'is', null);
+      
+      if (error) {
+        console.error('Erreur lors du chargement des destinations:', error);
+        return [];
+      }
+      
+      const destinationsUniques = [...new Set(data?.map(item => item.destination).filter(Boolean))] || [];
+      return destinationsUniques;
+    }
+  });
 
   // Récupérer les véhicules disponibles
   const { data: vehicules = [] } = useQuery({
@@ -56,10 +105,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     if (chauffeursAssignesVehicule.length > 0 && formData.vehicule_id) {
       console.log('Chauffeurs assignés au véhicule:', chauffeursAssignesVehicule);
       
-      // Pour une nouvelle mission (pas de modification)
       if (!mission?.id) {
         if (chauffeursAssignesVehicule.length === 1) {
-          // Un seul chauffeur assigné => assignation automatique
           const chauffeurAssigne = chauffeursAssignesVehicule[0];
           setFormData(prev => ({ 
             ...prev, 
@@ -71,7 +118,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
             description: `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est assigné à ce véhicule.`
           });
         } else {
-          // Plusieurs chauffeurs assignés => prendre le premier par défaut
           const chauffeurAssigne = chauffeursAssignesVehicule[0];
           setFormData(prev => ({ 
             ...prev, 
@@ -89,7 +135,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     } else {
       setChauffeursAssignes([]);
       
-      // Si pas de chauffeurs assignés et pas de modification de mission existante
       if (!mission?.id && formData.vehicule_id) {
         setFormData(prev => ({ ...prev, chauffeur_id: '' }));
       }
@@ -150,7 +195,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Vérification obligatoire : un chauffeur doit être assigné
     if (!formData.chauffeur_id) {
       toast({
         title: 'Erreur',
@@ -163,8 +207,10 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     const submitData = {
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
+      quantite_litres: formData.quantite_litres ? parseFloat(formData.quantite_litres) : null,
       date_heure_depart: new Date(formData.date_heure_depart).toISOString(),
-      date_heure_arrivee_prevue: new Date(formData.date_heure_arrivee_prevue).toISOString()
+      date_heure_arrivee_prevue: new Date(formData.date_heure_arrivee_prevue).toISOString(),
+      date_emission_bl: formData.date_emission_bl ? new Date(formData.date_emission_bl).toISOString() : null
     };
 
     console.log('Sauvegarde de la mission:', submitData);
@@ -172,12 +218,25 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   };
 
   const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Si le véhicule change, réinitialiser le chauffeur sauf si on modifie une mission existante
-    if (field === 'vehicule_id' && !mission?.id) {
-      setFormData(prev => ({ ...prev, chauffeur_id: '' }));
-    }
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Si le type de transport change, ajuster l'unité de mesure
+      if (field === 'type_transport') {
+        if (value === 'hydrocarbures') {
+          newData.unite_mesure = 'litres';
+        } else if (value === 'bauxite') {
+          newData.unite_mesure = 'tonnes';
+        }
+      }
+      
+      // Si le véhicule change, réinitialiser le chauffeur sauf si on modifie une mission existante
+      if (field === 'vehicule_id' && !mission?.id) {
+        newData.chauffeur_id = '';
+      }
+      
+      return newData;
+    });
   };
 
   // Obtenir le nom du chauffeur assigné pour l'affichage
@@ -185,6 +244,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     const chauffeur = chauffeursAssignes.find(c => c.id === formData.chauffeur_id);
     return chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '';
   };
+
+  const isHydrocarbures = formData.type_transport === 'hydrocarbures';
 
   return (
     <div className="space-y-6">
@@ -242,55 +303,136 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="site_depart">Site de départ *</Label>
-                  <Input
-                    id="site_depart"
-                    value={formData.site_depart}
-                    onChange={(e) => updateFormData('site_depart', e.target.value)}
-                    placeholder="Ex: Kamsar"
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="site_arrivee">Site d'arrivée *</Label>
-                  <Input
-                    id="site_arrivee"
-                    value={formData.site_arrivee}
-                    onChange={(e) => updateFormData('site_arrivee', e.target.value)}
-                    placeholder="Ex: Conakry"
-                    required
-                  />
-                </div>
-              </div>
+              {/* Champs spécifiques aux hydrocarbures */}
+              {isHydrocarbures && (
+                <>
+                  <div>
+                    <Label htmlFor="date_emission_bl">Date d'émission du BL *</Label>
+                    <Input
+                      id="date_emission_bl"
+                      type="date"
+                      value={formData.date_emission_bl}
+                      onChange={(e) => updateFormData('date_emission_bl', e.target.value)}
+                      required={isHydrocarbures}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="volume_poids">Volume/Poids</Label>
-                  <Input
-                    id="volume_poids"
-                    type="number"
-                    step="0.1"
-                    value={formData.volume_poids}
-                    onChange={(e) => updateFormData('volume_poids', e.target.value)}
-                    placeholder="0.0"
-                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="lieu_chargement">Lieu de chargement *</Label>
+                      <Select value={formData.lieu_chargement} onValueChange={(value) => updateFormData('lieu_chargement', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le lieu" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {lieuxDepart.map(lieu => (
+                            <SelectItem key={lieu} value={lieu}>
+                              {lieu}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="destination">Destination *</Label>
+                      <Select value={formData.destination} onValueChange={(value) => updateFormData('destination', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner la destination" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {destinations.map(dest => (
+                            <SelectItem key={dest} value={dest}>
+                              {dest}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="type_produit">Type de produit *</Label>
+                      <Select value={formData.type_produit} onValueChange={(value) => updateFormData('type_produit', value)}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sélectionner le produit" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="essence">Essence</SelectItem>
+                          <SelectItem value="gasoil">Gasoil</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="quantite_litres">Quantité (litres) *</Label>
+                      <Input
+                        id="quantite_litres"
+                        type="number"
+                        step="0.1"
+                        value={formData.quantite_litres}
+                        onChange={(e) => updateFormData('quantite_litres', e.target.value)}
+                        placeholder="0.0"
+                        required={isHydrocarbures}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Champs généraux (modifiés conditionnellement) */}
+              {!isHydrocarbures && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="site_depart">Site de départ *</Label>
+                    <Input
+                      id="site_depart"
+                      value={formData.site_depart}
+                      onChange={(e) => updateFormData('site_depart', e.target.value)}
+                      placeholder="Ex: Kamsar"
+                      required={!isHydrocarbures}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="site_arrivee">Site d'arrivée *</Label>
+                    <Input
+                      id="site_arrivee"
+                      value={formData.site_arrivee}
+                      onChange={(e) => updateFormData('site_arrivee', e.target.value)}
+                      placeholder="Ex: Conakry"
+                      required={!isHydrocarbures}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="unite_mesure">Unité</Label>
-                  <Select value={formData.unite_mesure} onValueChange={(value) => updateFormData('unite_mesure', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tonnes">Tonnes</SelectItem>
-                      <SelectItem value="litres">Litres</SelectItem>
-                      <SelectItem value="m3">m³</SelectItem>
-                    </SelectContent>
-                  </Select>
+              )}
+
+              {!isHydrocarbures && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="volume_poids">Volume/Poids</Label>
+                    <Input
+                      id="volume_poids"
+                      type="number"
+                      step="0.1"
+                      value={formData.volume_poids}
+                      onChange={(e) => updateFormData('volume_poids', e.target.value)}
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="unite_mesure">Unité</Label>
+                    <Select value={formData.unite_mesure} onValueChange={(value) => updateFormData('unite_mesure', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tonnes">Tonnes</SelectItem>
+                        <SelectItem value="litres">Litres</SelectItem>
+                        <SelectItem value="m3">m³</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
