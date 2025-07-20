@@ -3,8 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Clock, XCircle, Eye, RefreshCw, User } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, Eye, RefreshCw, User, Edit, Trash2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
@@ -21,9 +24,20 @@ interface DocumentAlert {
   chauffeur_id?: string;
 }
 
+interface EditDocumentData {
+  id: string;
+  nom: string;
+  date_expiration: string;
+  chauffeur_id: string;
+  chauffeur_nom: string;
+}
+
 export const DriversAlerts = () => {
   const [alerts, setAlerts] = useState<DocumentAlert[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editDialog, setEditDialog] = useState(false);
+  const [editingDocument, setEditingDocument] = useState<EditDocumentData | null>(null);
+  const [newExpirationDate, setNewExpirationDate] = useState('');
   const { toast } = useToast();
 
   const loadAlerts = async () => {
@@ -86,6 +100,119 @@ export const DriversAlerts = () => {
     const interval = setInterval(loadAlerts, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleEditDocument = (alert: DocumentAlert) => {
+    if (!alert.chauffeur_id || !alert.date_expiration) {
+      toast({
+        title: 'Erreur',
+        description: 'Informations du document incomplètes',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setEditingDocument({
+      id: alert.id,
+      nom: alert.document_nom,
+      date_expiration: alert.date_expiration,
+      chauffeur_id: alert.chauffeur_id,
+      chauffeur_nom: alert.chauffeur_nom
+    });
+    setNewExpirationDate(alert.date_expiration);
+    setEditDialog(true);
+  };
+
+  const handleUpdateDocument = async () => {
+    if (!editingDocument || !newExpirationDate) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez saisir une nouvelle date d\'expiration',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      console.log('Mise à jour du document:', editingDocument.id, 'nouvelle date:', newExpirationDate);
+
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          date_expiration: newExpirationDate,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingDocument.id);
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de mettre à jour le document',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: 'Document mis à jour',
+        description: `Nouvelle date d'expiration: ${new Date(newExpirationDate).toLocaleDateString('fr-FR')}`
+      });
+
+      setEditDialog(false);
+      setEditingDocument(null);
+      setNewExpirationDate('');
+      
+      // Recharger les alertes
+      loadAlerts();
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Erreur lors de la mise à jour du document',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleDeleteDocument = async (alert: DocumentAlert) => {
+    if (!confirm(`Êtes-vous sûr de vouloir supprimer le document "${alert.document_nom}" de ${alert.chauffeur_nom} ?`)) {
+      return;
+    }
+
+    try {
+      console.log('Suppression du document:', alert.id);
+
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', alert.id);
+
+      if (error) {
+        console.error('Erreur lors de la suppression:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de supprimer le document',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      toast({
+        title: 'Document supprimé',
+        description: `Le document "${alert.document_nom}" a été supprimé`
+      });
+
+      // Recharger les alertes
+      loadAlerts();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Erreur lors de la suppression du document',
+        variant: 'destructive'
+      });
+    }
+  };
 
   const getAlertIcon = (niveau: string) => {
     if (niveau.includes('URGENT')) return XCircle;
@@ -251,10 +378,25 @@ export const DriversAlerts = () => {
                         )}
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
-                      <Eye className="w-4 h-4 mr-1" />
-                      Voir chauffeur
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditDocument(alert)}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Modifier
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleDeleteDocument(alert)}
+                        className="text-red-600 border-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Supprimer
+                      </Button>
+                    </div>
                   </div>
                 </AlertDescription>
               </Alert>
@@ -262,6 +404,49 @@ export const DriversAlerts = () => {
           })}
         </div>
       )}
+
+      {/* Dialog de modification de document */}
+      <Dialog open={editDialog} onOpenChange={setEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier la date d'expiration</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Chauffeur</Label>
+              <Input value={editingDocument?.chauffeur_nom || ''} disabled />
+            </div>
+            <div>
+              <Label>Document</Label>
+              <Input value={editingDocument?.nom || ''} disabled />
+            </div>
+            <div>
+              <Label>Date d'expiration actuelle</Label>
+              <Input 
+                value={editingDocument?.date_expiration ? new Date(editingDocument.date_expiration).toLocaleDateString('fr-FR') : ''} 
+                disabled 
+              />
+            </div>
+            <div>
+              <Label htmlFor="newDate">Nouvelle date d'expiration</Label>
+              <Input
+                id="newDate"
+                type="date"
+                value={newExpirationDate}
+                onChange={(e) => setNewExpirationDate(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setEditDialog(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleUpdateDocument}>
+                Mettre à jour
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

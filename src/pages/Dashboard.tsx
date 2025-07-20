@@ -47,6 +47,10 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboardData();
+    
+    // Actualiser les données toutes les 30 secondes
+    const interval = setInterval(loadDashboardData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadDashboardData = async () => {
@@ -68,8 +72,8 @@ const Dashboard = () => {
         supabase.from('missions').select('id, statut'),
         supabase.from('factures').select('id, statut'),
         supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
-        supabase.from('alertes_documents_vehicules').select('*'),
-        supabase.from('alertes_documents_chauffeurs').select('*')
+        supabase.from('alertes_documents_vehicules').select('*').lte('jours_restants', 30),
+        supabase.from('alertes_documents_chauffeurs').select('*').lte('jours_restants', 30)
       ]);
 
       // Calculer les statistiques
@@ -100,6 +104,7 @@ const Dashboard = () => {
         ...alertesVehicules.map((a: any) => ({ ...a, type: 'vehicule' })),
         ...alertesChauffeurs.map((a: any) => ({ ...a, type: 'chauffeur' }))
       ]
+      .filter(a => a.jours_restants !== null && a.jours_restants <= 30)
       .sort((a, b) => {
         // Trier par jours restants (les plus critiques d'abord)
         if (a.jours_restants === null && b.jours_restants === null) return 0;
@@ -371,7 +376,7 @@ const Dashboard = () => {
                 <div className="text-center">
                   <Button
                     variant="outline"
-                    onClick={() => navigate('/drivers')}
+                    onClick={() => navigate('/drivers?tab=alertes')}
                     className="text-orange-600 border-orange-600 hover:bg-orange-50"
                   >
                     Voir toutes les alertes ({stats.alertesDocuments})

@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DriversStats } from './DriversStats';
-import { Edit, Calendar, RefreshCw } from 'lucide-react';
+import { Edit, Calendar, RefreshCw, AlertTriangle, Clock, XCircle, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface Chauffeur {
   id: string;
@@ -43,6 +44,7 @@ export const DriversDashboard = () => {
   const [dateDebutError, setDateDebutError] = useState('');
   const [dateFinError, setDateFinError] = useState('');
   const [alertsCount, setAlertsCount] = useState(0);
+  const [alertesChauffeurs, setAlertesChauffeurs] = useState<any[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -61,22 +63,39 @@ export const DriversDashboard = () => {
     alertes: alertsCount
   };
 
-  useEffect(() => {
-    const loadAlerts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('alertes_documents_chauffeurs')
-          .select('id', { count: 'exact' });
+  const loadAlertes = async () => {
+    try {
+      console.log('Chargement des alertes chauffeurs pour le dashboard...');
+      const { data, error } = await supabase
+        .from('alertes_documents_chauffeurs')
+        .select('*')
+        .order('jours_restants', { ascending: true, nullsFirst: false });
 
-        if (!error && data) {
-          setAlertsCount(data.length);
-        }
-      } catch (error) {
-        console.error('Erreur lors du chargement des alertes:', error);
+      if (error) {
+        console.error('Erreur lors du chargement des alertes chauffeurs:', error);
+        return;
       }
-    };
 
-    loadAlerts();
+      console.log('Alertes chauffeurs chargées:', data);
+      
+      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
+      const alertesFiltered = data?.filter(alert => {
+        if (alert.jours_restants === null) return false;
+        return alert.jours_restants <= 30;
+      }) || [];
+
+      setAlertesChauffeurs(alertesFiltered.slice(0, 5)); // Limiter à 5 pour le dashboard
+      setAlertsCount(alertesFiltered.length);
+    } catch (error) {
+      console.error('Erreur lors du chargement des alertes:', error);
+    }
+  };
+
+  useEffect(() => {
+    loadAlertes();
+    // Actualiser les alertes toutes les 30 secondes
+    const interval = setInterval(loadAlertes, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const validateDates = () => {
@@ -211,7 +230,27 @@ export const DriversDashboard = () => {
     setStatusDialog(true);
   };
 
-  // Le formulaire est valide seulement si les deux dates sont renseignées ET valides
+  const getAlertIcon = (joursRestants: number | null) => {
+    if (joursRestants === null) return Clock;
+    if (joursRestants < 0) return XCircle;
+    if (joursRestants <= 7) return AlertTriangle;
+    return Clock;
+  };
+
+  const getAlertColor = (joursRestants: number | null) => {
+    if (joursRestants === null) return 'text-gray-500';
+    if (joursRestants < 0) return 'text-red-600';
+    if (joursRestants <= 7) return 'text-orange-600';
+    return 'text-blue-600';
+  };
+
+  const getAlertBgColor = (joursRestants: number | null) => {
+    if (joursRestants === null) return 'bg-gray-50 border-l-gray-500';
+    if (joursRestants < 0) return 'bg-red-50 border-l-red-500';
+    if (joursRestants <= 7) return 'bg-orange-50 border-l-orange-500';
+    return 'bg-blue-50 border-l-blue-500';
+  };
+
   const canSubmit = statusChange.dateDebut && statusChange.dateFin && statusChange.dateDebut.trim() !== '' && statusChange.dateFin.trim() !== '' && !dateDebutError && !dateFinError && statusChange.nouveauStatut;
 
   if (isLoading) {
@@ -231,7 +270,10 @@ export const DriversDashboard = () => {
           <p className="text-gray-600">Vue d'ensemble et gestion rapide des statuts</p>
         </div>
         <Button 
-          onClick={() => queryClient.invalidateQueries({ queryKey: ['chauffeurs'] })}
+          onClick={() => {
+            queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
+            loadAlertes();
+          }}
           variant="outline"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
@@ -240,6 +282,79 @@ export const DriversDashboard = () => {
       </div>
 
       <DriversStats {...stats} />
+
+      {/* Section des alertes documents */}
+      {alertesChauffeurs.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Alertes Documents Récentes
+              <Badge className="bg-orange-500 text-white">
+                {alertsCount}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {alertesChauffeurs.map((alerte, index) => {
+                const AlertIcon = getAlertIcon(alerte.jours_restants);
+                const alertColor = getAlertColor(alerte.jours_restants);
+                const alertBgColor = getAlertBgColor(alerte.jours_restants);
+                
+                return (
+                  <Alert key={index} className={`border-l-4 ${alertBgColor}`}>
+                    <AlertIcon className={`h-4 w-4 ${alertColor}`} />
+                    <AlertDescription>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 mb-1">
+                            {alerte.chauffeur_nom}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {alerte.document_nom} - {
+                              alerte.jours_restants !== null && alerte.jours_restants < 0 
+                                ? `Expiré depuis ${Math.abs(alerte.jours_restants)} jour(s)`
+                                : alerte.jours_restants !== null && alerte.jours_restants <= 7
+                                ? `Expire dans ${alerte.jours_restants} jour(s)`
+                                : `${alerte.jours_restants} jours restants`
+                            }
+                          </div>
+                          {alerte.date_expiration && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              Expiration: {new Date(alerte.date_expiration).toLocaleDateString('fr-FR')}
+                            </div>
+                          )}
+                        </div>
+                        <Badge variant={
+                          alerte.jours_restants !== null && alerte.jours_restants < 0 
+                            ? 'destructive' 
+                            : alerte.jours_restants !== null && alerte.jours_restants <= 7
+                            ? 'destructive'
+                            : 'secondary'
+                        }>
+                          {alerte.jours_restants !== null && alerte.jours_restants < 0 ? 'Expiré' : 'À renouveler'}
+                        </Badge>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                );
+              })}
+              {alertsCount > alertesChauffeurs.length && (
+                <div className="text-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => window.location.href = '/drivers?tab=alertes'}
+                    className="text-orange-600 border-orange-600 hover:bg-orange-50"
+                  >
+                    Voir toutes les alertes ({alertsCount})
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
