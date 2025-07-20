@@ -3,7 +3,7 @@ import { Database } from '@/integrations/supabase/types';
 
 export type AppRole = 'maintenance' | 'administratif' | 'hsecq' | 'obc' | 'transport' | 'rh' | 'facturation' | 'direction' | 'admin' | 'transitaire' | 'directeur_exploitation';
 export type AppPermission = 'read' | 'write' | 'delete' | 'validate' | 'export' | 'admin';
-export type ModulePermission = 'fleet' | 'drivers' | 'rh' | 'cargo' | 'missions' | 'billing' | 'dashboard';
+export type ModulePermission = 'fleet' | 'drivers' | 'rh' | 'missions' | 'billing' | 'dashboard';
 
 export interface SystemUser {
   id: string;
@@ -52,7 +52,6 @@ export const MODULES = [
   'fleet',
   'missions', 
   'drivers',
-  'cargo',
   'billing',
   'validations',
   'rh',
@@ -77,7 +76,6 @@ export const MODULE_PERMISSIONS: string[] = [
   'fleet',
   'drivers',
   'rh',
-  'cargo',
   'missions',
   'billing',
   'dashboard'
@@ -110,7 +108,6 @@ export const MODULE_LABELS: Record<string, string> = {
   fleet: 'Flotte',
   missions: 'Missions',
   drivers: 'Chauffeurs',
-  cargo: 'Chargements',
   billing: 'Facturation',
   validations: 'Validations',
   rh: 'Ressources Humaines',

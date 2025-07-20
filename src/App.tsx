@@ -14,13 +14,10 @@ const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Fleet = lazy(() => import('@/pages/Fleet'));
 const Drivers = lazy(() => import('@/pages/Drivers'));
 const Missions = lazy(() => import('@/pages/Missions'));
-const Cargo = lazy(() => import('@/pages/Cargo'));
 const Billing = lazy(() => import('@/pages/Billing'));
 const RH = lazy(() => import('@/pages/RH'));
 const Validations = lazy(() => import('@/pages/Validations'));
 const Administration = lazy(() => import('@/pages/Administration'));
-const DocumentStock = lazy(() => import('@/pages/DocumentStock'));
-const Guide = lazy(() => import('@/pages/Guide'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const queryClient = new QueryClient({
@@ -99,13 +96,10 @@ function App() {
               <Route path="/fleet" element={<Fleet />} />
               <Route path="/drivers" element={<Drivers />} />
               <Route path="/missions" element={<Missions />} />
-              <Route path="/cargo" element={<Cargo />} />
               <Route path="/billing" element={<Billing />} />
               <Route path="/rh" element={<RH />} />
               <Route path="/validations" element={<Validations />} />
               <Route path="/administration" element={<Administration />} />
-              <Route path="/documents" element={<DocumentStock />} />
-              <Route path="/guide" element={<Guide />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ModernAppLayout>

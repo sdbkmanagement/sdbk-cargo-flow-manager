@@ -8,13 +8,10 @@ import {
   Truck, 
   Users, 
   FileText, 
-  Package, 
   Calculator, 
   UserCog, 
   Shield,
-  Settings,
-  Building2,
-  BookOpen
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -44,12 +41,6 @@ const navigationItems = [
     permissions: ['missions', 'all']
   },
   {
-    title: 'Chargements',
-    icon: Package,
-    href: '/cargo',
-    permissions: ['cargo', 'all']
-  },
-  {
     title: 'Facturation',
     icon: Calculator,
     href: '/billing',
@@ -73,18 +64,6 @@ const navigationItems = [
     icon: Settings,
     href: '/administration',
     permissions: ['admin', 'all']
-  },
-  {
-    title: 'Stock Documents',
-    icon: Building2,
-    href: '/documents',
-    permissions: ['documents', 'all']
-  },
-  {
-    title: 'Guide',
-    icon: BookOpen,
-    href: '/guide',
-    permissions: ['all'] // Accessible à tous
   }
 ];
 
