@@ -1,6 +1,48 @@
 import { supabase } from '@/integrations/supabase/client';
 import { BonLivraison } from '@/types/bl';
 
+// Helper function to safely convert database record to BonLivraison
+function mapDatabaseRecordToBL(record: any): BonLivraison {
+  return {
+    id: record.id,
+    numero: record.numero,
+    client_nom: record.client_nom,
+    client_code: record.client_code || undefined,
+    client_code_total: record.client_code_total || undefined,
+    destination: record.destination,
+    vehicule_id: record.vehicule_id,
+    chauffeur_id: record.chauffeur_id,
+    date_emission: record.date_emission,
+    produit: record.produit as 'essence' | 'gasoil',
+    quantite_prevue: record.quantite_prevue,
+    unite_mesure: 'litres' as const,
+    numero_tournee: record.numero_tournee || undefined,
+    date_chargement_prevue: record.date_chargement_prevue || undefined,
+    date_chargement_reelle: record.date_chargement_reelle || undefined,
+    date_depart: record.date_depart || undefined,
+    date_arrivee_prevue: record.date_arrivee_prevue || undefined,
+    date_arrivee_reelle: record.date_arrivee_reelle || undefined,
+    date_dechargement: record.date_dechargement || undefined,
+    quantite_livree: record.quantite_livree || undefined,
+    manquant_cuve: record.manquant_cuve || undefined,
+    manquant_compteur: record.manquant_compteur || undefined,
+    manquant_total: record.manquant_total || undefined,
+    prix_unitaire: record.prix_unitaire || undefined,
+    montant_total: record.montant_total || undefined,
+    montant_facture: record.montant_facture || undefined,
+    associe_id: record.associe_id || undefined,
+    chiffre_affaire_associe: record.chiffre_affaire_associe || undefined,
+    statut: record.statut as BonLivraison['statut'],
+    observations: record.observations || undefined,
+    facture: record.facture || false,
+    mission_id: record.mission_id || undefined,
+    created_at: record.created_at || undefined,
+    updated_at: record.updated_at || undefined,
+    saisi_par: record.saisi_par || undefined,
+    transitaire_nom: record.transitaire_nom || undefined
+  };
+}
+
 export const bonsLivraisonService = {
   // Récupérer tous les BL d'une mission
   async getByMissionId(missionId: string): Promise<BonLivraison[]> {
@@ -16,47 +58,7 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return (data || []).map(record => {
-        const bl: BonLivraison = {
-          id: record.id,
-          numero: record.numero,
-          client_nom: record.client_nom,
-          client_code: record.client_code,
-          client_code_total: record.client_code_total,
-          destination: record.destination,
-          vehicule_id: record.vehicule_id,
-          chauffeur_id: record.chauffeur_id,
-          date_emission: record.date_emission,
-          produit: record.produit as 'essence' | 'gasoil',
-          quantite_prevue: record.quantite_prevue,
-          unite_mesure: 'litres' as const,
-          numero_tournee: record.numero_tournee,
-          date_chargement_prevue: record.date_chargement_prevue,
-          date_chargement_reelle: record.date_chargement_reelle,
-          date_depart: record.date_depart,
-          date_arrivee_prevue: record.date_arrivee_prevue,
-          date_arrivee_reelle: record.date_arrivee_reelle,
-          date_dechargement: record.date_dechargement,
-          quantite_livree: record.quantite_livree,
-          manquant_cuve: record.manquant_cuve,
-          manquant_compteur: record.manquant_compteur,
-          manquant_total: record.manquant_total,
-          prix_unitaire: record.prix_unitaire,
-          montant_total: record.montant_total,
-          montant_facture: record.montant_facture,
-          associe_id: record.associe_id,
-          chiffre_affaire_associe: record.chiffre_affaire_associe,
-          statut: record.statut as BonLivraison['statut'],
-          observations: (record as any).observations || undefined,
-          facture: record.facture,
-          mission_id: (record as any).mission_id || undefined,
-          created_at: record.created_at,
-          updated_at: record.updated_at,
-          saisi_par: record.saisi_par,
-          transitaire_nom: record.transitaire_nom
-        };
-        return bl;
-      });
+      return (data || []).map(mapDatabaseRecordToBL);
     } catch (error) {
       console.error('Erreur générale BL:', error);
       throw error;
@@ -113,46 +115,7 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      const bl: BonLivraison = {
-        id: data.id,
-        numero: data.numero,
-        client_nom: data.client_nom,
-        client_code: data.client_code,
-        client_code_total: data.client_code_total,
-        destination: data.destination,
-        vehicule_id: data.vehicule_id,
-        chauffeur_id: data.chauffeur_id,
-        date_emission: data.date_emission,
-        produit: data.produit as 'essence' | 'gasoil',
-        quantite_prevue: data.quantite_prevue,
-        unite_mesure: 'litres' as const,
-        numero_tournee: data.numero_tournee,
-        date_chargement_prevue: data.date_chargement_prevue,
-        date_chargement_reelle: data.date_chargement_reelle,
-        date_depart: data.date_depart,
-        date_arrivee_prevue: data.date_arrivee_prevue,
-        date_arrivee_reelle: data.date_arrivee_reelle,
-        date_dechargement: data.date_dechargement,
-        quantite_livree: data.quantite_livree,
-        manquant_cuve: data.manquant_cuve,
-        manquant_compteur: data.manquant_compteur,
-        manquant_total: data.manquant_total,
-        prix_unitaire: data.prix_unitaire,
-        montant_total: data.montant_total,
-        montant_facture: data.montant_facture,
-        associe_id: data.associe_id,
-        chiffre_affaire_associe: data.chiffre_affaire_associe,
-        statut: data.statut as BonLivraison['statut'],
-        observations: (data as any).observations || undefined,
-        facture: data.facture,
-        mission_id: (data as any).mission_id || undefined,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        saisi_par: data.saisi_par,
-        transitaire_nom: data.transitaire_nom
-      };
-      
-      return bl;
+      return mapDatabaseRecordToBL(data);
     } catch (error) {
       console.error('Erreur lors de la création du BL:', error);
       throw error;
@@ -177,46 +140,7 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      const bl: BonLivraison = {
-        id: data.id,
-        numero: data.numero,
-        client_nom: data.client_nom,
-        client_code: data.client_code,
-        client_code_total: data.client_code_total,
-        destination: data.destination,
-        vehicule_id: data.vehicule_id,
-        chauffeur_id: data.chauffeur_id,
-        date_emission: data.date_emission,
-        produit: data.produit as 'essence' | 'gasoil',
-        quantite_prevue: data.quantite_prevue,
-        unite_mesure: 'litres' as const,
-        numero_tournee: data.numero_tournee,
-        date_chargement_prevue: data.date_chargement_prevue,
-        date_chargement_reelle: data.date_chargement_reelle,
-        date_depart: data.date_depart,
-        date_arrivee_prevue: data.date_arrivee_prevue,
-        date_arrivee_reelle: data.date_arrivee_reelle,
-        date_dechargement: data.date_dechargement,
-        quantite_livree: data.quantite_livree,
-        manquant_cuve: data.manquant_cuve,
-        manquant_compteur: data.manquant_compteur,
-        manquant_total: data.manquant_total,
-        prix_unitaire: data.prix_unitaire,
-        montant_total: data.montant_total,
-        montant_facture: data.montant_facture,
-        associe_id: data.associe_id,
-        chiffre_affaire_associe: data.chiffre_affaire_associe,
-        statut: data.statut as BonLivraison['statut'],
-        observations: (data as any).observations || undefined,
-        facture: data.facture,
-        mission_id: (data as any).mission_id || undefined,
-        created_at: data.created_at,
-        updated_at: data.updated_at,
-        saisi_par: data.saisi_par,
-        transitaire_nom: data.transitaire_nom
-      };
-      
-      return bl;
+      return mapDatabaseRecordToBL(data);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du BL:', error);
       throw error;
