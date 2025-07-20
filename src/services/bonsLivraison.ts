@@ -1,9 +1,9 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { BonLivraison, BLDatabase } from '@/types/bl';
+import { BonLivraison } from '@/types/bl';
 
 // Helper function to convert database record to BonLivraison
-const convertFromDatabase = (dbRecord: BLDatabase): BonLivraison => ({
+const convertFromDatabase = (dbRecord: any): BonLivraison => ({
   ...dbRecord,
   produit: dbRecord.produit as 'essence' | 'gasoil',
   statut: dbRecord.statut as 'emis' | 'charge' | 'en_route' | 'livre' | 'termine',
@@ -11,7 +11,7 @@ const convertFromDatabase = (dbRecord: BLDatabase): BonLivraison => ({
 });
 
 // Helper function to convert BonLivraison to database format
-const convertToDatabase = (bl: Partial<BonLivraison>): Partial<BLDatabase> => ({
+const convertToDatabase = (bl: Partial<BonLivraison>) => ({
   ...bl,
   produit: bl.produit as string,
   statut: bl.statut as string
@@ -45,7 +45,7 @@ export const bonsLivraisonService = {
       const dbData = convertToDatabase(blData);
       const { data, error } = await supabase
         .from('bons_livraison')
-        .insert([dbData])
+        .insert(dbData)
         .select()
         .single();
 
