@@ -263,11 +263,20 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       }
     }
     
+    // Calculer la date d'arrivée prévue si une date de départ est fournie
+    let dateArriveePreve = null;
+    if (formData.date_heure_depart) {
+      const dateDepart = new Date(formData.date_heure_depart);
+      // Ajouter 8 heures par défaut pour la durée estimée du trajet
+      const dateArrivee = new Date(dateDepart.getTime() + (8 * 60 * 60 * 1000));
+      dateArriveePreve = dateArrivee.toISOString();
+    }
+    
     const submitData = {
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
       date_heure_depart: formData.date_heure_depart ? new Date(formData.date_heure_depart).toISOString() : null,
-      date_heure_arrivee_prevue: null
+      date_heure_arrivee_prevue: dateArriveePreve || new Date(Date.now() + (8 * 60 * 60 * 1000)).toISOString()
     };
 
     console.log('💾 Sauvegarde de la mission:', submitData);
