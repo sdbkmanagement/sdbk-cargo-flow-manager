@@ -93,7 +93,7 @@ export const ClientSelector = ({
         {/* Sélection du client */}
         <div>
           <Label>Client / Destination *</Label>
-          <Select value={selectedClient} onValueChange={handleClientSelect}>
+          <Select value={selectedClient || ''} onValueChange={handleClientSelect}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>
