@@ -113,12 +113,13 @@ export const documentsService = {
     }
   },
 
-  // Upload d'un fichier
+  // Upload d'un fichier avec gestion d'erreurs améliorée
   async uploadFile(file: File, entityType: string, entityId: string, documentType: string): Promise<string> {
     try {
       console.log('Upload fichier:', { 
         fileName: file.name, 
         size: file.size, 
+        type: file.type,
         entityType, 
         entityId, 
         documentType 
@@ -133,26 +134,78 @@ export const documentsService = {
         throw new Error('Le fichier est trop volumineux (max 10MB)')
       }
 
-      // Générer un nom de fichier unique
-      const fileExt = file.name.split('.').pop()?.toLowerCase()
+      // Types de fichiers acceptés
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg', 
+        'image/png',
+        'image/gif',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error(`Type de fichier non supporté: ${file.type}. Types acceptés: PDF, JPG, PNG, GIF, DOC, DOCX`)
+      }
+
+      // Générer un nom de fichier unique et sécurisé
+      const fileExt = file.name.split('.').pop()?.toLowerCase() || 'bin'
       const timestamp = Date.now()
       const randomString = Math.random().toString(36).substring(7)
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_') // Nettoyer le nom de fichier
       const fileName = `${entityType}_${entityId}_${documentType}_${timestamp}_${randomString}.${fileExt}`
       const filePath = `${entityType}s/${fileName}`
 
       console.log('Upload vers:', filePath)
 
-      // Upload du fichier
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      // Créer un nouveau blob pour s'assurer que le fichier est valide
+      const fileBuffer = await file.arrayBuffer()
+      const blob = new Blob([fileBuffer], { type: file.type })
 
-      if (uploadError) {
-        console.error('Erreur upload storage:', uploadError)
-        throw new Error(`Erreur d'upload: ${uploadError.message}`)
+      // Upload du fichier avec retry logic
+      let uploadError = null
+      let uploadData = null
+      
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          console.log(`Tentative d'upload ${attempt}/3`)
+          
+          const { data, error } = await supabase.storage
+            .from('documents')
+            .upload(filePath, blob, {
+              cacheControl: '3600',
+              upsert: false,
+              contentType: file.type
+            })
+
+          if (error) {
+            uploadError = error
+            console.warn(`Tentative ${attempt} échouée:`, error)
+            
+            if (attempt < 3) {
+              // Attendre avant de réessayer
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+              continue
+            }
+          } else {
+            uploadData = data
+            uploadError = null
+            break
+          }
+        } catch (err) {
+          uploadError = err
+          console.warn(`Tentative ${attempt} échouée avec exception:`, err)
+          
+          if (attempt < 3) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+          }
+        }
+      }
+
+      if (uploadError || !uploadData) {
+        console.error('Erreur upload storage après 3 tentatives:', uploadError)
+        throw new Error(`Erreur d'upload: ${uploadError?.message || 'Upload échoué'}`)
       }
 
       console.log('Fichier uploadé avec succès:', uploadData)
@@ -175,7 +228,7 @@ export const documentsService = {
     }
   },
 
-  // Supprimer un fichier du storage
+  // Supprimer un fichier du storage avec gestion d'erreurs
   async deleteFile(url: string): Promise<void> {
     try {
       // Extraire le chemin du fichier depuis l'URL
@@ -195,12 +248,33 @@ export const documentsService = {
       if (error) {
         console.error('Erreur suppression fichier storage:', error)
         // Ne pas lancer d'erreur car le document peut être supprimé même si le fichier n'existe plus
+      } else {
+        console.log('Fichier supprimé du storage avec succès')
       }
-
-      console.log('Fichier supprimé du storage avec succès')
     } catch (error) {
       console.error('Erreur lors de la suppression du fichier:', error)
       // Ne pas lancer d'erreur pour ne pas bloquer la suppression du document
+    }
+  },
+
+  // Vérifier si un fichier existe dans le storage
+  async fileExists(url: string): Promise<boolean> {
+    try {
+      const urlParts = url.split('/storage/v1/object/public/documents/')
+      if (urlParts.length < 2) return false
+
+      const filePath = urlParts[1]
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .list(filePath.split('/').slice(0, -1).join('/'))
+
+      if (error) return false
+
+      const fileName = filePath.split('/').pop()
+      return data?.some(file => file.name === fileName) || false
+    } catch (error) {
+      console.error('Erreur lors de la vérification du fichier:', error)
+      return false
     }
   }
 }

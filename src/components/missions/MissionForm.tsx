@@ -29,13 +29,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     unite_mesure: mission?.unite_mesure || 'tonnes',
     vehicule_id: mission?.vehicule_id || '',
     chauffeur_id: mission?.chauffeur_id || '',
-    date_heure_depart: mission?.date_heure_depart ? 
-      new Date(mission.date_heure_depart).toISOString().slice(0, 16) : '',
-    date_heure_arrivee_prevue: mission?.date_heure_arrivee_prevue ? 
-      new Date(mission.date_heure_arrivee_prevue).toISOString().slice(0, 16) : '',
     observations: mission?.observations || '',
     statut: mission?.statut || 'en_attente',
-    // Nouveaux champs pour hydrocarbures
+    // Champs spécifiques aux hydrocarbures
     date_emission_bl: mission?.date_emission_bl ? 
       new Date(mission.date_emission_bl).toISOString().slice(0, 10) : '',
     lieu_chargement: mission?.lieu_chargement || '',
@@ -170,32 +166,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     }
   });
 
-  // Vérifier la disponibilité des ressources (informatif seulement)
-  const checkAvailabilityInfo = async () => {
-    if (formData.vehicule_id && formData.chauffeur_id && 
-        formData.date_heure_depart && formData.date_heure_arrivee_prevue) {
-      try {
-        const result = await missionsService.checkResourceAvailability(
-          formData.vehicule_id,
-          formData.chauffeur_id,
-          formData.date_heure_depart,
-          formData.date_heure_arrivee_prevue
-        );
-        setAvailabilityInfo(result);
-      } catch (error) {
-        console.error('Erreur lors de la vérification:', error);
-        setAvailabilityInfo(null);
-      }
-    } else {
-      setAvailabilityInfo(null);
-    }
-  };
-
-  useEffect(() => {
-    const timeoutId = setTimeout(checkAvailabilityInfo, 500);
-    return () => clearTimeout(timeoutId);
-  }, [formData.vehicule_id, formData.chauffeur_id, formData.date_heure_depart, formData.date_heure_arrivee_prevue]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -217,12 +187,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       date_emission_bl: formData.date_emission_bl ? new Date(formData.date_emission_bl).toISOString() : null
     };
 
-    // Pour les hydrocarbures, on ne sauvegarde pas les dates/heures
-    if (!isHydrocarbures) {
-      submitData.date_heure_depart = new Date(formData.date_heure_depart).toISOString();
-      submitData.date_heure_arrivee_prevue = new Date(formData.date_heure_arrivee_prevue).toISOString();
-    }
-
     console.log('Sauvegarde de la mission:', submitData);
     saveMutation.mutate(submitData);
   };
@@ -233,9 +197,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       
       // Si le type de transport change, ajuster l'unité de mesure
       if (field === 'type_transport') {
-        if (value === 'hydrocarbures') {
+        if (value === 'hydrocarbures' || value === 'lubrifiants') {
           newData.unite_mesure = 'litres';
-        } else if (value === 'bauxite') {
+        } else if (value === 'marchandises') {
           newData.unite_mesure = 'tonnes';
         }
       }
@@ -293,7 +257,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
-                      <SelectItem value="bauxite">Bauxite</SelectItem>
+                      <SelectItem value="lubrifiants">Lubrifiants</SelectItem>
+                      <SelectItem value="marchandises">Marchandises</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -313,6 +278,40 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </div>
               </div>
 
+              {/* Champs pour tous les types de transport */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="lieu_chargement">Lieu de chargement *</Label>
+                  <Select value={formData.lieu_chargement} onValueChange={(value) => updateFormData('lieu_chargement', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner le lieu" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {lieuxChargement.map(lieu => (
+                        <SelectItem key={lieu} value={lieu}>
+                          {lieu}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="destination">Destination *</Label>
+                  <Select value={formData.destination} onValueChange={(value) => updateFormData('destination', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner la destination" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {destinations.map(dest => (
+                        <SelectItem key={dest} value={dest}>
+                          {dest}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
               {/* Champs spécifiques aux hydrocarbures */}
               {isHydrocarbures && (
                 <>
@@ -325,39 +324,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                       onChange={(e) => updateFormData('date_emission_bl', e.target.value)}
                       required={isHydrocarbures}
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="lieu_chargement">Lieu de chargement *</Label>
-                      <Select value={formData.lieu_chargement} onValueChange={(value) => updateFormData('lieu_chargement', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner le lieu" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {lieuxChargement.map(lieu => (
-                            <SelectItem key={lieu} value={lieu}>
-                              {lieu}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="destination">Destination *</Label>
-                      <Select value={formData.destination} onValueChange={(value) => updateFormData('destination', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner la destination" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {destinations.map(dest => (
-                            <SelectItem key={dest} value={dest}>
-                              {dest}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -389,28 +355,26 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </>
               )}
 
-              {/* Champs généraux (modifiés conditionnellement) */}
+              {/* Champs généraux pour tous les types sauf hydrocarbures */}
               {!isHydrocarbures && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="site_depart">Site de départ *</Label>
+                      <Label htmlFor="site_depart">Site de départ</Label>
                       <Input
                         id="site_depart"
                         value={formData.site_depart}
                         onChange={(e) => updateFormData('site_depart', e.target.value)}
                         placeholder="Ex: Kamsar"
-                        required={!isHydrocarbures}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="site_arrivee">Site d'arrivée *</Label>
+                      <Label htmlFor="site_arrivee">Site d'arrivée</Label>
                       <Input
                         id="site_arrivee"
                         value={formData.site_arrivee}
                         onChange={(e) => updateFormData('site_arrivee', e.target.value)}
                         placeholder="Ex: Conakry"
-                        required={!isHydrocarbures}
                       />
                     </div>
                   </div>
@@ -439,29 +403,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                           <SelectItem value="m3">m³</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="date_heure_depart">Date et heure de départ *</Label>
-                      <Input
-                        id="date_heure_depart"
-                        type="datetime-local"
-                        value={formData.date_heure_depart}
-                        onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
-                        required={!isHydrocarbures}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="date_heure_arrivee_prevue">Date et heure d'arrivée prévue *</Label>
-                      <Input
-                        id="date_heure_arrivee_prevue"
-                        type="datetime-local"
-                        value={formData.date_heure_arrivee_prevue}
-                        onChange={(e) => updateFormData('date_heure_arrivee_prevue', e.target.value)}
-                        required={!isHydrocarbures}
-                      />
                     </div>
                   </div>
                 </>
@@ -540,16 +481,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                   )}
                 </div>
               </div>
-
-              {/* Information de disponibilité (non-bloquante) pour bauxite seulement */}
-              {availabilityInfo && !isHydrocarbures && (
-                <Alert className="border-blue-200 bg-blue-50">
-                  <Info className="h-4 w-4" />
-                  <AlertDescription>
-                    <strong>Information planning:</strong> {availabilityInfo.message}
-                  </AlertDescription>
-                </Alert>
-              )}
             </CardContent>
           </Card>
         </div>
