@@ -39,31 +39,34 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   };
 
   const modifierBL = (index: number, champ: keyof BonLivraison, valeur: any) => {
+    console.log('BLMultiplesForm - modifierBL called:', { index, champ, valeur });
     const nouveauxBLs = [...bls];
     nouveauxBLs[index] = { ...nouveauxBLs[index], [champ]: valeur };
+    console.log('BLMultiplesForm - Updated BL:', nouveauxBLs[index]);
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation des BL - logique simplifiée
-  const blsIncomplets = bls.filter(bl => {
-    const isIncomplet = (
-      !bl.client_nom || 
-      bl.client_nom.trim() === '' ||
-      !bl.date_emission || 
-      bl.date_emission.trim() === '' ||
-      !bl.quantite_prevue || 
-      bl.quantite_prevue <= 0
-    );
+  // Validation des BL - logique simplifiée avec plus de logs
+  const blsIncomplets = bls.filter((bl, index) => {
+    const clientNomEmpty = !bl.client_nom || bl.client_nom.trim() === '';
+    const dateEmpty = !bl.date_emission || bl.date_emission.trim() === '';
+    const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
+    const isIncomplet = clientNomEmpty || dateEmpty || quantiteInvalide;
     
-    console.log('Validation BL:', {
+    console.log(`BLMultiplesForm - Validation BL ${index + 1}:`, {
       client_nom: bl.client_nom,
+      client_nom_empty: clientNomEmpty,
       date_emission: bl.date_emission,
+      date_empty: dateEmpty,
       quantite_prevue: bl.quantite_prevue,
+      quantite_invalide: quantiteInvalide,
       isIncomplet
     });
     
     return isIncomplet;
   });
+
+  console.log('BLMultiplesForm - Total BLs incomplets:', blsIncomplets.length);
 
   return (
     <Card>

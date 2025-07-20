@@ -40,10 +40,22 @@ export const ClientSelector = ({
   }, [searchQuery, selectedVille]);
 
   const handleClientSelect = (clientNom: string) => {
-    console.log('Sélection du client:', clientNom);
+    console.log('ClientSelector - Selecting client:', clientNom);
+    console.log('ClientSelector - Current selectedClient:', selectedClient);
+    
+    // Appeler directement onClientChange avec le nom du client
     onClientChange(clientNom);
-    onDestinationChange(clientNom); // Définir la destination identique au client
+    
+    // Trouver la ville du client sélectionné pour la destination
+    const selectedClientData = filteredClients.find(c => c.nom === clientNom);
+    if (selectedClientData) {
+      console.log('ClientSelector - Setting destination to:', selectedClientData.ville);
+      onDestinationChange(selectedClientData.ville);
+    }
   };
+
+  console.log('ClientSelector - Render with selectedClient:', selectedClient);
+  console.log('ClientSelector - Available clients:', filteredClients.length);
 
   return (
     <div className="space-y-4">
@@ -52,9 +64,10 @@ export const ClientSelector = ({
         <div>
           <Label>Filtrer par ville</Label>
           <Select value={selectedVille} onValueChange={(value) => {
+            console.log('ClientSelector - Ville filter changed to:', value);
             setSelectedVille(value);
             if (value !== 'all') {
-              onDestinationChange(value); // Définir la ville comme destination par défaut
+              onDestinationChange(value);
             }
           }}>
             <SelectTrigger>
@@ -82,7 +95,10 @@ export const ClientSelector = ({
             <Input
               placeholder="Rechercher un client..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                console.log('ClientSelector - Search query:', e.target.value);
+                setSearchQuery(e.target.value);
+              }}
               className="pl-10"
             />
           </div>
@@ -93,19 +109,33 @@ export const ClientSelector = ({
         {/* Sélection du client */}
         <div>
           <Label>Client / Destination *</Label>
-          <Select value={selectedClient || ''} onValueChange={handleClientSelect}>
+          <Select 
+            value={selectedClient || ''} 
+            onValueChange={handleClientSelect}
+          >
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un client" />
+              <SelectValue placeholder="Sélectionner un client">
+                {selectedClient || 'Sélectionner un client'}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              {filteredClients.map(client => (
-                <SelectItem key={`${client.nom}-${client.ville}`} value={client.nom}>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{client.nom}</span>
-                    <span className="text-xs text-gray-500">{client.ville}</span>
-                  </div>
+              {filteredClients.length === 0 ? (
+                <SelectItem value="no-results" disabled>
+                  Aucun client trouvé
                 </SelectItem>
-              ))}
+              ) : (
+                filteredClients.map((client, index) => (
+                  <SelectItem 
+                    key={`${client.nom}-${client.ville}-${index}`} 
+                    value={client.nom}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{client.nom}</span>
+                      <span className="text-xs text-gray-500">{client.ville}</span>
+                    </div>
+                  </SelectItem>
+                ))
+              )}
             </SelectContent>
           </Select>
         </div>

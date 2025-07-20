@@ -19,14 +19,16 @@ interface SingleBLFormProps {
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (clientNom: string) => {
-    console.log('Mise à jour client_nom pour BL:', clientNom);
+    console.log('SingleBLForm - handleClientChange called with:', clientNom);
     onUpdate('client_nom', clientNom);
   };
 
   const handleDestinationChange = (destination: string) => {
-    console.log('Mise à jour destination pour BL:', destination);
+    console.log('SingleBLForm - handleDestinationChange called with:', destination);
     onUpdate('destination', destination);
   };
+
+  console.log('SingleBLForm - Rendering BL with client_nom:', bl.client_nom);
 
   return (
     <Card className="border-l-4 border-l-orange-400">
