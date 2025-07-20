@@ -19,15 +19,24 @@ interface SingleBLFormProps {
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (clientNom: string) => {
-    console.log('SingleBLForm handleClientChange appelé avec:', clientNom);
-    console.log('BL avant mise à jour:', bl);
+    console.log('=== SINGLE BL FORM CLIENT CHANGE ===');
+    console.log('Nouveau client:', clientNom);
+    console.log('BL Index:', index);
+    console.log('BL avant mise à jour:', JSON.stringify(bl, null, 2));
+    
+    // Mettre à jour le client
     onUpdate('client_nom', clientNom);
-    onUpdate('destination', clientNom); // Définir la destination identique au client
+    // Définir la destination identique au client
+    onUpdate('destination', clientNom);
+    
+    console.log('=== FIN MISE À JOUR CLIENT BL ===');
   };
 
   const handleDestinationChange = (destination: string) => {
-    console.log('SingleBLForm handleDestinationChange appelé avec:', destination);
+    console.log('=== SINGLE BL FORM DESTINATION CHANGE ===');
+    console.log('Nouvelle destination:', destination);
     onUpdate('destination', destination);
+    console.log('=== FIN MISE À JOUR DESTINATION BL ===');
   };
 
   return (
@@ -51,11 +60,6 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Debug info */}
-        <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-          Debug - Client: "{bl.client_nom || 'vide'}" | Destination: "{bl.destination || 'vide'}"
-        </div>
-
         {/* Sélection client uniquement */}
         <div>
           <Label>Client / Destination *</Label>

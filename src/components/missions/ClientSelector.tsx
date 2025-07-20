@@ -45,10 +45,18 @@ export const ClientSelector = ({
     return destination ? destination.stations : [];
   };
 
-  const handleClientChange = (clientNom: string) => {
-    console.log('ClientSelector handleClientChange appelé avec:', clientNom);
+  const handleClientSelection = (clientNom: string) => {
+    console.log('=== CLIENT SELECTION START ===');
+    console.log('Client sélectionné:', clientNom);
+    console.log('BL Index:', blIndex);
+    
+    // Appeler immédiatement onClientChange
     onClientChange(clientNom);
-    onDestinationChange(clientNom); // Définir la destination identique au client
+    
+    // Définir la destination identique au client
+    onDestinationChange(clientNom);
+    
+    console.log('=== CLIENT SELECTION END ===');
   };
 
   return (
@@ -60,7 +68,7 @@ export const ClientSelector = ({
           <Select value={selectedVille} onValueChange={(value) => {
             setSelectedVille(value);
             if (value !== 'all') {
-              onDestinationChange(value); // Définir la ville comme destination par défaut
+              onDestinationChange(value);
             }
           }}>
             <SelectTrigger>
@@ -100,9 +108,8 @@ export const ClientSelector = ({
         <div>
           <Label>Client *</Label>
           <Select 
-            value={selectedClient} 
-            onValueChange={handleClientChange}
-            key={`client-select-${blIndex}`}
+            value={selectedClient || ''} 
+            onValueChange={handleClientSelection}
           >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un client" />
@@ -111,7 +118,7 @@ export const ClientSelector = ({
               {filteredClients.length > 0 ? (
                 filteredClients.map((client, clientIndex) => (
                   <SelectItem 
-                    key={`client-${blIndex}-${clientIndex}-${client.nom}`} 
+                    key={`${client.nom}-${clientIndex}`} 
                     value={client.nom}
                   >
                     <div className="flex flex-col">
@@ -121,24 +128,25 @@ export const ClientSelector = ({
                   </SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>
+                <SelectItem value="__no_client__" disabled>
                   Aucun client trouvé
                 </SelectItem>
               )}
             </SelectContent>
           </Select>
-          {selectedClient && (
-            <div className="text-xs text-green-600 mt-1">
-              Client sélectionné: {selectedClient}
-            </div>
-          )}
+          
+          {/* Debug info - sera supprimé une fois le problème résolu */}
+          <div className="text-xs mt-1 p-2 bg-blue-50 rounded">
+            <div>Selected Client: "{selectedClient}"</div>
+            <div>Selected Destination: "{selectedDestination}"</div>
+          </div>
         </div>
 
         {/* Destination spécifique - masquée si hideDestinationField est true */}
         {!hideDestinationField && (
           <div>
             <Label>Destination</Label>
-            <Select value={selectedDestination} onValueChange={onDestinationChange}>
+            <Select value={selectedDestination || ''} onValueChange={onDestinationChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner une destination" />
               </SelectTrigger>
