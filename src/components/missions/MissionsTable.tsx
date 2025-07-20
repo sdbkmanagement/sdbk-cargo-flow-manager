@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Search, 
   Filter,
@@ -18,12 +19,14 @@ import {
   User,
   MoreHorizontal,
   Eye,
-  RefreshCw
+  RefreshCw,
+  CheckCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { missionsService } from '@/services/missions';
 import { cn } from '@/lib/utils';
+import { MissionClosureDialog } from './MissionClosureDialog';
 
 interface MissionsTableProps {
   missions: any[];
@@ -36,8 +39,13 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [selectedMissionForClosure, setSelectedMissionForClosure] = useState(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { hasRole, hasPermission } = useAuth();
+
+  // Vérifier si l'utilisateur peut clôturer une mission
+  const canCloseMission = hasRole('admin') || hasRole('transport') || hasPermission('missions_write');
 
   const deleteMissionMutation = useMutation({
     mutationFn: missionsService.delete,
@@ -64,6 +72,15 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
       console.log('Suppression de la mission:', mission.id);
       deleteMissionMutation.mutate(mission.id);
     }
+  };
+
+  const handleCloseMission = (mission: any) => {
+    setSelectedMissionForClosure(mission);
+  };
+
+  const handleClosureSuccess = () => {
+    setSelectedMissionForClosure(null);
+    onRefresh();
   };
 
   const getStatusColor = (status: string) => {
@@ -102,181 +119,211 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
   });
 
   return (
-    <Card className="sdbk-card">
-      <CardHeader className="border-b border-gray-100 bg-gray-50/50">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-sdbk-blue/10 rounded-lg">
-              <Calendar className="w-5 h-5 text-sdbk-blue" />
+    <>
+      <Card className="sdbk-card">
+        <CardHeader className="border-b border-gray-100 bg-gray-50/50">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-sdbk-blue/10 rounded-lg">
+                <Calendar className="w-5 h-5 text-sdbk-blue" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-bold text-gray-900">
+                  Missions ({filteredMissions.length})
+                </CardTitle>
+                <p className="text-sm text-gray-500 mt-1">
+                  Gestion des missions de transport
+                </p>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-xl font-bold text-gray-900">
-                Missions ({filteredMissions.length})
-              </CardTitle>
-              <p className="text-sm text-gray-500 mt-1">
-                Gestion des missions de transport
-              </p>
-            </div>
+            <Button 
+              onClick={onRefresh} 
+              variant="outline" 
+              size="sm"
+              className="hover:bg-sdbk-blue hover:text-white transition-colors duration-200"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Actualiser
+            </Button>
           </div>
-          <Button 
-            onClick={onRefresh} 
-            variant="outline" 
-            size="sm"
-            className="hover:bg-sdbk-blue hover:text-white transition-colors duration-200"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Actualiser
-          </Button>
-        </div>
+          
+          <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Rechercher par numéro, chauffeur, véhicule..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 sdbk-input"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[200px] sdbk-input">
+                <SelectValue placeholder="Filtrer par statut" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                <SelectItem value="en_attente">En attente</SelectItem>
+                <SelectItem value="en_cours">En cours</SelectItem>
+                <SelectItem value="terminee">Terminée</SelectItem>
+                <SelectItem value="annulee">Annulée</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={typeFilter} onValueChange={setTypeFilter}>
+              <SelectTrigger className="w-[200px] sdbk-input">
+                <SelectValue placeholder="Filtrer par type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les types</SelectItem>
+                <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
+                <SelectItem value="bauxite">Bauxite</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
         
-        <div className="flex flex-col sm:flex-row gap-4 mt-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Rechercher par numéro, chauffeur, véhicule..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 sdbk-input"
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[200px] sdbk-input">
-              <SelectValue placeholder="Filtrer par statut" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les statuts</SelectItem>
-              <SelectItem value="en_attente">En attente</SelectItem>
-              <SelectItem value="en_cours">En cours</SelectItem>
-              <SelectItem value="terminee">Terminée</SelectItem>
-              <SelectItem value="annulee">Annulée</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-[200px] sdbk-input">
-              <SelectValue placeholder="Filtrer par type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les types</SelectItem>
-              <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
-              <SelectItem value="bauxite">Bauxite</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      
-      <CardContent className="p-0">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="sdbk-table-header">
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Numéro</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Type</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Trajet</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Véhicule</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Chauffeur</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Date départ</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Statut</th>
-                <th className="text-left py-4 px-6 font-semibold text-gray-900">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredMissions.map((mission) => (
-                <tr key={mission.id} className="sdbk-table-row">
-                  <td className="py-4 px-6">
-                    <div className="font-semibold text-sdbk-blue">
-                      {mission.numero}
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <Badge 
-                      variant="outline" 
-                      className={cn(
-                        "font-medium",
-                        mission.type_transport === 'hydrocarbures' 
-                          ? 'border-red-200 text-sdbk-red bg-red-50' 
-                          : 'border-yellow-200 text-yellow-700 bg-yellow-50'
-                      )}
-                    >
-                      {mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center text-sm">
-                      <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="truncate max-w-[150px] font-medium">
-                        {mission.site_depart} → {mission.site_arrivee}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center text-sm">
-                      <Truck className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="font-medium">{mission.vehicule?.numero}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center text-sm">
-                      <User className="w-4 h-4 mr-2 text-gray-400" />
-                      <span className="font-medium">
-                        {mission.chauffeur?.prenom} {mission.chauffeur?.nom}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-6 text-sm font-medium text-gray-900">
-                    {mission.date_heure_depart && format(
-                      new Date(mission.date_heure_depart), 
-                      'dd/MM/yyyy HH:mm', 
-                      { locale: fr }
-                    )}
-                  </td>
-                  <td className="py-4 px-6">
-                    <Badge className={cn("font-medium border", getStatusColor(mission.statut))}>
-                      {getStatusLabel(mission.statut)}
-                    </Badge>
-                  </td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(mission)}
-                        className="hover:bg-sdbk-blue/10 hover:text-sdbk-blue transition-colors duration-200"
-                        title="Modifier la mission"
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="sdbk-table-header">
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Numéro</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Type</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Trajet</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Véhicule</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Chauffeur</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Date départ</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Statut</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMissions.map((mission) => (
+                  <tr key={mission.id} className="sdbk-table-row">
+                    <td className="py-4 px-6">
+                      <div className="font-semibold text-sdbk-blue">
+                        {mission.numero}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "font-medium",
+                          mission.type_transport === 'hydrocarbures' 
+                            ? 'border-red-200 text-sdbk-red bg-red-50' 
+                            : 'border-yellow-200 text-yellow-700 bg-yellow-50'
+                        )}
                       >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      {hasWritePermission && (
+                        {mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center text-sm">
+                        <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="truncate max-w-[150px] font-medium">
+                          {mission.site_depart || 'Non défini'} → {mission.site_arrivee || 'Non défini'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center text-sm">
+                        <Truck className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="font-medium">
+                          {mission.vehicule?.numero || 'Non assigné'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center text-sm">
+                        <User className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="font-medium">
+                          {mission.chauffeur ? 
+                            `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : 
+                            'Non assigné'
+                          }
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-sm font-medium text-gray-900">
+                      {mission.date_heure_depart && format(
+                        new Date(mission.date_heure_depart), 
+                        'dd/MM/yyyy HH:mm', 
+                        { locale: fr }
+                      )}
+                    </td>
+                    <td className="py-4 px-6">
+                      <Badge className={cn("font-medium border", getStatusColor(mission.statut))}>
+                        {getStatusLabel(mission.statut)}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center space-x-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteMission(mission)}
-                          className="hover:bg-red-50 hover:text-sdbk-red transition-colors duration-200"
-                          title="Supprimer la mission"
-                          disabled={deleteMissionMutation.isPending}
+                          onClick={() => onEdit(mission)}
+                          className="hover:bg-sdbk-blue/10 hover:text-sdbk-blue transition-colors duration-200"
+                          title="Modifier la mission"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Edit className="w-4 h-4" />
                         </Button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          
-          {filteredMissions.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Calendar className="w-8 h-8 text-gray-400" />
+                        
+                        {/* Bouton de clôture pour les missions en cours */}
+                        {canCloseMission && mission.statut === 'en_cours' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleCloseMission(mission)}
+                            className="hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
+                            title="Clôturer la mission"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                        )}
+                        
+                        {hasWritePermission && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMission(mission)}
+                            className="hover:bg-red-50 hover:text-sdbk-red transition-colors duration-200"
+                            title="Supprimer la mission"
+                            disabled={deleteMissionMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            
+            {filteredMissions.length === 0 && (
+              <div className="text-center py-12">
+                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="w-8 h-8 text-gray-400" />
+                </div>
+                <p className="text-gray-500 font-medium">Aucune mission trouvée</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Essayez de modifier vos critères de recherche
+                </p>
               </div>
-              <p className="text-gray-500 font-medium">Aucune mission trouvée</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Essayez de modifier vos critères de recherche
-              </p>
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dialog de clôture de mission */}
+      {selectedMissionForClosure && (
+        <MissionClosureDialog
+          mission={selectedMissionForClosure}
+          onClose={() => setSelectedMissionForClosure(null)}
+          onSuccess={handleClosureSuccess}
+        />
+      )}
+    </>
   );
 };

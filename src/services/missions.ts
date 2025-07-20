@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Mission {
@@ -17,10 +18,12 @@ export interface Mission {
   created_at: string;
   updated_at: string;
   created_by?: string;
+  vehicule?: any;
+  chauffeur?: any;
 }
 
 export const missionsService = {
-  // Récupérer toutes les missions
+  // Récupérer toutes les missions avec les relations
   async getAll() {
     try {
       console.log('Chargement des missions...')
@@ -28,7 +31,11 @@ export const missionsService = {
       const { data, error } = await Promise.race([
         supabase
           .from('missions')
-          .select('*')
+          .select(`
+            *,
+            vehicule:vehicules(numero, marque, modele, immatriculation),
+            chauffeur:chauffeurs(nom, prenom, telephone)
+          `)
           .order('created_at', { ascending: false }),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Timeout')), 10000)
