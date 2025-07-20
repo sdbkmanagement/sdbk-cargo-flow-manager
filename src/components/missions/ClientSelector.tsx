@@ -53,19 +53,18 @@ export const ClientSelector = ({
     }
   }, [villeFromClient, selectedVille]);
 
-  // Extraire le nom du lieu de livraison depuis le client sélectionné
+  // Extraire le nom du lieu de livraison depuis le client sélectionné - SIMPLIFIÉ
   const selectedLieuNom = useMemo(() => {
     if (selectedClient && selectedVille) {
       // Le client est au format "VILLE LieuSpécifique"
       const lieuName = selectedClient.replace(`${selectedVille} `, '');
-      console.log('Extraction:', { selectedClient, selectedVille, lieuName });
+      console.log('Extraction simplifiée:', { selectedClient, selectedVille, lieuName });
       
-      // Trouver le lieu correspondant dans la liste pour s'assurer qu'il existe
-      const lieuCorrespondant = lieuxLivraisonForVille.find(lieu => lieu.nom === lieuName);
-      return lieuCorrespondant ? lieuName : '';
+      // Retourner directement le nom extrait sans vérification supplémentaire
+      return lieuName;
     }
     return '';
-  }, [selectedClient, selectedVille, lieuxLivraisonForVille]);
+  }, [selectedClient, selectedVille]);
 
   const handleVilleSelection = (ville: string) => {
     console.log('Ville sélectionnée:', ville);
@@ -86,6 +85,7 @@ export const ClientSelector = ({
     onDestinationChange(destinationComplete);
     
     console.log('Destination complète créée:', destinationComplete);
+    console.log('selectedLieuNom après sélection devrait être:', lieuNom);
   };
 
   return (
@@ -150,6 +150,13 @@ export const ClientSelector = ({
             )}
           </SelectContent>
         </Select>
+        
+        {/* Debug info */}
+        {selectedClient && (
+          <div className="mt-2 text-xs text-gray-500">
+            Debug: selectedLieuNom = "{selectedLieuNom}" | selectedClient = "{selectedClient}"
+          </div>
+        )}
         
         {/* Affichage de la destination complète */}
         {selectedVille && selectedClient && (
