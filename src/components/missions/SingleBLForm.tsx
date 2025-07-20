@@ -26,20 +26,17 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
       lieu_arrivee: bl.lieu_arrivee
     });
     
-    // Une seule mise à jour avec toutes les valeurs nécessaires
+    // Mise à jour synchrone de tous les champs liés
     onUpdate('client_nom', clientNom);
-    // Synchroniser destination et lieu_arrivee avec un léger délai pour éviter les conflits
-    setTimeout(() => {
-      onUpdate('destination', clientNom);
-      onUpdate('lieu_arrivee', clientNom);
-    }, 10);
+    onUpdate('destination', clientNom);
+    onUpdate('lieu_arrivee', clientNom);
     
     console.log(`✅ BL ${index}: Client mis à jour:`, clientNom);
   };
 
   const handleDestinationChange = (destination: string) => {
     console.log(`🎯 BL ${index}: handleDestinationChange appelé avec:`, destination);
-    // Cette fonction peut être vide maintenant car tout passe par handleClientChange
+    // Cette fonction reste vide car tout passe par handleClientChange
   };
 
   // Log des valeurs actuelles du BL avec plus de détails

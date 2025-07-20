@@ -58,23 +58,18 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation simplifiée : un BL est valide s'il a au moins un client_nom OU destination rempli
+  // Validation ultra-simplifiée : un BL est valide s'il a un client_nom ET les autres champs requis
   const blsIncomplets = bls.filter((bl, blIndex) => {
     const aClient = bl.client_nom && bl.client_nom.trim() !== '';
-    const aDestination = bl.destination && bl.destination.trim() !== '';
-    const aClientOuDestination = aClient || aDestination;
-    
     const aDate = bl.date_emission && bl.date_emission.trim() !== '';
     const aQuantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
     const aLieuDepart = bl.lieu_depart && bl.lieu_depart.trim() !== '';
     
-    const estComplet = aClientOuDestination && aDate && aQuantiteValide && aLieuDepart;
+    const estComplet = aClient && aDate && aQuantiteValide && aLieuDepart;
     
     if (!estComplet) {
       console.log(`❌ BL ${blIndex} est incomplet:`, {
         aClient: aClient,
-        aDestination: aDestination,
-        aClientOuDestination: aClientOuDestination,
         aDate: aDate,
         aQuantiteValide: aQuantiteValide,
         aLieuDepart: aLieuDepart,
@@ -121,7 +116,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
               <strong>Attention:</strong> {blsIncomplets.length} BL{blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet{blsIncomplets.length > 1 ? 's' : ''}. 
               Veuillez remplir tous les champs obligatoires avant de sauvegarder la mission.
               <div className="mt-2 text-xs">
-                Champs requis: Client/Destination, Date d&apos;émission, Quantité &gt; 0, Lieu de départ
+                Champs requis: Client, Date d&apos;émission, Quantité &gt; 0, Lieu de départ
               </div>
             </AlertDescription>
           </Alert>
