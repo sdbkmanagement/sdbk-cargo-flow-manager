@@ -61,14 +61,14 @@ export const ClientSelector = ({
     
     setSelectedLieuNom(lieuNom);
     
-    // CORRECTION : Créer la destination complète : "VILLE LieuSpécifique"
+    // NOUVELLE APPROCHE : Créer la destination complète pour lieu_arrivee uniquement
     const destinationComplete = `${selectedVille} ${lieuNom}`;
     
     console.log(`✅ BL ${blIndex}: Destination complète créée:`, destinationComplete);
-    console.log(`🔄 BL ${blIndex}: Appel onClientChange avec destination complète:`, destinationComplete);
+    console.log(`🔄 BL ${blIndex}: Appel onClientChange pour mettre à jour lieu_arrivee:`, destinationComplete);
     
-    // CORRECTION CRITIQUE : Appeler onClientChange avec la destination complète
-    // Cela va mettre à jour client_nom, destination ET lieu_arrivee dans SingleBLForm
+    // Appeler onClientChange avec la destination complète
+    // SingleBLForm va mettre à jour lieu_arrivee avec cette valeur
     onClientChange(destinationComplete);
   };
 
@@ -135,14 +135,14 @@ export const ClientSelector = ({
           </SelectContent>
         </Select>
         
-        {/* Affichage de la destination complète */}
-        {selectedVille && selectedClient && (
+        {/* Affichage de la destination complète sélectionnée */}
+        {selectedVille && selectedLieuNom && (
           <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
             <p className="text-sm font-medium text-green-800">
-              Destination complète sélectionnée :
+              Destination sélectionnée :
             </p>
             <p className="text-lg font-bold text-green-900">
-              {selectedClient}
+              {selectedVille} {selectedLieuNom}
             </p>
           </div>
         )}

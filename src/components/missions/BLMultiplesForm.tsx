@@ -49,9 +49,8 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     // Log détaillé après modification
     console.log(`📋 BL ${index} après modification:`, {
       client_nom: nouveauxBLs[index].client_nom || 'VIDE',
-      destination: nouveauxBLs[index].destination || 'VIDE',
-      lieu_depart: nouveauxBLs[index].lieu_depart || 'VIDE',
       lieu_arrivee: nouveauxBLs[index].lieu_arrivee || 'VIDE',
+      lieu_depart: nouveauxBLs[index].lieu_depart || 'VIDE',
       date_emission: nouveauxBLs[index].date_emission || 'VIDE',
       quantite_prevue: nouveauxBLs[index].quantite_prevue || 0,
       produit: nouveauxBLs[index].produit
@@ -60,24 +59,24 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // CORRECTION : Validation plus robuste et claire
+  // NOUVELLE VALIDATION : Basée sur lieu_arrivee au lieu de client_nom
   const blsIncomplets = bls.filter((bl, blIndex) => {
-    // Vérifications strictes avec trim() pour éviter les espaces
-    const clientValide = bl.client_nom && bl.client_nom.trim() !== '';
+    // Vérifications basées sur lieu_arrivee au lieu de client_nom
+    const lieuArriveeValide = bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '';
     const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
     const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
     const lieuDepartValide = bl.lieu_depart && bl.lieu_depart.trim() !== '';
     
-    const estComplet = clientValide && dateValide && quantiteValide && lieuDepartValide;
+    const estComplet = lieuArriveeValide && dateValide && quantiteValide && lieuDepartValide;
     
-    console.log(`🔍 Validation BL ${blIndex}:`, {
-      clientValide: clientValide ? 'OUI' : 'NON',
+    console.log(`🔍 NOUVELLE Validation BL ${blIndex}:`, {
+      lieuArriveeValide: lieuArriveeValide ? 'OUI' : 'NON',
       dateValide: dateValide ? 'OUI' : 'NON', 
       quantiteValide: quantiteValide ? 'OUI' : 'NON',
       lieuDepartValide: lieuDepartValide ? 'OUI' : 'NON',
       estComplet: estComplet ? 'COMPLET' : 'INCOMPLET',
       valeurs: {
-        client_nom: `"${bl.client_nom || 'VIDE'}"`,
+        lieu_arrivee: `"${bl.lieu_arrivee || 'VIDE'}"`,
         date_emission: `"${bl.date_emission || 'VIDE'}"`,
         quantite_prevue: bl.quantite_prevue || 0,
         lieu_depart: `"${bl.lieu_depart || 'VIDE'}"`
@@ -87,7 +86,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     return !estComplet;
   });
 
-  console.log(`📊 Validation globale: ${blsIncomplets.length}/${bls.length} BL incomplets`);
+  console.log(`📊 NOUVELLE Validation globale: ${blsIncomplets.length}/${bls.length} BL incomplets`);
 
   return (
     <Card>
@@ -107,7 +106,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
         </div>
       </CardHeader>
       <CardContent>
-        {/* Alerte si des BL sont incomplets - AMÉLIORÉE */}
+        {/* Alerte si des BL sont incomplets - MISE À JOUR */}
         {blsIncomplets.length > 0 && (
           <Alert className="mb-6 border-amber-200 bg-amber-50">
             <AlertCircle className="h-4 w-4 text-amber-600" />
@@ -116,7 +115,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
               <div className="mt-2 text-sm">
                 <strong>Champs obligatoires manquants :</strong>
                 <ul className="list-disc list-inside mt-1">
-                  <li>Client/Destination (ne doit pas être vide)</li>
+                  <li>Lieu d'arrivée (Client/Destination) - ne doit pas être vide</li>
                   <li>Date d'émission (obligatoire)</li>
                   <li>Quantité supérieure à 0</li>
                   <li>Lieu de départ (obligatoire)</li>

@@ -26,24 +26,17 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
       lieu_arrivee: bl.lieu_arrivee
     });
     
-    // CORRECTION CRITIQUE : Mise à jour synchrone et forcée avec la destination complète
+    // NOUVELLE APPROCHE : Mettre à jour seulement lieu_arrivee
+    // client_nom reste vide comme demandé
     if (destinationComplete && destinationComplete.trim() !== '') {
-      console.log(`✅ BL ${index}: Mise à jour avec destination complète:`, destinationComplete);
+      console.log(`✅ BL ${index}: Mise à jour lieu_arrivee avec:`, destinationComplete);
       
-      // Mettre à jour TOUS les champs avec la destination complète
-      onUpdate('client_nom', destinationComplete);  // Ex: "Cissela Station Cissela 2"  
-      onUpdate('destination', destinationComplete); // Ex: "Cissela Station Cissela 2"
-      onUpdate('lieu_arrivee', destinationComplete); // Ex: "Cissela Station Cissela 2"
+      // Mettre à jour SEULEMENT lieu_arrivee avec la destination complète
+      onUpdate('lieu_arrivee', destinationComplete);  // Ex: "Conakry Conakry Terminal"
       
-      console.log(`🔄 BL ${index}: Champs mis à jour avec:`, {
-        client_nom: destinationComplete,
-        destination: destinationComplete,
-        lieu_arrivee: destinationComplete
-      });
+      console.log(`🔄 BL ${index}: lieu_arrivee mis à jour avec:`, destinationComplete);
     } else {
-      console.log(`❌ BL ${index}: Destination vide, réinitialisation`);
-      onUpdate('client_nom', '');
-      onUpdate('destination', '');
+      console.log(`❌ BL ${index}: Destination vide, réinitialisation lieu_arrivee`);
       onUpdate('lieu_arrivee', '');
     }
     
@@ -109,15 +102,15 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             </Select>
           </div>
           <div>
-            <Label>Lieu d'arrivée (Client)</Label>
+            <Label>Lieu d'arrivée (Client) *</Label>
             <Input
-              value={bl.lieu_arrivee || bl.client_nom || ''}
+              value={bl.lieu_arrivee || ''}
               readOnly
               className="bg-gray-100"
-              placeholder="Défini par le client sélectionné"
+              placeholder="Défini par la sélection client/destination"
             />
             <p className="text-xs text-blue-600 mt-1">
-              Automatiquement défini par le client
+              Automatiquement rempli par la sélection client
             </p>
           </div>
         </div>
@@ -126,19 +119,19 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         <div>
           <Label>Client / Destination *</Label>
           <ClientSelector
-            selectedClient={bl.client_nom || bl.destination || ''}
-            selectedDestination={bl.destination || bl.client_nom || ''}
+            selectedClient={bl.lieu_arrivee || ''}
+            selectedDestination={bl.destination || ''}
             onClientChange={handleClientChange}
             onDestinationChange={handleDestinationChange}
             blIndex={index}
             hideDestinationField={true}
           />
           
-          {/* AJOUT : Affichage debug pour voir les valeurs en temps réel */}
+          {/* MODIFICATION : Affichage debug pour voir les valeurs en temps réel */}
           <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-600">
             <p><strong>Debug BL #{index + 1}:</strong></p>
             <p>client_nom: "{bl.client_nom || 'VIDE'}"</p>
-            <p>destination: "{bl.destination || 'VIDE'}"</p>
+            <p>lieu_arrivee: "{bl.lieu_arrivee || 'VIDE'}"</p>
             <p>lieu_depart: "{bl.lieu_depart || 'VIDE'}"</p>
             <p>quantite_prevue: {bl.quantite_prevue || 0}</p>
           </div>
