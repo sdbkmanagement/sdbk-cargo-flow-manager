@@ -3,9 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent } from '@/components/ui/card';
-import { Upload, X, FileText, AlertTriangle } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Upload, X, FileText } from 'lucide-react';
 
 interface DocumentUploadProps {
   onUpload: (file: File, expirationDate?: string) => void;
@@ -13,90 +11,72 @@ interface DocumentUploadProps {
   acceptedTypes?: string;
   maxSize?: number;
   showExpirationDate?: boolean;
-  defaultExpirationDate?: string;
   requiredExpirationDate?: boolean;
+  defaultExpirationDate?: string;
+  isLoading?: boolean;
 }
 
 export const DocumentUpload = ({
   onUpload,
   onCancel,
-  acceptedTypes = ".pdf,.jpg,.jpeg,.png",
-  maxSize = 10 * 1024 * 1024, // 10MB
+  acceptedTypes = ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+  maxSize = 10 * 1024 * 1024, // 10MB par défaut
   showExpirationDate = true,
+  requiredExpirationDate = false,
   defaultExpirationDate,
-  requiredExpirationDate = false
+  isLoading = false
 }: DocumentUploadProps) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [expirationDate, setExpirationDate] = useState(defaultExpirationDate || '');
   const [dragOver, setDragOver] = useState(false);
-  const { toast } = useToast();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      validateAndSetFile(file);
+      if (file.size > maxSize) {
+        alert(`Le fichier est trop volumineux. Taille maximum : ${Math.round(maxSize / (1024 * 1024))}MB`);
+        return;
+      }
+      setSelectedFile(file);
     }
   };
 
-  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (event: React.DragEvent) => {
     event.preventDefault();
     setDragOver(false);
     
-    const file = event.dataTransfer.files?.[0];
+    const file = event.dataTransfer.files[0];
     if (file) {
-      validateAndSetFile(file);
+      if (file.size > maxSize) {
+        alert(`Le fichier est trop volumineux. Taille maximum : ${Math.round(maxSize / (1024 * 1024))}MB`);
+        return;
+      }
+      setSelectedFile(file);
     }
   };
 
-  const validateAndSetFile = (file: File) => {
-    // Vérifier le type de fichier
-    const allowedTypes = acceptedTypes.split(',').map(type => type.trim());
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    
-    if (!allowedTypes.includes(fileExtension)) {
-      toast({
-        title: "Type de fichier non supporté",
-        description: `Types acceptés: ${acceptedTypes}`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Vérifier la taille du fichier
-    if (file.size > maxSize) {
-      toast({
-        title: "Fichier trop volumineux",
-        description: `Taille maximum: ${Math.round(maxSize / (1024 * 1024))}MB`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setSelectedFile(file);
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault();
+    setDragOver(true);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleDragLeave = (event: React.DragEvent) => {
+    event.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleUpload = () => {
     if (!selectedFile) {
-      toast({
-        title: "Aucun fichier sélectionné",
-        description: "Veuillez sélectionner un fichier",
-        variant: "destructive",
-      });
+      alert('Veuillez sélectionner un fichier');
       return;
     }
 
-    if (requiredExpirationDate && showExpirationDate && !expirationDate) {
-      toast({
-        title: "Date d'expiration requise",
-        description: "Veuillez renseigner la date d'expiration",
-        variant: "destructive",
-      });
+    if (showExpirationDate && requiredExpirationDate && !expirationDate) {
+      alert('Veuillez saisir une date d\'expiration');
       return;
     }
 
-    onUpload(selectedFile, expirationDate || undefined);
+    onUpload(selectedFile, expirationDate);
   };
 
   const formatFileSize = (bytes: number) => {
@@ -108,93 +88,87 @@ export const DocumentUpload = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {/* Zone de drop */}
-      <Card 
-        className={`border-2 border-dashed transition-colors ${
-          dragOver ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+    <div className="space-y-4">
+      {/* Zone de drop/sélection de fichier */}
+      <div
+        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+          dragOver 
+            ? 'border-blue-500 bg-blue-50' 
+            : 'border-gray-300 hover:border-gray-400'
         }`}
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
       >
-        <CardContent className="p-6">
-          {!selectedFile ? (
-            <div className="text-center">
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <div className="space-y-2">
-                <p className="text-sm font-medium">
-                  Glissez votre fichier ici ou cliquez pour sélectionner
-                </p>
-                <p className="text-xs text-gray-500">
-                  Types acceptés: {acceptedTypes} | Max: {Math.round(maxSize / (1024 * 1024))}MB
-                </p>
-              </div>
+        {selectedFile ? (
+          <div className="space-y-2">
+            <FileText className="w-12 h-12 mx-auto text-green-600" />
+            <div>
+              <p className="font-medium">{selectedFile.name}</p>
+              <p className="text-sm text-gray-500">{formatFileSize(selectedFile.size)}</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedFile(null)}
+              disabled={isLoading}
+            >
+              <X className="w-4 h-4 mr-1" />
+              Changer
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <Upload className="w-12 h-12 mx-auto text-gray-400" />
+            <div>
+              <p>Glissez-déposez un fichier ici ou</p>
+              <Label htmlFor="file-upload" className="cursor-pointer text-blue-600 hover:text-blue-700">
+                cliquez pour sélectionner
+              </Label>
               <Input
+                id="file-upload"
                 type="file"
                 accept={acceptedTypes}
                 onChange={handleFileSelect}
-                className="mt-4"
+                className="hidden"
+                disabled={isLoading}
               />
             </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-blue-500" />
-                <div>
-                  <p className="font-medium">{selectedFile.name}</p>
-                  <p className="text-sm text-gray-500">{formatFileSize(selectedFile.size)}</p>
-                </div>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedFile(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            <p className="text-xs text-gray-500">
+              Types acceptés: {acceptedTypes.replace(/\./g, '').toUpperCase()}
+              <br />
+              Taille max: {Math.round(maxSize / (1024 * 1024))}MB
+            </p>
+          </div>
+        )}
+      </div>
 
       {/* Date d'expiration */}
       {showExpirationDate && (
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="expiration">Date d'expiration</Label>
-            {requiredExpirationDate && (
-              <AlertTriangle className="h-4 w-4 text-orange-500" />
-            )}
-          </div>
+          <Label htmlFor="expiration-date">
+            Date d'expiration {requiredExpirationDate && <span className="text-red-500">*</span>}
+          </Label>
           <Input
-            id="expiration"
+            id="expiration-date"
             type="date"
             value={expirationDate}
             onChange={(e) => setExpirationDate(e.target.value)}
-            required={requiredExpirationDate}
+            disabled={isLoading}
           />
-          {requiredExpirationDate && (
-            <p className="text-sm text-orange-600">
-              La date d'expiration est obligatoire pour ce type de document
-            </p>
-          )}
         </div>
       )}
 
-      {/* Actions */}
-      <div className="flex gap-2 justify-end">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      {/* Boutons d'action */}
+      <div className="flex justify-end space-x-2">
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
           Annuler
         </Button>
-        <Button type="submit">
-          Télécharger
+        <Button onClick={handleUpload} disabled={!selectedFile || isLoading}>
+          <Upload className="w-4 h-4 mr-2" />
+          {isLoading ? 'Téléchargement...' : 'Télécharger'}
         </Button>
       </div>
-    </form>
+    </div>
   );
 };
