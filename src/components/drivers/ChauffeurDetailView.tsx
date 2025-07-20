@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Phone, Mail, MapPin, Calendar, FileText, Car, Clock, UserCheck } from 'lucide-react';
 import { ChauffeurStatutManager } from './ChauffeurStatutManager';
-import { ChauffeurDocumentManager } from './ChauffeurDocumentManager';
+import { ChauffeurDocumentManagerSimple } from './ChauffeurDocumentManagerSimple';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
 
@@ -248,7 +248,7 @@ export const ChauffeurDetailView = ({ chauffeur: initialChauffeur }: ChauffeurDe
         </TabsContent>
 
         <TabsContent value="documents">
-          <ChauffeurDocumentManager chauffeur={chauffeur} onUpdate={handleUpdate} />
+          <ChauffeurDocumentManagerSimple chauffeur={chauffeur} onUpdate={handleUpdate} />
         </TabsContent>
 
         <TabsContent value="permis" className="space-y-4">

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Upload, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { DocumentUpload } from '@/components/common/DocumentUpload';
 import { useToast } from '@/hooks/use-toast';
-import { documentsService } from '@/services/documentsService';
+import { documentsSimpleService } from '@/services/documentsSimple';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
 import {
   Dialog,
@@ -47,7 +46,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
   const loadDocuments = async () => {
     try {
       console.log('Chargement des documents pour le chauffeur:', chauffeur.id);
-      const docs = await documentsService.getByEntity('chauffeur', chauffeur.id);
+      const docs = await documentsSimpleService.getByEntity('chauffeur', chauffeur.id);
       setDocuments(docs);
       console.log('Documents chargés:', docs.length);
     } catch (error) {
@@ -80,7 +79,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
       });
       
       // Upload du fichier
-      const url = await documentsService.uploadFile(file, 'chauffeur', chauffeur.id, documentType);
+      const url = await documentsSimpleService.uploadFile(file, 'chauffeur', chauffeur.id, documentType);
       console.log('Fichier uploadé avec succès, URL:', url);
       
       // Préparer les données du document
@@ -92,21 +91,20 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
         url: url,
         taille: file.size,
         date_expiration: dateExpiration || null,
-        // Les champs statut et jours_avant_expiration seront calculés par le trigger PostgreSQL
       };
 
       console.log('Données du document à sauvegarder:', documentData);
 
       let savedDocument;
       if (editingDocument) {
-        savedDocument = await documentsService.update(editingDocument.id, documentData);
+        savedDocument = await documentsSimpleService.update(editingDocument.id, documentData);
         toast({
           title: "Document modifié",
           description: "Le document a été mis à jour avec succès",
         });
         setEditingDocument(null);
       } else {
-        savedDocument = await documentsService.create(documentData);
+        savedDocument = await documentsSimpleService.create(documentData);
         toast({
           title: "Document ajouté",
           description: "Le document a été téléchargé avec succès",
@@ -137,11 +135,11 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
       
       // Supprimer le fichier du storage
       if (document.url) {
-        await documentsService.deleteFile(document.url);
+        await documentsSimpleService.deleteFile(document.url);
       }
       
       // Supprimer l'enregistrement de la base
-      await documentsService.delete(document.id);
+      await documentsSimpleService.delete(document.id);
       
       toast({
         title: "Document supprimé",
