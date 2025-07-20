@@ -44,25 +44,25 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation des BL - correction de la logique de validation
+  // Validation des BL - logique simplifiée
   const blsIncomplets = bls.filter(bl => {
-    const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
-    const destinationManquante = !bl.destination || bl.destination.trim() === '';
-    const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
-    const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
+    const isIncomplet = (
+      !bl.client_nom || 
+      bl.client_nom.trim() === '' ||
+      !bl.date_emission || 
+      bl.date_emission.trim() === '' ||
+      !bl.quantite_prevue || 
+      bl.quantite_prevue <= 0
+    );
     
     console.log('Validation BL:', {
       client_nom: bl.client_nom,
-      destination: bl.destination,
       date_emission: bl.date_emission,
       quantite_prevue: bl.quantite_prevue,
-      clientManquant,
-      destinationManquante,
-      dateManquante,
-      quantiteInvalide
+      isIncomplet
     });
     
-    return clientManquant || destinationManquante || dateManquante || quantiteInvalide;
+    return isIncomplet;
   });
 
   return (
@@ -89,7 +89,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               <strong>Attention:</strong> {blsIncomplets.length} BL{blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet{blsIncomplets.length > 1 ? 's' : ''}. 
-              Veuillez remplir tous les champs obligatoires avant de sauvegarder la mission.
+              Veuillez vérifier que tous les champs obligatoires sont remplis (Client, Date, Quantité).
             </AlertDescription>
           </Alert>
         )}
