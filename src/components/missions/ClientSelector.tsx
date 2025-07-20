@@ -53,6 +53,15 @@ export const ClientSelector = ({
     }
   }, [villeFromClient, selectedVille]);
 
+  // Extraire le nom du lieu de livraison depuis le client sélectionné
+  const selectedLieuNom = useMemo(() => {
+    if (selectedClient && selectedVille) {
+      // Le client est au format "VILLE LieuSpécifique"
+      return selectedClient.replace(`${selectedVille} `, '');
+    }
+    return '';
+  }, [selectedClient, selectedVille]);
+
   const handleVilleSelection = (ville: string) => {
     console.log('Ville sélectionnée:', ville);
     setSelectedVille(ville);
@@ -98,7 +107,7 @@ export const ClientSelector = ({
       <div>
         <Label>Lieu de livraison *</Label>
         <Select 
-          value={selectedClient ? selectedClient.replace(`${selectedVille} `, '') : ''} 
+          value={selectedLieuNom} 
           onValueChange={handleLieuLivraisonSelection}
           disabled={!selectedVille}
         >
