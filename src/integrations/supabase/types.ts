@@ -223,6 +223,7 @@ export type Database = {
           montant_total: number | null
           numero: string
           numero_tournee: string | null
+          observations: string | null
           prix_unitaire: number | null
           produit: string
           quantite_livree: number | null
@@ -260,6 +261,7 @@ export type Database = {
           montant_total?: number | null
           numero: string
           numero_tournee?: string | null
+          observations?: string | null
           prix_unitaire?: number | null
           produit: string
           quantite_livree?: number | null
@@ -297,6 +299,7 @@ export type Database = {
           montant_total?: number | null
           numero?: string
           numero_tournee?: string | null
+          observations?: string | null
           prix_unitaire?: number | null
           produit?: string
           quantite_livree?: number | null
