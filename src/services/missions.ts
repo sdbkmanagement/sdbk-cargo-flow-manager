@@ -91,21 +91,52 @@ export const missionsService = {
     }
   },
 
-  // Supprimer une mission
+  // Supprimer une mission et tous ses enregistrements liés
   async delete(id: string) {
     try {
-      const { error } = await supabase
+      console.log('Début de la suppression de la mission:', id);
+      
+      // 1. Supprimer les chargements liés à cette mission
+      const { error: chargementsError } = await supabase
+        .from('chargements')
+        .delete()
+        .eq('mission_id', id);
+
+      if (chargementsError) {
+        console.error('Erreur suppression chargements:', chargementsError);
+        throw new Error('Impossible de supprimer les chargements liés à cette mission');
+      }
+      
+      console.log('Chargements supprimés avec succès');
+
+      // 2. Supprimer les bons de livraison liés à cette mission
+      const { error: blError } = await supabase
+        .from('bons_livraison')
+        .delete()
+        .eq('mission_id', id);
+
+      if (blError) {
+        console.error('Erreur suppression bons de livraison:', blError);
+        throw new Error('Impossible de supprimer les bons de livraison liés à cette mission');
+      }
+      
+      console.log('Bons de livraison supprimés avec succès');
+
+      // 3. Maintenant supprimer la mission elle-même
+      const { error: missionError } = await supabase
         .from('missions')
         .delete()
         .eq('id', id);
 
-      if (error) {
-        console.error('Erreur suppression mission:', error)
-        throw error
+      if (missionError) {
+        console.error('Erreur suppression mission:', missionError);
+        throw new Error('Impossible de supprimer la mission');
       }
+      
+      console.log('Mission supprimée avec succès');
     } catch (error) {
-      console.error('Erreur lors de la suppression de la mission:', error)
-      throw error
+      console.error('Erreur lors de la suppression de la mission:', error);
+      throw error;
     }
   },
 
@@ -243,7 +274,6 @@ export const missionsService = {
   // Vérifier la disponibilité des ressources
   async checkResourceAvailability(vehiculeId: string, chauffeurId: string, dateDebut: string, dateFin: string) {
     try {
-      // Vérifier les conflits de planning
       const { data: conflits, error } = await supabase
         .from('missions')
         .select('*')
