@@ -1,11 +1,12 @@
 
+
 -- Créer ou recréer la vue pour les alertes documents chauffeurs
 DROP VIEW IF EXISTS public.alertes_documents_chauffeurs;
 
 CREATE VIEW public.alertes_documents_chauffeurs AS
 SELECT 
     d.id,
-    d.chauffeur_id,
+    d.entity_id as chauffeur_id,
     (c.prenom || ' ' || c.nom) as chauffeur_nom,
     d.nom as document_nom,
     d.type as document_type,
@@ -28,10 +29,12 @@ SELECT
         ELSE 'INFO'
     END as niveau_alerte
 FROM public.documents d
-INNER JOIN public.chauffeurs c ON d.chauffeur_id = c.id
-WHERE d.chauffeur_id IS NOT NULL
+INNER JOIN public.chauffeurs c ON d.entity_id = c.id
+WHERE d.entity_type = 'chauffeur'
+AND d.entity_id IS NOT NULL
 AND d.date_expiration IS NOT NULL;
 
 -- Accorder les permissions de lecture sur la vue
 GRANT SELECT ON public.alertes_documents_chauffeurs TO authenticated;
 GRANT SELECT ON public.alertes_documents_chauffeurs TO anon;
+
