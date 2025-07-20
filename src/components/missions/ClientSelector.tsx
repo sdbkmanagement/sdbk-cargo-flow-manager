@@ -61,25 +61,24 @@ export const ClientSelector = ({
     
     setSelectedLieuNom(lieuNom);
     
-    // NOUVELLE APPROCHE : Créer la destination complète pour lieu_arrivee uniquement
+    // Créer la destination complète pour lieu_arrivee
     const destinationComplete = `${selectedVille} ${lieuNom}`;
     
     console.log(`✅ BL ${blIndex}: Destination complète créée:`, destinationComplete);
     console.log(`🔄 BL ${blIndex}: Appel onClientChange pour mettre à jour lieu_arrivee:`, destinationComplete);
     
     // Appeler onClientChange avec la destination complète
-    // SingleBLForm va mettre à jour lieu_arrivee avec cette valeur
     onClientChange(destinationComplete);
   };
 
   return (
     <div className="space-y-4">
-      {/* Sélection de la ville */}
+      {/* Sélection de la ville - OPTIONNELLE */}
       <div>
-        <Label>Ville de destination *</Label>
+        <Label>Ville de destination (optionnel)</Label>
         <Select value={selectedVille} onValueChange={handleVilleSelection}>
           <SelectTrigger>
-            <SelectValue placeholder="Sélectionner une ville" />
+            <SelectValue placeholder="Sélectionner une ville (optionnel)" />
           </SelectTrigger>
           <SelectContent>
             {DESTINATIONS.map(destination => (
@@ -94,9 +93,9 @@ export const ClientSelector = ({
         </Select>
       </div>
 
-      {/* Sélection du lieu de livraison spécifique */}
+      {/* Sélection du lieu de livraison spécifique - OPTIONNELLE */}
       <div>
-        <Label>Lieu de livraison *</Label>
+        <Label>Lieu de livraison (optionnel)</Label>
         <Select 
           value={selectedLieuNom} 
           onValueChange={handleLieuLivraisonSelection}
@@ -104,7 +103,7 @@ export const ClientSelector = ({
         >
           <SelectTrigger>
             <SelectValue 
-              placeholder={selectedVille ? "Sélectionner un lieu de livraison" : "Sélectionnez d'abord une ville"}
+              placeholder={selectedVille ? "Sélectionner un lieu de livraison (optionnel)" : "Sélectionnez d'abord une ville"}
             />
           </SelectTrigger>
           <SelectContent className="max-h-60">

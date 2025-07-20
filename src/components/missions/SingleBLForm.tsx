@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,19 +19,12 @@ interface SingleBLFormProps {
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (destinationComplete: string) => {
     console.log(`🎯 BL ${index}: handleClientChange appelé avec:`, destinationComplete);
-    console.log(`📝 BL ${index}: Valeurs AVANT modification:`, {
-      client_nom: bl.client_nom,
-      destination: bl.destination,
-      lieu_arrivee: bl.lieu_arrivee
-    });
     
-    // NOUVELLE APPROCHE : Mettre à jour seulement lieu_arrivee
-    // client_nom reste vide comme demandé
     if (destinationComplete && destinationComplete.trim() !== '') {
       console.log(`✅ BL ${index}: Mise à jour lieu_arrivee avec:`, destinationComplete);
       
-      // Mettre à jour SEULEMENT lieu_arrivee avec la destination complète
-      onUpdate('lieu_arrivee', destinationComplete);  // Ex: "Conakry Conakry Terminal"
+      // Mettre à jour lieu_arrivee avec la destination complète
+      onUpdate('lieu_arrivee', destinationComplete);  // Ex: "Conakry Conakry Terminal" 
       
       console.log(`🔄 BL ${index}: lieu_arrivee mis à jour avec:`, destinationComplete);
     } else {
@@ -48,7 +40,7 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
     // Cette fonction reste vide car tout passe par handleClientChange
   };
 
-  // Log des valeurs actuelles du BL avec plus de détails
+  // Log des valeurs actuelles du BL
   console.log(`📊 BL ${index} - État actuel complet:`, {
     client_nom: bl.client_nom || 'VIDE',
     destination: bl.destination || 'VIDE',
@@ -110,14 +102,14 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
               placeholder="Défini par la sélection client/destination"
             />
             <p className="text-xs text-blue-600 mt-1">
-              Automatiquement rempli par la sélection client
+              Automatiquement rempli par la sélection client (optionnelle)
             </p>
           </div>
         </div>
 
-        {/* Sélection client/destination */}
+        {/* Sélection client/destination - OPTIONNELLE */}
         <div>
-          <Label>Client / Destination *</Label>
+          <Label>Client / Destination (optionnel)</Label>
           <ClientSelector
             selectedClient={bl.lieu_arrivee || ''}
             selectedDestination={bl.destination || ''}
@@ -127,7 +119,7 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             hideDestinationField={true}
           />
           
-          {/* MODIFICATION : Affichage debug pour voir les valeurs en temps réel */}
+          {/* Affichage debug pour voir les valeurs en temps réel */}
           <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-600">
             <p><strong>Debug BL #{index + 1}:</strong></p>
             <p>client_nom: "{bl.client_nom || 'VIDE'}"</p>
