@@ -19,16 +19,21 @@ interface SingleBLFormProps {
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (clientNom: string) => {
+    console.log('handleClientChange appelé avec:', clientNom);
     // Mettre à jour les deux champs simultanément pour éviter la désynchronisation
     onUpdate('client_nom', clientNom);
     onUpdate('destination', clientNom);
   };
 
   const handleDestinationChange = (destination: string) => {
+    console.log('handleDestinationChange appelé avec:', destination);
     // Si on change la destination, on met aussi à jour le client pour maintenir la cohérence
     onUpdate('destination', destination);
     onUpdate('client_nom', destination);
   };
+
+  // Afficher les valeurs actuelles pour debug
+  console.log(`BL ${index + 1} - client_nom:`, bl.client_nom, '| destination:', bl.destination);
 
   return (
     <Card className="border-2 border-orange-100">
@@ -51,6 +56,11 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Debug info temporaire */}
+        <div className="text-xs bg-gray-100 p-2 rounded">
+          Debug BL #{index + 1}: client_nom="{bl.client_nom}" | destination="{bl.destination}"
+        </div>
+
         {/* Sélection client uniquement */}
         <div>
           <Label>Client / Destination *</Label>

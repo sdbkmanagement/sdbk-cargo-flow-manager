@@ -213,11 +213,25 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
     // Validation des BL
     if (formData.type_transport === 'hydrocarbures') {
-      const blsIncomplets = bls.filter(bl => 
-        !bl.client_nom || !bl.destination || !bl.date_emission || !bl.quantite_prevue || bl.quantite_prevue <= 0
-      );
+      const blsIncomplets = bls.filter(bl => {
+        // Utiliser client_nom OU destination pour la validation client (au moins un des deux doit être rempli)
+        const clientManquant = (!bl.client_nom || bl.client_nom.trim() === '') && 
+                               (!bl.destination || bl.destination.trim() === '');
+        const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
+        const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
+        
+        return clientManquant || dateManquante || quantiteInvalide;
+      });
       
       if (blsIncomplets.length > 0) {
+        console.log('BLs incomplets détectés:', blsIncomplets);
+        console.log('Détails des BLs:', bls.map(bl => ({
+          client_nom: bl.client_nom,
+          destination: bl.destination,
+          date_emission: bl.date_emission,
+          quantite_prevue: bl.quantite_prevue
+        })));
+        
         toast({
           title: 'Erreur',
           description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir tous les champs obligatoires.`,
