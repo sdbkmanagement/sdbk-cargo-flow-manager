@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Clock, XCircle, RefreshCw, User, Edit, Trash2 } from 'lucide-react';
+import { AlertTriangle, Clock, XCircle, RefreshCw, User, Edit, Trash2, Bug } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
@@ -44,11 +43,11 @@ export const DriversAlerts = () => {
   const loadAlerts = async () => {
     try {
       setLoading(true);
-      console.log('Chargement des alertes documents chauffeurs...');
+      console.log('🔄 Début du chargement des alertes dans le composant...');
       
       const alertesData = await alertesService.getAlertesChauffeurs();
       
-      console.log('Alertes chauffeurs récupérées pour l\'onglet Alertes:', alertesData);
+      console.log('📊 Alertes chauffeurs récupérées pour l\'affichage:', alertesData);
 
       // Transformer les données pour correspondre à l'interface
       const alertsFormatted = alertesData.map(alert => ({
@@ -63,10 +62,10 @@ export const DriversAlerts = () => {
         chauffeur_id: alert.chauffeur_id
       }));
 
-      console.log('Alertes formatées pour affichage:', alertsFormatted);
+      console.log('✅ Alertes formatées pour affichage:', alertsFormatted);
       setAlerts(alertsFormatted);
     } catch (error) {
-      console.error('Erreur lors du chargement des alertes:', error);
+      console.error('💥 Erreur lors du chargement des alertes dans le composant:', error);
       toast({
         title: 'Erreur',
         description: 'Impossible de charger les alertes',
@@ -74,6 +73,53 @@ export const DriversAlerts = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const debugDatabase = async () => {
+    try {
+      console.log('🐛 DÉBOGAGE - Vérification de la base de données...');
+      
+      // Vérifier la table documents
+      const { data: allDocs, error: allDocsError } = await supabase
+        .from('documents')
+        .select('*');
+      
+      console.log('📄 TOUS les documents:', allDocs);
+      console.log('❌ Erreurs documents:', allDocsError);
+
+      // Vérifier spécifiquement les documents chauffeurs
+      const { data: chauffeurDocs, error: chauffeurDocsError } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('entity_type', 'chauffeur');
+      
+      console.log('👤 Documents chauffeurs:', chauffeurDocs);
+      console.log('❌ Erreurs documents chauffeurs:', chauffeurDocsError);
+
+      // Vérifier la vue alertes
+      const { data: vueAlertes, error: vueAlertesError } = await supabase
+        .from('alertes_documents_chauffeurs')
+        .select('*');
+      
+      console.log('🎯 Vue alertes_documents_chauffeurs:', vueAlertes);
+      console.log('❌ Erreurs vue alertes:', vueAlertesError);
+
+      // Vérifier les chauffeurs
+      const { data: chauffeurs, error: chauffeursError } = await supabase
+        .from('chauffeurs')
+        .select('id, nom, prenom');
+      
+      console.log('👥 Chauffeurs:', chauffeurs);
+      console.log('❌ Erreurs chauffeurs:', chauffeursError);
+
+      toast({
+        title: 'Débogage terminé',
+        description: 'Vérifiez la console pour les détails',
+      });
+
+    } catch (error) {
+      console.error('💥 Erreur lors du débogage:', error);
     }
   };
 
@@ -85,7 +131,7 @@ export const DriversAlerts = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleEditDocument = (alert: DocumentAlert) => {
+  const handleEditDocument = async (alert: DocumentAlert) => {
     if (!alert.chauffeur_id || !alert.date_expiration) {
       toast({
         title: 'Erreur',
@@ -252,10 +298,16 @@ export const DriversAlerts = () => {
             {alerts.length} alerte(s) détectée(s)
           </p>
         </div>
-        <Button onClick={loadAlerts} variant="outline">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Actualiser
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={debugDatabase} variant="outline" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+            <Bug className="w-4 h-4 mr-2" />
+            Debug DB
+          </Button>
+          <Button onClick={loadAlerts} variant="outline">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Actualiser
+          </Button>
+        </div>
       </div>
 
       {/* Résumé des alertes */}
@@ -310,9 +362,13 @@ export const DriversAlerts = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Aucune alerte
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-4">
               Tous les documents des chauffeurs sont conformes
             </p>
+            <Button onClick={debugDatabase} variant="outline" className="bg-yellow-500 hover:bg-yellow-600 text-white">
+              <Bug className="w-4 h-4 mr-2" />
+              Déboguer la base de données
+            </Button>
           </CardContent>
         </Card>
       ) : (
