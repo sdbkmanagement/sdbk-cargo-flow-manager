@@ -22,6 +22,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
 
   const ajouterBL = () => {
     const nouveauBL: BonLivraison = {
+      numero: `BL-${Date.now()}`, // Temporary numero, will be replaced by database trigger
       client_nom: '',
       destination: '',
       vehicule_id: vehiculeId,

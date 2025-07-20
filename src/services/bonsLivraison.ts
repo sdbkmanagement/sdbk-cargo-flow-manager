@@ -1,6 +1,21 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { BonLivraison } from '@/types/bl';
+import { BonLivraison, BLDatabase } from '@/types/bl';
+
+// Helper function to convert database record to BonLivraison
+const convertFromDatabase = (dbRecord: BLDatabase): BonLivraison => ({
+  ...dbRecord,
+  produit: dbRecord.produit as 'essence' | 'gasoil',
+  statut: dbRecord.statut as 'emis' | 'charge' | 'en_route' | 'livre' | 'termine',
+  unite_mesure: 'litres'
+});
+
+// Helper function to convert BonLivraison to database format
+const convertToDatabase = (bl: Partial<BonLivraison>): Partial<BLDatabase> => ({
+  ...bl,
+  produit: bl.produit as string,
+  statut: bl.statut as string
+});
 
 export const bonsLivraisonService = {
   // Récupérer tous les BL d'une mission
@@ -17,7 +32,7 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(convertFromDatabase);
     } catch (error) {
       console.error('Erreur générale BL:', error);
       throw error;
@@ -27,9 +42,10 @@ export const bonsLivraisonService = {
   // Créer un nouveau BL
   async create(blData: Omit<BonLivraison, 'id' | 'created_at' | 'updated_at'>): Promise<BonLivraison> {
     try {
+      const dbData = convertToDatabase(blData);
       const { data, error } = await supabase
         .from('bons_livraison')
-        .insert([blData])
+        .insert([dbData])
         .select()
         .single();
 
@@ -38,7 +54,7 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return data;
+      return convertFromDatabase(data);
     } catch (error) {
       console.error('Erreur lors de la création du BL:', error);
       throw error;
@@ -48,9 +64,10 @@ export const bonsLivraisonService = {
   // Mettre à jour un BL
   async update(id: string, blData: Partial<BonLivraison>): Promise<BonLivraison> {
     try {
+      const dbData = convertToDatabase({ ...blData, updated_at: new Date().toISOString() });
       const { data, error } = await supabase
         .from('bons_livraison')
-        .update({ ...blData, updated_at: new Date().toISOString() })
+        .update(dbData)
         .eq('id', id)
         .select()
         .single();
@@ -60,7 +77,7 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return data;
+      return convertFromDatabase(data);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du BL:', error);
       throw error;
@@ -90,7 +107,7 @@ export const bonsLivraisonService = {
     try {
       const { error } = await supabase
         .from('bons_livraison')
-        .update({ statut, updated_at: new Date().toISOString() })
+        .update({ statut: statut as string, updated_at: new Date().toISOString() })
         .eq('id', id);
 
       if (error) {
