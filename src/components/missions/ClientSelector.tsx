@@ -65,11 +65,10 @@ export const ClientSelector = ({
     const destinationComplete = `${selectedVille} ${lieuNom}`;
     
     console.log(`✅ BL ${blIndex}: Destination complète créée:`, destinationComplete);
-    console.log(`🔄 BL ${blIndex}: Mise à jour simultanée client_nom ET destination avec:`, destinationComplete);
+    console.log(`🔄 BL ${blIndex}: Appel onClientChange avec:`, destinationComplete);
     
-    // Mettre à jour les deux champs simultanément pour éviter les conflits
+    // Appeler seulement onClientChange - SingleBLForm se chargera de la synchronisation
     onClientChange(destinationComplete);
-    onDestinationChange(destinationComplete);
   };
 
   return (

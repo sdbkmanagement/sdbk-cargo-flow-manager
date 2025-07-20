@@ -58,16 +58,12 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation simplifiée et plus robuste
+  // Validation simplifiée : un BL est valide s'il a au moins un client_nom OU destination rempli
   const blsIncomplets = bls.filter((bl, blIndex) => {
-    // Un BL est considéré comme valide si :
-    // 1. Il a un client OU une destination (pas les deux vides)
-    // 2. Il a une date d'émission
-    // 3. Il a une quantité > 0
-    // 4. Il a un lieu de départ
+    const aClient = bl.client_nom && bl.client_nom.trim() !== '';
+    const aDestination = bl.destination && bl.destination.trim() !== '';
+    const aClientOuDestination = aClient || aDestination;
     
-    const aClientOuDestination = (bl.client_nom && bl.client_nom.trim() !== '') || 
-                                 (bl.destination && bl.destination.trim() !== '');
     const aDate = bl.date_emission && bl.date_emission.trim() !== '';
     const aQuantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
     const aLieuDepart = bl.lieu_depart && bl.lieu_depart.trim() !== '';
@@ -76,6 +72,8 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     
     if (!estComplet) {
       console.log(`❌ BL ${blIndex} est incomplet:`, {
+        aClient: aClient,
+        aDestination: aDestination,
         aClientOuDestination: aClientOuDestination,
         aDate: aDate,
         aQuantiteValide: aQuantiteValide,

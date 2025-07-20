@@ -26,28 +26,20 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
       lieu_arrivee: bl.lieu_arrivee
     });
     
-    // Mise à jour groupée pour éviter les conflits
+    // Une seule mise à jour avec toutes les valeurs nécessaires
     onUpdate('client_nom', clientNom);
-    onUpdate('destination', clientNom);
-    onUpdate('lieu_arrivee', clientNom);
+    // Synchroniser destination et lieu_arrivee avec un léger délai pour éviter les conflits
+    setTimeout(() => {
+      onUpdate('destination', clientNom);
+      onUpdate('lieu_arrivee', clientNom);
+    }, 10);
     
-    console.log(`✅ BL ${index}: Modifications appliquées pour client_nom, destination et lieu_arrivee:`, clientNom);
+    console.log(`✅ BL ${index}: Client mis à jour:`, clientNom);
   };
 
   const handleDestinationChange = (destination: string) => {
     console.log(`🎯 BL ${index}: handleDestinationChange appelé avec:`, destination);
-    console.log(`📝 BL ${index}: Valeurs AVANT modification:`, {
-      client_nom: bl.client_nom,
-      destination: bl.destination,
-      lieu_arrivee: bl.lieu_arrivee
-    });
-    
-    // Synchroniser avec le client
-    onUpdate('destination', destination);
-    onUpdate('client_nom', destination);
-    onUpdate('lieu_arrivee', destination);
-    
-    console.log(`✅ BL ${index}: Modifications appliquées pour destination, client_nom et lieu_arrivee:`, destination);
+    // Cette fonction peut être vide maintenant car tout passe par handleClientChange
   };
 
   // Log des valeurs actuelles du BL avec plus de détails
