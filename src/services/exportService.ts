@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
 export const exportService = {
   async exportBLData() {
@@ -105,6 +106,152 @@ export const exportService = {
 
     } catch (error) {
       console.error('❌ Erreur générale lors de l\'export des missions:', error);
+      throw error;
+    }
+  },
+
+  async exportToExcel(dateDebut: string, dateFin: string) {
+    try {
+      console.log(`🔄 Export Excel pour la période du ${dateDebut} au ${dateFin}`);
+      
+      // Récupérer les données BL filtrées par date
+      const { data: bls, error } = await supabase
+        .from('bons_livraison')
+        .select(`
+          *,
+          vehicules(numero, marque, modele, immatriculation),
+          chauffeurs(nom, prenom)
+        `)
+        .gte('date_emission', dateDebut)
+        .lte('date_emission', dateFin)
+        .eq('statut', 'livre')
+        .order('date_emission', { ascending: true });
+
+      if (error) {
+        console.error('❌ Erreur lors de la récupération des BL:', error);
+        throw error;
+      }
+
+      if (!bls || bls.length === 0) {
+        throw new Error('Aucune donnée à exporter pour cette période');
+      }
+
+      // Transformer les données pour l'export Excel
+      const exportData = bls.map(bl => ({
+        'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
+        'N°Tournée': bl.numero || '',
+        'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
+        'Dépôt': bl.lieu_depart || '',
+        'BL': bl.numero || '',
+        'Client': bl.destination || bl.lieu_arrivee || '',
+        'Destination': bl.lieu_arrivee || '',
+        'Produit': bl.produit || '',
+        'Quantité': bl.quantite_livree || bl.quantite_prevue || 0,
+        'Prix Unitaire': bl.prix_unitaire || 0,
+        'Montant': bl.montant_facture || (bl.quantite_livree || bl.quantite_prevue || 0) * (bl.prix_unitaire || 0),
+        'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
+        'Manquant Compteur': bl.manquant_compteur || 0,
+        'Manquant Cuve': bl.manquant_cuve || 0,
+        'Numéros Clients': bl.client_code_total || bl.client_code || ''
+      }));
+
+      // Créer le fichier Excel
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Factures');
+
+      // Générer et télécharger le fichier
+      const fileName = `Factures_${dateDebut}_${dateFin}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+
+      console.log(`✅ Fichier Excel généré: ${fileName}`);
+
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export Excel:', error);
+      throw error;
+    }
+  },
+
+  async exportToCSV(dateDebut: string, dateFin: string) {
+    try {
+      console.log(`🔄 Export CSV pour la période du ${dateDebut} au ${dateFin}`);
+      
+      // Récupérer les données BL filtrées par date
+      const { data: bls, error } = await supabase
+        .from('bons_livraison')
+        .select(`
+          *,
+          vehicules(numero, marque, modele, immatriculation),
+          chauffeurs(nom, prenom)
+        `)
+        .gte('date_emission', dateDebut)
+        .lte('date_emission', dateFin)
+        .eq('statut', 'livre')
+        .order('date_emission', { ascending: true });
+
+      if (error) {
+        console.error('❌ Erreur lors de la récupération des BL:', error);
+        throw error;
+      }
+
+      if (!bls || bls.length === 0) {
+        throw new Error('Aucune donnée à exporter pour cette période');
+      }
+
+      // Transformer les données pour l'export CSV
+      const exportData = bls.map(bl => ({
+        'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
+        'N°Tournée': bl.numero || '',
+        'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
+        'Dépôt': bl.lieu_depart || '',
+        'BL': bl.numero || '',
+        'Client': bl.destination || bl.lieu_arrivee || '',
+        'Destination': bl.lieu_arrivee || '',
+        'Produit': bl.produit || '',
+        'Quantité': bl.quantite_livree || bl.quantite_prevue || 0,
+        'Prix Unitaire': bl.prix_unitaire || 0,
+        'Montant': bl.montant_facture || (bl.quantite_livree || bl.quantite_prevue || 0) * (bl.prix_unitaire || 0),
+        'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
+        'Manquant Compteur': bl.manquant_compteur || 0,
+        'Manquant Cuve': bl.manquant_cuve || 0,
+        'Numéros Clients': bl.client_code_total || bl.client_code || ''
+      }));
+
+      // Créer le contenu CSV avec séparateur français (point-virgule)
+      const headers = Object.keys(exportData[0]);
+      const csvContent = [
+        headers.join(';'),
+        ...exportData.map(row => 
+          headers.map(header => {
+            const value = row[header as keyof typeof row];
+            // Échapper les guillemets et encapsuler si nécessaire
+            if (typeof value === 'string' && (value.includes(';') || value.includes('"') || value.includes('\n'))) {
+              return `"${value.replace(/"/g, '""')}"`;
+            }
+            return value;
+          }).join(';')
+        )
+      ].join('\n');
+
+      // Ajouter BOM UTF-8 pour une meilleure compatibilité avec Excel
+      const BOM = '\uFEFF';
+      const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+      // Télécharger le fichier
+      const fileName = `Factures_${dateDebut}_${dateFin}.csv`;
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      console.log(`✅ Fichier CSV généré: ${fileName}`);
+
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'export CSV:', error);
       throw error;
     }
   }
