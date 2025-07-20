@@ -39,10 +39,19 @@ export const ClientSelector = ({
     return getAllClients();
   }, [searchQuery, selectedVille]);
 
+  console.log('ClientSelector - selectedClient:', selectedClient);
+  console.log('ClientSelector - filteredClients:', filteredClients);
+
   // Obtenir les destinations pour la ville sélectionnée
   const getDestinationsForVille = (ville: string) => {
     const destination = DESTINATIONS.find(d => d.ville === ville);
     return destination ? destination.stations : [];
+  };
+
+  const handleClientChange = (clientNom: string) => {
+    console.log('handleClientChange - clientNom:', clientNom);
+    onClientChange(clientNom);
+    onDestinationChange(clientNom); // Définir la destination identique au client
   };
 
   return (
@@ -93,7 +102,7 @@ export const ClientSelector = ({
         {/* Sélection du client */}
         <div>
           <Label>Client *</Label>
-          <Select value={selectedClient} onValueChange={onClientChange}>
+          <Select value={selectedClient || ''} onValueChange={handleClientChange}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>

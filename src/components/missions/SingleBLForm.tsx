@@ -18,6 +18,20 @@ interface SingleBLFormProps {
 }
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
+  console.log('SingleBLForm - bl.client_nom:', bl.client_nom);
+  console.log('SingleBLForm - bl.destination:', bl.destination);
+
+  const handleClientChange = (clientNom: string) => {
+    console.log('SingleBLForm - handleClientChange:', clientNom);
+    onUpdate('client_nom', clientNom);
+    onUpdate('destination', clientNom); // Définir la destination identique au client
+  };
+
+  const handleDestinationChange = (destination: string) => {
+    console.log('SingleBLForm - handleDestinationChange:', destination);
+    onUpdate('destination', destination);
+  };
+
   return (
     <Card className="border-2 border-orange-100">
       <CardHeader className="pb-4">
@@ -43,13 +57,10 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         <div>
           <Label>Client / Destination *</Label>
           <ClientSelector
-            selectedClient={bl.client_nom}
-            selectedDestination={bl.destination}
-            onClientChange={(value) => {
-              onUpdate('client_nom', value);
-              onUpdate('destination', value); // Définir la destination identique au client
-            }}
-            onDestinationChange={(value) => onUpdate('destination', value)}
+            selectedClient={bl.client_nom || ''}
+            selectedDestination={bl.destination || ''}
+            onClientChange={handleClientChange}
+            onDestinationChange={handleDestinationChange}
             blIndex={index}
             hideDestinationField={true}
           />
