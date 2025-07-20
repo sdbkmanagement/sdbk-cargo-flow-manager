@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,8 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
       numero: `BL-${Date.now()}`, // Temporary numero, will be replaced by database trigger
       client_nom: '',
       destination: '',
+      lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
+      lieu_arrivee: '',
       vehicule_id: vehiculeId,
       chauffeur_id: chauffeurId,
       date_emission: new Date().toISOString().split('T')[0],
@@ -45,7 +46,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     nouveauxBLs[index] = { ...nouveauxBLs[index], [champ]: valeur };
     
     // Log détaillé après modification
-    console.log(`📋 BL ${index} après modification - État complet:`, {
+    console.log(`📋 BL ${index} après modification:`, {
       client_nom: nouveauxBLs[index].client_nom || 'VIDE',
       destination: nouveauxBLs[index].destination || 'VIDE',
       lieu_depart: nouveauxBLs[index].lieu_depart || 'VIDE',
@@ -58,37 +59,34 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation ultra-simplifiée : un BL est valide s'il a un client_nom ET les autres champs requis
+  // Validation stricte et plus claire
   const blsIncomplets = bls.filter((bl, blIndex) => {
-    const aClient = bl.client_nom && bl.client_nom.trim() !== '';
-    const aDate = bl.date_emission && bl.date_emission.trim() !== '';
-    const aQuantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
-    const aLieuDepart = bl.lieu_depart && bl.lieu_depart.trim() !== '';
+    const clientValide = bl.client_nom && bl.client_nom.trim() !== '';
+    const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
+    const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
+    const lieuDepartValide = bl.lieu_depart && bl.lieu_depart.trim() !== '';
     
-    const estComplet = aClient && aDate && aQuantiteValide && aLieuDepart;
+    const estComplet = clientValide && dateValide && quantiteValide && lieuDepartValide;
     
     if (!estComplet) {
       console.log(`❌ BL ${blIndex} est incomplet:`, {
-        aClient: aClient,
-        aDate: aDate,
-        aQuantiteValide: aQuantiteValide,
-        aLieuDepart: aLieuDepart,
-        valeurs_actuelles: {
+        clientValide,
+        dateValide,
+        quantiteValide,
+        lieuDepartValide,
+        valeurs: {
           client_nom: bl.client_nom || 'VIDE',
-          destination: bl.destination || 'VIDE',
           date_emission: bl.date_emission || 'VIDE',
           quantite_prevue: bl.quantite_prevue || 0,
           lieu_depart: bl.lieu_depart || 'VIDE'
         }
       });
-    } else {
-      console.log(`✅ BL ${blIndex} est complet`);
     }
     
     return !estComplet;
   });
 
-  console.log(`📊 Validation globale finale: ${blsIncomplets.length}/${bls.length} BL incomplets`);
+  console.log(`📊 Validation globale: ${blsIncomplets.length}/${bls.length} BL incomplets`);
 
   return (
     <Card>

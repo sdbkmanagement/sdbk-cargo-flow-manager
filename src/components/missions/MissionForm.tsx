@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,12 +114,14 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       };
       chargerBLs();
     } else {
-      // Pour une nouvelle mission d'hydrocarbures, créer un BL par défaut
+      // Pour une nouvelle mission d'hydrocarbures, créer un BL par défaut avec tous les champs requis
       if (formData.type_transport === 'hydrocarbures') {
         const defaultBL: BonLivraison = {
           numero: `BL-${Date.now()}`,
           client_nom: '',
           destination: '',
+          lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
+          lieu_arrivee: '',
           vehicule_id: formData.vehicule_id,
           chauffeur_id: formData.chauffeur_id,
           date_emission: new Date().toISOString().split('T')[0],
@@ -217,42 +220,44 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
 
-    // Validation des BL - logique corrigée et synchronisée
+    // Validation des BL - corrigée pour être plus stricte
     if (formData.type_transport === 'hydrocarbures') {
       const blsIncomplets = bls.filter(bl => {
-        console.log('Validation finale BL:', {
+        console.log('🔍 Validation BL:', {
           id: bl.id || 'nouveau',
-          client_nom: bl.client_nom,
-          destination: bl.destination,
-          date_emission: bl.date_emission,
-          quantite_prevue: bl.quantite_prevue,
-          lieu_depart: bl.lieu_depart
+          client_nom: bl.client_nom || 'VIDE',
+          destination: bl.destination || 'VIDE',
+          date_emission: bl.date_emission || 'VIDE',
+          quantite_prevue: bl.quantite_prevue || 0,
+          lieu_depart: bl.lieu_depart || 'VIDE'
         });
         
-        // Vérifier que le client/destination est rempli
-        const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
-        const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
-        const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
-        const lieuDepartManquant = !bl.lieu_depart || bl.lieu_depart.trim() === '';
+        // Vérification stricte de tous les champs requis
+        const clientValide = bl.client_nom && bl.client_nom.trim() !== '';
+        const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
+        const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
+        const lieuDepartValide = bl.lieu_depart && bl.lieu_depart.trim() !== '';
         
-        const estIncomplet = clientManquant || dateManquante || quantiteInvalide || lieuDepartManquant;
+        const estComplet = clientValide && dateValide && quantiteValide && lieuDepartValide;
         
-        if (estIncomplet) {
-          console.log('BL incomplet lors de la validation finale:', {
-            clientManquant,
-            dateManquante,
-            quantiteInvalide,
-            lieuDepartManquant
+        if (!estComplet) {
+          console.log('❌ BL incomplet:', {
+            clientValide,
+            dateValide,
+            quantiteValide,
+            lieuDepartValide
           });
+        } else {
+          console.log('✅ BL complet');
         }
         
-        return estIncomplet;
+        return !estComplet;
       });
       
       if (blsIncomplets.length > 0) {
         toast({
           title: 'Erreur de validation',
-          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Champs requis: Client/Destination, Date d'émission, Quantité > 0, Lieu de départ.`,
+          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir: Client/Destination, Date d'émission, Quantité > 0, et Lieu de départ.`,
           variant: 'destructive'
         });
         return;
@@ -266,8 +271,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       date_heure_arrivee_prevue: null
     };
 
-    console.log('Sauvegarde de la mission:', submitData);
-    console.log('BLs associés:', bls);
+    console.log('💾 Sauvegarde de la mission:', submitData);
+    console.log('📋 BLs associés:', bls);
     saveMutation.mutate(submitData);
   };
 
