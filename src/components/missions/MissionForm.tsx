@@ -118,7 +118,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       if (formData.type_transport === 'hydrocarbures') {
         const defaultBL: BonLivraison = {
           numero: `BL-${Date.now()}`,
-          client_nom: '',
           destination: '',
           lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
           lieu_arrivee: '',
@@ -225,7 +224,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       const blsIncomplets = bls.filter(bl => {
         console.log('🔍 Validation BL:', {
           id: bl.id || 'nouveau',
-          client_nom: bl.client_nom || 'VIDE',
+          lieu_arrivee: bl.lieu_arrivee || 'VIDE',
           destination: bl.destination || 'VIDE',
           date_emission: bl.date_emission || 'VIDE',
           quantite_prevue: bl.quantite_prevue || 0,
@@ -233,16 +232,16 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         });
         
         // Vérification stricte de tous les champs requis
-        const clientValide = bl.client_nom && bl.client_nom.trim() !== '';
+        const lieuArriveeValide = bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '';
         const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
         const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
         const lieuDepartValide = bl.lieu_depart && bl.lieu_depart.trim() !== '';
         
-        const estComplet = clientValide && dateValide && quantiteValide && lieuDepartValide;
+        const estComplet = lieuArriveeValide && dateValide && quantiteValide && lieuDepartValide;
         
         if (!estComplet) {
           console.log('❌ BL incomplet:', {
-            clientValide,
+            lieuArriveeValide,
             dateValide,
             quantiteValide,
             lieuDepartValide
@@ -257,7 +256,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       if (blsIncomplets.length > 0) {
         toast({
           title: 'Erreur de validation',
-          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir: Client/Destination, Date d'émission, Quantité > 0, et Lieu de départ.`,
+          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir: Lieu d'arrivée, Date d'émission, Quantité > 0, et Lieu de départ.`,
           variant: 'destructive'
         });
         return;

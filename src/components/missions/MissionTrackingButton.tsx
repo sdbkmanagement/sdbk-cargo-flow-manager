@@ -160,9 +160,9 @@ export const MissionTrackingButton = ({ mission, onSuccess }: MissionTrackingBut
               <Card key={bl.id || index} className="border-2 border-blue-100">
                 <CardHeader className="pb-4">
                   <CardTitle className="text-lg flex items-center justify-between">
-                    <span>BL #{index + 1} - {bl.client_nom}</span>
+                    <span>BL #{index + 1} - {bl.lieu_arrivee || bl.destination}</span>
                     <div className="text-sm font-normal text-gray-500">
-                      {bl.lieu_depart} → {bl.lieu_arrivee || bl.client_nom}
+                      {bl.lieu_depart} → {bl.lieu_arrivee || bl.destination}
                     </div>
                   </CardTitle>
                 </CardHeader>

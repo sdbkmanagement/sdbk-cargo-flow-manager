@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -167,7 +168,7 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                   <Card key={bl.id || index} className="border-2 border-orange-100">
                     <CardHeader className="pb-4">
                       <CardTitle className="text-lg flex items-center justify-between">
-                        <span>BL #{index + 1} - {bl.client_nom}</span>
+                        <span>BL #{index + 1} - {bl.lieu_arrivee || bl.destination}</span>
                         <div className="text-sm font-normal text-gray-500">
                           {bl.produit} - {bl.quantite_prevue?.toLocaleString()} L
                         </div>
@@ -177,14 +178,14 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                       {/* Modification du client/destination */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
                         <div>
-                          <Label>Client / Destination *</Label>
+                          <Label>Lieu d'arrivée / Destination *</Label>
                           <Input
-                            value={bl.client_nom}
+                            value={bl.lieu_arrivee || bl.destination}
                             onChange={(e) => {
-                              updateBL(index, 'client_nom', e.target.value);
+                              updateBL(index, 'lieu_arrivee', e.target.value);
                               updateBL(index, 'destination', e.target.value);
                             }}
-                            placeholder="Nom du client"
+                            placeholder="Lieu d'arrivée"
                           />
                           <p className="text-xs text-blue-600 mt-1">
                             Modifiable pendant la tournée

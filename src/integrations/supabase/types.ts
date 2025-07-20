@@ -203,7 +203,6 @@ export type Database = {
           chiffre_affaire_associe: number | null
           client_code: string | null
           client_code_total: string | null
-          client_nom: string
           created_at: string
           date_arrivee_prevue: string | null
           date_arrivee_reelle: string | null
@@ -215,6 +214,8 @@ export type Database = {
           destination: string
           facture: boolean | null
           id: string
+          lieu_arrivee: string | null
+          lieu_depart: string | null
           manquant_compteur: number | null
           manquant_cuve: number | null
           manquant_total: number | null
@@ -241,7 +242,6 @@ export type Database = {
           chiffre_affaire_associe?: number | null
           client_code?: string | null
           client_code_total?: string | null
-          client_nom: string
           created_at?: string
           date_arrivee_prevue?: string | null
           date_arrivee_reelle?: string | null
@@ -253,6 +253,8 @@ export type Database = {
           destination: string
           facture?: boolean | null
           id?: string
+          lieu_arrivee?: string | null
+          lieu_depart?: string | null
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null
@@ -279,7 +281,6 @@ export type Database = {
           chiffre_affaire_associe?: number | null
           client_code?: string | null
           client_code_total?: string | null
-          client_nom?: string
           created_at?: string
           date_arrivee_prevue?: string | null
           date_arrivee_reelle?: string | null
@@ -291,6 +292,8 @@ export type Database = {
           destination?: string
           facture?: boolean | null
           id?: string
+          lieu_arrivee?: string | null
+          lieu_depart?: string | null
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null

@@ -40,7 +40,7 @@ export const BLSuiviDetail = ({ bl, index, onUpdate, isReadOnly = false }: BLSui
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
             <FileText className="w-5 h-5 mr-2 text-orange-500" />
-            BL #{index + 1} - {bl.client_nom}
+            BL #{index + 1} - {bl.lieu_arrivee || bl.destination}
             {hasProblems ? (
               <AlertTriangle className="w-4 h-4 ml-2 text-red-500" />
             ) : (
