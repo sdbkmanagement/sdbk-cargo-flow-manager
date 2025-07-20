@@ -48,11 +48,13 @@ export const bonsLivraisonService = {
   // Récupérer tous les BL d'une mission
   async getByMissionId(missionId: string): Promise<BonLivraison[]> {
     try {
-      const { data, error } = await supabase
+      const result = await (supabase as any)
         .from('bons_livraison')
         .select('*')
         .eq('mission_id', missionId)
         .order('created_at', { ascending: true });
+      
+      const { data, error } = result;
 
       if (error) {
         console.error('Erreur lors du chargement des BL:', error);
