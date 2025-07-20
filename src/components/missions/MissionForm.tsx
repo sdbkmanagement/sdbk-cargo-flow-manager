@@ -33,8 +33,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     chauffeur_id: mission?.chauffeur_id || '',
     observations: mission?.observations || '',
     statut: mission?.statut || 'en_attente',
-    date_heure_depart: mission?.date_heure_depart || '',
-    date_heure_arrivee_prevue: mission?.date_heure_arrivee_prevue || ''
+    date_heure_depart: mission?.date_heure_depart || ''
   });
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
@@ -243,7 +242,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
       date_heure_depart: formData.date_heure_depart ? new Date(formData.date_heure_depart).toISOString() : null,
-      date_heure_arrivee_prevue: formData.date_heure_arrivee_prevue ? new Date(formData.date_heure_arrivee_prevue).toISOString() : null
+      date_heure_arrivee_prevue: null
     };
 
     console.log('Sauvegarde de la mission:', submitData);
@@ -344,7 +343,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </div>
               </div>
 
-              {/* Dates */}
+              {/* Date de départ uniquement */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="date_heure_depart">Date et heure de départ</Label>
@@ -353,15 +352,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                     type="datetime-local"
                     value={formData.date_heure_depart}
                     onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="date_heure_arrivee_prevue">Date et heure d'arrivée prévue</Label>
-                  <Input
-                    id="date_heure_arrivee_prevue"
-                    type="datetime-local"
-                    value={formData.date_heure_arrivee_prevue}
-                    onChange={(e) => updateFormData('date_heure_arrivee_prevue', e.target.value)}
                   />
                 </div>
               </div>

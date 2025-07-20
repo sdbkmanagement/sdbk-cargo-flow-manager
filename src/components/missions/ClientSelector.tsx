@@ -1,10 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin } from 'lucide-react';
-import { getAllClients, getClientsByVille, searchClients, DESTINATIONS } from '@/data/destinations';
+import { MapPin } from 'lucide-react';
+import { getClientsByVille, DESTINATIONS } from '@/data/destinations';
 
 interface ClientSelectorProps {
   selectedClient: string;
@@ -23,152 +22,93 @@ export const ClientSelector = ({
   blIndex,
   hideDestinationField = false
 }: ClientSelectorProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedVille, setSelectedVille] = useState('');
 
-  // Filtrer les clients selon la recherche et la ville sélectionnée
-  const filteredClients = useMemo(() => {
-    if (selectedVille && selectedVille !== 'all') {
+  // Obtenir les clients pour la ville sélectionnée
+  const clientsForVille = useMemo(() => {
+    if (selectedVille) {
       return getClientsByVille(selectedVille);
     }
-    
-    if (searchQuery) {
-      return searchClients(searchQuery);
-    }
-    
-    return getAllClients();
-  }, [searchQuery, selectedVille]);
-
-  // Obtenir les destinations pour la ville sélectionnée
-  const getDestinationsForVille = (ville: string) => {
-    const destination = DESTINATIONS.find(d => d.ville === ville);
-    return destination ? destination.stations : [];
-  };
+    return [];
+  }, [selectedVille]);
 
   const handleClientSelection = (clientNom: string) => {
-    // Appeler les deux callbacks pour maintenir la synchronisation
+    // Le client EST la destination - synchroniser les deux champs
     onClientChange(clientNom);
     onDestinationChange(clientNom);
   };
 
-  // Utiliser selectedClient comme source de vérité, avec selectedDestination comme fallback
-  const currentValue = selectedClient || selectedDestination || '';
+  const handleVilleSelection = (ville: string) => {
+    setSelectedVille(ville);
+    // Réinitialiser la sélection du client quand on change de ville
+    onClientChange('');
+    onDestinationChange('');
+  };
+
+  // Utiliser selectedClient comme source de vérité
+  const currentValue = selectedClient || '';
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Filtre par ville */}
-        <div>
-          <Label>Filtrer par ville</Label>
-          <Select value={selectedVille} onValueChange={(value) => {
-            setSelectedVille(value);
-            if (value !== 'all') {
-              onDestinationChange(value);
-            }
-          }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Toutes les villes" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Toutes les villes</SelectItem>
-              {DESTINATIONS.map(destination => (
-                <SelectItem key={destination.ville} value={destination.ville}>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    {destination.ville}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Recherche client */}
-        <div>
-          <Label>Rechercher un client</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Rechercher un client..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
+      {/* Sélection de la ville */}
+      <div>
+        <Label>Ville *</Label>
+        <Select value={selectedVille} onValueChange={handleVilleSelection}>
+          <SelectTrigger>
+            <SelectValue placeholder="Sélectionner une ville" />
+          </SelectTrigger>
+          <SelectContent>
+            {DESTINATIONS.map(destination => (
+              <SelectItem key={destination.ville} value={destination.ville}>
+                <div className="flex items-center">
+                  <MapPin className="w-4 h-4 mr-2" />
+                  {destination.ville}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
-      <div className={hideDestinationField ? "w-full" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
-        {/* Sélection du client */}
-        <div>
-          <Label>Client *</Label>
-          <Select 
-            value={currentValue} 
-            onValueChange={handleClientSelection}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un client" />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              {filteredClients.length > 0 ? (
-                filteredClients.map((client, clientIndex) => (
-                  <SelectItem 
-                    key={`${client.nom}-${client.ville}-${clientIndex}`} 
-                    value={client.nom}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{client.nom}</span>
-                      <span className="text-xs text-gray-500">{client.ville}</span>
-                    </div>
-                  </SelectItem>
-                ))
-              ) : (
-                <SelectItem value="__no_client__" disabled>
-                  Aucun client trouvé
+      {/* Sélection du client/lieu de livraison */}
+      <div>
+        <Label>Client / Lieu de livraison *</Label>
+        <Select 
+          value={currentValue} 
+          onValueChange={handleClientSelection}
+          disabled={!selectedVille}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder={selectedVille ? "Sélectionner un client" : "Sélectionnez d'abord une ville"} />
+          </SelectTrigger>
+          <SelectContent className="max-h-60">
+            {clientsForVille.length > 0 ? (
+              clientsForVille.map((client, clientIndex) => (
+                <SelectItem 
+                  key={`${client.nom}-${client.ville}-${clientIndex}`} 
+                  value={client.nom}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{client.nom}</span>
+                    <span className="text-xs text-gray-500">{client.ville}</span>
+                  </div>
                 </SelectItem>
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Destination spécifique - masquée si hideDestinationField est true */}
-        {!hideDestinationField && (
-          <div>
-            <Label>Destination</Label>
-            <Select value={selectedDestination || ''} onValueChange={onDestinationChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une destination" />
-              </SelectTrigger>
-              <SelectContent>
-                {selectedVille && selectedVille !== 'all' && (
-                  <>
-                    <SelectItem value={selectedVille}>
-                      <div className="flex items-center">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        {selectedVille} (Ville)
-                      </div>
-                    </SelectItem>
-                    {getDestinationsForVille(selectedVille).map(station => (
-                      <SelectItem key={station} value={station}>
-                        <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-2" />
-                          {station}
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </>
-                )}
-                {(!selectedVille || selectedVille === 'all') && DESTINATIONS.map(dest => (
-                  <SelectItem key={dest.ville} value={dest.ville}>
-                    <div className="flex items-center">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {dest.ville}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              ))
+            ) : selectedVille ? (
+              <SelectItem value="__no_client__" disabled>
+                Aucun client trouvé pour {selectedVille}
+              </SelectItem>
+            ) : (
+              <SelectItem value="__no_ville__" disabled>
+                Veuillez d'abord sélectionner une ville
+              </SelectItem>
+            )}
+          </SelectContent>
+        </Select>
+        {selectedVille && (
+          <p className="text-xs text-gray-500 mt-1">
+            Ville sélectionnée: {selectedVille}
+          </p>
         )}
       </div>
     </div>
