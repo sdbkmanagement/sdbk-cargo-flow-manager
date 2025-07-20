@@ -19,18 +19,44 @@ interface SingleBLFormProps {
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (clientNom: string) => {
+    console.log('handleClientChange appelé avec:', clientNom);
     // Le client EST la destination - synchroniser les deux champs
     onUpdate('client_nom', clientNom);
     onUpdate('destination', clientNom);
     onUpdate('lieu_arrivee', clientNom); // Nouveau : lieu d'arrivée = client
+    
+    // Log après mise à jour
+    console.log('Valeurs après handleClientChange:', {
+      client_nom: clientNom,
+      destination: clientNom,
+      lieu_arrivee: clientNom
+    });
   };
 
   const handleDestinationChange = (destination: string) => {
+    console.log('handleDestinationChange appelé avec:', destination);
     // Si on change la destination, synchroniser avec le client
     onUpdate('destination', destination);
     onUpdate('client_nom', destination);
     onUpdate('lieu_arrivee', destination); // Nouveau : lieu d'arrivée = destination
+    
+    // Log après mise à jour
+    console.log('Valeurs après handleDestinationChange:', {
+      client_nom: destination,
+      destination: destination,
+      lieu_arrivee: destination
+    });
   };
+
+  // Log des valeurs actuelles du BL
+  console.log('SingleBLForm - Valeurs actuelles du BL:', {
+    index,
+    client_nom: bl.client_nom,
+    destination: bl.destination,
+    lieu_depart: bl.lieu_depart,
+    date_emission: bl.date_emission,
+    quantite_prevue: bl.quantite_prevue
+  });
 
   return (
     <Card className="border-2 border-orange-100">
@@ -59,7 +85,10 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             <Label>Lieu de départ *</Label>
             <Select
               value={bl.lieu_depart || ''}
-              onValueChange={(value) => onUpdate('lieu_depart', value)}
+              onValueChange={(value) => {
+                console.log('Lieu de départ sélectionné:', value);
+                onUpdate('lieu_depart', value);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner le lieu de départ" />
@@ -105,7 +134,10 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             <Input
               type="date"
               value={bl.date_emission}
-              onChange={(e) => onUpdate('date_emission', e.target.value)}
+              onChange={(e) => {
+                console.log('Date d\'émission changée:', e.target.value);
+                onUpdate('date_emission', e.target.value);
+              }}
             />
           </div>
 
@@ -131,7 +163,11 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
               type="number"
               step="0.1"
               value={bl.quantite_prevue}
-              onChange={(e) => onUpdate('quantite_prevue', parseFloat(e.target.value) || 0)}
+              onChange={(e) => {
+                const newValue = parseFloat(e.target.value) || 0;
+                console.log('Quantité changée:', newValue);
+                onUpdate('quantite_prevue', newValue);
+              }}
               placeholder="0.0"
             />
           </div>

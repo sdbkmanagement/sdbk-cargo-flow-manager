@@ -39,41 +39,58 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   };
 
   const modifierBL = (index: number, champ: keyof BonLivraison, valeur: any) => {
+    console.log(`Modification BL ${index}, champ: ${champ}, valeur:`, valeur);
     const nouveauxBLs = [...bls];
     nouveauxBLs[index] = { ...nouveauxBLs[index], [champ]: valeur };
+    
+    // Log des valeurs après modification
+    console.log(`BL ${index} après modification:`, {
+      client_nom: nouveauxBLs[index].client_nom,
+      destination: nouveauxBLs[index].destination,
+      lieu_depart: nouveauxBLs[index].lieu_depart,
+      date_emission: nouveauxBLs[index].date_emission,
+      quantite_prevue: nouveauxBLs[index].quantite_prevue
+    });
+    
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation des BL - logique corrigée
+  // Validation des BL - logique simplifiée et plus robuste
   const blsIncomplets = bls.filter(bl => {
-    console.log('Validation BL:', {
-      id: bl.id || 'nouveau',
-      client_nom: bl.client_nom,
-      destination: bl.destination,
-      date_emission: bl.date_emission,
-      quantite_prevue: bl.quantite_prevue,
-      lieu_depart: bl.lieu_depart
-    });
-    
-    // Vérifier que le client/destination est rempli
+    // Vérifier chaque champ obligatoire individuellement
     const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
+    const destinationManquante = !bl.destination || bl.destination.trim() === '';
     const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
     const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
     const lieuDepartManquant = !bl.lieu_depart || bl.lieu_depart.trim() === '';
     
-    const estIncomplet = clientManquant || dateManquante || quantiteInvalide || lieuDepartManquant;
+    // Un BL est incomplet si client_nom OU destination est manquant (ils doivent être synchronisés)
+    const clientDestinationManquant = clientManquant && destinationManquante;
+    
+    const estIncomplet = clientDestinationManquant || dateManquante || quantiteInvalide || lieuDepartManquant;
     
     if (estIncomplet) {
-      console.log('BL incomplet détecté:', {
+      console.log(`🔍 BL incomplet détecté (ID: ${bl.id || 'nouveau'}):`, {
         clientManquant,
+        destinationManquante,
+        clientDestinationManquant,
         dateManquante,
         quantiteInvalide,
-        lieuDepartManquant
+        lieuDepartManquant,
+        valeurs_actuelles: {
+          client_nom: bl.client_nom,
+          destination: bl.destination,
+          date_emission: bl.date_emission,
+          quantite_prevue: bl.quantite_prevue,
+          lieu_depart: bl.lieu_depart
+        }
       });
     }
     
     return estIncomplet;
   });
+
+  console.log(`📊 Validation globale: ${blsIncomplets.length}/${bls.length} BL incomplets`);
 
   return (
     <Card>
