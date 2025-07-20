@@ -92,7 +92,7 @@ export const ClientSelector = ({
       <div>
         <Label>Client / Lieu de livraison *</Label>
         <Select 
-          value={selectedClient || ''} 
+          value={selectedClient} 
           onValueChange={handleClientSelection}
           disabled={!selectedVille}
         >
