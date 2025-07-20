@@ -46,6 +46,7 @@ export const ClientSelector = ({
   };
 
   const handleClientChange = (clientNom: string) => {
+    console.log('ClientSelector handleClientChange appelé avec:', clientNom);
     onClientChange(clientNom);
     onDestinationChange(clientNom); // Définir la destination identique au client
   };
@@ -98,21 +99,39 @@ export const ClientSelector = ({
         {/* Sélection du client */}
         <div>
           <Label>Client *</Label>
-          <Select value={selectedClient || ''} onValueChange={handleClientChange}>
+          <Select 
+            value={selectedClient} 
+            onValueChange={handleClientChange}
+            key={`client-select-${blIndex}`}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              {filteredClients.map((client, clientIndex) => (
-                <SelectItem key={`${client.nom}-${client.ville}-${clientIndex}`} value={client.nom}>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{client.nom}</span>
-                    <span className="text-xs text-gray-500">{client.ville}</span>
-                  </div>
+              {filteredClients.length > 0 ? (
+                filteredClients.map((client, clientIndex) => (
+                  <SelectItem 
+                    key={`client-${blIndex}-${clientIndex}-${client.nom}`} 
+                    value={client.nom}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{client.nom}</span>
+                      <span className="text-xs text-gray-500">{client.ville}</span>
+                    </div>
+                  </SelectItem>
+                ))
+              ) : (
+                <SelectItem value="" disabled>
+                  Aucun client trouvé
                 </SelectItem>
-              ))}
+              )}
             </SelectContent>
           </Select>
+          {selectedClient && (
+            <div className="text-xs text-green-600 mt-1">
+              Client sélectionné: {selectedClient}
+            </div>
+          )}
         </div>
 
         {/* Destination spécifique - masquée si hideDestinationField est true */}
