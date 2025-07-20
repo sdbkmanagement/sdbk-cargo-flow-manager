@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin } from 'lucide-react';
+import { MapPin, Building } from 'lucide-react';
 import { getClientsByVille, DESTINATIONS, getAllClients } from '@/data/destinations';
 
 interface ClientSelectorProps {
@@ -24,10 +24,12 @@ export const ClientSelector = ({
 }: ClientSelectorProps) => {
   const [selectedVille, setSelectedVille] = useState('');
 
-  // Obtenir les clients pour la ville sélectionnée
-  const clientsForVille = useMemo(() => {
+  // Obtenir les lieux de livraison pour la ville sélectionnée (sans inclure la ville elle-même)
+  const lieuxLivraisonForVille = useMemo(() => {
     if (selectedVille) {
-      return getClientsByVille(selectedVille);
+      const clientsForVille = getClientsByVille(selectedVille);
+      // Filtrer pour ne garder que les stations/entreprises (pas la ville)
+      return clientsForVille.filter(client => client.type !== 'ville');
     }
     return [];
   }, [selectedVille]);
@@ -35,7 +37,6 @@ export const ClientSelector = ({
   // Détecter la ville du client sélectionné
   const villeFromClient = useMemo(() => {
     if (selectedClient) {
-      // Trouver la ville du client sélectionné parmi tous les clients
       const allClients = getAllClients();
       const client = allClients.find(c => c.nom === selectedClient);
       if (client) {
@@ -52,25 +53,30 @@ export const ClientSelector = ({
     }
   }, [villeFromClient, selectedVille]);
 
-  const handleClientSelection = (clientNom: string) => {
-    console.log('Client sélectionné:', clientNom);
-    // Le client EST la destination - synchroniser les deux champs
-    onClientChange(clientNom);
-    onDestinationChange(clientNom);
-  };
-
   const handleVilleSelection = (ville: string) => {
+    console.log('Ville sélectionnée:', ville);
     setSelectedVille(ville);
-    // Réinitialiser la sélection du client quand on change de ville
+    // Réinitialiser la sélection du lieu de livraison quand on change de ville
     onClientChange('');
     onDestinationChange('');
+  };
+
+  const handleLieuLivraisonSelection = (lieuNom: string) => {
+    console.log('Lieu de livraison sélectionné:', lieuNom);
+    
+    // Créer la destination complète : "VILLE LieuSpécifique"
+    const destinationComplete = `${selectedVille} ${lieuNom}`;
+    
+    // Mettre à jour les deux champs avec les mêmes informations
+    onClientChange(destinationComplete);
+    onDestinationChange(destinationComplete);
   };
 
   return (
     <div className="space-y-4">
       {/* Sélection de la ville */}
       <div>
-        <Label>Ville *</Label>
+        <Label>Ville de destination *</Label>
         <Select value={selectedVille} onValueChange={handleVilleSelection}>
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner une ville" />
@@ -88,35 +94,38 @@ export const ClientSelector = ({
         </Select>
       </div>
 
-      {/* Sélection du client/lieu de livraison */}
+      {/* Sélection du lieu de livraison spécifique */}
       <div>
-        <Label>Client / Lieu de livraison *</Label>
+        <Label>Lieu de livraison *</Label>
         <Select 
-          value={selectedClient || ''} 
-          onValueChange={handleClientSelection}
+          value={selectedClient ? selectedClient.replace(`${selectedVille} `, '') : ''} 
+          onValueChange={handleLieuLivraisonSelection}
           disabled={!selectedVille}
         >
           <SelectTrigger>
             <SelectValue 
-              placeholder={selectedVille ? "Sélectionner un client" : "Sélectionnez d'abord une ville"}
+              placeholder={selectedVille ? "Sélectionner un lieu de livraison" : "Sélectionnez d'abord une ville"}
             />
           </SelectTrigger>
           <SelectContent className="max-h-60">
-            {clientsForVille.length > 0 ? (
-              clientsForVille.map((client, clientIndex) => (
+            {lieuxLivraisonForVille.length > 0 ? (
+              lieuxLivraisonForVille.map((lieu, lieuIndex) => (
                 <SelectItem 
-                  key={`${client.nom}-${client.ville}-${clientIndex}`} 
-                  value={client.nom}
+                  key={`${lieu.nom}-${lieu.ville}-${lieuIndex}`} 
+                  value={lieu.nom}
                 >
-                  <div className="flex flex-col">
-                    <span className="font-medium">{client.nom}</span>
-                    <span className="text-xs text-gray-500">{client.ville}</span>
+                  <div className="flex items-center">
+                    <Building className="w-4 h-4 mr-2" />
+                    <div className="flex flex-col">
+                      <span className="font-medium">{lieu.nom}</span>
+                      <span className="text-xs text-gray-500">{lieu.type}</span>
+                    </div>
                   </div>
                 </SelectItem>
               ))
             ) : selectedVille ? (
-              <SelectItem value="__no_client__" disabled>
-                Aucun client trouvé pour {selectedVille}
+              <SelectItem value="__no_lieu__" disabled>
+                Aucun lieu de livraison trouvé pour {selectedVille}
               </SelectItem>
             ) : (
               <SelectItem value="__no_ville__" disabled>
@@ -125,10 +134,17 @@ export const ClientSelector = ({
             )}
           </SelectContent>
         </Select>
+        
+        {/* Affichage de la destination complète */}
         {selectedVille && selectedClient && (
-          <p className="text-xs text-green-600 mt-1">
-            ✓ Client sélectionné: {selectedClient} ({selectedVille})
-          </p>
+          <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm font-medium text-green-800">
+              Destination complète sélectionnée :
+            </p>
+            <p className="text-lg font-bold text-green-900">
+              {selectedClient}
+            </p>
+          </div>
         )}
       </div>
     </div>
