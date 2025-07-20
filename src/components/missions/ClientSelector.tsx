@@ -92,12 +92,16 @@ export const ClientSelector = ({
       <div>
         <Label>Client / Lieu de livraison *</Label>
         <Select 
-          value={selectedClient} 
+          value={selectedClient || ''} 
           onValueChange={handleClientSelection}
           disabled={!selectedVille}
         >
           <SelectTrigger>
-            <SelectValue placeholder={selectedVille ? "Sélectionner un client" : "Sélectionnez d'abord une ville"} />
+            <SelectValue 
+              placeholder={selectedVille ? "Sélectionner un client" : "Sélectionnez d'abord une ville"}
+            >
+              {selectedClient || (selectedVille ? "Sélectionner un client" : "Sélectionnez d'abord une ville")}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent className="max-h-60">
             {clientsForVille.length > 0 ? (
