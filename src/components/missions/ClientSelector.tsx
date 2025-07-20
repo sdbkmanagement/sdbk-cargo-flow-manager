@@ -48,7 +48,7 @@ export const ClientSelector = ({
   }, [selectedClient, selectedVille]);
 
   const handleVilleSelection = (ville: string) => {
-    console.log('Ville sélectionnée:', ville);
+    console.log(`🏙️ BL ${blIndex}: Ville sélectionnée:`, ville);
     setSelectedVille(ville);
     setSelectedLieuNom(''); // Réinitialiser le lieu
     // Réinitialiser les props parent
@@ -57,18 +57,19 @@ export const ClientSelector = ({
   };
 
   const handleLieuLivraisonSelection = (lieuNom: string) => {
-    console.log('Lieu de livraison sélectionné:', lieuNom);
+    console.log(`🏢 BL ${blIndex}: Lieu de livraison sélectionné:`, lieuNom);
     
     setSelectedLieuNom(lieuNom);
     
     // Créer la destination complète : "VILLE LieuSpécifique"
     const destinationComplete = `${selectedVille} ${lieuNom}`;
     
-    // Mettre à jour les props parent
+    console.log(`✅ BL ${blIndex}: Destination complète créée:`, destinationComplete);
+    console.log(`🔄 BL ${blIndex}: Mise à jour simultanée client_nom ET destination avec:`, destinationComplete);
+    
+    // Mettre à jour les deux champs simultanément pour éviter les conflits
     onClientChange(destinationComplete);
     onDestinationChange(destinationComplete);
-    
-    console.log('Destination complète créée:', destinationComplete);
   };
 
   return (
@@ -133,13 +134,6 @@ export const ClientSelector = ({
             )}
           </SelectContent>
         </Select>
-        
-        {/* Debug info */}
-        {selectedClient && (
-          <div className="mt-2 text-xs text-gray-500">
-            Debug: selectedLieuNom = "{selectedLieuNom}" | selectedVille = "{selectedVille}" | selectedClient = "{selectedClient}"
-          </div>
-        )}
         
         {/* Affichage de la destination complète */}
         {selectedVille && selectedClient && (

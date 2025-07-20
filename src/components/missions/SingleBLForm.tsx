@@ -19,43 +19,46 @@ interface SingleBLFormProps {
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
   const handleClientChange = (clientNom: string) => {
-    console.log('handleClientChange appelé avec:', clientNom);
-    // Le client EST la destination - synchroniser les deux champs
+    console.log(`🎯 BL ${index}: handleClientChange appelé avec:`, clientNom);
+    console.log(`📝 BL ${index}: Valeurs AVANT modification:`, {
+      client_nom: bl.client_nom,
+      destination: bl.destination,
+      lieu_arrivee: bl.lieu_arrivee
+    });
+    
+    // Mise à jour groupée pour éviter les conflits
     onUpdate('client_nom', clientNom);
     onUpdate('destination', clientNom);
-    onUpdate('lieu_arrivee', clientNom); // Nouveau : lieu d'arrivée = client
+    onUpdate('lieu_arrivee', clientNom);
     
-    // Log après mise à jour
-    console.log('Valeurs après handleClientChange:', {
-      client_nom: clientNom,
-      destination: clientNom,
-      lieu_arrivee: clientNom
-    });
+    console.log(`✅ BL ${index}: Modifications appliquées pour client_nom, destination et lieu_arrivee:`, clientNom);
   };
 
   const handleDestinationChange = (destination: string) => {
-    console.log('handleDestinationChange appelé avec:', destination);
-    // Si on change la destination, synchroniser avec le client
+    console.log(`🎯 BL ${index}: handleDestinationChange appelé avec:`, destination);
+    console.log(`📝 BL ${index}: Valeurs AVANT modification:`, {
+      client_nom: bl.client_nom,
+      destination: bl.destination,
+      lieu_arrivee: bl.lieu_arrivee
+    });
+    
+    // Synchroniser avec le client
     onUpdate('destination', destination);
     onUpdate('client_nom', destination);
-    onUpdate('lieu_arrivee', destination); // Nouveau : lieu d'arrivée = destination
+    onUpdate('lieu_arrivee', destination);
     
-    // Log après mise à jour
-    console.log('Valeurs après handleDestinationChange:', {
-      client_nom: destination,
-      destination: destination,
-      lieu_arrivee: destination
-    });
+    console.log(`✅ BL ${index}: Modifications appliquées pour destination, client_nom et lieu_arrivee:`, destination);
   };
 
-  // Log des valeurs actuelles du BL
-  console.log('SingleBLForm - Valeurs actuelles du BL:', {
-    index,
-    client_nom: bl.client_nom,
-    destination: bl.destination,
-    lieu_depart: bl.lieu_depart,
-    date_emission: bl.date_emission,
-    quantite_prevue: bl.quantite_prevue
+  // Log des valeurs actuelles du BL avec plus de détails
+  console.log(`📊 BL ${index} - État actuel complet:`, {
+    client_nom: bl.client_nom || 'VIDE',
+    destination: bl.destination || 'VIDE',
+    lieu_depart: bl.lieu_depart || 'VIDE',
+    lieu_arrivee: bl.lieu_arrivee || 'VIDE',
+    date_emission: bl.date_emission || 'VIDE',
+    quantite_prevue: bl.quantite_prevue || 0,
+    produit: bl.produit
   });
 
   return (
@@ -86,7 +89,7 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             <Select
               value={bl.lieu_depart || ''}
               onValueChange={(value) => {
-                console.log('Lieu de départ sélectionné:', value);
+                console.log(`🚚 BL ${index}: Lieu de départ sélectionné:`, value);
                 onUpdate('lieu_depart', value);
               }}
             >
@@ -135,7 +138,7 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
               type="date"
               value={bl.date_emission}
               onChange={(e) => {
-                console.log('Date d\'émission changée:', e.target.value);
+                console.log(`📅 BL ${index}: Date d'émission changée:`, e.target.value);
                 onUpdate('date_emission', e.target.value);
               }}
             />
@@ -145,7 +148,10 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             <Label>Produit *</Label>
             <Select
               value={bl.produit}
-              onValueChange={(value) => onUpdate('produit', value)}
+              onValueChange={(value) => {
+                console.log(`⛽ BL ${index}: Produit sélectionné:`, value);
+                onUpdate('produit', value);
+              }}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -165,7 +171,7 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
               value={bl.quantite_prevue}
               onChange={(e) => {
                 const newValue = parseFloat(e.target.value) || 0;
-                console.log('Quantité changée:', newValue);
+                console.log(`📊 BL ${index}: Quantité changée:`, newValue);
                 onUpdate('quantite_prevue', newValue);
               }}
               placeholder="0.0"
