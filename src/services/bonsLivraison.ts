@@ -64,9 +64,14 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      // Explicitly type the data and map it
-      const records = (data || []) as DatabaseBLRecord[];
-      return records.map(record => mapDatabaseRecordToBL(record));
+      // Use a more explicit approach to avoid type inference issues
+      if (!data) return [];
+      
+      const result: BonLivraison[] = [];
+      for (const item of data) {
+        result.push(mapDatabaseRecordToBL(item as DatabaseBLRecord));
+      }
+      return result;
     } catch (error) {
       console.error('Erreur générale BL:', error);
       throw error;
