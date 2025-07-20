@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -59,8 +60,9 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation stricte et plus claire
+  // CORRECTION : Validation plus robuste et claire
   const blsIncomplets = bls.filter((bl, blIndex) => {
+    // Vérifications strictes avec trim() pour éviter les espaces
     const clientValide = bl.client_nom && bl.client_nom.trim() !== '';
     const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
     const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
@@ -68,20 +70,19 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     
     const estComplet = clientValide && dateValide && quantiteValide && lieuDepartValide;
     
-    if (!estComplet) {
-      console.log(`❌ BL ${blIndex} est incomplet:`, {
-        clientValide,
-        dateValide,
-        quantiteValide,
-        lieuDepartValide,
-        valeurs: {
-          client_nom: bl.client_nom || 'VIDE',
-          date_emission: bl.date_emission || 'VIDE',
-          quantite_prevue: bl.quantite_prevue || 0,
-          lieu_depart: bl.lieu_depart || 'VIDE'
-        }
-      });
-    }
+    console.log(`🔍 Validation BL ${blIndex}:`, {
+      clientValide: clientValide ? 'OUI' : 'NON',
+      dateValide: dateValide ? 'OUI' : 'NON', 
+      quantiteValide: quantiteValide ? 'OUI' : 'NON',
+      lieuDepartValide: lieuDepartValide ? 'OUI' : 'NON',
+      estComplet: estComplet ? 'COMPLET' : 'INCOMPLET',
+      valeurs: {
+        client_nom: `"${bl.client_nom || 'VIDE'}"`,
+        date_emission: `"${bl.date_emission || 'VIDE'}"`,
+        quantite_prevue: bl.quantite_prevue || 0,
+        lieu_depart: `"${bl.lieu_depart || 'VIDE'}"`
+      }
+    });
     
     return !estComplet;
   });
@@ -106,15 +107,20 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
         </div>
       </CardHeader>
       <CardContent>
-        {/* Alerte si des BL sont incomplets */}
+        {/* Alerte si des BL sont incomplets - AMÉLIORÉE */}
         {blsIncomplets.length > 0 && (
           <Alert className="mb-6 border-amber-200 bg-amber-50">
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               <strong>Attention:</strong> {blsIncomplets.length} BL{blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet{blsIncomplets.length > 1 ? 's' : ''}. 
-              Veuillez remplir tous les champs obligatoires avant de sauvegarder la mission.
-              <div className="mt-2 text-xs">
-                Champs requis: Client, Date d&apos;émission, Quantité &gt; 0, Lieu de départ
+              <div className="mt-2 text-sm">
+                <strong>Champs obligatoires manquants :</strong>
+                <ul className="list-disc list-inside mt-1">
+                  <li>Client/Destination (ne doit pas être vide)</li>
+                  <li>Date d'émission (obligatoire)</li>
+                  <li>Quantité supérieure à 0</li>
+                  <li>Lieu de départ (obligatoire)</li>
+                </ul>
               </div>
             </AlertDescription>
           </Alert>

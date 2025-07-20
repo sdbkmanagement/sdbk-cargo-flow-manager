@@ -26,10 +26,19 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
       lieu_arrivee: bl.lieu_arrivee
     });
     
-    // Mise à jour synchrone de tous les champs liés
-    onUpdate('client_nom', clientNom);
-    onUpdate('destination', clientNom);
-    onUpdate('lieu_arrivee', clientNom);
+    // CORRECTION : Mise à jour synchrone et forcée de tous les champs liés
+    // On force la mise à jour immédiate pour éviter les états intermédiaires
+    if (clientNom && clientNom.trim() !== '') {
+      console.log(`✅ BL ${index}: Mise à jour forcée avec:`, clientNom);
+      onUpdate('client_nom', clientNom);
+      onUpdate('destination', clientNom);
+      onUpdate('lieu_arrivee', clientNom);
+    } else {
+      console.log(`❌ BL ${index}: Client vide, réinitialisation`);
+      onUpdate('client_nom', '');
+      onUpdate('destination', '');
+      onUpdate('lieu_arrivee', '');
+    }
     
     console.log(`✅ BL ${index}: Client mis à jour:`, clientNom);
   };
@@ -117,6 +126,15 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             blIndex={index}
             hideDestinationField={true}
           />
+          
+          {/* AJOUT : Affichage debug pour voir les valeurs en temps réel */}
+          <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-600">
+            <p><strong>Debug BL #{index + 1}:</strong></p>
+            <p>client_nom: "{bl.client_nom || 'VIDE'}"</p>
+            <p>destination: "{bl.destination || 'VIDE'}"</p>
+            <p>lieu_depart: "{bl.lieu_depart || 'VIDE'}"</p>
+            <p>quantite_prevue: {bl.quantite_prevue || 0}</p>
+          </div>
         </div>
 
         {/* Informations du BL */}
