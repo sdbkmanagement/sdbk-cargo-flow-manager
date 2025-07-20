@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -107,8 +106,25 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         }
       };
       chargerBLs();
+    } else {
+      // Pour une nouvelle mission d'hydrocarbures, créer un BL par défaut
+      if (formData.type_transport === 'hydrocarbures') {
+        const defaultBL: BonLivraison = {
+          numero: `BL-${Date.now()}`,
+          client_nom: '',
+          destination: '',
+          vehicule_id: formData.vehicule_id,
+          chauffeur_id: formData.chauffeur_id,
+          date_emission: new Date().toISOString().split('T')[0],
+          produit: 'essence',
+          quantite_prevue: 0,
+          unite_mesure: 'litres',
+          statut: 'emis'
+        };
+        setBls([defaultBL]);
+      }
     }
-  }, [mission?.id]);
+  }, [mission?.id, formData.type_transport, formData.vehicule_id, formData.chauffeur_id]);
 
   // Mutation pour créer/modifier une mission
   const saveMutation = useMutation({
@@ -197,16 +213,17 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
     // Validation des BL
     if (formData.type_transport === 'hydrocarbures') {
-      for (let i = 0; i < bls.length; i++) {
-        const bl = bls[i];
-        if (!bl.client_nom || !bl.destination || !bl.date_emission || !bl.quantite_prevue) {
-          toast({
-            title: 'Erreur',
-            description: `Le BL #${i + 1} est incomplet. Veuillez remplir tous les champs obligatoires.`,
-            variant: 'destructive'
-          });
-          return;
-        }
+      const blsIncomplets = bls.filter(bl => 
+        !bl.client_nom || !bl.destination || !bl.date_emission || !bl.quantite_prevue || bl.quantite_prevue <= 0
+      );
+      
+      if (blsIncomplets.length > 0) {
+        toast({
+          title: 'Erreur',
+          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir tous les champs obligatoires.`,
+          variant: 'destructive'
+        });
+        return;
       }
     }
     

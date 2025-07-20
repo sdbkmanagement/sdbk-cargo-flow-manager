@@ -1,13 +1,11 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2, Search, MapPin } from 'lucide-react';
+import { Plus, MapPin, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BonLivraison } from '@/types/bl';
-import { getAllClients, getClientsByVille, searchClients, DESTINATIONS } from '@/data/destinations';
+import { SingleBLForm } from './SingleBLForm';
 
 interface BLMultiplesFormProps {
   bls: BonLivraison[];
@@ -17,9 +15,6 @@ interface BLMultiplesFormProps {
 }
 
 export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: BLMultiplesFormProps) => {
-  const [searchQueries, setSearchQueries] = useState<{ [key: number]: string }>({});
-  const [selectedVilles, setSelectedVilles] = useState<{ [key: number]: string }>({});
-
   const ajouterBL = () => {
     const nouveauBL: BonLivraison = {
       numero: `BL-${Date.now()}`, // Temporary numero, will be replaced by database trigger
@@ -38,6 +33,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   };
 
   const supprimerBL = (index: number) => {
+    if (bls.length <= 1) return; // Toujours garder au moins un BL
     const nouveauxBLs = bls.filter((_, i) => i !== index);
     onBLsChange(nouveauxBLs);
   };
@@ -48,25 +44,10 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     onBLsChange(nouveauxBLs);
   };
 
-  const getClientsFiltered = (index: number) => {
-    const query = searchQueries[index];
-    const ville = selectedVilles[index];
-    
-    if (ville) {
-      return getClientsByVille(ville);
-    }
-    
-    if (query) {
-      return searchClients(query);
-    }
-    
-    return getAllClients();
-  };
-
-  const getDestinationsForVille = (ville: string) => {
-    const destination = DESTINATIONS.find(d => d.ville === ville);
-    return destination ? destination.stations : [];
-  };
+  // Validation des BL
+  const blsIncomplets = bls.filter(bl => 
+    !bl.client_nom || !bl.destination || !bl.date_emission || !bl.quantite_prevue || bl.quantite_prevue <= 0
+  );
 
   return (
     <Card>
@@ -75,6 +56,9 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
           <CardTitle className="flex items-center">
             <MapPin className="w-5 h-5 mr-2" />
             Bons de Livraison (BL)
+            <span className="ml-2 text-sm font-normal text-gray-500">
+              ({bls.length} BL{bls.length > 1 ? 's' : ''})
+            </span>
           </CardTitle>
           <Button onClick={ajouterBL} className="bg-orange-500 hover:bg-orange-600">
             <Plus className="w-4 h-4 mr-2" />
@@ -83,6 +67,17 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
         </div>
       </CardHeader>
       <CardContent>
+        {/* Alerte si des BL sont incomplets */}
+        {blsIncomplets.length > 0 && (
+          <Alert className="mb-6 border-amber-200 bg-amber-50">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Attention:</strong> {blsIncomplets.length} BL{blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet{blsIncomplets.length > 1 ? 's' : ''}. 
+              Veuillez remplir tous les champs obligatoires avant de sauvegarder la mission.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {bls.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <MapPin className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -91,161 +86,46 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
         ) : (
           <div className="space-y-6">
             {bls.map((bl, index) => (
-              <Card key={index} className="border-2 border-orange-100">
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-lg">BL #{index + 1}</h4>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => supprimerBL(index)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Sélection de la ville */}
-                    <div>
-                      <Label>Ville de destination *</Label>
-                      <Select
-                        value={selectedVilles[index] || ''}
-                        onValueChange={(value) => {
-                          setSelectedVilles(prev => ({ ...prev, [index]: value }));
-                          modifierBL(index, 'destination', value);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner une ville" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DESTINATIONS.map(destination => (
-                            <SelectItem key={destination.ville} value={destination.ville}>
-                              {destination.ville}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Recherche client */}
-                    <div>
-                      <Label>Rechercher un client</Label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          placeholder="Rechercher un client..."
-                          value={searchQueries[index] || ''}
-                          onChange={(e) => setSearchQueries(prev => ({ ...prev, [index]: e.target.value }))}
-                          className="pl-10"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Client */}
-                    <div>
-                      <Label>Client *</Label>
-                      <Select
-                        value={bl.client_nom}
-                        onValueChange={(value) => modifierBL(index, 'client_nom', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sélectionner un client" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {getClientsFiltered(index).map(client => (
-                            <SelectItem key={`${client.nom}-${client.ville}`} value={client.nom}>
-                              <div className="flex flex-col">
-                                <span>{client.nom}</span>
-                                <span className="text-xs text-gray-500">{client.ville}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Destination spécifique */}
-                    {selectedVilles[index] && (
-                      <div>
-                        <Label>Destination spécifique</Label>
-                        <Select
-                          value={bl.destination}
-                          onValueChange={(value) => modifierBL(index, 'destination', value)}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une destination" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={selectedVilles[index]}>{selectedVilles[index]} (Ville)</SelectItem>
-                            {getDestinationsForVille(selectedVilles[index]).map(station => (
-                              <SelectItem key={station} value={station}>
-                                {station}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Date d'émission */}
-                    <div>
-                      <Label>Date d'émission du BL *</Label>
-                      <Input
-                        type="date"
-                        value={bl.date_emission}
-                        onChange={(e) => modifierBL(index, 'date_emission', e.target.value)}
-                      />
-                    </div>
-
-                    {/* Produit */}
-                    <div>
-                      <Label>Produit *</Label>
-                      <Select
-                        value={bl.produit}
-                        onValueChange={(value) => modifierBL(index, 'produit', value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="essence">Essence</SelectItem>
-                          <SelectItem value="gasoil">Gasoil</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Quantité */}
-                    <div>
-                      <Label>Quantité (litres) *</Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={bl.quantite_prevue}
-                        onChange={(e) => modifierBL(index, 'quantite_prevue', parseFloat(e.target.value) || 0)}
-                        placeholder="0.0"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Code client TOTAL */}
-                  <div>
-                    <Label>Code client TOTAL (optionnel)</Label>
-                    <Input
-                      value={bl.client_code_total || ''}
-                      onChange={(e) => modifierBL(index, 'client_code_total', e.target.value)}
-                      placeholder="Code client fourni par TOTAL"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              <SingleBLForm
+                key={index}
+                bl={bl}
+                index={index}
+                onUpdate={(field, value) => modifierBL(index, field, value)}
+                onRemove={() => supprimerBL(index)}
+                canRemove={bls.length > 1}
+              />
             ))}
+          </div>
+        )}
+
+        {/* Résumé des quantités */}
+        {bls.length > 0 && (
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h5 className="font-medium text-gray-700 mb-2">Résumé des quantités</h5>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">Total Essence:</span>
+                <div className="font-medium text-blue-600">
+                  {bls.filter(bl => bl.produit === 'essence').reduce((sum, bl) => sum + bl.quantite_prevue, 0).toLocaleString()} L
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-600">Total Gasoil:</span>
+                <div className="font-medium text-green-600">
+                  {bls.filter(bl => bl.produit === 'gasoil').reduce((sum, bl) => sum + bl.quantite_prevue, 0).toLocaleString()} L
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-600">Total général:</span>
+                <div className="font-medium text-orange-600">
+                  {bls.reduce((sum, bl) => sum + bl.quantite_prevue, 0).toLocaleString()} L
+                </div>
+              </div>
+              <div>
+                <span className="text-gray-600">Nombre de BL:</span>
+                <div className="font-medium">{bls.length}</div>
+              </div>
+            </div>
           </div>
         )}
       </CardContent>
