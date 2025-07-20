@@ -2,48 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { BonLivraison } from '@/types/bl';
 
-// Simple conversion functions without complex typing
-const convertFromDatabase = (dbRecord: any): BonLivraison => {
-  return {
-    id: dbRecord.id,
-    numero: dbRecord.numero,
-    client_nom: dbRecord.client_nom,
-    client_code: dbRecord.client_code,
-    client_code_total: dbRecord.client_code_total,
-    destination: dbRecord.destination,
-    vehicule_id: dbRecord.vehicule_id,
-    chauffeur_id: dbRecord.chauffeur_id,
-    date_emission: dbRecord.date_emission,
-    produit: dbRecord.produit,
-    quantite_prevue: dbRecord.quantite_prevue,
-    unite_mesure: dbRecord.unite_mesure || 'litres',
-    numero_tournee: dbRecord.numero_tournee,
-    date_chargement_prevue: dbRecord.date_chargement_prevue,
-    date_chargement_reelle: dbRecord.date_chargement_reelle,
-    date_depart: dbRecord.date_depart,
-    date_arrivee_prevue: dbRecord.date_arrivee_prevue,
-    date_arrivee_reelle: dbRecord.date_arrivee_reelle,
-    date_dechargement: dbRecord.date_dechargement,
-    quantite_livree: dbRecord.quantite_livree,
-    manquant_cuve: dbRecord.manquant_cuve,
-    manquant_compteur: dbRecord.manquant_compteur,
-    manquant_total: dbRecord.manquant_total,
-    prix_unitaire: dbRecord.prix_unitaire,
-    montant_total: dbRecord.montant_total,
-    montant_facture: dbRecord.montant_facture,
-    associe_id: dbRecord.associe_id,
-    chiffre_affaire_associe: dbRecord.chiffre_affaire_associe,
-    statut: dbRecord.statut,
-    observations: dbRecord.observations,
-    facture: dbRecord.facture,
-    mission_id: dbRecord.mission_id,
-    created_at: dbRecord.created_at,
-    updated_at: dbRecord.updated_at,
-    saisi_par: dbRecord.saisi_par,
-    transitaire_nom: dbRecord.transitaire_nom
-  };
-};
-
 export const bonsLivraisonService = {
   // Récupérer tous les BL d'une mission
   async getByMissionId(missionId: string): Promise<BonLivraison[]> {
@@ -59,7 +17,44 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return (data || []).map(convertFromDatabase);
+      return (data || []).map(record => ({
+        id: record.id,
+        numero: record.numero,
+        client_nom: record.client_nom,
+        client_code: record.client_code,
+        client_code_total: record.client_code_total,
+        destination: record.destination,
+        vehicule_id: record.vehicule_id,
+        chauffeur_id: record.chauffeur_id,
+        date_emission: record.date_emission,
+        produit: record.produit,
+        quantite_prevue: record.quantite_prevue,
+        unite_mesure: record.unite_mesure || 'litres',
+        numero_tournee: record.numero_tournee,
+        date_chargement_prevue: record.date_chargement_prevue,
+        date_chargement_reelle: record.date_chargement_reelle,
+        date_depart: record.date_depart,
+        date_arrivee_prevue: record.date_arrivee_prevue,
+        date_arrivee_reelle: record.date_arrivee_reelle,
+        date_dechargement: record.date_dechargement,
+        quantite_livree: record.quantite_livree,
+        manquant_cuve: record.manquant_cuve,
+        manquant_compteur: record.manquant_compteur,
+        manquant_total: record.manquant_total,
+        prix_unitaire: record.prix_unitaire,
+        montant_total: record.montant_total,
+        montant_facture: record.montant_facture,
+        associe_id: record.associe_id,
+        chiffre_affaire_associe: record.chiffre_affaire_associe,
+        statut: record.statut,
+        observations: record.observations,
+        facture: record.facture,
+        mission_id: record.mission_id,
+        created_at: record.created_at,
+        updated_at: record.updated_at,
+        saisi_par: record.saisi_par,
+        transitaire_nom: record.transitaire_nom
+      }));
     } catch (error) {
       console.error('Erreur générale BL:', error);
       throw error;
@@ -69,7 +64,6 @@ export const bonsLivraisonService = {
   // Créer un nouveau BL
   async create(blData: Omit<BonLivraison, 'id' | 'created_at' | 'updated_at'>): Promise<BonLivraison> {
     try {
-      // Create the insert object with explicit typing
       const insertData = {
         numero: blData.numero,
         client_nom: blData.client_nom,
@@ -117,7 +111,44 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return convertFromDatabase(data);
+      return {
+        id: data.id,
+        numero: data.numero,
+        client_nom: data.client_nom,
+        client_code: data.client_code,
+        client_code_total: data.client_code_total,
+        destination: data.destination,
+        vehicule_id: data.vehicule_id,
+        chauffeur_id: data.chauffeur_id,
+        date_emission: data.date_emission,
+        produit: data.produit,
+        quantite_prevue: data.quantite_prevue,
+        unite_mesure: data.unite_mesure || 'litres',
+        numero_tournee: data.numero_tournee,
+        date_chargement_prevue: data.date_chargement_prevue,
+        date_chargement_reelle: data.date_chargement_reelle,
+        date_depart: data.date_depart,
+        date_arrivee_prevue: data.date_arrivee_prevue,
+        date_arrivee_reelle: data.date_arrivee_reelle,
+        date_dechargement: data.date_dechargement,
+        quantite_livree: data.quantite_livree,
+        manquant_cuve: data.manquant_cuve,
+        manquant_compteur: data.manquant_compteur,
+        manquant_total: data.manquant_total,
+        prix_unitaire: data.prix_unitaire,
+        montant_total: data.montant_total,
+        montant_facture: data.montant_facture,
+        associe_id: data.associe_id,
+        chiffre_affaire_associe: data.chiffre_affaire_associe,
+        statut: data.statut,
+        observations: data.observations,
+        facture: data.facture,
+        mission_id: data.mission_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        saisi_par: data.saisi_par,
+        transitaire_nom: data.transitaire_nom
+      };
     } catch (error) {
       console.error('Erreur lors de la création du BL:', error);
       throw error;
@@ -142,7 +173,44 @@ export const bonsLivraisonService = {
         throw error;
       }
 
-      return convertFromDatabase(data);
+      return {
+        id: data.id,
+        numero: data.numero,
+        client_nom: data.client_nom,
+        client_code: data.client_code,
+        client_code_total: data.client_code_total,
+        destination: data.destination,
+        vehicule_id: data.vehicule_id,
+        chauffeur_id: data.chauffeur_id,
+        date_emission: data.date_emission,
+        produit: data.produit,
+        quantite_prevue: data.quantite_prevue,
+        unite_mesure: data.unite_mesure || 'litres',
+        numero_tournee: data.numero_tournee,
+        date_chargement_prevue: data.date_chargement_prevue,
+        date_chargement_reelle: data.date_chargement_reelle,
+        date_depart: data.date_depart,
+        date_arrivee_prevue: data.date_arrivee_prevue,
+        date_arrivee_reelle: data.date_arrivee_reelle,
+        date_dechargement: data.date_dechargement,
+        quantite_livree: data.quantite_livree,
+        manquant_cuve: data.manquant_cuve,
+        manquant_compteur: data.manquant_compteur,
+        manquant_total: data.manquant_total,
+        prix_unitaire: data.prix_unitaire,
+        montant_total: data.montant_total,
+        montant_facture: data.montant_facture,
+        associe_id: data.associe_id,
+        chiffre_affaire_associe: data.chiffre_affaire_associe,
+        statut: data.statut,
+        observations: data.observations,
+        facture: data.facture,
+        mission_id: data.mission_id,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        saisi_par: data.saisi_par,
+        transitaire_nom: data.transitaire_nom
+      };
     } catch (error) {
       console.error('Erreur lors de la mise à jour du BL:', error);
       throw error;
