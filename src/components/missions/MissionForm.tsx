@@ -32,7 +32,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     vehicule_id: mission?.vehicule_id || '',
     chauffeur_id: mission?.chauffeur_id || '',
     observations: mission?.observations || '',
-    statut: mission?.statut || 'en_attente',
+    statut: mission?.statut || 'en_cours',
     date_heure_depart: mission?.date_heure_depart || ''
   });
 
@@ -329,17 +329,21 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </div>
                 <div>
                   <Label htmlFor="statut">Statut</Label>
-                  <Select value={formData.statut} onValueChange={(value) => updateFormData('statut', value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="en_attente">En attente</SelectItem>
-                      <SelectItem value="en_cours">En cours</SelectItem>
-                      <SelectItem value="terminee">Terminée</SelectItem>
-                      <SelectItem value="annulee">Annulée</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  {!mission?.id ? (
+                    <div className="flex items-center h-10 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md">
+                      <span className="text-gray-700">En cours</span>
+                    </div>
+                  ) : (
+                    <Select value={formData.statut} onValueChange={(value) => updateFormData('statut', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en_cours">En cours</SelectItem>
+                        <SelectItem value="terminee">Terminée</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
               </div>
 

@@ -32,7 +32,29 @@ export const ClientSelector = ({
     return [];
   }, [selectedVille]);
 
+  // Détecter la ville du client sélectionné
+  const villeFromClient = useMemo(() => {
+    if (selectedClient) {
+      // Trouver la ville du client sélectionné
+      for (const destination of DESTINATIONS) {
+        const client = destination.clients.find(c => c.nom === selectedClient);
+        if (client) {
+          return destination.ville;
+        }
+      }
+    }
+    return '';
+  }, [selectedClient]);
+
+  // Synchroniser la ville sélectionnée avec la ville du client
+  React.useEffect(() => {
+    if (villeFromClient && villeFromClient !== selectedVille) {
+      setSelectedVille(villeFromClient);
+    }
+  }, [villeFromClient, selectedVille]);
+
   const handleClientSelection = (clientNom: string) => {
+    console.log('Client sélectionné:', clientNom);
     // Le client EST la destination - synchroniser les deux champs
     onClientChange(clientNom);
     onDestinationChange(clientNom);
@@ -44,9 +66,6 @@ export const ClientSelector = ({
     onClientChange('');
     onDestinationChange('');
   };
-
-  // Utiliser selectedClient comme source de vérité
-  const currentValue = selectedClient || '';
 
   return (
     <div className="space-y-4">
@@ -74,7 +93,7 @@ export const ClientSelector = ({
       <div>
         <Label>Client / Lieu de livraison *</Label>
         <Select 
-          value={currentValue} 
+          value={selectedClient || ''} 
           onValueChange={handleClientSelection}
           disabled={!selectedVille}
         >
@@ -105,9 +124,9 @@ export const ClientSelector = ({
             )}
           </SelectContent>
         </Select>
-        {selectedVille && (
-          <p className="text-xs text-gray-500 mt-1">
-            Ville sélectionnée: {selectedVille}
+        {selectedVille && selectedClient && (
+          <p className="text-xs text-green-600 mt-1">
+            ✓ Client sélectionné: {selectedClient} ({selectedVille})
           </p>
         )}
       </div>
