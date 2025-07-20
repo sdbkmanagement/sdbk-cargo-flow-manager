@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Truck, Upload } from 'lucide-react';
 import { VehicleImport } from './VehicleImport';
-import { DriversImport } from '@/components/drivers/DriversImport';
 
 interface FleetHeaderProps {
   onAddVehicle: () => void;
@@ -13,7 +12,6 @@ interface FleetHeaderProps {
 
 export const FleetHeader: React.FC<FleetHeaderProps> = ({ onAddVehicle, vehicleCount }) => {
   const [showVehicleImport, setShowVehicleImport] = useState(false);
-  const [showDriversImport, setShowDriversImport] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -25,14 +23,6 @@ export const FleetHeader: React.FC<FleetHeaderProps> = ({ onAddVehicle, vehicleC
         </div>
         
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowDriversImport(true)}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Import Chauffeurs
-          </Button>
           <Button 
             variant="outline" 
             onClick={() => setShowVehicleImport(true)}
@@ -57,22 +47,6 @@ export const FleetHeader: React.FC<FleetHeaderProps> = ({ onAddVehicle, vehicleC
             onClose={() => setShowVehicleImport(false)}
             onSuccess={() => {
               setShowVehicleImport(false);
-              window.location.reload();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-
-      {/* Dialog pour l'import de chauffeurs */}
-      <Dialog open={showDriversImport} onOpenChange={setShowDriversImport}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Import de chauffeurs</DialogTitle>
-          </DialogHeader>
-          <DriversImport
-            onClose={() => setShowDriversImport(false)}
-            onSuccess={() => {
-              setShowDriversImport(false);
               window.location.reload();
             }}
           />
