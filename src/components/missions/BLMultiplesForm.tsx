@@ -39,34 +39,31 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   };
 
   const modifierBL = (index: number, champ: keyof BonLivraison, valeur: any) => {
-    console.log('BLMultiplesForm - modifierBL called:', { index, champ, valeur });
     const nouveauxBLs = [...bls];
     nouveauxBLs[index] = { ...nouveauxBLs[index], [champ]: valeur };
-    console.log('BLMultiplesForm - Updated BL:', nouveauxBLs[index]);
     onBLsChange(nouveauxBLs);
   };
 
-  // Validation des BL - logique simplifiée avec plus de logs
-  const blsIncomplets = bls.filter((bl, index) => {
-    const clientNomEmpty = !bl.client_nom || bl.client_nom.trim() === '';
-    const dateEmpty = !bl.date_emission || bl.date_emission.trim() === '';
+  // Validation des BL - correction de la logique de validation
+  const blsIncomplets = bls.filter(bl => {
+    const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
+    const destinationManquante = !bl.destination || bl.destination.trim() === '';
+    const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
     const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
-    const isIncomplet = clientNomEmpty || dateEmpty || quantiteInvalide;
     
-    console.log(`BLMultiplesForm - Validation BL ${index + 1}:`, {
+    console.log('Validation BL:', {
       client_nom: bl.client_nom,
-      client_nom_empty: clientNomEmpty,
+      destination: bl.destination,
       date_emission: bl.date_emission,
-      date_empty: dateEmpty,
       quantite_prevue: bl.quantite_prevue,
-      quantite_invalide: quantiteInvalide,
-      isIncomplet
+      clientManquant,
+      destinationManquante,
+      dateManquante,
+      quantiteInvalide
     });
     
-    return isIncomplet;
+    return clientManquant || destinationManquante || dateManquante || quantiteInvalide;
   });
-
-  console.log('BLMultiplesForm - Total BLs incomplets:', blsIncomplets.length);
 
   return (
     <Card>
@@ -92,7 +89,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="text-amber-800">
               <strong>Attention:</strong> {blsIncomplets.length} BL{blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet{blsIncomplets.length > 1 ? 's' : ''}. 
-              Veuillez vérifier que tous les champs obligatoires sont remplis (Client, Date, Quantité).
+              Veuillez remplir tous les champs obligatoires avant de sauvegarder la mission.
             </AlertDescription>
           </Alert>
         )}

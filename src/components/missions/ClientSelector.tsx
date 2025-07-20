@@ -24,7 +24,7 @@ export const ClientSelector = ({
   hideDestinationField = false
 }: ClientSelectorProps) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedVille, setSelectedVille] = useState('all');
+  const [selectedVille, setSelectedVille] = useState('');
 
   // Filtrer les clients selon la recherche et la ville sélectionnée
   const filteredClients = useMemo(() => {
@@ -39,23 +39,11 @@ export const ClientSelector = ({
     return getAllClients();
   }, [searchQuery, selectedVille]);
 
-  const handleClientSelect = (clientNom: string) => {
-    console.log('ClientSelector - Selecting client:', clientNom);
-    console.log('ClientSelector - Current selectedClient:', selectedClient);
-    
-    // Appeler directement onClientChange avec le nom du client
-    onClientChange(clientNom);
-    
-    // Trouver la ville du client sélectionné pour la destination
-    const selectedClientData = filteredClients.find(c => c.nom === clientNom);
-    if (selectedClientData) {
-      console.log('ClientSelector - Setting destination to:', selectedClientData.ville);
-      onDestinationChange(selectedClientData.ville);
-    }
+  // Obtenir les destinations pour la ville sélectionnée
+  const getDestinationsForVille = (ville: string) => {
+    const destination = DESTINATIONS.find(d => d.ville === ville);
+    return destination ? destination.stations : [];
   };
-
-  console.log('ClientSelector - Render with selectedClient:', selectedClient);
-  console.log('ClientSelector - Available clients:', filteredClients.length);
 
   return (
     <div className="space-y-4">
@@ -64,10 +52,9 @@ export const ClientSelector = ({
         <div>
           <Label>Filtrer par ville</Label>
           <Select value={selectedVille} onValueChange={(value) => {
-            console.log('ClientSelector - Ville filter changed to:', value);
             setSelectedVille(value);
             if (value !== 'all') {
-              onDestinationChange(value);
+              onDestinationChange(value); // Définir la ville comme destination par défaut
             }
           }}>
             <SelectTrigger>
@@ -95,50 +82,73 @@ export const ClientSelector = ({
             <Input
               placeholder="Rechercher un client..."
               value={searchQuery}
-              onChange={(e) => {
-                console.log('ClientSelector - Search query:', e.target.value);
-                setSearchQuery(e.target.value);
-              }}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
           </div>
         </div>
       </div>
 
-      <div className="w-full">
+      <div className={hideDestinationField ? "w-full" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
         {/* Sélection du client */}
         <div>
-          <Label>Client / Destination *</Label>
-          <Select 
-            value={selectedClient || ''} 
-            onValueChange={handleClientSelect}
-          >
+          <Label>Client *</Label>
+          <Select value={selectedClient} onValueChange={onClientChange}>
             <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un client">
-                {selectedClient || 'Sélectionner un client'}
-              </SelectValue>
+              <SelectValue placeholder="Sélectionner un client" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              {filteredClients.length === 0 ? (
-                <SelectItem value="no-results" disabled>
-                  Aucun client trouvé
+              {filteredClients.map(client => (
+                <SelectItem key={`${client.nom}-${client.ville}`} value={client.nom}>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{client.nom}</span>
+                    <span className="text-xs text-gray-500">{client.ville}</span>
+                  </div>
                 </SelectItem>
-              ) : (
-                filteredClients.map((client, index) => (
-                  <SelectItem 
-                    key={`${client.nom}-${client.ville}-${index}`} 
-                    value={client.nom}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{client.nom}</span>
-                      <span className="text-xs text-gray-500">{client.ville}</span>
-                    </div>
-                  </SelectItem>
-                ))
-              )}
+              ))}
             </SelectContent>
           </Select>
         </div>
+
+        {/* Destination spécifique - masquée si hideDestinationField est true */}
+        {!hideDestinationField && (
+          <div>
+            <Label>Destination</Label>
+            <Select value={selectedDestination} onValueChange={onDestinationChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner une destination" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedVille && selectedVille !== 'all' && (
+                  <>
+                    <SelectItem value={selectedVille}>
+                      <div className="flex items-center">
+                        <MapPin className="w-4 h-4 mr-2" />
+                        {selectedVille} (Ville)
+                      </div>
+                    </SelectItem>
+                    {getDestinationsForVille(selectedVille).map(station => (
+                      <SelectItem key={station} value={station}>
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          {station}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </>
+                )}
+                {(!selectedVille || selectedVille === 'all') && DESTINATIONS.map(dest => (
+                  <SelectItem key={dest.ville} value={dest.ville}>
+                    <div className="flex items-center">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {dest.ville}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
     </div>
   );

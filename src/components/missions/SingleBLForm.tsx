@@ -18,24 +18,12 @@ interface SingleBLFormProps {
 }
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
-  const handleClientChange = (clientNom: string) => {
-    console.log('SingleBLForm - handleClientChange called with:', clientNom);
-    onUpdate('client_nom', clientNom);
-  };
-
-  const handleDestinationChange = (destination: string) => {
-    console.log('SingleBLForm - handleDestinationChange called with:', destination);
-    onUpdate('destination', destination);
-  };
-
-  console.log('SingleBLForm - Rendering BL with client_nom:', bl.client_nom);
-
   return (
-    <Card className="border-l-4 border-l-orange-400">
+    <Card className="border-2 border-orange-100">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-lg">
-            <FileText className="w-5 h-5 mr-2" />
+          <CardTitle className="flex items-center">
+            <FileText className="w-5 h-5 mr-2 text-orange-500" />
             BL #{index + 1}
           </CardTitle>
           {canRemove && (
@@ -51,86 +39,94 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Sélection Client/Destination */}
-        <ClientSelector
-          selectedClient={bl.client_nom || ''}
-          selectedDestination={bl.destination || ''}
-          onClientChange={handleClientChange}
-          onDestinationChange={handleDestinationChange}
-          blIndex={index}
-          hideDestinationField={true}
-        />
+        {/* Sélection client uniquement */}
+        <div>
+          <Label>Client / Destination *</Label>
+          <ClientSelector
+            selectedClient={bl.client_nom}
+            selectedDestination={bl.destination}
+            onClientChange={(value) => {
+              onUpdate('client_nom', value);
+              onUpdate('destination', value); // Définir la destination identique au client
+            }}
+            onDestinationChange={(value) => onUpdate('destination', value)}
+            blIndex={index}
+            hideDestinationField={true}
+          />
+        </div>
 
         {/* Informations du BL */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <Label htmlFor={`date_emission_${index}`}>Date d'émission *</Label>
+            <Label>Date d'émission du BL *</Label>
             <Input
-              id={`date_emission_${index}`}
               type="date"
               value={bl.date_emission}
               onChange={(e) => onUpdate('date_emission', e.target.value)}
-              required
             />
           </div>
+
           <div>
-            <Label htmlFor={`produit_${index}`}>Produit *</Label>
-            <Select value={bl.produit} onValueChange={(value) => onUpdate('produit', value)}>
+            <Label>Produit *</Label>
+            <Select
+              value={bl.produit}
+              onValueChange={(value) => onUpdate('produit', value)}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="essence">Essence</SelectItem>
                 <SelectItem value="gasoil">Gasoil</SelectItem>
-                <SelectItem value="lubrifiant">Lubrifiant</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
           <div>
-            <Label htmlFor={`quantite_prevue_${index}`}>Quantité prévue (L) *</Label>
+            <Label>Quantité (litres) *</Label>
             <Input
-              id={`quantite_prevue_${index}`}
               type="number"
-              min="0"
               step="0.1"
               value={bl.quantite_prevue}
               onChange={(e) => onUpdate('quantite_prevue', parseFloat(e.target.value) || 0)}
-              placeholder="0"
-              required
+              placeholder="0.0"
             />
           </div>
         </div>
 
-        {/* Statut et Observations */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor={`statut_${index}`}>Statut</Label>
-            <Select value={bl.statut} onValueChange={(value) => onUpdate('statut', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="emis">Émis</SelectItem>
-                <SelectItem value="en_cours">En cours</SelectItem>
-                <SelectItem value="livre">Livré</SelectItem>
-                <SelectItem value="annule">Annulé</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor={`unite_mesure_${index}`}>Unité de mesure</Label>
-            <Select value={bl.unite_mesure} onValueChange={(value) => onUpdate('unite_mesure', value)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="litres">Litres</SelectItem>
-                <SelectItem value="tonnes">Tonnes</SelectItem>
-                <SelectItem value="m3">m³</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Code client TOTAL */}
+        <div>
+          <Label>Code client TOTAL (optionnel)</Label>
+          <Input
+            value={bl.client_code_total || ''}
+            onChange={(e) => onUpdate('client_code_total', e.target.value)}
+            placeholder="Code client fourni par TOTAL"
+          />
         </div>
+
+        {/* Informations de suivi (affichées seulement si déjà renseignées) */}
+        {(bl.numero_tournee || bl.date_chargement_reelle || bl.manquant_total) && (
+          <div className="border-t pt-4 mt-4">
+            <h5 className="font-medium text-gray-700 mb-3">Informations de suivi</h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              {bl.numero_tournee && (
+                <div>
+                  <span className="font-medium">Numéro de tournée:</span> {bl.numero_tournee}
+                </div>
+              )}
+              {bl.date_chargement_reelle && (
+                <div>
+                  <span className="font-medium">Date de chargement:</span> {new Date(bl.date_chargement_reelle).toLocaleDateString()}
+                </div>
+              )}
+              {bl.manquant_total && bl.manquant_total > 0 && (
+                <div className="text-red-600">
+                  <span className="font-medium">Manquant total:</span> {bl.manquant_total} L
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
