@@ -33,27 +33,23 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     chauffeur_id: mission?.chauffeur_id || '',
     observations: mission?.observations || '',
     statut: mission?.statut || 'en_attente',
-    date_heure_depart: mission?.date_heure_depart || '',
-    date_heure_arrivee_prevue: mission?.date_heure_arrivee_prevue || ''
+    date_heure_depart: mission?.date_heure_depart || ''
   });
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
   const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
 
-  // Récupérer les véhicules disponibles
   const { data: vehicules = [] } = useQuery({
     queryKey: ['available-vehicules'],
     queryFn: missionsService.getAvailableVehicules
   });
 
-  // Récupérer les chauffeurs assignés au véhicule sélectionné
   const { data: chauffeursAssignesVehicule = [] } = useQuery({
     queryKey: ['chauffeurs-assignes-vehicule', formData.vehicule_id],
     queryFn: () => missionsService.getChauffeursAssignesVehicule(formData.vehicule_id),
     enabled: !!formData.vehicule_id
   });
 
-  // Logique d'auto-assignation du/des chauffeur(s)
   useEffect(() => {
     if (chauffeursAssignesVehicule.length > 0 && formData.vehicule_id) {
       console.log('Chauffeurs assignés au véhicule:', chauffeursAssignesVehicule);
@@ -94,7 +90,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     }
   }, [chauffeursAssignesVehicule, formData.vehicule_id, mission?.id, toast]);
 
-  // Charger les BL existants si on modifie une mission
   useEffect(() => {
     if (mission?.id) {
       const chargerBLs = async () => {
@@ -107,7 +102,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       };
       chargerBLs();
     } else {
-      // Pour une nouvelle mission d'hydrocarbures, créer un BL par défaut
       if (formData.type_transport === 'hydrocarbures') {
         const defaultBL: BonLivraison = {
           numero: `BL-${Date.now()}`,
@@ -126,14 +120,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     }
   }, [mission?.id, formData.type_transport, formData.vehicule_id, formData.chauffeur_id]);
 
-  // Mutation pour créer/modifier une mission
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
       if (mission?.id) {
-        // Mettre à jour la mission
         const missionUpdated = await missionsService.update(mission.id, data);
         
-        // Mettre à jour les BL si c'est un transport d'hydrocarbures
         if (data.type_transport === 'hydrocarbures' && bls.length > 0) {
           for (const bl of bls) {
             const blData = {
@@ -153,10 +144,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         
         return missionUpdated;
       } else {
-        // Créer la mission
         const missionCreated = await missionsService.create(data);
         
-        // Créer les BL si c'est un transport d'hydrocarbures
         if (data.type_transport === 'hydrocarbures' && bls.length > 0) {
           for (const bl of bls) {
             const blData = {
@@ -201,7 +190,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
 
-    // Validation spécifique aux hydrocarbures
     if (formData.type_transport === 'hydrocarbures' && bls.length === 0) {
       toast({
         title: 'Erreur',
@@ -211,7 +199,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
 
-    // Validation des BL
     if (formData.type_transport === 'hydrocarbures') {
       const blsIncomplets = bls.filter(bl => 
         !bl.client_nom || !bl.destination || !bl.date_emission || !bl.quantite_prevue || bl.quantite_prevue <= 0
@@ -230,8 +217,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     const submitData = {
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
-      date_heure_depart: formData.date_heure_depart ? new Date(formData.date_heure_depart).toISOString() : null,
-      date_heure_arrivee_prevue: formData.date_heure_arrivee_prevue ? new Date(formData.date_heure_arrivee_prevue).toISOString() : null
+      date_heure_depart: formData.date_heure_depart ? new Date(formData.date_heure_depart).toISOString() : null
     };
 
     console.log('Sauvegarde de la mission:', submitData);
@@ -243,7 +229,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
       
-      // Si le type de transport change, ajuster l'unité de mesure
       if (field === 'type_transport') {
         if (value === 'hydrocarbures' || value === 'lubrifiants') {
           newData.unite_mesure = 'litres';
@@ -251,13 +236,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           newData.unite_mesure = 'tonnes';
         }
         
-        // Réinitialiser les BL si on change le type de transport
         if (value !== 'hydrocarbures') {
           setBls([]);
         }
       }
       
-      // Si le véhicule change, réinitialiser le chauffeur sauf si on modifie une mission existante
       if (field === 'vehicule_id' && !mission?.id) {
         newData.chauffeur_id = '';
       }
@@ -266,7 +249,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     });
   };
 
-  // Obtenir le nom du chauffeur assigné pour l'affichage
   const getChauffeurAssigneNom = () => {
     const chauffeur = chauffeursAssignes.find(c => c.id === formData.chauffeur_id);
     return chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '';
@@ -296,7 +278,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Informations de base */}
           <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>Informations de la mission</CardTitle>
@@ -332,29 +313,16 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </div>
               </div>
 
-              {/* Dates */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date_heure_depart">Date et heure de départ</Label>
-                  <Input
-                    id="date_heure_depart"
-                    type="datetime-local"
-                    value={formData.date_heure_depart}
-                    onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="date_heure_arrivee_prevue">Date et heure d'arrivée prévue</Label>
-                  <Input
-                    id="date_heure_arrivee_prevue"
-                    type="datetime-local"
-                    value={formData.date_heure_arrivee_prevue}
-                    onChange={(e) => updateFormData('date_heure_arrivee_prevue', e.target.value)}
-                  />
-                </div>
+              <div>
+                <Label htmlFor="date_heure_depart">Date et heure de départ</Label>
+                <Input
+                  id="date_heure_depart"
+                  type="datetime-local"
+                  value={formData.date_heure_depart}
+                  onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
+                />
               </div>
 
-              {/* Champs pour tous les types de transport sauf hydrocarbures */}
               {!isHydrocarbures && (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -420,7 +388,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
             </CardContent>
           </Card>
 
-          {/* Assignation des ressources */}
           <Card>
             <CardHeader>
               <CardTitle>Assignation des ressources</CardTitle>
@@ -484,7 +451,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           </Card>
         </div>
 
-        {/* Section BL pour les hydrocarbures */}
         {isHydrocarbures && (
           <>
             {!isTerminee ? (

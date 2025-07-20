@@ -40,6 +40,7 @@ export const ClientSelector = ({
   }, [searchQuery, selectedVille]);
 
   const handleClientSelect = (clientNom: string) => {
+    console.log('Sélection du client:', clientNom);
     onClientChange(clientNom);
     onDestinationChange(clientNom); // Définir la destination identique au client
   };
