@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,32 +47,33 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   const [availabilityInfo, setAvailabilityInfo] = useState(null);
   const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
 
-  // Récupérer les lieux de départ depuis la facturation
-  const { data: lieuxDepart = [] } = useQuery({
-    queryKey: ['lieux-depart'],
+  // Récupérer les lieux de chargement depuis les bons de livraison
+  const { data: lieuxChargement = [] } = useQuery({
+    queryKey: ['lieux-chargement'],
     queryFn: async () => {
-      console.log('Chargement des lieux de départ...');
+      console.log('Chargement des lieux de chargement...');
       const { data, error } = await supabase
         .from('bons_livraison')
         .select('destination')
         .not('destination', 'is', null);
       
       if (error) {
-        console.error('Erreur lors du chargement des lieux de départ:', error);
+        console.error('Erreur lors du chargement des lieux de chargement:', error);
         return [];
       }
       
-      // Extraire les destinations uniques et les utiliser comme lieux de départ
+      // Extraire les destinations uniques des bons de livraison
       const lieux = data && data.length > 0 ? [...new Set(data.map(item => item.destination).filter(Boolean))] : [];
-      console.log('Lieux de départ chargés:', lieux);
+      console.log('Lieux de chargement chargés:', lieux);
       return lieux;
     }
   });
 
-  // Récupérer les destinations depuis la facturation
+  // Récupérer les destinations depuis les clients TOTAL
   const { data: destinations = [] } = useQuery({
-    queryKey: ['destinations-facturation'],
+    queryKey: ['destinations-clients'],
     queryFn: async () => {
+      console.log('Chargement des destinations...');
       const { data, error } = await supabase
         .from('clients_total')
         .select('destination')
@@ -82,7 +84,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         return [];
       }
       
+      // Extraire les destinations uniques des clients
       const destinationsUniques = data && data.length > 0 ? [...new Set(data.map(item => item.destination).filter(Boolean))] : [];
+      console.log('Destinations chargées:', destinationsUniques);
       return destinationsUniques;
     }
   });
@@ -204,14 +208,20 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
     
+    const isHydrocarbures = formData.type_transport === 'hydrocarbures';
+    
     const submitData = {
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
       quantite_litres: formData.quantite_litres ? parseFloat(formData.quantite_litres) : null,
-      date_heure_depart: new Date(formData.date_heure_depart).toISOString(),
-      date_heure_arrivee_prevue: new Date(formData.date_heure_arrivee_prevue).toISOString(),
       date_emission_bl: formData.date_emission_bl ? new Date(formData.date_emission_bl).toISOString() : null
     };
+
+    // Pour les hydrocarbures, on ne sauvegarde pas les dates/heures
+    if (!isHydrocarbures) {
+      submitData.date_heure_depart = new Date(formData.date_heure_depart).toISOString();
+      submitData.date_heure_arrivee_prevue = new Date(formData.date_heure_arrivee_prevue).toISOString();
+    }
 
     console.log('Sauvegarde de la mission:', submitData);
     saveMutation.mutate(submitData);
@@ -325,7 +335,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                           <SelectValue placeholder="Sélectionner le lieu" />
                         </SelectTrigger>
                         <SelectContent>
-                          {lieuxDepart.map(lieu => (
+                          {lieuxChargement.map(lieu => (
                             <SelectItem key={lieu} value={lieu}>
                               {lieu}
                             </SelectItem>
@@ -381,81 +391,81 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
               {/* Champs généraux (modifiés conditionnellement) */}
               {!isHydrocarbures && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="site_depart">Site de départ *</Label>
-                    <Input
-                      id="site_depart"
-                      value={formData.site_depart}
-                      onChange={(e) => updateFormData('site_depart', e.target.value)}
-                      placeholder="Ex: Kamsar"
-                      required={!isHydrocarbures}
-                    />
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="site_depart">Site de départ *</Label>
+                      <Input
+                        id="site_depart"
+                        value={formData.site_depart}
+                        onChange={(e) => updateFormData('site_depart', e.target.value)}
+                        placeholder="Ex: Kamsar"
+                        required={!isHydrocarbures}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="site_arrivee">Site d'arrivée *</Label>
+                      <Input
+                        id="site_arrivee"
+                        value={formData.site_arrivee}
+                        onChange={(e) => updateFormData('site_arrivee', e.target.value)}
+                        placeholder="Ex: Conakry"
+                        required={!isHydrocarbures}
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="site_arrivee">Site d'arrivée *</Label>
-                    <Input
-                      id="site_arrivee"
-                      value={formData.site_arrivee}
-                      onChange={(e) => updateFormData('site_arrivee', e.target.value)}
-                      placeholder="Ex: Conakry"
-                      required={!isHydrocarbures}
-                    />
-                  </div>
-                </div>
-              )}
 
-              {!isHydrocarbures && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="volume_poids">Volume/Poids</Label>
-                    <Input
-                      id="volume_poids"
-                      type="number"
-                      step="0.1"
-                      value={formData.volume_poids}
-                      onChange={(e) => updateFormData('volume_poids', e.target.value)}
-                      placeholder="0.0"
-                    />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="volume_poids">Volume/Poids</Label>
+                      <Input
+                        id="volume_poids"
+                        type="number"
+                        step="0.1"
+                        value={formData.volume_poids}
+                        onChange={(e) => updateFormData('volume_poids', e.target.value)}
+                        placeholder="0.0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="unite_mesure">Unité</Label>
+                      <Select value={formData.unite_mesure} onValueChange={(value) => updateFormData('unite_mesure', value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tonnes">Tonnes</SelectItem>
+                          <SelectItem value="litres">Litres</SelectItem>
+                          <SelectItem value="m3">m³</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="unite_mesure">Unité</Label>
-                    <Select value={formData.unite_mesure} onValueChange={(value) => updateFormData('unite_mesure', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="tonnes">Tonnes</SelectItem>
-                        <SelectItem value="litres">Litres</SelectItem>
-                        <SelectItem value="m3">m³</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date_heure_depart">Date et heure de départ *</Label>
-                  <Input
-                    id="date_heure_depart"
-                    type="datetime-local"
-                    value={formData.date_heure_depart}
-                    onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="date_heure_arrivee_prevue">Date et heure d'arrivée prévue *</Label>
-                  <Input
-                    id="date_heure_arrivee_prevue"
-                    type="datetime-local"
-                    value={formData.date_heure_arrivee_prevue}
-                    onChange={(e) => updateFormData('date_heure_arrivee_prevue', e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="date_heure_depart">Date et heure de départ *</Label>
+                      <Input
+                        id="date_heure_depart"
+                        type="datetime-local"
+                        value={formData.date_heure_depart}
+                        onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
+                        required={!isHydrocarbures}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="date_heure_arrivee_prevue">Date et heure d'arrivée prévue *</Label>
+                      <Input
+                        id="date_heure_arrivee_prevue"
+                        type="datetime-local"
+                        value={formData.date_heure_arrivee_prevue}
+                        onChange={(e) => updateFormData('date_heure_arrivee_prevue', e.target.value)}
+                        required={!isHydrocarbures}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div>
                 <Label htmlFor="observations">Observations</Label>
@@ -531,8 +541,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </div>
               </div>
 
-              {/* Information de disponibilité (non-bloquante) */}
-              {availabilityInfo && (
+              {/* Information de disponibilité (non-bloquante) pour bauxite seulement */}
+              {availabilityInfo && !isHydrocarbures && (
                 <Alert className="border-blue-200 bg-blue-50">
                   <Info className="h-4 w-4" />
                   <AlertDescription>
