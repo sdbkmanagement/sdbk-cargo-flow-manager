@@ -5,10 +5,42 @@ import { BonLivraison } from '@/types/bl';
 // Simplified conversion functions
 const convertFromDatabase = (dbRecord: any): BonLivraison => {
   return {
-    ...dbRecord,
+    id: dbRecord.id,
+    numero: dbRecord.numero,
+    client_nom: dbRecord.client_nom,
+    client_code: dbRecord.client_code,
+    client_code_total: dbRecord.client_code_total,
+    destination: dbRecord.destination,
+    vehicule_id: dbRecord.vehicule_id,
+    chauffeur_id: dbRecord.chauffeur_id,
+    date_emission: dbRecord.date_emission,
     produit: dbRecord.produit as 'essence' | 'gasoil',
+    quantite_prevue: dbRecord.quantite_prevue,
+    unite_mesure: dbRecord.unite_mesure || 'litres',
+    numero_tournee: dbRecord.numero_tournee,
+    date_chargement_prevue: dbRecord.date_chargement_prevue,
+    date_chargement_reelle: dbRecord.date_chargement_reelle,
+    date_depart: dbRecord.date_depart,
+    date_arrivee_prevue: dbRecord.date_arrivee_prevue,
+    date_arrivee_reelle: dbRecord.date_arrivee_reelle,
+    date_dechargement: dbRecord.date_dechargement,
+    quantite_livree: dbRecord.quantite_livree,
+    manquant_cuve: dbRecord.manquant_cuve,
+    manquant_compteur: dbRecord.manquant_compteur,
+    manquant_total: dbRecord.manquant_total,
+    prix_unitaire: dbRecord.prix_unitaire,
+    montant_total: dbRecord.montant_total,
+    montant_facture: dbRecord.montant_facture,
+    associe_id: dbRecord.associe_id,
+    chiffre_affaire_associe: dbRecord.chiffre_affaire_associe,
     statut: dbRecord.statut as 'emis' | 'charge' | 'en_route' | 'livre' | 'termine',
-    unite_mesure: dbRecord.unite_mesure || 'litres'
+    observations: dbRecord.observations,
+    facture: dbRecord.facture,
+    mission_id: dbRecord.mission_id,
+    created_at: dbRecord.created_at,
+    updated_at: dbRecord.updated_at,
+    saisi_par: dbRecord.saisi_par,
+    transitaire_nom: dbRecord.transitaire_nom
   };
 };
 
@@ -121,7 +153,6 @@ export const bonsLivraisonService = {
     }
   },
 
-  // Supprimer un BL
   async delete(id: string): Promise<void> {
     try {
       const { error } = await supabase
