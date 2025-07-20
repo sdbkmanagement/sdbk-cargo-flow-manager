@@ -62,7 +62,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       }
       
       // Extraire les destinations uniques et les utiliser comme lieux de départ
-      const lieux = [...new Set(data?.map(item => item.destination).filter(Boolean))] || [];
+      const lieux = data && data.length > 0 ? [...new Set(data.map(item => item.destination).filter(Boolean))] : [];
       console.log('Lieux de départ chargés:', lieux);
       return lieux;
     }
@@ -82,7 +82,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         return [];
       }
       
-      const destinationsUniques = [...new Set(data?.map(item => item.destination).filter(Boolean))] || [];
+      const destinationsUniques = data && data.length > 0 ? [...new Set(data.map(item => item.destination).filter(Boolean))] : [];
       return destinationsUniques;
     }
   });
