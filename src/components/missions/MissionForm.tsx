@@ -211,16 +211,15 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
 
-    // Validation des BL - vérifier que client_nom ET destination sont remplis
+    // Validation des BL - simplifiée car client_nom et destination sont synchronisés
     if (formData.type_transport === 'hydrocarbures') {
       const blsIncomplets = bls.filter(bl => {
-        // Le client ET la destination doivent être remplis (ils sont la même chose)
-        const clientDestinationManquant = (!bl.client_nom || bl.client_nom.trim() === '') || 
-                                         (!bl.destination || bl.destination.trim() === '');
+        // Vérifier que le client/destination est rempli (on vérifie juste client_nom maintenant)
+        const clientManquant = !bl.client_nom || bl.client_nom.trim() === '';
         const dateManquante = !bl.date_emission || bl.date_emission.trim() === '';
         const quantiteInvalide = !bl.quantite_prevue || bl.quantite_prevue <= 0;
         
-        return clientDestinationManquant || dateManquante || quantiteInvalide;
+        return clientManquant || dateManquante || quantiteInvalide;
       });
       
       if (blsIncomplets.length > 0) {
