@@ -1,6 +1,22 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export interface AlerteDocument {
+  id: string;
+  chauffeur_id?: string;
+  vehicule_id?: string;
+  chauffeur_nom?: string;
+  vehicule_numero?: string;
+  immatriculation?: string;
+  document_nom: string;
+  document_type: string;
+  date_expiration: string | null;
+  jours_restants: number | null;
+  statut: string;
+  niveau_alerte: string;
+  type?: 'chauffeur' | 'vehicule';
+}
+
 export const alertesService = {
   // Récupérer toutes les alertes documents chauffeurs
   async getAlertesChauffeurs() {
