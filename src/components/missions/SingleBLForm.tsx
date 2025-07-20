@@ -18,29 +18,36 @@ interface SingleBLFormProps {
 }
 
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
-  const handleClientChange = (clientNom: string) => {
-    console.log(`🎯 BL ${index}: handleClientChange appelé avec:`, clientNom);
+  const handleClientChange = (destinationComplete: string) => {
+    console.log(`🎯 BL ${index}: handleClientChange appelé avec:`, destinationComplete);
     console.log(`📝 BL ${index}: Valeurs AVANT modification:`, {
       client_nom: bl.client_nom,
       destination: bl.destination,
       lieu_arrivee: bl.lieu_arrivee
     });
     
-    // CORRECTION : Mise à jour synchrone et forcée de tous les champs liés
-    // On force la mise à jour immédiate pour éviter les états intermédiaires
-    if (clientNom && clientNom.trim() !== '') {
-      console.log(`✅ BL ${index}: Mise à jour forcée avec:`, clientNom);
-      onUpdate('client_nom', clientNom);
-      onUpdate('destination', clientNom);
-      onUpdate('lieu_arrivee', clientNom);
+    // CORRECTION CRITIQUE : Mise à jour synchrone et forcée avec la destination complète
+    if (destinationComplete && destinationComplete.trim() !== '') {
+      console.log(`✅ BL ${index}: Mise à jour avec destination complète:`, destinationComplete);
+      
+      // Mettre à jour TOUS les champs avec la destination complète
+      onUpdate('client_nom', destinationComplete);  // Ex: "Cissela Station Cissela 2"  
+      onUpdate('destination', destinationComplete); // Ex: "Cissela Station Cissela 2"
+      onUpdate('lieu_arrivee', destinationComplete); // Ex: "Cissela Station Cissela 2"
+      
+      console.log(`🔄 BL ${index}: Champs mis à jour avec:`, {
+        client_nom: destinationComplete,
+        destination: destinationComplete,
+        lieu_arrivee: destinationComplete
+      });
     } else {
-      console.log(`❌ BL ${index}: Client vide, réinitialisation`);
+      console.log(`❌ BL ${index}: Destination vide, réinitialisation`);
       onUpdate('client_nom', '');
       onUpdate('destination', '');
       onUpdate('lieu_arrivee', '');
     }
     
-    console.log(`✅ BL ${index}: Client mis à jour:`, clientNom);
+    console.log(`✅ BL ${index}: Fin de handleClientChange`);
   };
 
   const handleDestinationChange = (destination: string) => {
