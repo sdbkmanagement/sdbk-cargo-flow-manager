@@ -26,7 +26,7 @@ export const ClientSelector = ({
 
   // Filtrer les clients selon la recherche et la ville sélectionnée
   const filteredClients = useMemo(() => {
-    if (selectedVille) {
+    if (selectedVille && selectedVille !== 'all') {
       return getClientsByVille(selectedVille);
     }
     
@@ -51,13 +51,15 @@ export const ClientSelector = ({
           <Label>Filtrer par ville</Label>
           <Select value={selectedVille} onValueChange={(value) => {
             setSelectedVille(value);
-            onDestinationChange(value); // Définir la ville comme destination par défaut
+            if (value !== 'all') {
+              onDestinationChange(value); // Définir la ville comme destination par défaut
+            }
           }}>
             <SelectTrigger>
               <SelectValue placeholder="Toutes les villes" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Toutes les villes</SelectItem>
+              <SelectItem value="all">Toutes les villes</SelectItem>
               {DESTINATIONS.map(destination => (
                 <SelectItem key={destination.ville} value={destination.ville}>
                   <div className="flex items-center">
@@ -114,7 +116,7 @@ export const ClientSelector = ({
               <SelectValue placeholder="Sélectionner une destination" />
             </SelectTrigger>
             <SelectContent>
-              {selectedVille && (
+              {selectedVille && selectedVille !== 'all' && (
                 <>
                   <SelectItem value={selectedVille}>
                     <div className="flex items-center">
@@ -132,7 +134,7 @@ export const ClientSelector = ({
                   ))}
                 </>
               )}
-              {!selectedVille && DESTINATIONS.map(dest => (
+              {(!selectedVille || selectedVille === 'all') && DESTINATIONS.map(dest => (
                 <SelectItem key={dest.ville} value={dest.ville}>
                   <div className="flex items-center">
                     <MapPin className="w-4 h-4 mr-2" />
