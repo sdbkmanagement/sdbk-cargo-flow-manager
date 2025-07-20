@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,8 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
         const blsTyped = data.map(bl => ({
           ...bl,
           produit: bl.produit as 'essence' | 'gasoil',
-          unite_mesure: bl.unite_mesure as 'litres'
+          unite_mesure: bl.unite_mesure as 'litres',
+          statut: bl.statut as 'emis' | 'charge' | 'en_route' | 'livre' | 'termine'
         }));
         setBls(blsTyped);
       } catch (error) {
