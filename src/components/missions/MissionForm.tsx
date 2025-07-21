@@ -34,7 +34,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     chauffeur_id: mission?.chauffeur_id || '',
     observations: mission?.observations || '',
     statut: mission?.statut || 'en_cours',
-    date_heure_depart: mission?.date_heure_depart || ''
+    date_heure_depart: mission?.date_heure_depart ? 
+      new Date(mission.date_heure_depart).toISOString().slice(0, 16) : ''
   });
 
   const [bls, setBls] = useState<BonLivraison[]>([]);

@@ -37,7 +37,7 @@ export const ClientSelector = ({
 
   // Initialiser les valeurs depuis selectedClient au premier rendu
   React.useEffect(() => {
-    if (selectedClient && selectedClient.trim() !== '' && !selectedVille) {
+    if (selectedClient && selectedClient.trim() !== '' && selectedClient !== 'VIDE' && !selectedVille) {
       console.log(`🔍 ClientSelector BL ${blIndex}: Tentative de reconstitution depuis selectedClient:`, selectedClient);
       
       const allClients = getAllClients();
@@ -52,6 +52,15 @@ export const ClientSelector = ({
       if (!client) {
         // Essayer de trouver par nom seulement
         client = allClients.find(c => selectedClient.includes(c.nom));
+      }
+      if (!client) {
+        // Essayer de séparer par l'espace et trouver par ville et nom séparément
+        const parts = selectedClient.split(' ');
+        if (parts.length >= 2) {
+          const ville = parts[0];
+          const nom = parts.slice(1).join(' ');
+          client = allClients.find(c => c.ville === ville && c.nom === nom);
+        }
       }
       
       if (client) {
