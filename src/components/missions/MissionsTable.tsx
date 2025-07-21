@@ -218,14 +218,17 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
                         {mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
                       </Badge>
                     </td>
-                    <td className="py-4 px-6">
-                      <div className="flex items-center text-sm">
-                        <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                        <span className="truncate max-w-[150px] font-medium">
-                          {mission.site_depart || 'Non défini'} → {mission.site_arrivee || 'Non défini'}
-                        </span>
-                      </div>
-                    </td>
+                     <td className="py-4 px-6">
+                       <div className="flex items-center text-sm">
+                         <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                         <span className="truncate max-w-[150px] font-medium">
+                           {mission.site_depart && mission.site_arrivee 
+                             ? `${mission.site_depart} → ${mission.site_arrivee}`
+                             : 'Non défini → Non défini'
+                           }
+                         </span>
+                       </div>
+                     </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center text-sm">
                         <Truck className="w-4 h-4 mr-2 text-gray-400" />

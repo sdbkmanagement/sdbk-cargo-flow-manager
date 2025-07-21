@@ -100,9 +100,9 @@ export const ClientSelector = ({
 
   return (
     <div className="space-y-4">
-      {/* Sélection de la ville - OPTIONNELLE */}
+      {/* Sélection de la ville */}
       <div>
-        <Label>Ville de destination (optionnel)</Label>
+        <Label>Ville de destination</Label>
         <Select value={selectedVille} onValueChange={handleVilleSelection}>
           <SelectTrigger>
             <SelectValue placeholder="Sélectionner une ville (optionnel)" />
@@ -120,9 +120,9 @@ export const ClientSelector = ({
         </Select>
       </div>
 
-      {/* Sélection du lieu de livraison spécifique - OPTIONNELLE */}
+      {/* Sélection du lieu de livraison spécifique */}
       <div>
-        <Label>Lieu de livraison (optionnel)</Label>
+        <Label>Lieu de livraison</Label>
         <Select 
           value={selectedLieuNom} 
           onValueChange={handleLieuLivraisonSelection}
@@ -130,7 +130,7 @@ export const ClientSelector = ({
         >
           <SelectTrigger>
             <SelectValue 
-              placeholder={selectedVille ? "Sélectionner un lieu de livraison (optionnel)" : "Sélectionnez d'abord une ville"}
+              placeholder={selectedVille ? "Sélectionner un lieu de livraison" : "Sélectionnez d'abord une ville"}
             />
           </SelectTrigger>
           <SelectContent className="max-h-60">

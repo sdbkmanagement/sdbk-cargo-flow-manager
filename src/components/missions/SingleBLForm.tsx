@@ -107,9 +107,8 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
           </div>
         </div>
 
-        {/* Sélection client/destination - OPTIONNELLE */}
+        {/* Sélection client/destination */}
         <div>
-          <Label>Client / Destination (optionnel)</Label>
           <ClientSelector
             selectedClient={bl.lieu_arrivee || ''}
             selectedDestination={bl.destination || ''}
@@ -118,14 +117,6 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
             blIndex={index}
             hideDestinationField={true}
           />
-          
-          {/* Affichage debug pour voir les valeurs en temps réel */}
-          <div className="mt-2 p-2 bg-gray-50 border rounded text-xs text-gray-600">
-            <p><strong>Debug BL #{index + 1}:</strong></p>
-            <p>lieu_arrivee: "{bl.lieu_arrivee || 'VIDE'}"</p>
-            <p>lieu_depart: "{bl.lieu_depart || 'VIDE'}"</p>
-            <p>quantite_prevue: {bl.quantite_prevue || 0}</p>
-          </div>
         </div>
 
         {/* Informations du BL */}
