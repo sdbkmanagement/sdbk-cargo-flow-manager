@@ -32,10 +32,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     unite_mesure: mission?.unite_mesure || 'tonnes',
     vehicule_id: mission?.vehicule_id || '',
     chauffeur_id: mission?.chauffeur_id || '',
-    observations: mission?.observations || '',
-    statut: mission?.statut || 'en_cours',
-    date_heure_depart: mission?.date_heure_depart ? 
-      new Date(mission.date_heure_depart).toISOString().slice(0, 16) : ''
+    statut: mission?.statut || 'en_cours'
   });
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
@@ -264,20 +261,10 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       }
     }
     
-    // Calculer la date d'arrivée prévue si une date de départ est fournie
-    let dateArriveePreve = null;
-    if (formData.date_heure_depart) {
-      const dateDepart = new Date(formData.date_heure_depart);
-      // Ajouter 8 heures par défaut pour la durée estimée du trajet
-      const dateArrivee = new Date(dateDepart.getTime() + (8 * 60 * 60 * 1000));
-      dateArriveePreve = dateArrivee.toISOString();
-    }
-    
     const submitData = {
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
-      date_heure_depart: formData.date_heure_depart ? new Date(formData.date_heure_depart).toISOString() : null,
-      date_heure_arrivee_prevue: dateArriveePreve || new Date(Date.now() + (8 * 60 * 60 * 1000)).toISOString()
+      date_heure_arrivee_prevue: new Date(Date.now() + (8 * 60 * 60 * 1000)).toISOString()
     };
 
     console.log('💾 Sauvegarde de la mission:', submitData);
@@ -399,19 +386,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 </div>
               </div>
 
-              {/* Date de départ uniquement */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="date_heure_depart">Date et heure de départ</Label>
-                  <Input
-                    id="date_heure_depart"
-                    type="datetime-local"
-                    value={formData.date_heure_depart}
-                    onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
-                  />
-                </div>
-              </div>
-
               {/* Champs pour tous les types de transport sauf hydrocarbures */}
               {!isHydrocarbures && (
                 <>
@@ -464,17 +438,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                   </div>
                 </>
               )}
-
-              <div>
-                <Label htmlFor="observations">Observations</Label>
-                <Textarea
-                  id="observations"
-                  value={formData.observations}
-                  onChange={(e) => updateFormData('observations', e.target.value)}
-                  placeholder="Observations ou instructions particulières..."
-                  rows={3}
-                />
-              </div>
             </CardContent>
           </Card>
 
