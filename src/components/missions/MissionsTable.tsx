@@ -272,13 +272,7 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
                           <Edit className="w-4 h-4" />
                         </Button>
                         
-                        {/* Nouveau bouton de suivi pour les missions en cours */}
-                        {mission.statut === 'en_cours' && (
-                          <MissionTrackingButton
-                            mission={mission}
-                            onSuccess={onRefresh}
-                          />
-                        )}
+                        {/* Bouton de suivi supprimé comme demandé */}
                         
                         {/* Bouton de clôture pour les missions en cours */}
                         {canCloseMission && mission.statut === 'en_cours' && (

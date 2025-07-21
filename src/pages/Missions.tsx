@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, AlertTriangle } from 'lucide-react';
 import { MissionsStats } from '@/components/missions/MissionsStats';
 import { MissionsTable } from '@/components/missions/MissionsTable';
@@ -14,6 +15,7 @@ const Missions = () => {
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [selectedMission, setSelectedMission] = useState(null);
+  const [activeTab, setActiveTab] = useState('en-cours');
 
   // Actualisation automatique toutes les 30 secondes
   const { data: missions = [], isLoading, error, isError } = useQuery({
@@ -36,6 +38,15 @@ const Missions = () => {
     refetchInterval: 30 * 1000, // Actualisation toutes les 30 secondes
     refetchIntervalInBackground: true,
   });
+
+  // Filtrer les missions selon l'onglet actif
+  const missionsEnCours = missions.filter(mission => 
+    mission.statut === 'en_attente' || mission.statut === 'en_cours'
+  );
+  
+  const missionsTerminees = missions.filter(mission => 
+    mission.statut === 'terminee'
+  );
 
   const handleCreateMission = () => {
     setSelectedMission(null);
@@ -145,12 +156,34 @@ const Missions = () => {
         />
       )}
 
-      <MissionsTable
-        missions={missions}
-        onEdit={handleEditMission}
-        hasWritePermission={hasPermission('missions_write')}
-        onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
-      />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="en-cours" className="flex items-center gap-2">
+            Missions en cours ({missionsEnCours.length})
+          </TabsTrigger>
+          <TabsTrigger value="terminees" className="flex items-center gap-2">
+            Missions terminées ({missionsTerminees.length})
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="en-cours" className="mt-6">
+          <MissionsTable
+            missions={missionsEnCours}
+            onEdit={handleEditMission}
+            hasWritePermission={hasPermission('missions_write')}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
+          />
+        </TabsContent>
+        
+        <TabsContent value="terminees" className="mt-6">
+          <MissionsTable
+            missions={missionsTerminees}
+            onEdit={handleEditMission}
+            hasWritePermission={hasPermission('missions_write')}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

@@ -65,7 +65,7 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
         if (bl.id) {
           await bonsLivraisonService.update(bl.id, {
             ...bl,
-            statut: 'termine'
+            statut: 'livre'
           });
         }
       }

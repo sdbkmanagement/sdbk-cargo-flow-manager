@@ -80,6 +80,43 @@ export interface CreateFactureData {
 }
 
 export const billingService = {
+  // Missions terminées pour facturation
+  async getMissionsTerminees(): Promise<any[]> {
+    try {
+      const { data, error } = await supabase
+        .from('missions')
+        .select(`
+          *,
+          vehicule:vehicules(numero, immatriculation),
+          chauffeur:chauffeurs(nom, prenom),
+          bons_livraison(
+            id,
+            numero,
+            destination,
+            lieu_arrivee,
+            quantite_prevue,
+            quantite_livree,
+            prix_unitaire,
+            montant_total,
+            produit,
+            facture
+          )
+        `)
+        .eq('statut', 'terminee')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur récupération missions terminées:', error);
+        throw new Error(`Erreur lors de la récupération des missions terminées: ${error.message}`);
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Erreur service getMissionsTerminees:', error);
+      throw error;
+    }
+  },
+
   // Méthodes pour les devis
   async createDevis(data: CreateDevisData): Promise<Devis> {
     try {
