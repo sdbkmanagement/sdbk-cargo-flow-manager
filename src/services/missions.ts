@@ -55,9 +55,99 @@ export const missionsService = {
     }
   },
 
-  // Créer une nouvelle mission
+  // Vérifier si un véhicule est disponible pour une mission
+  async checkVehiculeAvailability(vehiculeId: string, missionId?: string) {
+    try {
+      console.log('🔍 Vérification disponibilité véhicule:', vehiculeId);
+      
+      // Vérifier le statut du véhicule
+      const { data: vehicule, error: vehiculeError } = await supabase
+        .from('vehicules')
+        .select('statut, validation_requise')
+        .eq('id', vehiculeId)
+        .single();
+
+      if (vehiculeError) {
+        console.error('Erreur lors de la vérification du véhicule:', vehiculeError);
+        return {
+          available: false,
+          message: 'Véhicule introuvable'
+        };
+      }
+
+      // Le véhicule doit être disponible et ne pas nécessiter de validation
+      if (vehicule.statut !== 'disponible') {
+        return {
+          available: false,
+          message: `Véhicule non disponible. Statut actuel: ${vehicule.statut}`
+        };
+      }
+
+      if (vehicule.validation_requise) {
+        return {
+          available: false,
+          message: 'Véhicule nécessite une validation avant assignation'
+        };
+      }
+
+      // Vérifier s'il y a des missions en cours pour ce véhicule
+      let query = supabase
+        .from('missions')
+        .select('id, numero, statut')
+        .eq('vehicule_id', vehiculeId)
+        .in('statut', ['en_attente', 'en_cours']);
+
+      // Exclure la mission actuelle si on est en train de la modifier
+      if (missionId) {
+        query = query.neq('id', missionId);
+      }
+
+      const { data: missionsEnCours, error: missionsError } = await query;
+
+      if (missionsError) {
+        console.error('Erreur lors de la vérification des missions:', missionsError);
+        return {
+          available: false,
+          message: 'Erreur lors de la vérification des missions en cours'
+        };
+      }
+
+      if (missionsEnCours && missionsEnCours.length > 0) {
+        const mission = missionsEnCours[0];
+        return {
+          available: false,
+          message: `Véhicule déjà assigné à la mission ${mission.numero} (${mission.statut})`
+        };
+      }
+
+      return {
+        available: true,
+        message: 'Véhicule disponible pour assignation'
+      };
+    } catch (error) {
+      console.error('Erreur lors de la vérification de disponibilité:', error);
+      return {
+        available: false,
+        message: 'Erreur lors de la vérification de disponibilité'
+      };
+    }
+  },
+
+  // Créer une nouvelle mission avec vérification
   async create(missionData: Omit<Mission, 'id' | 'created_at' | 'updated_at'>) {
     try {
+      console.log('🚀 Création d\'une nouvelle mission pour véhicule:', missionData.vehicule_id);
+      
+      // Vérifier la disponibilité du véhicule
+      const availability = await this.checkVehiculeAvailability(missionData.vehicule_id);
+      
+      if (!availability.available) {
+        console.error('❌ Véhicule non disponible:', availability.message);
+        throw new Error(availability.message);
+      }
+
+      console.log('✅ Véhicule disponible, création de la mission...');
+
       const { data, error } = await supabase
         .from('missions')
         .insert([missionData])
@@ -69,6 +159,7 @@ export const missionsService = {
         throw error
       }
 
+      console.log('✅ Mission créée avec succès:', data.numero);
       return data;
     } catch (error) {
       console.error('Erreur lors de la création de la mission:', error)
@@ -76,9 +167,21 @@ export const missionsService = {
     }
   },
 
-  // Mettre à jour une mission
+  // Mettre à jour une mission avec vérification
   async update(id: string, missionData: Partial<Mission>) {
     try {
+      console.log('🔄 Mise à jour mission:', id);
+      
+      // Si on change le véhicule, vérifier sa disponibilité
+      if (missionData.vehicule_id) {
+        const availability = await this.checkVehiculeAvailability(missionData.vehicule_id, id);
+        
+        if (!availability.available) {
+          console.error('❌ Véhicule non disponible:', availability.message);
+          throw new Error(availability.message);
+        }
+      }
+
       const { data, error } = await supabase
         .from('missions')
         .update({ ...missionData, updated_at: new Date().toISOString() })
@@ -91,6 +194,7 @@ export const missionsService = {
         throw error
       }
 
+      console.log('✅ Mission mise à jour avec succès');
       return data;
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la mission:', error)
@@ -164,30 +268,16 @@ export const missionsService = {
           en_attente: 0,
           en_cours: 0,
           terminees: 0,
-          annulees: 0,
-          ce_mois: 0,
-          hydrocarbures: 0,
-          bauxite: 0,
-          volume_total: 0
+          annulees: 0
         }
       }
-
-      const currentMonth = new Date().getMonth();
-      const currentYear = new Date().getFullYear();
 
       const stats = {
         total: missions?.length || 0,
         en_attente: missions?.filter(m => m.statut === 'en_attente').length || 0,
         en_cours: missions?.filter(m => m.statut === 'en_cours').length || 0,
         terminees: missions?.filter(m => m.statut === 'terminee').length || 0,
-        annulees: missions?.filter(m => m.statut === 'annulee').length || 0,
-        ce_mois: missions?.filter(m => {
-          const createdDate = new Date(m.created_at);
-          return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
-        }).length || 0,
-        hydrocarbures: missions?.filter(m => m.type_transport === 'hydrocarbures').length || 0,
-        bauxite: missions?.filter(m => m.type_transport === 'bauxite').length || 0,
-        volume_total: missions?.reduce((sum, m) => sum + (m.volume_poids || 0), 0) || 0
+        annulees: missions?.filter(m => m.statut === 'annulee').length || 0
       };
 
       return stats;
@@ -198,11 +288,7 @@ export const missionsService = {
         en_attente: 0,
         en_cours: 0,
         terminees: 0,
-        annulees: 0,
-        ce_mois: 0,
-        hydrocarbures: 0,
-        bauxite: 0,
-        volume_total: 0
+        annulees: 0
       }
     }
   },
@@ -236,13 +322,17 @@ export const missionsService = {
     }
   },
 
-  // Récupérer les véhicules disponibles
+  // Récupérer les véhicules disponibles pour une nouvelle mission
   async getAvailableVehicules() {
     try {
-      const { data, error } = await supabase
+      console.log('🔍 Recherche des véhicules disponibles...');
+      
+      // Récupérer tous les véhicules qui sont disponibles et ne nécessitent pas de validation
+      const { data: vehicules, error } = await supabase
         .from('vehicules')
         .select('*')
         .eq('statut', 'disponible')
+        .eq('validation_requise', false)
         .order('numero', { ascending: true });
 
       if (error) {
@@ -250,7 +340,33 @@ export const missionsService = {
         return []
       }
 
-      return data || []
+      if (!vehicules || vehicules.length === 0) {
+        console.log('⚠️ Aucun véhicule disponible trouvé');
+        return [];
+      }
+
+      console.log(`✅ ${vehicules.length} véhicules potentiellement disponibles`);
+
+      // Vérifier qu'ils ne sont pas déjà assignés à une mission en cours
+      const vehiculesDisponibles = [];
+      
+      for (const vehicule of vehicules) {
+        const { data: missionsEnCours } = await supabase
+          .from('missions')
+          .select('id, numero')
+          .eq('vehicule_id', vehicule.id)
+          .in('statut', ['en_attente', 'en_cours'])
+          .limit(1);
+
+        if (!missionsEnCours || missionsEnCours.length === 0) {
+          vehiculesDisponibles.push(vehicule);
+        } else {
+          console.log(`⚠️ Véhicule ${vehicule.numero} déjà assigné à la mission ${missionsEnCours[0].numero}`);
+        }
+      }
+
+      console.log(`✅ ${vehiculesDisponibles.length} véhicules réellement disponibles`);
+      return vehiculesDisponibles;
     } catch (error) {
       console.error('Erreur récupération véhicules disponibles:', error)
       return []

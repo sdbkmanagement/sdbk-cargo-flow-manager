@@ -149,10 +149,6 @@ const Missions = () => {
           en_cours={stats.en_cours}
           terminees={stats.terminees}
           annulees={stats.annulees}
-          ce_mois={stats.ce_mois || 0}
-          hydrocarbures={stats.hydrocarbures}
-          bauxite={stats.bauxite}
-          volume_total={stats.volume_total || 0}
         />
       )}
 

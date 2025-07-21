@@ -4,13 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
 import { bonsLivraisonService } from '@/services/bonsLivraison';
-import { ArrowLeft, Save, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Save, AlertTriangle, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BLMultiplesForm } from './BLMultiplesForm';
 import { BLSuiviForm } from './BLSuiviForm';
@@ -37,11 +36,16 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
   const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
+  const [vehiculeAvailability, setVehiculeAvailability] = useState<{
+    available: boolean;
+    message: string;
+  } | null>(null);
 
   // Récupérer les véhicules disponibles
-  const { data: vehicules = [] } = useQuery({
+  const { data: vehicules = [], isLoading: vehiculesLoading } = useQuery({
     queryKey: ['available-vehicules'],
-    queryFn: missionsService.getAvailableVehicules
+    queryFn: missionsService.getAvailableVehicules,
+    refetchInterval: 30000 // Actualiser toutes les 30 secondes
   });
 
   // Récupérer les chauffeurs assignés au véhicule sélectionné
@@ -50,6 +54,34 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     queryFn: () => missionsService.getChauffeursAssignesVehicule(formData.vehicule_id),
     enabled: !!formData.vehicule_id
   });
+
+  // Vérifier la disponibilité du véhicule sélectionné
+  useEffect(() => {
+    if (formData.vehicule_id && !mission?.id) {
+      const checkAvailability = async () => {
+        try {
+          const availability = await missionsService.checkVehiculeAvailability(formData.vehicule_id);
+          setVehiculeAvailability(availability);
+        } catch (error) {
+          console.error('Erreur lors de la vérification de disponibilité:', error);
+          setVehiculeAvailability({
+            available: false,
+            message: 'Erreur lors de la vérification'
+          });
+        }
+      };
+
+      checkAvailability();
+    } else if (mission?.id) {
+      // Si on modifie une mission existante, le véhicule est considéré comme disponible
+      setVehiculeAvailability({
+        available: true,
+        message: 'Véhicule assigné à cette mission'
+      });
+    } else {
+      setVehiculeAvailability(null);
+    }
+  }, [formData.vehicule_id, mission?.id]);
 
   // Logique d'auto-assignation du/des chauffeur(s)
   useEffect(() => {
@@ -202,6 +234,16 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       toast({
         title: 'Erreur',
         description: 'Aucun chauffeur n\'est assigné au véhicule sélectionné.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Vérifier la disponibilité du véhicule pour les nouvelles missions
+    if (!mission?.id && vehiculeAvailability && !vehiculeAvailability.available) {
+      toast({
+        title: 'Véhicule non disponible',
+        description: vehiculeAvailability.message,
         variant: 'destructive'
       });
       return;
@@ -454,13 +496,35 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                     <SelectValue placeholder="Sélectionner un véhicule" />
                   </SelectTrigger>
                   <SelectContent>
-                    {vehicules.map(vehicule => (
-                      <SelectItem key={vehicule.id} value={vehicule.id}>
-                        {vehicule.numero} - {vehicule.marque} {vehicule.modele}
-                      </SelectItem>
-                    ))}
+                    {vehiculesLoading ? (
+                      <SelectItem value="" disabled>Chargement...</SelectItem>
+                    ) : vehicules.length === 0 ? (
+                      <SelectItem value="" disabled>Aucun véhicule disponible</SelectItem>
+                    ) : (
+                      vehicules.map(vehicule => (
+                        <SelectItem key={vehicule.id} value={vehicule.id}>
+                          {vehicule.numero} - {vehicule.marque} {vehicule.modele}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
+                
+                {/* Affichage de l'état de disponibilité du véhicule */}
+                {vehiculeAvailability && (
+                  <div className="mt-2">
+                    <Alert className={vehiculeAvailability.available ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+                      {vehiculeAvailability.available ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                      )}
+                      <AlertDescription className={vehiculeAvailability.available ? 'text-green-700' : 'text-red-700'}>
+                        {vehiculeAvailability.message}
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -532,7 +596,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           <Button 
             type="submit" 
             className="bg-orange-500 hover:bg-orange-600"
-            disabled={saveMutation.isPending || !formData.chauffeur_id}
+            disabled={
+              saveMutation.isPending || 
+              !formData.chauffeur_id || 
+              (!mission?.id && vehiculeAvailability && !vehiculeAvailability.available)
+            }
           >
             <Save className="w-4 h-4 mr-2" />
             {saveMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
