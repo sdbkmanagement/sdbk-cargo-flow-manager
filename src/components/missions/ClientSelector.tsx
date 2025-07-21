@@ -58,6 +58,7 @@ export const ClientSelector = ({
         console.log(`✅ ClientSelector BL ${blIndex}: Client trouvé:`, client);
         setSelectedVille(client.ville);
         setSelectedLieuNom(client.nom);
+        // Ne PAS déclencher onClientChange ici pour éviter d'effacer la valeur
       } else {
         console.log(`❌ ClientSelector BL ${blIndex}: Aucun client trouvé pour:`, selectedClient);
       }
