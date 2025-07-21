@@ -167,17 +167,23 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
         if (tarif) {
           console.log('Tarif trouvé:', tarif);
           // Mettre à jour la première ligne avec les données hydrocarbures
-          setInvoiceLines(lines => lines.map((line, index) => {
-            if (index === 0) { // Première ligne
-              return {
-                ...line,
-                description: `Transport hydrocarbures ${lieuDepart} → ${destination}`,
-                prixUnitaire: tarif.tarif_au_litre,
-                total: line.quantite * tarif.tarif_au_litre
-              };
-            }
-            return line;
-          }));
+          setInvoiceLines(lines => {
+            const updatedLines = lines.map((line, index) => {
+              if (index === 0) { // Première ligne
+                const newLine = {
+                  ...line,
+                  description: `Transport hydrocarbures ${lieuDepart} → ${destination}`,
+                  prixUnitaire: tarif.tarif_au_litre,
+                  total: line.quantite * tarif.tarif_au_litre
+                };
+                console.log('Ligne mise à jour:', newLine);
+                return newLine;
+              }
+              return line;
+            });
+            console.log('Toutes les lignes mises à jour:', updatedLines);
+            return updatedLines;
+          });
         }
       }
     };
