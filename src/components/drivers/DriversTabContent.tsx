@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,17 +45,6 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
         return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Suspendu</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Inconnu</Badge>;
-    }
-  };
-
-  const getAssignationBadge = (assignation: string) => {
-    switch (assignation) {
-      case 'assigne':
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Assigné</Badge>;
-      case 'non_assigne':
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Non assigné</Badge>;
-      default:
-        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">-</Badge>;
     }
   };
 
@@ -113,9 +103,14 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
                     {getStatutBadge(chauffeur.statut)}
                   </div>
 
-                  {/* Assignation */}
-                  <div>
-                    {getAssignationBadge(chauffeur.assignation)}
+                  {/* Véhicule assigné */}
+                  <div className="text-center">
+                    <div className="text-sm font-medium">
+                      {chauffeur.vehicule_assigne || 'Non assigné'}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Véhicule
+                    </div>
                   </div>
 
                   {/* Actions */}
@@ -127,6 +122,7 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
                       className="flex items-center space-x-1"
                     >
                       <Edit className="w-4 h-4" />
+                      <span>Modifier</span>
                     </Button>
                   </div>
                 </div>
