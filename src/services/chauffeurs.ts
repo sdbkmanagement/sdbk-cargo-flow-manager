@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client'
 import type { Database } from '@/integrations/supabase/types'
 
@@ -17,7 +16,7 @@ export const chauffeursService = {
           .from('chauffeurs')
           .select(`
             *,
-            affectations_chauffeurs!inner(
+            affectations_chauffeurs(
               vehicule_id,
               vehicules(numero)
             )
