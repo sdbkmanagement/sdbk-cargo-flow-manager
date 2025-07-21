@@ -1,12 +1,15 @@
-
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Plus } from 'lucide-react';
-import { ChauffeursList } from './ChauffeursList';
-import { ChauffeurForm } from './ChauffeurForm';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Edit, 
+  Phone, 
+  User,
+  Calendar,
+  MapPin,
+  Car
+} from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
 
@@ -15,97 +18,123 @@ interface DriversTabContentProps {
   onSelectChauffeur: (chauffeur: any) => void;
 }
 
-export const DriversTabContent = ({ searchTerm, onSelectChauffeur }: DriversTabContentProps) => {
-  const [showForm, setShowForm] = useState(false);
-  const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
-
-  const { data: chauffeurs = [], isLoading, error } = useQuery({
+export const DriversTabContent: React.FC<DriversTabContentProps> = ({
+  searchTerm,
+  onSelectChauffeur
+}) => {
+  const { data: chauffeurs = [], isLoading } = useQuery({
     queryKey: ['chauffeurs'],
-    queryFn: chauffeursService.getAll,
-    refetchInterval: 30000, // Actualisation automatique
+    queryFn: chauffeursService.getAll
   });
 
-  const handleCreateSuccess = () => {
-    setShowForm(false);
-    setSelectedChauffeur(null);
-    toast({
-      title: "Chauffeur créé",
-      description: "Le chauffeur a été ajouté avec succès et les documents requis ont été assignés automatiquement.",
-    });
+  const filteredChauffeurs = chauffeurs.filter(chauffeur =>
+    chauffeur.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chauffeur.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chauffeur.telephone?.includes(searchTerm) ||
+    chauffeur.numero_permis?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const getStatutBadge = (statut: string) => {
+    switch (statut) {
+      case 'actif':
+        return <Badge className="bg-green-100 text-green-800 border-green-200">Actif</Badge>;
+      case 'inactif':
+        return <Badge className="bg-red-100 text-red-800 border-red-200">Inactif</Badge>;
+      case 'suspendu':
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">Suspendu</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Inconnu</Badge>;
+    }
   };
 
-  const handleEditChauffeur = (chauffeur: any) => {
-    setSelectedChauffeur(chauffeur);
-    setShowForm(true);
-  };
-
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setSelectedChauffeur(null);
-  };
-
-  const handleNewChauffeur = () => {
-    console.log('Bouton Nouveau chauffeur cliqué');
-    setSelectedChauffeur(null);
-    setShowForm(true);
+  const getAssignationBadge = (assignation: string) => {
+    switch (assignation) {
+      case 'assigne':
+        return <Badge className="bg-blue-100 text-blue-800 border-blue-200">Assigné</Badge>;
+      case 'non_assigne':
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">Non assigné</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800 border-gray-200">-</Badge>;
+    }
   };
 
   if (isLoading) {
-    return <div className="flex justify-center p-8">Chargement des chauffeurs...</div>;
-  }
-
-  if (error) {
-    return <div className="flex justify-center p-8 text-red-600">Erreur lors du chargement des chauffeurs</div>;
+    return (
+      <div className="text-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+        <p className="mt-2 text-sm text-gray-600">Chargement des chauffeurs...</p>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Liste des chauffeurs
-              </CardTitle>
-              <CardDescription>
-                Gestion des chauffeurs et de leurs informations
-              </CardDescription>
-            </div>
-            <Button 
-              onClick={handleNewChauffeur} 
-              className="gap-2 bg-orange-500 hover:bg-orange-600"
-            >
-              <Plus className="h-4 w-4" />
-              Nouveau chauffeur
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ChauffeursList 
-            chauffeurs={chauffeurs}
-            onSelectChauffeur={onSelectChauffeur}
-            onEditChauffeur={handleEditChauffeur}
-            searchTerm={searchTerm}
-            hasWritePermission={true}
-          />
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      {filteredChauffeurs.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <User className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>Aucun chauffeur trouvé</p>
+          {searchTerm && <p className="text-sm">Essayez avec d'autres termes de recherche</p>}
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {filteredChauffeurs.map((chauffeur) => (
+            <Card key={chauffeur.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  {/* Info principale */}
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-gray-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">
+                        {chauffeur.prenom} {chauffeur.nom}
+                      </h3>
+                      <p className="text-sm text-gray-600">Mat: {chauffeur.matricule}</p>
+                    </div>
+                  </div>
 
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedChauffeur ? 'Modifier le chauffeur' : 'Nouveau chauffeur'}
-            </DialogTitle>
-          </DialogHeader>
-          <ChauffeurForm 
-            chauffeur={selectedChauffeur}
-            onSuccess={handleCreateSuccess}
-            onCancel={handleFormCancel}
-          />
-        </DialogContent>
-      </Dialog>
+                  {/* Téléphone */}
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <span className="text-sm">{chauffeur.telephone}</span>
+                  </div>
+
+                  {/* Permis */}
+                  <div className="text-center">
+                    <div className="text-sm font-medium">{chauffeur.numero_permis}</div>
+                    <div className="text-xs text-gray-500">
+                      {chauffeur.type_permis || 'B'}
+                    </div>
+                  </div>
+
+                  {/* Statut */}
+                  <div>
+                    {getStatutBadge(chauffeur.statut)}
+                  </div>
+
+                  {/* Assignation */}
+                  <div>
+                    {getAssignationBadge(chauffeur.assignation)}
+                  </div>
+
+                  {/* Actions */}
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSelectChauffeur(chauffeur)}
+                      className="flex items-center space-x-1"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
