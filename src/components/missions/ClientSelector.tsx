@@ -37,15 +37,32 @@ export const ClientSelector = ({
 
   // Initialiser les valeurs depuis selectedClient au premier rendu
   React.useEffect(() => {
-    if (selectedClient && !selectedVille) {
+    if (selectedClient && selectedClient.trim() !== '' && !selectedVille) {
+      console.log(`🔍 ClientSelector BL ${blIndex}: Tentative de reconstitution depuis selectedClient:`, selectedClient);
+      
       const allClients = getAllClients();
-      const client = allClients.find(c => `${c.ville} ${c.nom}` === selectedClient);
+      console.log(`🔍 ClientSelector BL ${blIndex}: Recherche parmi ${allClients.length} clients`);
+      
+      // Essayer de trouver le client avec différents formats possibles
+      let client = allClients.find(c => `${c.ville} ${c.nom}` === selectedClient);
+      if (!client) {
+        // Essayer sans espace entre ville et nom
+        client = allClients.find(c => `${c.ville}${c.nom}` === selectedClient);
+      }
+      if (!client) {
+        // Essayer de trouver par nom seulement
+        client = allClients.find(c => selectedClient.includes(c.nom));
+      }
+      
       if (client) {
+        console.log(`✅ ClientSelector BL ${blIndex}: Client trouvé:`, client);
         setSelectedVille(client.ville);
         setSelectedLieuNom(client.nom);
+      } else {
+        console.log(`❌ ClientSelector BL ${blIndex}: Aucun client trouvé pour:`, selectedClient);
       }
     }
-  }, [selectedClient, selectedVille]);
+  }, [selectedClient, selectedVille, blIndex]);
 
   const handleVilleSelection = (ville: string) => {
     console.log(`🏙️ BL ${blIndex}: Ville sélectionnée:`, ville);
