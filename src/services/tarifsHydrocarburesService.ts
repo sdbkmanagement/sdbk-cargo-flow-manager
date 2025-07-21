@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -82,18 +83,54 @@ export const tarifsHydrocarburesService = {
   // Récupérer un tarif spécifique par lieu de départ et destination
   async getTarif(lieuDepart: string, destination: string): Promise<TarifHydrocarbure | null> {
     try {
-      const { data, error } = await supabase
+      console.log(`🔍 Recherche de tarif pour: ${lieuDepart} → ${destination}`);
+      
+      // D'abord, essayer une recherche exacte
+      let { data, error } = await supabase
         .from('tarifs_hydrocarbures')
         .select('*')
         .eq('lieu_depart', lieuDepart)
         .eq('destination', destination)
         .single();
 
-      if (error) {
+      if (error && error.code === 'PGRST116') {
+        // Si pas trouvé, essayer une recherche flexible
+        console.log(`❌ Recherche exacte échouée, tentative recherche flexible...`);
+        
+        // Récupérer tous les tarifs pour ce lieu de départ
+        const { data: allTarifs, error: allError } = await supabase
+          .from('tarifs_hydrocarbures')
+          .select('*')
+          .eq('lieu_depart', lieuDepart);
+
+        if (allError) {
+          console.error('Erreur lors de la récupération des tarifs:', allError);
+          return null;
+        }
+
+        // Chercher une correspondance flexible
+        const tarifTrouve = allTarifs?.find(tarif => {
+          const destTarif = tarif.destination.toLowerCase();
+          const destRecherche = destination.toLowerCase();
+          
+          // Vérifier si la destination recherchée contient le nom du tarif
+          // ou si le nom du tarif est contenu dans la destination recherchée
+          return destRecherche.includes(destTarif) || destTarif.includes(destRecherche);
+        });
+
+        if (tarifTrouve) {
+          console.log(`✅ Tarif trouvé avec recherche flexible:`, tarifTrouve);
+          return tarifTrouve;
+        } else {
+          console.log(`❌ Aucun tarif trouvé même avec recherche flexible`);
+          return null;
+        }
+      } else if (error) {
         console.error('Erreur lors de la récupération du tarif:', error);
         return null;
       }
 
+      console.log(`✅ Tarif trouvé avec recherche exacte:`, data);
       return data;
     } catch (error) {
       console.error('Erreur:', error);

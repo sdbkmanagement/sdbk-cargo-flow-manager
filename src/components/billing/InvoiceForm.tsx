@@ -171,10 +171,21 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
   useEffect(() => {
     const updateInvoiceLineForHydrocarbures = async () => {
       if (typeTransport === 'hydrocarbures' && lieuDepart && destination && !selectedMission) {
-        console.log('Mise à jour ligne pour:', lieuDepart, '→', destination);
-        const tarif = await tarifsHydrocarburesService.getTarif(lieuDepart, destination);
+        console.log('🔄 Mise à jour ligne pour:', lieuDepart, '→', destination);
+        
+        // Essayer d'abord avec la destination exacte
+        let tarif = await tarifsHydrocarburesService.getTarif(lieuDepart, destination);
+        
+        // Si pas trouvé et que la destination contient des mots supplémentaires, 
+        // essayer avec juste le premier mot
+        if (!tarif && destination.includes(' ')) {
+          const premierMot = destination.split(' ')[0];
+          console.log('🔄 Tentative avec premier mot seulement:', premierMot);
+          tarif = await tarifsHydrocarburesService.getTarif(lieuDepart, premierMot);
+        }
+        
         if (tarif) {
-          console.log('Tarif trouvé:', tarif);
+          console.log('✅ Tarif trouvé:', tarif);
           // Mettre à jour la première ligne avec les données hydrocarbures
           setInvoiceLines(lines => {
             const updatedLines = lines.map((line, index) => {
@@ -185,14 +196,16 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
                   prixUnitaire: tarif.tarif_au_litre,
                   total: line.quantite * tarif.tarif_au_litre
                 };
-                console.log('Ligne mise à jour:', newLine);
+                console.log('📝 Ligne mise à jour:', newLine);
                 return newLine;
               }
               return line;
             });
-            console.log('Toutes les lignes mises à jour:', updatedLines);
+            console.log('📋 Toutes les lignes mises à jour:', updatedLines);
             return updatedLines;
           });
+        } else {
+          console.log('❌ Aucun tarif trouvé pour cette destination');
         }
       }
     };
