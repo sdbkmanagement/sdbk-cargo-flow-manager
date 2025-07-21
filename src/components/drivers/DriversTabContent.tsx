@@ -94,7 +94,7 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
                   <div className="text-center">
                     <div className="text-sm font-medium">{chauffeur.numero_permis}</div>
                     <div className="text-xs text-gray-500">
-                      {chauffeur.type_permis || 'B'}
+                      {chauffeur.type_permis?.[0] || 'B'}
                     </div>
                   </div>
 
@@ -105,7 +105,8 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
 
                   {/* Véhicule assigné */}
                   <div className="text-center">
-                    <div className="text-sm font-medium">
+                    <div className="text-sm font-medium flex items-center gap-1">
+                      <Car className="w-4 h-4 text-gray-500" />
                       {chauffeur.vehicule_assigne || 'Non assigné'}
                     </div>
                     <div className="text-xs text-gray-500">

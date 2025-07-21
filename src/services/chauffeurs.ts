@@ -7,7 +7,7 @@ type ChauffeurInsert = Database['public']['Tables']['chauffeurs']['Insert']
 type ChauffeurUpdate = Database['public']['Tables']['chauffeurs']['Update']
 
 export const chauffeursService = {
-  // Récupérer tous les chauffeurs avec timeout
+  // Récupérer tous les chauffeurs avec leurs véhicules assignés
   async getAll(): Promise<Chauffeur[]> {
     try {
       console.log('Chargement des chauffeurs...')
@@ -15,7 +15,14 @@ export const chauffeursService = {
       const { data, error } = await Promise.race([
         supabase
           .from('chauffeurs')
-          .select('*')
+          .select(`
+            *,
+            affectations_chauffeurs!inner(
+              vehicule_id,
+              vehicules(numero)
+            )
+          `)
+          .eq('affectations_chauffeurs.statut', 'active')
           .order('created_at', { ascending: false }),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Timeout')), 10000)
@@ -24,13 +31,43 @@ export const chauffeursService = {
 
       if (error) {
         console.error('Erreur lors du chargement des chauffeurs:', error)
+        // Fallback vers la requête simple
+        return await this.getAllSimple()
+      }
+
+      console.log('Chauffeurs avec assignations chargés:', data?.length || 0)
+      
+      // Traiter les données pour ajouter le véhicule assigné
+      const chauffeursWithVehicles = data?.map(chauffeur => ({
+        ...chauffeur,
+        vehicule_assigne: chauffeur.affectations_chauffeurs?.[0]?.vehicules?.numero || null
+      })) || []
+
+      return chauffeursWithVehicles
+    } catch (error) {
+      console.error('Erreur générale chauffeurs:', error)
+      // Fallback vers la requête simple
+      return await this.getAllSimple()
+    }
+  },
+
+  // Méthode fallback pour récupérer les chauffeurs sans jointure
+  async getAllSimple(): Promise<Chauffeur[]> {
+    try {
+      const { data, error } = await supabase
+        .from('chauffeurs')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Erreur lors du chargement simple des chauffeurs:', error)
         return []
       }
 
-      console.log('Chauffeurs chargés:', data?.length || 0)
+      console.log('Chauffeurs (méthode simple) chargés:', data?.length || 0)
       return data || []
     } catch (error) {
-      console.error('Erreur générale chauffeurs:', error)
+      console.error('Erreur méthode simple chauffeurs:', error)
       return []
     }
   },
