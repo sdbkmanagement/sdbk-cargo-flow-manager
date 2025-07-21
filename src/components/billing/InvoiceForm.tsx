@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -106,8 +105,38 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
     loadInitialData();
   }, []);
 
+  // Fonction pour appliquer le tarif hydrocarbures automatiquement
+  const applyHydrocarburesTarif = async (depart: string, arrivee: string) => {
+    console.log('🔄 Application du tarif hydrocarbures pour:', depart, '→', arrivee);
+    
+    const tarif = await tarifsHydrocarburesService.getTarif(depart, arrivee);
+    
+    if (tarif) {
+      console.log('✅ Tarif trouvé:', tarif);
+      setInvoiceLines(lines => {
+        const updatedLines = lines.map((line, index) => {
+          if (index === 0) { // Première ligne
+            const newLine = {
+              ...line,
+              description: `Transport hydrocarbures ${depart} → ${arrivee}`,
+              prixUnitaire: tarif.tarif_au_litre,
+              total: line.quantite * tarif.tarif_au_litre
+            };
+            console.log('📝 Ligne mise à jour:', newLine);
+            return newLine;
+          }
+          return line;
+        });
+        console.log('📋 Toutes les lignes mises à jour:', updatedLines);
+        return updatedLines;
+      });
+    } else {
+      console.log('❌ Aucun tarif trouvé pour cette destination');
+    }
+  };
+
   // Gérer la sélection d'une mission terminée
-  const handleMissionSelect = (missionId: string) => {
+  const handleMissionSelect = async (missionId: string) => {
     setSelectedMission(missionId);
     const mission = missionsTerminees.find(m => m.id === missionId);
     
@@ -119,6 +148,15 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
       setValue('typeTransport', mission.type_transport);
       setValue('chauffeur', `${mission.chauffeur.nom} ${mission.chauffeur.prenom}`);
       setValue('vehicule', `${mission.vehicule.numero} - ${mission.vehicule.immatriculation}`);
+      
+      // Pour les hydrocarbures, définir lieu de départ et destination
+      if (mission.type_transport === 'hydrocarbures') {
+        setValue('lieuDepart', mission.site_depart);
+        setValue('destination', mission.site_arrivee);
+        
+        // Appliquer le tarif hydrocarbures immédiatement
+        await applyHydrocarburesTarif(mission.site_depart, mission.site_arrivee);
+      }
       
       // Générer les lignes de facturation à partir des bons de livraison
       if (mission.bons_livraison && mission.bons_livraison.length > 0) {
@@ -145,12 +183,6 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
           setInvoiceLines(nouvelleLignes);
         }
       }
-      
-      // Pour les hydrocarbures, définir lieu de départ et destination
-      if (mission.type_transport === 'hydrocarbures') {
-        setValue('lieuDepart', mission.site_depart);
-        setValue('destination', mission.site_arrivee);
-      }
     }
   };
 
@@ -171,42 +203,7 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
   useEffect(() => {
     const updateInvoiceLineForHydrocarbures = async () => {
       if (typeTransport === 'hydrocarbures' && lieuDepart && destination && !selectedMission) {
-        console.log('🔄 Mise à jour ligne pour:', lieuDepart, '→', destination);
-        
-        // Essayer d'abord avec la destination exacte
-        let tarif = await tarifsHydrocarburesService.getTarif(lieuDepart, destination);
-        
-        // Si pas trouvé et que la destination contient des mots supplémentaires, 
-        // essayer avec juste le premier mot
-        if (!tarif && destination.includes(' ')) {
-          const premierMot = destination.split(' ')[0];
-          console.log('🔄 Tentative avec premier mot seulement:', premierMot);
-          tarif = await tarifsHydrocarburesService.getTarif(lieuDepart, premierMot);
-        }
-        
-        if (tarif) {
-          console.log('✅ Tarif trouvé:', tarif);
-          // Mettre à jour la première ligne avec les données hydrocarbures
-          setInvoiceLines(lines => {
-            const updatedLines = lines.map((line, index) => {
-              if (index === 0) { // Première ligne
-                const newLine = {
-                  ...line,
-                  description: `Transport hydrocarbures ${lieuDepart} → ${destination}`,
-                  prixUnitaire: tarif.tarif_au_litre,
-                  total: line.quantite * tarif.tarif_au_litre
-                };
-                console.log('📝 Ligne mise à jour:', newLine);
-                return newLine;
-              }
-              return line;
-            });
-            console.log('📋 Toutes les lignes mises à jour:', updatedLines);
-            return updatedLines;
-          });
-        } else {
-          console.log('❌ Aucun tarif trouvé pour cette destination');
-        }
+        await applyHydrocarburesTarif(lieuDepart, destination);
       }
     };
     updateInvoiceLineForHydrocarbures();
