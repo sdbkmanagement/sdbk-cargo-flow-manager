@@ -285,6 +285,23 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     saveMutation.mutate(submitData);
   };
 
+  // Effet pour mettre à jour automatiquement site_depart et site_arrivee basé sur les BL
+  useEffect(() => {
+    if (bls.length > 0) {
+      // Pour site_depart, prendre le premier BL avec lieu_depart défini
+      const premierBLAvecDepart = bls.find(bl => bl.lieu_depart && bl.lieu_depart.trim() !== '');
+      if (premierBLAvecDepart && premierBLAvecDepart.lieu_depart !== formData.site_depart) {
+        setFormData(prev => ({ ...prev, site_depart: premierBLAvecDepart.lieu_depart }));
+      }
+      
+      // Pour site_arrivee, prendre le premier BL avec lieu_arrivee défini
+      const premierBLAvecArrivee = bls.find(bl => bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '');
+      if (premierBLAvecArrivee && premierBLAvecArrivee.lieu_arrivee !== formData.site_arrivee) {
+        setFormData(prev => ({ ...prev, site_arrivee: premierBLAvecArrivee.lieu_arrivee }));
+      }
+    }
+  }, [bls, formData.site_depart, formData.site_arrivee]);
+
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => {
       const newData = { ...prev, [field]: value };
