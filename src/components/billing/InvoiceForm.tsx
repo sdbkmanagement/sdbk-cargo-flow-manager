@@ -109,6 +109,11 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
   const applyHydrocarburesTarif = async (depart: string, arrivee: string) => {
     console.log('🔄 Application du tarif hydrocarbures pour:', depart, '→', arrivee);
     
+    if (!depart || !arrivee) {
+      console.log('❌ Départ ou arrivée manquant:', { depart, arrivee });
+      return;
+    }
+    
     const tarif = await tarifsHydrocarburesService.getTarif(depart, arrivee);
     
     if (tarif) {
@@ -137,6 +142,7 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
 
   // Gérer la sélection d'une mission terminée
   const handleMissionSelect = async (missionId: string) => {
+    console.log('🎯 Sélection de la mission:', missionId);
     setSelectedMission(missionId);
     const mission = missionsTerminees.find(m => m.id === missionId);
     
@@ -151,15 +157,23 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
       
       // Pour les hydrocarbures, définir lieu de départ et destination
       if (mission.type_transport === 'hydrocarbures') {
+        console.log('🛢️ Mission hydrocarbures détectée');
+        console.log('Site départ:', mission.site_depart);
+        console.log('Site arrivée:', mission.site_arrivee);
+        
         setValue('lieuDepart', mission.site_depart);
         setValue('destination', mission.site_arrivee);
         
-        // Appliquer le tarif hydrocarbures immédiatement
-        await applyHydrocarburesTarif(mission.site_depart, mission.site_arrivee);
+        // Attendre un peu pour que les setValue se propagent
+        setTimeout(async () => {
+          console.log('🔄 Application du tarif après setTimeout');
+          await applyHydrocarburesTarif(mission.site_depart, mission.site_arrivee);
+        }, 100);
       }
       
       // Générer les lignes de facturation à partir des bons de livraison
       if (mission.bons_livraison && mission.bons_livraison.length > 0) {
+        console.log('📋 Génération des lignes à partir des BL');
         const nouvelleLignes = mission.bons_livraison
           .filter(bl => !bl.facture) // Seulement les BL non facturés
           .map((bl, index) => {
@@ -202,7 +216,16 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
   // Mettre à jour automatiquement la ligne de facture quand destination change
   useEffect(() => {
     const updateInvoiceLineForHydrocarbures = async () => {
+      console.log('📊 Effect updateInvoiceLineForHydrocarbures déclenché');
+      console.log('Conditions:', {
+        typeTransport,
+        lieuDepart,
+        destination,
+        selectedMission
+      });
+      
       if (typeTransport === 'hydrocarbures' && lieuDepart && destination && !selectedMission) {
+        console.log('🔄 Conditions remplies, application du tarif');
         await applyHydrocarburesTarif(lieuDepart, destination);
       }
     };
