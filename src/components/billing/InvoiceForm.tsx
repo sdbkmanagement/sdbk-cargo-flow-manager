@@ -124,13 +124,22 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
       if (mission.bons_livraison && mission.bons_livraison.length > 0) {
         const nouvelleLignes = mission.bons_livraison
           .filter(bl => !bl.facture) // Seulement les BL non facturés
-          .map((bl, index) => ({
-            id: `bl-${bl.id}`,
-            description: `Transport ${bl.produit} - ${bl.destination} (BL: ${bl.numero})`,
-            quantite: bl.quantite_livree || bl.quantite_prevue,
-            prixUnitaire: bl.prix_unitaire || 0,
-            total: bl.montant_total || (bl.quantite_livree || bl.quantite_prevue) * (bl.prix_unitaire || 0)
-          }));
+          .map((bl, index) => {
+            console.log('Bon de livraison traité:', bl);
+            const prixUnitaire = bl.prix_unitaire || 0;
+            const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+            const total = bl.montant_total || (quantite * prixUnitaire);
+            
+            return {
+              id: `bl-${bl.id}`,
+              description: `Transport ${bl.produit} - ${bl.destination} (BL: ${bl.numero})`,
+              quantite: quantite,
+              prixUnitaire: prixUnitaire,
+              total: total
+            };
+          });
+        
+        console.log('Nouvelles lignes générées:', nouvelleLignes);
         
         if (nouvelleLignes.length > 0) {
           setInvoiceLines(nouvelleLignes);
@@ -579,6 +588,8 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
                     onChange={(e) => updateInvoiceLine(line.id, 'quantite', parseFloat(e.target.value) || 0)}
                     min="0"
                     step="0.01"
+                    disabled={!!selectedMission}
+                    className={selectedMission ? "bg-gray-50" : ""}
                   />
                 </div>
                 <div className="col-span-2">
@@ -589,8 +600,8 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
                     onChange={(e) => updateInvoiceLine(line.id, 'prixUnitaire', parseFloat(e.target.value) || 0)}
                     min="0"
                     step="1"
-                    disabled={index === 0 && isFirstLineHydrocarbures}
-                    className={index === 0 && isFirstLineHydrocarbures ? "bg-blue-50" : ""}
+                    disabled={(index === 0 && isFirstLineHydrocarbures) || !!selectedMission}
+                    className={(index === 0 && isFirstLineHydrocarbures) || selectedMission ? "bg-blue-50" : ""}
                   />
                 </div>
                 <div className="col-span-2">
@@ -602,7 +613,7 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
                   />
                 </div>
                 <div className="col-span-1">
-                  {invoiceLines.length > 1 && (
+                  {invoiceLines.length > 1 && !selectedMission && (
                     <Button
                       type="button"
                       variant="ghost"
