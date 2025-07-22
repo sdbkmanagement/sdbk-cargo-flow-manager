@@ -9,8 +9,6 @@ export interface Mission {
   type_transport: string;
   site_depart: string;
   site_arrivee: string;
-  date_heure_depart: string;
-  date_heure_arrivee_prevue: string;
   volume_poids?: number;
   unite_mesure?: string;
   observations?: string;
@@ -397,6 +395,7 @@ export const missionsService = {
   // Vérifier la disponibilité des ressources
   async checkResourceAvailability(vehiculeId: string, chauffeurId: string, dateDebut: string, dateFin: string) {
     try {
+      // Vérifier s'il y a des missions actives pour ces ressources
       const { data: conflits, error } = await supabase
         .from('missions')
         .select('*')
@@ -412,19 +411,14 @@ export const missionsService = {
         }
       }
 
-      const hasConflict = conflits?.some(mission => {
-        const missionStart = new Date(mission.date_heure_depart);
-        const missionEnd = new Date(mission.date_heure_arrivee_prevue);
-        const requestStart = new Date(dateDebut);
-        const requestEnd = new Date(dateFin);
-        
-        return (requestStart < missionEnd && requestEnd > missionStart);
-      });
+      // Pour l'instant, on considère qu'il y a conflit s'il y a déjà des missions actives
+      const vehiculeConflict = conflits?.some(c => c.vehicule_id === vehiculeId);
+      const chauffeurConflict = conflits?.some(c => c.chauffeur_id === chauffeurId);
 
       return {
-        vehicule_disponible: !conflits?.some(c => c.vehicule_id === vehiculeId && hasConflict),
-        chauffeur_disponible: !conflits?.some(c => c.chauffeur_id === chauffeurId && hasConflict),
-        message: hasConflict ? 'Conflit de planning détecté' : 'Ressources disponibles'
+        vehicule_disponible: !vehiculeConflict,
+        chauffeur_disponible: !chauffeurConflict,
+        message: (vehiculeConflict || chauffeurConflict) ? 'Ressource déjà assignée à une mission active' : 'Ressources disponibles'
       };
     } catch (error) {
       console.error('Erreur lors de la vérification de disponibilité:', error)

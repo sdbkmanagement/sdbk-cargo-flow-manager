@@ -90,8 +90,6 @@ export const exportService = {
         'Type Transport': mission.type_transport || '',
         'Site Départ': mission.site_depart || '',
         'Site Arrivée': mission.site_arrivee || '',
-        'Date Départ': mission.date_heure_depart || '',
-        'Date Arrivée Prévue': mission.date_heure_arrivee_prevue || '',
         'Véhicule': mission.vehicules ? `${mission.vehicules.numero} - ${mission.vehicules.marque} ${mission.vehicules.modele}` : '',
         'Chauffeur': mission.chauffeurs ? `${mission.chauffeurs.prenom} ${mission.chauffeurs.nom}` : '',
         'Volume/Poids': mission.volume_poids || 0,

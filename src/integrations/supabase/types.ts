@@ -1552,8 +1552,6 @@ export type Database = {
           chauffeur_id: string
           created_at: string
           created_by: string | null
-          date_heure_arrivee_prevue: string
-          date_heure_depart: string
           id: string
           numero: string
           observations: string | null
@@ -1570,8 +1568,6 @@ export type Database = {
           chauffeur_id: string
           created_at?: string
           created_by?: string | null
-          date_heure_arrivee_prevue: string
-          date_heure_depart: string
           id?: string
           numero: string
           observations?: string | null
@@ -1588,8 +1584,6 @@ export type Database = {
           chauffeur_id?: string
           created_at?: string
           created_by?: string | null
-          date_heure_arrivee_prevue?: string
-          date_heure_depart?: string
           id?: string
           numero?: string
           observations?: string | null

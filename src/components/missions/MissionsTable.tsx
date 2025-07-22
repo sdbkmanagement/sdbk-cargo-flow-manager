@@ -248,9 +248,9 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-sm font-medium text-gray-900">
-                      {mission.date_heure_depart && format(
-                        new Date(mission.date_heure_depart), 
+                    <td className="py-4 px-6 text-sm text-gray-900">
+                      {mission.created_at && format(
+                        new Date(mission.created_at), 
                         'dd/MM/yyyy HH:mm', 
                         { locale: fr }
                       )}

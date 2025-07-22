@@ -39,8 +39,8 @@ export const PlanningView = ({ chauffeurs }: PlanningViewProps) => {
     });
 
     missions.forEach(mission => {
-      if (mission.chauffeur_id && mission.date_heure_depart) {
-        const missionDate = new Date(mission.date_heure_depart);
+      if (mission.chauffeur_id && mission.created_at) {
+        const missionDate = new Date(mission.created_at);
         const dayKey = format(missionDate, 'yyyy-MM-dd');
         
         if (organized[mission.chauffeur_id] && organized[mission.chauffeur_id][dayKey]) {
@@ -169,7 +169,7 @@ export const PlanningView = ({ chauffeurs }: PlanningViewProps) => {
                           <div className="font-medium truncate">{mission.numero}</div>
                           <div className="flex items-center text-xs text-gray-600">
                             <Clock className="w-3 h-3 mr-1" />
-                            {format(new Date(mission.date_heure_depart), 'HH:mm')}
+                            {format(new Date(mission.created_at), 'HH:mm')}
                           </div>
                           <div className="flex items-center text-xs text-gray-600">
                             <MapPin className="w-3 h-3 mr-1" />
