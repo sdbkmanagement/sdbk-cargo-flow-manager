@@ -8,6 +8,7 @@ import { ModernSidebar } from '@/components/layout/ModernSidebar';
 import { ModernHeader } from '@/components/layout/ModernHeader';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { PageLoader } from '@/components/ui/loading-states';
+import { useRealtimeData } from '@/hooks/useRealtimeData';
 
 // Lazy loading des pages
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -38,6 +39,9 @@ const queryClient = new QueryClient({
 const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  
+  // Activer les mises à jour en temps réel
+  useRealtimeData();
 
   console.log('🔍 État de l\'app:', { user: !!user, loading });
 
