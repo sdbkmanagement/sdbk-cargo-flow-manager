@@ -1,45 +1,21 @@
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
-const cardVariants = cva(
-  "modern-card",
-  {
-    variants: {
-      variant: {
-        default: "",
-        elevated: "shadow-large hover:shadow-elegant",
-        interactive: "hover-lift cursor-pointer",
-        glass: "bg-card/80 backdrop-blur-sm border-border/50",
-      },
-      size: {
-        sm: "p-4",
-        default: "p-6",
-        lg: "p-8",
-      }
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-)
-
-export interface ModernCardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof cardVariants> {}
-
-const ModernCard = React.forwardRef<HTMLDivElement, ModernCardProps>(
-  ({ className, variant, size, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(cardVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
-)
-ModernCard.displayName = "ModernCard"
+const ModernCard = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "modern-card p-4 sm:p-6",
+      className
+    )}
+    {...props}
+  />
+));
+ModernCard.displayName = "ModernCard";
 
 const ModernCardHeader = React.forwardRef<
   HTMLDivElement,
@@ -47,11 +23,11 @@ const ModernCardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 pb-4", className)}
+    className={cn("flex flex-col space-y-1.5 mb-4 sm:mb-6", className)}
     {...props}
   />
-))
-ModernCardHeader.displayName = "ModernCardHeader"
+));
+ModernCardHeader.displayName = "ModernCardHeader";
 
 const ModernCardTitle = React.forwardRef<
   HTMLHeadingElement,
@@ -59,11 +35,14 @@ const ModernCardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    className={cn(
+      "text-lg sm:text-xl lg:text-2xl font-semibold leading-none tracking-tight",
+      className
+    )}
     {...props}
   />
-))
-ModernCardTitle.displayName = "ModernCardTitle"
+));
+ModernCardTitle.displayName = "ModernCardTitle";
 
 const ModernCardDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -71,19 +50,19 @@ const ModernCardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-sm text-muted-foreground", className)}
+    className={cn("text-sm sm:text-base text-muted-foreground", className)}
     {...props}
   />
-))
-ModernCardDescription.displayName = "ModernCardDescription"
+));
+ModernCardDescription.displayName = "ModernCardDescription";
 
 const ModernCardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("", className)} {...props} />
-))
-ModernCardContent.displayName = "ModernCardContent"
+  <div ref={ref} className={cn("space-y-4", className)} {...props} />
+));
+ModernCardContent.displayName = "ModernCardContent";
 
 const ModernCardFooter = React.forwardRef<
   HTMLDivElement,
@@ -91,17 +70,10 @@ const ModernCardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center pt-4", className)}
+    className={cn("flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mt-4 sm:mt-6", className)}
     {...props}
   />
-))
-ModernCardFooter.displayName = "ModernCardFooter"
+));
+ModernCardFooter.displayName = "ModernCardFooter";
 
-export {
-  ModernCard,
-  ModernCardHeader,
-  ModernCardFooter,
-  ModernCardTitle,
-  ModernCardDescription,
-  ModernCardContent,
-}
+export { ModernCard, ModernCardHeader, ModernCardFooter, ModernCardTitle, ModernCardDescription, ModernCardContent };
