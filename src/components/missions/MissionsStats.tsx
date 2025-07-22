@@ -31,15 +31,14 @@ export const MissionsStats = ({
       <StatCard
         title="Total des missions"
         value={total}
-        subtitle={`${completionRate}% de taux de réussite`}
         icon={Calendar}
         color="blue"
+        trend={{ value: completionRate, isPositive: true }}
       />
       
       <StatCard
         title="En attente"
         value={en_attente}
-        subtitle="Missions planifiées"
         icon={Clock}
         color="yellow"
       />
@@ -47,7 +46,6 @@ export const MissionsStats = ({
       <StatCard
         title="En cours"
         value={en_cours}
-        subtitle="Missions actives"
         icon={TrendingUp}
         color="green"
       />
@@ -55,7 +53,6 @@ export const MissionsStats = ({
       <StatCard
         title="Terminées"
         value={terminees}
-        subtitle="Missions accomplies"
         icon={CheckCircle}
         color="green"
       />
