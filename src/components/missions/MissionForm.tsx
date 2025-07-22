@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -259,36 +258,27 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
 
-    // Validation des BL - corrigée pour être plus stricte
+    // Validation des BL simplifiée - seulement les champs actuellement présents
     if (formData.type_transport === 'hydrocarbures') {
+      console.log('🔍 Validation des BL:', bls);
+      
       const blsIncomplets = bls.filter(bl => {
-        console.log('🔍 Validation BL:', {
-          id: bl.id || 'nouveau',
-          lieu_arrivee: bl.lieu_arrivee || 'VIDE',
-          destination: bl.destination || 'VIDE',
-          date_emission: bl.date_emission || 'VIDE',
-          quantite_prevue: bl.quantite_prevue || 0,
-          lieu_depart: bl.lieu_depart || 'VIDE'
-        });
-        
-        // Vérification stricte de tous les champs requis
-        const lieuArriveeValide = bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '';
+        // Validation simplifiée basée sur les champs actuellement visibles
         const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
         const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
         const lieuDepartValide = bl.lieu_depart && bl.lieu_depart.trim() !== '';
+        const destinationChoisie = bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '';
         
-        const estComplet = lieuArriveeValide && dateValide && quantiteValide && lieuDepartValide;
+        const estComplet = dateValide && quantiteValide && lieuDepartValide && destinationChoisie;
         
-        if (!estComplet) {
-          console.log('❌ BL incomplet:', {
-            lieuArriveeValide,
-            dateValide,
-            quantiteValide,
-            lieuDepartValide
-          });
-        } else {
-          console.log('✅ BL complet');
-        }
+        console.log('🔍 BL validation:', {
+          id: bl.id || 'nouveau',
+          dateValide,
+          quantiteValide,
+          lieuDepartValide,
+          destinationChoisie,
+          estComplet
+        });
         
         return !estComplet;
       });
@@ -296,7 +286,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       if (blsIncomplets.length > 0) {
         toast({
           title: 'Erreur de validation',
-          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir: Lieu d'arrivée, Date d'émission, Quantité > 0, et Lieu de départ.`,
+          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir tous les champs obligatoires.`,
           variant: 'destructive'
         });
         return;
@@ -366,6 +356,39 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   const isHydrocarbures = formData.type_transport === 'hydrocarbures';
   const isTerminee = formData.statut === 'terminee';
+
+  // Fonction pour vérifier si le bouton doit être activé
+  const isSaveButtonEnabled = () => {
+    // Vérifications de base
+    if (!formData.type_transport || !formData.vehicule_id || !formData.chauffeur_id) {
+      return false;
+    }
+    
+    // Si c'est une nouvelle mission, vérifier la disponibilité du véhicule
+    if (!mission?.id && vehiculeAvailability && !vehiculeAvailability.available) {
+      return false;
+    }
+    
+    // Si c'est un transport d'hydrocarbures, vérifier les BL
+    if (isHydrocarbures) {
+      if (bls.length === 0) return false;
+      
+      // Vérifier que tous les BL ont les champs obligatoires remplis
+      const tousBlsValides = bls.every(bl => {
+        return bl.date_emission && 
+               bl.date_emission.trim() !== '' &&
+               bl.quantite_prevue > 0 &&
+               bl.lieu_depart && 
+               bl.lieu_depart.trim() !== '' &&
+               bl.lieu_arrivee && 
+               bl.lieu_arrivee.trim() !== '';
+      });
+      
+      if (!tousBlsValides) return false;
+    }
+    
+    return !saveMutation.isPending;
+  };
 
   return (
     <div className="space-y-6">
@@ -596,11 +619,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           <Button 
             type="submit" 
             className="bg-orange-500 hover:bg-orange-600"
-            disabled={
-              saveMutation.isPending || 
-              !formData.chauffeur_id || 
-              (!mission?.id && vehiculeAvailability && !vehiculeAvailability.available)
-            }
+            disabled={!isSaveButtonEnabled()}
           >
             <Save className="w-4 h-4 mr-2" />
             {saveMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
