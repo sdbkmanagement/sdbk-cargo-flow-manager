@@ -112,7 +112,7 @@ export const exportService = {
     try {
       console.log(`🔄 Export Excel pour la période du ${dateDebut} au ${dateFin}`);
       
-      // Récupérer les données BL filtrées par date
+      // Récupérer les données BL filtrées par date avec les tarifs
       const { data: bls, error } = await supabase
         .from('bons_livraison')
         .select(`
@@ -134,10 +134,41 @@ export const exportService = {
         throw new Error('Aucune donnée à exporter pour cette période');
       }
 
-      // Transformer les données pour l'export Excel avec calcul du montant si nécessaire
-      const exportData = bls.map(bl => {
+      // Récupérer tous les tarifs destinations
+      const { data: tarifs, error: tarifsError } = await supabase
+        .from('tarifs_destinations')
+        .select('*');
+
+      if (tarifsError) {
+        console.error('❌ Erreur lors de la récupération des tarifs:', tarifsError);
+        throw tarifsError;
+      }
+
+      // Transformer les données pour l'export Excel avec calcul du montant
+      const exportData = await Promise.all(bls.map(async bl => {
         const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
-        const prixUnitaire = bl.prix_unitaire || 0;
+        let prixUnitaire = bl.prix_unitaire || 0;
+        
+        // Si pas de prix unitaire dans le BL, chercher dans les tarifs par destination
+        if (!prixUnitaire && bl.destination && tarifs) {
+          const tarif = tarifs.find(t => 
+            t.destination.toLowerCase() === bl.destination.toLowerCase() ||
+            t.destination.toLowerCase() === (bl.lieu_arrivee || '').toLowerCase()
+          );
+          
+          if (tarif) {
+            // Utiliser le prix selon le produit (essence ou gasoil)
+            if (bl.produit && bl.produit.toLowerCase().includes('essence')) {
+              prixUnitaire = tarif.prix_unitaire_essence || 0;
+            } else if (bl.produit && bl.produit.toLowerCase().includes('gasoil')) {
+              prixUnitaire = tarif.prix_unitaire_gasoil || 0;
+            } else {
+              // Par défaut, utiliser le prix essence
+              prixUnitaire = tarif.prix_unitaire_essence || 0;
+            }
+          }
+        }
+        
         const montantCalcule = quantite * prixUnitaire;
         
         return {
@@ -157,7 +188,7 @@ export const exportService = {
           'Manquant Cuve': bl.manquant_cuve || 0,
           'Numéros Clients': bl.client_code_total || bl.client_code || ''
         };
-      });
+      }));
 
       // Créer le fichier Excel avec formatage des nombres
       const ws = XLSX.utils.json_to_sheet(exportData);
