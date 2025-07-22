@@ -134,27 +134,52 @@ export const exportService = {
         throw new Error('Aucune donnée à exporter pour cette période');
       }
 
-      // Transformer les données pour l'export Excel
-      const exportData = bls.map(bl => ({
-        'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
-        'N°Tournée': bl.numero || '',
-        'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
-        'Dépôt': bl.lieu_depart || '',
-        'BL': bl.numero || '',
-        'Client': bl.destination || bl.lieu_arrivee || '',
-        'Destination': bl.lieu_arrivee || '',
-        'Produit': bl.produit || '',
-        'Quantité': bl.quantite_livree || bl.quantite_prevue || 0,
-        'Prix Unitaire': bl.prix_unitaire || 0,
-        'Montant': bl.montant_facture || (bl.quantite_livree || bl.quantite_prevue || 0) * (bl.prix_unitaire || 0),
-        'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
-        'Manquant Compteur': bl.manquant_compteur || 0,
-        'Manquant Cuve': bl.manquant_cuve || 0,
-        'Numéros Clients': bl.client_code_total || bl.client_code || ''
-      }));
+      // Transformer les données pour l'export Excel avec calcul du montant si nécessaire
+      const exportData = bls.map(bl => {
+        const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+        const prixUnitaire = bl.prix_unitaire || 0;
+        const montantCalcule = quantite * prixUnitaire;
+        
+        return {
+          'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
+          'N°Tournée': bl.numero || '',
+          'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
+          'Dépôt': bl.lieu_depart || '',
+          'BL': bl.numero || '',
+          'Client': bl.destination || bl.lieu_arrivee || '',
+          'Destination': bl.lieu_arrivee || '',
+          'Produit': bl.produit || '',
+          'Quantité': quantite,
+          'Prix Unitaire': prixUnitaire,
+          'Montant': bl.montant_facture || montantCalcule,
+          'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
+          'Manquant Compteur': bl.manquant_compteur || 0,
+          'Manquant Cuve': bl.manquant_cuve || 0,
+          'Numéros Clients': bl.client_code_total || bl.client_code || ''
+        };
+      });
 
-      // Créer le fichier Excel
+      // Créer le fichier Excel avec formatage des nombres
       const ws = XLSX.utils.json_to_sheet(exportData);
+      
+      // Formater les colonnes numériques
+      const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+      for (let row = range.s.r + 1; row <= range.e.r; row++) {
+        // Formater la colonne Prix Unitaire (colonne J)
+        const prixCell = XLSX.utils.encode_cell({ r: row, c: 9 });
+        if (ws[prixCell]) {
+          ws[prixCell].t = 'n'; // type number
+          ws[prixCell].z = '#,##0.00'; // format numérique
+        }
+        
+        // Formater la colonne Montant (colonne K)
+        const montantCell = XLSX.utils.encode_cell({ r: row, c: 10 });
+        if (ws[montantCell]) {
+          ws[montantCell].t = 'n'; // type number
+          ws[montantCell].z = '#,##0.00'; // format numérique
+        }
+      }
+      
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Factures');
 
@@ -196,24 +221,30 @@ export const exportService = {
         throw new Error('Aucune donnée à exporter pour cette période');
       }
 
-      // Transformer les données pour l'export CSV
-      const exportData = bls.map(bl => ({
-        'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
-        'N°Tournée': bl.numero || '',
-        'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
-        'Dépôt': bl.lieu_depart || '',
-        'BL': bl.numero || '',
-        'Client': bl.destination || bl.lieu_arrivee || '',
-        'Destination': bl.lieu_arrivee || '',
-        'Produit': bl.produit || '',
-        'Quantité': bl.quantite_livree || bl.quantite_prevue || 0,
-        'Prix Unitaire': bl.prix_unitaire || 0,
-        'Montant': bl.montant_facture || (bl.quantite_livree || bl.quantite_prevue || 0) * (bl.prix_unitaire || 0),
-        'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
-        'Manquant Compteur': bl.manquant_compteur || 0,
-        'Manquant Cuve': bl.manquant_cuve || 0,
-        'Numéros Clients': bl.client_code_total || bl.client_code || ''
-      }));
+      // Transformer les données pour l'export CSV avec calcul du montant si nécessaire
+      const exportData = bls.map(bl => {
+        const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+        const prixUnitaire = bl.prix_unitaire || 0;
+        const montantCalcule = quantite * prixUnitaire;
+        
+        return {
+          'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
+          'N°Tournée': bl.numero || '',
+          'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
+          'Dépôt': bl.lieu_depart || '',
+          'BL': bl.numero || '',
+          'Client': bl.destination || bl.lieu_arrivee || '',
+          'Destination': bl.lieu_arrivee || '',
+          'Produit': bl.produit || '',
+          'Quantité': quantite,
+          'Prix Unitaire': prixUnitaire,
+          'Montant': bl.montant_facture || montantCalcule,
+          'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
+          'Manquant Compteur': bl.manquant_compteur || 0,
+          'Manquant Cuve': bl.manquant_cuve || 0,
+          'Numéros Clients': bl.client_code_total || bl.client_code || ''
+        };
+      });
 
       // Créer le contenu CSV avec séparateur français (point-virgule)
       const headers = Object.keys(exportData[0]);
