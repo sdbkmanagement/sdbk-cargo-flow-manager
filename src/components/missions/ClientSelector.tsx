@@ -1,4 +1,5 @@
 
+
 import React, { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -150,11 +151,11 @@ export const ClientSelector = ({
                 </SelectItem>
               ))
             ) : selectedVille ? (
-              <SelectItem value="__no_lieu__" disabled>
+              <SelectItem value="no_lieu_placeholder" disabled>
                 Aucun lieu de livraison trouvé pour {selectedVille}
               </SelectItem>
             ) : (
-              <SelectItem value="__no_ville__" disabled>
+              <SelectItem value="no_ville_placeholder" disabled>
                 Veuillez d'abord sélectionner une ville
               </SelectItem>
             )}
@@ -176,3 +177,4 @@ export const ClientSelector = ({
     </div>
   );
 };
+

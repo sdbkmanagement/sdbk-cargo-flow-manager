@@ -497,9 +497,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                   </SelectTrigger>
                   <SelectContent>
                     {vehiculesLoading ? (
-                      <SelectItem value="" disabled>Chargement...</SelectItem>
+                      <SelectItem value="loading" disabled>Chargement...</SelectItem>
                     ) : vehicules.length === 0 ? (
-                      <SelectItem value="" disabled>Aucun véhicule disponible</SelectItem>
+                      <SelectItem value="no_vehicle" disabled>Aucun véhicule disponible</SelectItem>
                     ) : (
                       vehicules.map(vehicule => (
                         <SelectItem key={vehicule.id} value={vehicule.id}>
