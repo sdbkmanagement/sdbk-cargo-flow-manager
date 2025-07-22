@@ -46,11 +46,6 @@ const menuItems = [
     icon: FileText
   },
   {
-    path: '/cargo',
-    label: 'Cargaison',
-    icon: FileText
-  },
-  {
     path: '/billing',
     label: 'Facturation',
     icon: Coins
@@ -69,16 +64,6 @@ const menuItems = [
     path: '/administration',
     label: 'Administration',
     icon: Settings
-  },
-  {
-    path: '/documents',
-    label: 'Documents',
-    icon: FileText
-  },
-  {
-    path: '/guide',
-    label: 'Guide',
-    icon: Book
   }
 ];
 
