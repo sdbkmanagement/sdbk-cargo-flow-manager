@@ -30,7 +30,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     unite_mesure: mission?.unite_mesure || 'tonnes',
     vehicule_id: mission?.vehicule_id || '',
     chauffeur_id: mission?.chauffeur_id || '',
-    statut: mission?.statut || 'en_cours'
+    statut: mission?.statut || 'en_cours',
+    date_heure_depart: mission?.date_heure_depart ? new Date(mission.date_heure_depart).toISOString().slice(0, 16) : '',
+    date_heure_arrivee_prevue: mission?.date_heure_arrivee_prevue ? new Date(mission.date_heure_arrivee_prevue).toISOString().slice(0, 16) : ''
   });
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
@@ -296,7 +298,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     const submitData = {
       ...formData,
       volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
-      date_heure_arrivee_prevue: new Date(Date.now() + (8 * 60 * 60 * 1000)).toISOString()
+      date_heure_depart: formData.date_heure_depart ? new Date(formData.date_heure_depart).toISOString() : new Date().toISOString(),
+      date_heure_arrivee_prevue: formData.date_heure_arrivee_prevue ? new Date(formData.date_heure_arrivee_prevue).toISOString() : new Date(Date.now() + (8 * 60 * 60 * 1000)).toISOString()
     };
 
     console.log('💾 Sauvegarde de la mission:', submitData);
@@ -360,7 +363,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   // Fonction pour vérifier si le bouton doit être activé
   const isSaveButtonEnabled = () => {
     // Vérifications de base
-    if (!formData.type_transport || !formData.vehicule_id || !formData.chauffeur_id) {
+    if (!formData.type_transport || !formData.vehicule_id || !formData.chauffeur_id || !formData.date_heure_depart) {
       return false;
     }
     
@@ -448,6 +451,28 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                       </SelectContent>
                     </Select>
                   )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="date_heure_depart">Date et heure de départ *</Label>
+                  <Input
+                    id="date_heure_depart"
+                    type="datetime-local"
+                    value={formData.date_heure_depart}
+                    onChange={(e) => updateFormData('date_heure_depart', e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="date_heure_arrivee_prevue">Date et heure d'arrivée prévue</Label>
+                  <Input
+                    id="date_heure_arrivee_prevue"
+                    type="datetime-local"
+                    value={formData.date_heure_arrivee_prevue}
+                    onChange={(e) => updateFormData('date_heure_arrivee_prevue', e.target.value)}
+                  />
                 </div>
               </div>
 
