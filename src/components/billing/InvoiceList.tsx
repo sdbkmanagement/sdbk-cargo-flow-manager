@@ -17,6 +17,7 @@ export const InvoiceList = () => {
     setSearchTerm,
     handleDownloadPDF,
     handleExportAll,
+    handleExportByDates,
     handleDeleteConfirm
   } = useInvoiceList();
 
@@ -62,6 +63,7 @@ export const InvoiceList = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onExportAll={handleExportAll}
+        onExportByDates={handleExportByDates}
       />
 
       <Card>

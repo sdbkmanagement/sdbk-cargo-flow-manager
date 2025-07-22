@@ -48,6 +48,19 @@ export const useInvoiceList = () => {
     });
   };
 
+  const handleExportByDates = (dateDebut: Date, dateFin: Date) => {
+    const filteredInvoices = invoices.filter(invoice => {
+      const invoiceDate = new Date(invoice.date_emission);
+      return invoiceDate >= dateDebut && invoiceDate <= dateFin;
+    });
+    
+    exportInvoicesToCSV(filteredInvoices);
+    toast({
+      title: "Export réussi",
+      description: `${filteredInvoices.length} factures exportées pour la période sélectionnée.`,
+    });
+  };
+
   const handleDeleteConfirm = async (invoiceId: string) => {
     try {
       await billingService.deleteFacture(invoiceId);
@@ -80,6 +93,7 @@ export const useInvoiceList = () => {
     loadInvoices,
     handleDownloadPDF,
     handleExportAll,
+    handleExportByDates,
     handleDeleteConfirm
   };
 };
