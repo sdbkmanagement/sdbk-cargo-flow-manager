@@ -47,7 +47,7 @@ const RH = () => {
           <RHStats />
         </div>
         <div>
-          <AlertesRH />
+          <AlertesRH alertes={alertes} />
         </div>
       </div>
 

@@ -28,6 +28,19 @@ const Missions = () => {
     queryClient.invalidateQueries({ queryKey: ['available-chauffeurs'] });
   };
 
+  const handleEdit = (missionId: string) => {
+    // TODO: Implement edit functionality
+    console.log('Edit mission:', missionId);
+  };
+
+  const missionStats = {
+    total: missions.length,
+    en_attente: missions.filter(m => m.statut === 'en_attente').length,
+    en_cours: missions.filter(m => m.statut === 'en_cours').length,
+    terminees: missions.filter(m => m.statut === 'terminee').length,
+    annulees: missions.filter(m => m.statut === 'annulee').length,
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -44,7 +57,7 @@ const Missions = () => {
         </div>
       </div>
 
-      <MissionsStats />
+      <MissionsStats {...missionStats} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-1">
@@ -52,12 +65,18 @@ const Missions = () => {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-          <MissionsTable missions={missions} />
+          <MissionsTable 
+            missions={missions}
+            onEdit={handleEdit}
+            hasWritePermission={true}
+            onRefresh={handleRefresh}
+          />
         </TabsContent>
       </Tabs>
 
       {showForm && (
         <MissionForm
+          onCancel={() => setShowForm(false)}
           onSuccess={() => {
             setShowForm(false);
             handleRefresh();

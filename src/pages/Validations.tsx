@@ -17,7 +17,7 @@ const Validations = () => {
 
   const { data: workflows = [], isLoading } = useQuery({
     queryKey: ['validation-workflows'],
-    queryFn: validationService.getWorkflowsPaginated,
+    queryFn: () => validationService.getWorkflowsPaginated(),
   });
 
   const handleRefresh = () => {
@@ -118,7 +118,8 @@ const Validations = () => {
                 {statusWorkflows.map((workflow) => (
                   <ValidationWorkflowCard 
                     key={workflow.id} 
-                    onUpdate={handleRefresh}
+                    workflow={workflow}
+                    onRefresh={handleRefresh}
                   />
                 ))}
               </div>

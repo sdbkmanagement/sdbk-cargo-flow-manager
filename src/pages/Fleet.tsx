@@ -31,6 +31,21 @@ const Fleet = () => {
     queryClient.invalidateQueries({ queryKey: ['available-vehicules'] });
   };
 
+  const handleEdit = (vehicleId: string) => {
+    // TODO: Implement edit functionality
+    console.log('Edit vehicle:', vehicleId);
+  };
+
+  const handleDelete = async (vehicleId: string) => {
+    // TODO: Implement delete functionality
+    console.log('Delete vehicle:', vehicleId);
+  };
+
+  const handleViewDocuments = (vehicle: any) => {
+    // TODO: Implement view documents functionality
+    console.log('View documents for vehicle:', vehicle);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -51,7 +66,12 @@ const Fleet = () => {
         </TabsList>
 
         <TabsContent value="list" className="space-y-6">
-          <VehicleListTab vehicles={vehicles} />
+          <VehicleListTab 
+            vehicles={vehicles}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onViewDocuments={handleViewDocuments}
+          />
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-6">

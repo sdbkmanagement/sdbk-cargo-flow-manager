@@ -40,8 +40,8 @@ const Drivers = () => {
       />
       
       <DriversTabContent 
-        chauffeurs={chauffeurs}
-        onRefresh={handleRefresh}
+        searchTerm=""
+        onSelectChauffeur={() => {}}
       />
     </div>
   );
