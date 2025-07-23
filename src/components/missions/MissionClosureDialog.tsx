@@ -97,7 +97,7 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
     
     // Validation des champs obligatoires
     const blsIncomplets = bls.filter(bl => {
-      return !bl.date_chargement_reelle || !bl.date_depart || 
+      return !bl.numero_tournee || !bl.date_chargement_reelle || !bl.date_depart || 
              !bl.date_arrivee_reelle || !bl.date_dechargement ||
              bl.manquant_cuve === undefined || bl.manquant_compteur === undefined;
     });
@@ -105,7 +105,7 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
     if (blsIncomplets.length > 0) {
       toast({
         title: 'Champs obligatoires manquants',
-        description: 'Veuillez remplir tous les champs obligatoires pour tous les BL',
+        description: 'Veuillez remplir tous les champs obligatoires pour tous les BL, y compris le numéro de tournée',
         variant: 'destructive'
       });
       return;
@@ -175,6 +175,23 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
+                      {/* Numéro de tournée - mis en évidence */}
+                      <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                        <Label htmlFor={`tournee-${index}`} className="text-orange-800 font-medium">
+                          Numéro de tournée *
+                        </Label>
+                        <Input
+                          id={`tournee-${index}`}
+                          value={bl.numero_tournee || ''}
+                          onChange={(e) => updateBL(index, 'numero_tournee', e.target.value)}
+                          placeholder="Ex: T2024-001"
+                          className="mt-1 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                        />
+                        <p className="text-xs text-orange-600 mt-1">
+                          Ce numéro apparaîtra sur les factures et exports
+                        </p>
+                      </div>
+
                       {/* Modification du client/destination */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
                         <div>
