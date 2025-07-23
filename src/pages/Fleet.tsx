@@ -1,87 +1,227 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FleetStats } from '@/components/fleet/FleetStats';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Search, Truck, CheckCircle, Wrench, AlertTriangle } from 'lucide-react';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
-import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
-import { RefreshButton } from '@/components/common/RefreshButton';
+import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
+import { VehicleForm } from '@/components/fleet/VehicleForm';
+import { DocumentManagerVehicule } from '@/components/fleet/DocumentManagerVehicule';
+import { FleetStats } from '@/components/fleet/FleetStats';
+import { FleetHeader } from '@/components/fleet/FleetHeader';
+import { AlertesDocumentsVehicules } from '@/components/fleet/AlertesDocumentsVehicules';
+import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 import { vehiculesService } from '@/services/vehicules';
-import { useQueryClient } from '@tanstack/react-query';
+import { alertesService } from '@/services/alertesService';
+import type { Vehicule } from '@/services/vehicules';
 
 const Fleet = () => {
-  const [activeTab, setActiveTab] = useState('list');
-  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('vehicles');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showVehicleForm, setShowVehicleForm] = useState(false);
+  const [showDocumentManager, setShowDocumentManager] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
+  const [selectedVehicleNumero, setSelectedVehicleNumero] = useState<string>('');
+  const [selectedVehicleForEdit, setSelectedVehicleForEdit] = useState<Vehicule | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
+  // Fetch vehicles and calculate stats
   const { data: vehicles = [], isLoading } = useQuery({
-    queryKey: ['vehicules'],
+    queryKey: ['vehicules', refreshKey],
     queryFn: vehiculesService.getAll,
   });
 
-  const { data: fleetStats } = useQuery({
-    queryKey: ['fleet-stats'],
-    queryFn: vehiculesService.getFleetStats,
+  // Fetch alerts
+  const { data: alertes = [] } = useQuery({
+    queryKey: ['alertes-documents-vehicules', refreshKey],
+    queryFn: alertesService.getAlertesVehicules,
   });
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['vehicules'] });
-    queryClient.invalidateQueries({ queryKey: ['fleet-stats'] });
-    queryClient.invalidateQueries({ queryKey: ['available-vehicules'] });
+  const stats = {
+    total: vehicles.length,
+    disponibles: vehicles.filter(v => v.statut === 'disponible').length,
+    en_mission: vehicles.filter(v => v.statut === 'en_mission').length,
+    maintenance: vehicles.filter(v => v.statut === 'maintenance').length,
+    validation_requise: vehicles.filter(v => v.statut === 'validation_requise').length,
+    alertes: alertes.length,
   };
 
-  const handleEdit = (vehicleId: string) => {
-    // TODO: Implement edit functionality
-    console.log('Edit vehicle:', vehicleId);
+  const handleVehicleCreated = () => {
+    setRefreshKey(prev => prev + 1);
+    toast({
+      title: "Véhicule créé",
+      description: "Le véhicule a été ajouté avec succès.",
+    });
   };
 
-  const handleDelete = async (vehicleId: string) => {
-    // TODO: Implement delete functionality
-    console.log('Delete vehicle:', vehicleId);
+  const handleManageDocuments = (vehicle: Vehicule) => {
+    setSelectedVehicleId(vehicle.id);
+    setSelectedVehicleNumero(vehicle.numero);
+    setShowDocumentManager(true);
   };
 
-  const handleViewDocuments = (vehicle: any) => {
-    // TODO: Implement view documents functionality
-    console.log('View documents for vehicle:', vehicle);
+  const handleModifyVehicle = async (vehicleId: string) => {
+    console.log('Modifier véhicule:', vehicleId);
+    try {
+      const vehicle = await vehiculesService.getById(vehicleId);
+      if (vehicle) {
+        setSelectedVehicleForEdit(vehicle);
+        setShowVehicleForm(true);
+      } else {
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger les données du véhicule.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement du véhicule:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les données du véhicule.",
+        variant: "destructive"
+      });
+    }
   };
+
+  const handleDeleteVehicle = async (vehicleId: string) => {
+    try {
+      await vehiculesService.delete(vehicleId);
+      setRefreshKey(prev => prev + 1);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const handleFormClose = () => {
+    setShowVehicleForm(false);
+    setSelectedVehicleForEdit(null);
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleSelectVehicleForAlerts = (vehiculeId: string) => {
+    const vehicle = vehicles.find(v => v.id === vehiculeId);
+    if (vehicle) {
+      handleManageDocuments(vehicle);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center p-8">Chargement des véhicules...</div>;
+  }
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Gestion de la Flotte</h1>
-          <p className="text-muted-foreground">Suivi et gestion des véhicules</p>
+      <FleetHeader 
+        onAddVehicle={() => {
+          setSelectedVehicleForEdit(null);
+          setShowVehicleForm(true);
+        }}
+        vehicleCount={vehicles.length}
+      />
+
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+        <div className="flex gap-2 items-center">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un véhicule..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 w-64"
+            />
+          </div>
         </div>
-        <RefreshButton onRefresh={handleRefresh} isLoading={isLoading} />
       </div>
 
-      {fleetStats && <FleetStats stats={fleetStats} />}
+      <FleetStats stats={stats} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="list">Liste des véhicules</TabsTrigger>
-          <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-          <TabsTrigger value="validation">Validation</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="vehicles" className="gap-2">
+            <Truck className="h-4 w-4" />
+            Véhicules
+          </TabsTrigger>
+          <TabsTrigger value="validation" className="gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Validation
+          </TabsTrigger>
+          <TabsTrigger value="maintenance" className="gap-2">
+            <Wrench className="h-4 w-4" />
+            Maintenance
+          </TabsTrigger>
+          <TabsTrigger value="alerts" className="gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Alertes
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="space-y-6">
-          <VehicleListTab 
-            vehicles={vehicles}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onViewDocuments={handleViewDocuments}
-          />
+        <TabsContent value="vehicles" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Liste des véhicules</CardTitle>
+              <CardDescription>
+                Gestion de votre flotte de véhicules
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <VehicleListTab 
+                vehicles={vehicles.filter(vehicle => 
+                  vehicle.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  vehicle.immatriculation?.toLowerCase().includes(searchTerm.toLowerCase())
+                )}
+                onEdit={handleModifyVehicle}
+                onDelete={handleDeleteVehicle}
+                onViewDocuments={handleManageDocuments}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="validation" className="space-y-6">
+          <ValidationTab vehicles={vehicles} />
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-6">
           <MaintenanceTab vehicles={vehicles} />
         </TabsContent>
 
-        <TabsContent value="validation" className="space-y-6">
-          <ValidationTab vehicles={vehicles} />
+        <TabsContent value="alerts" className="space-y-6">
+          <AlertesDocumentsVehicules onSelectVehicule={handleSelectVehicleForAlerts} />
         </TabsContent>
       </Tabs>
+
+      {/* Dialog pour le formulaire de véhicule */}
+      <Dialog open={showVehicleForm} onOpenChange={setShowVehicleForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedVehicleForEdit ? 'Modifier le véhicule' : 'Ajouter un nouveau véhicule'}
+            </DialogTitle>
+          </DialogHeader>
+          <VehicleForm 
+            vehicule={selectedVehicleForEdit}
+            onSuccess={handleFormClose}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour la gestion des documents */}
+      <Dialog open={showDocumentManager} onOpenChange={setShowDocumentManager}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Gestion des documents - {selectedVehicleNumero}</DialogTitle>
+          </DialogHeader>
+          <DocumentManagerVehicule
+            vehiculeId={selectedVehicleId}
+            vehiculeNumero={selectedVehicleNumero}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

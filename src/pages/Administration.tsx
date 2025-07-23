@@ -9,20 +9,10 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { CreateAdminButton } from '@/components/admin/CreateAdminButton';
-import { RefreshButton } from '@/components/common/RefreshButton';
-import { useQueryClient } from '@tanstack/react-query';
 
 const Administration = () => {
   const { user, hasRole } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
-  const queryClient = useQueryClient();
-
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-    queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-    queryClient.invalidateQueries({ queryKey: ['admin-audit-logs'] });
-    queryClient.invalidateQueries({ queryKey: ['login-attempts'] });
-  };
 
   console.log('🔧 Administration - User:', user);
   console.log('🔧 Administration - Has admin role:', hasRole('admin'));
@@ -83,12 +73,9 @@ const Administration = () => {
             Gestion des utilisateurs et sécurité du système
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <RefreshButton onRefresh={handleRefresh} />
-          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-            Admin Système
-          </Badge>
-        </div>
+        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+          Admin Système
+        </Badge>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

@@ -9,32 +9,20 @@ import { PaymentTracking } from '@/components/billing/PaymentTracking';
 import { ExportFactures } from '@/components/billing/ExportFactures';
 import { InvoiceForm } from '@/components/billing/InvoiceForm';
 import { QuoteForm } from '@/components/billing/QuoteForm';
-import { RefreshButton } from '@/components/common/RefreshButton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Calculator } from 'lucide-react';
-import { useQueryClient } from '@tanstack/react-query';
 
 const Billing = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const queryClient = useQueryClient();
 
   const handleInvoiceCreated = () => {
     setRefreshKey(prev => prev + 1);
-    handleRefresh();
   };
 
   const handleQuoteCreated = () => {
-    setRefreshKey(prev => prev + 1);
-    handleRefresh();
-  };
-
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['factures'] });
-    queryClient.invalidateQueries({ queryKey: ['devis'] });
-    queryClient.invalidateQueries({ queryKey: ['billing-stats'] });
     setRefreshKey(prev => prev + 1);
   };
 
@@ -46,7 +34,6 @@ const Billing = () => {
           <p className="text-muted-foreground">Gestion complète de la facturation et des devis</p>
         </div>
         <div className="flex gap-2">
-          <RefreshButton onRefresh={handleRefresh} />
           <Dialog open={showQuoteForm} onOpenChange={setShowQuoteForm}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">

@@ -1,48 +1,179 @@
 
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Plus, Search, Upload } from 'lucide-react';
 import { DriversTabNavigation } from '@/components/drivers/DriversTabNavigation';
 import { DriversTabContent } from '@/components/drivers/DriversTabContent';
-import { RefreshButton } from '@/components/common/RefreshButton';
+import { DriversDashboard } from '@/components/drivers/DriversDashboard';
+import { DriversAlerts } from '@/components/drivers/DriversAlerts';
+import { DriversDocuments } from '@/components/drivers/DriversDocuments';
+import { PlanningView } from '@/components/drivers/planning/PlanningView';
+import { ChauffeurDetailDialog } from '@/components/drivers/ChauffeurDetailDialog';
+import { ChauffeurForm } from '@/components/drivers/ChauffeurForm';
+import { DriversImport } from '@/components/drivers/DriversImport';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
-import { useQueryClient } from '@tanstack/react-query';
 
 const Drivers = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [showNewChauffeurForm, setShowNewChauffeurForm] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
 
-  const { data: chauffeurs = [], isLoading } = useQuery({
+  // Récupération des chauffeurs avec actualisation automatique
+  const { data: chauffeurs = [], refetch } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll,
+    refetchInterval: 30 * 1000, // Actualisation toutes les 30 secondes
+    refetchIntervalInBackground: true,
   });
 
-  const handleRefresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['chauffeurs'] });
-    queryClient.invalidateQueries({ queryKey: ['available-chauffeurs'] });
-    queryClient.invalidateQueries({ queryKey: ['documents-chauffeurs'] });
-    queryClient.invalidateQueries({ queryKey: ['alertes-documents-chauffeurs'] });
-    queryClient.invalidateQueries({ queryKey: ['affectations'] });
+  const handleSelectChauffeur = (chauffeur: any) => {
+    setSelectedChauffeur(chauffeur);
+    setShowDetailDialog(true);
+  };
+
+  const handleNewChauffeur = () => {
+    console.log('Bouton Nouveau chauffeur (header) cliqué');
+    setShowNewChauffeurForm(true);
+  };
+
+  const handleImport = () => {
+    setShowImportDialog(true);
+  };
+
+  const handleCreateSuccess = () => {
+    setShowNewChauffeurForm(false);
+    refetch();
+    toast({
+      title: "Chauffeur créé",
+      description: "Le chauffeur a été ajouté avec succès.",
+    });
+  };
+
+  const handleImportSuccess = () => {
+    setShowImportDialog(false);
+    refetch();
+    toast({
+      title: "Import réussi",
+      description: "Les chauffeurs ont été importés avec succès.",
+    });
+  };
+
+  const handleFormCancel = () => {
+    setShowNewChauffeurForm(false);
+  };
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <DriversDashboard />;
+      case 'drivers':
+        return (
+          <DriversTabContent 
+            searchTerm={searchTerm}
+            onSelectChauffeur={handleSelectChauffeur}
+          />
+        );
+      case 'planning':
+        return <PlanningView chauffeurs={chauffeurs} />;
+      case 'alertes':
+        return <DriversAlerts />;
+      case 'documents':
+        return <DriversDocuments />;
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Gestion des Chauffeurs</h1>
-          <p className="text-muted-foreground">Suivi du personnel de conduite</p>
+          <h1 className="text-3xl font-bold text-gray-900">Gestion des chauffeurs</h1>
+          <p className="text-gray-600 mt-1">
+            Dashboard, planning, documents et alertes de conformité
+          </p>
         </div>
-        <RefreshButton onRefresh={handleRefresh} isLoading={isLoading} />
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleImport}
+            variant="outline"
+            className="bg-green-500 hover:bg-green-600 text-white border-green-500"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Importer Excel
+          </Button>
+          <Button 
+            onClick={handleNewChauffeur}
+            className="bg-orange-500 hover:bg-orange-600"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nouveau chauffeur
+          </Button>
+        </div>
       </div>
 
       <DriversTabNavigation 
         activeTab={activeTab} 
-        onTabChange={setActiveTab}
+        onTabChange={setActiveTab} 
       />
-      
-      <DriversTabContent 
-        searchTerm=""
-        onSelectChauffeur={() => {}}
-      />
+
+      {activeTab === 'drivers' && (
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="Rechercher un chauffeur..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+      )}
+
+      {renderTabContent()}
+
+      {/* Dialog de détails du chauffeur */}
+      {selectedChauffeur && (
+        <ChauffeurDetailDialog
+          chauffeur={selectedChauffeur}
+          open={showDetailDialog}
+          onOpenChange={setShowDetailDialog}
+        />
+      )}
+
+      {/* Dialog pour nouveau chauffeur */}
+      <Dialog open={showNewChauffeurForm} onOpenChange={setShowNewChauffeurForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nouveau chauffeur</DialogTitle>
+          </DialogHeader>
+          <ChauffeurForm 
+            onSuccess={handleCreateSuccess}
+            onCancel={handleFormCancel}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour import Excel */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Importer des chauffeurs depuis Excel</DialogTitle>
+          </DialogHeader>
+          <DriversImport 
+            onSuccess={handleImportSuccess}
+            onClose={() => setShowImportDialog(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
