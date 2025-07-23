@@ -1,260 +1,132 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, Clock, AlertTriangle, FileText } from 'lucide-react';
 import { ValidationWorkflowCard } from '@/components/fleet/validation/ValidationWorkflowCard';
 import { ValidationStats } from '@/components/fleet/validation/ValidationStats';
-import vehiculesService, { type Vehicule } from '@/services/vehicules';
+import { RefreshButton } from '@/components/common/RefreshButton';
 import { validationService } from '@/services/validation';
-import { useValidationPermissions } from '@/hooks/useValidationPermissions';
-import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Validations = () => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [activeTab, setActiveTab] = useState('en-attente');
+  const queryClient = useQueryClient();
 
-  const { hasValidationAccess, getUserRole, getUserRoles } = useValidationPermissions();
-
-  // Vérifier si l'utilisateur a accès aux validations
-  if (!hasValidationAccess()) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Accès restreint</h2>
-          <p className="text-gray-600 mb-4">
-            Vous n'avez pas les permissions nécessaires pour accéder aux validations.
-          </p>
-          <p className="text-sm text-gray-500">
-            Rôles requis : maintenance, administratif, hsecq, obc
-          </p>
-          <p className="text-sm text-gray-500">
-            Vos rôles : {getUserRoles().join(', ')}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Récupération optimisée des véhicules avec pagination côté serveur
-  const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError, refetch: refetchVehicles } = useQuery({
-    queryKey: ['vehicles-validation', currentPage, searchTerm, statusFilter],
-    queryFn: async () => {
-      console.log('Chargement optimisé des véhicules pour validation');
-      
-      // Récupérer tous les véhicules une seule fois
-      const allVehicles = await vehiculesService.getAll();
-      
-      // Filtrage côté client pour commencer
-      const filtered = allVehicles.filter((vehicle: Vehicule) => {
-        const matchesSearch = !searchTerm || 
-          vehicle.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (vehicle.immatriculation && vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (vehicle.tracteur_immatriculation && vehicle.tracteur_immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (vehicle.marque && vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        const matchesStatus = statusFilter === 'all' || 
-          (statusFilter === 'en_validation' && vehicle.statut === 'validation_requise') ||
-          (statusFilter === 'valide' && vehicle.statut === 'disponible') ||
-          (statusFilter === 'rejete' && vehicle.statut === 'validation_requise');
-        
-        return matchesSearch && matchesStatus;
-      });
-
-      // Pagination côté client
-      const start = (currentPage - 1) * itemsPerPage;
-      const end = start + itemsPerPage;
-      const paginatedVehicles = filtered.slice(start, end);
-      
-      return {
-        vehicles: paginatedVehicles,
-        totalCount: filtered.length,
-        hasMore: end < filtered.length,
-        hasPrevious: currentPage > 1
-      };
-    },
-    staleTime: 30000, // Cache 30 secondes
-    gcTime: 60000, // Keep in cache for 1 minute
+  const { data: workflows = [], isLoading } = useQuery({
+    queryKey: ['validation-workflows'],
+    queryFn: validationService.getWorkflows,
   });
 
-  // Récupération des statistiques avec cache plus long
-  const { data: stats, refetch: refetchStats } = useQuery({
-    queryKey: ['validation-stats'],
-    queryFn: validationService.getStatistiquesGlobales,
-    staleTime: 60000, // Cache 1 minute
-    gcTime: 300000, // Keep in cache for 5 minutes
-  });
-
-  const handleRefresh = async () => {
-    console.log('Actualisation manuelle des données');
-    validationService.clearCache();
-    await Promise.all([refetchVehicles(), refetchStats()]);
+  const handleRefresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['validation-workflows'] });
+    queryClient.invalidateQueries({ queryKey: ['validation-etapes'] });
+    queryClient.invalidateQueries({ queryKey: ['vehicules'] });
   };
 
-  const handleNextPage = () => {
-    if (vehiclesData?.hasMore) {
-      setCurrentPage(prev => prev + 1);
+  const workflowsByStatus = {
+    'en-attente': workflows.filter(w => w.statut === 'en_attente'),
+    'en-cours': workflows.filter(w => w.statut === 'en_cours'),
+    'terminee': workflows.filter(w => w.statut === 'terminee'),
+    'rejetee': workflows.filter(w => w.statut === 'rejetee'),
+  };
+
+  const getStatusColor = (statut: string) => {
+    switch (statut) {
+      case 'en_attente': return 'bg-yellow-100 text-yellow-800';
+      case 'en_cours': return 'bg-blue-100 text-blue-800';
+      case 'terminee': return 'bg-green-100 text-green-800';
+      case 'rejetee': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handlePrevPage = () => {
-    if (vehiclesData?.hasPrevious) {
-      setCurrentPage(prev => Math.max(1, prev - 1));
+  const getStatusIcon = (statut: string) => {
+    switch (statut) {
+      case 'en_attente': return Clock;
+      case 'en_cours': return FileText;
+      case 'terminee': return CheckCircle;
+      case 'rejetee': return AlertTriangle;
+      default: return FileText;
     }
   };
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1); // Reset to first page when searching
+  const getStatusLabel = (statut: string) => {
+    switch (statut) {
+      case 'en_attente': return 'En attente';
+      case 'en_cours': return 'En cours';
+      case 'terminee': return 'Terminée';
+      case 'rejetee': return 'Rejetée';
+      default: return statut;
+    }
   };
-
-  const handleStatusChange = (value: string) => {
-    setStatusFilter(value);
-    setCurrentPage(1); // Reset to first page when filtering
-  };
-
-  if (vehiclesLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
-          <p className="text-lg font-medium">Chargement optimisé des workflows...</p>
-          <p className="text-sm text-gray-500 mt-2">Page {currentPage}</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (vehiclesError) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center text-red-500">
-          <p className="text-lg font-medium">Erreur lors du chargement</p>
-          <p className="text-sm mt-2">{vehiclesError.message}</p>
-          <Button onClick={handleRefresh} variant="outline" className="mt-4">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Réessayer
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const vehicles = vehiclesData?.vehicles || [];
-  const totalCount = vehiclesData?.totalCount || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Workflows de Validation</h1>
-          <p className="text-gray-600 mt-2">
-            Gestion des processus de validation des véhicules (Page {currentPage} - {totalCount} véhicule(s))
-          </p>
-          <div className="mt-2 text-sm text-blue-600">
-            <p>Connecté en tant que : <strong>{getUserRole()}</strong></p>
-            <p>Rôles : {getUserRoles().join(', ')}</p>
-          </div>
+          <h1 className="text-3xl font-bold">Processus de Validation</h1>
+          <p className="text-muted-foreground">Gestion des workflows de validation post-mission</p>
         </div>
-        <Button onClick={handleRefresh} variant="outline">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          Actualiser
-        </Button>
+        <RefreshButton onRefresh={handleRefresh} isLoading={isLoading} />
       </div>
 
-      {/* Statistiques */}
-      <ValidationStats />
+      <ValidationStats workflows={workflows} />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Validation des véhicules</CardTitle>
-          <CardDescription>
-            Suivez et gérez les workflows de validation pour chaque véhicule
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* Filtres */}
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <Input
-                  placeholder="Rechercher un véhicule..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
-                />
-              </div>
-              <div className="w-full sm:w-48">
-                <Select value={statusFilter} onValueChange={handleStatusChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="en_validation">En validation</SelectItem>
-                    <SelectItem value="valide">Validé</SelectItem>
-                    <SelectItem value="rejete">Rejeté</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="en-attente" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            En attente ({workflowsByStatus['en-attente'].length})
+          </TabsTrigger>
+          <TabsTrigger value="en-cours" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            En cours ({workflowsByStatus['en-cours'].length})
+          </TabsTrigger>
+          <TabsTrigger value="terminee" className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            Terminées ({workflowsByStatus['terminee'].length})
+          </TabsTrigger>
+          <TabsTrigger value="rejetee" className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4" />
+            Rejetées ({workflowsByStatus['rejetee'].length})
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Navigation pagination */}
-          <div className="flex justify-between items-center mb-4">
-            <Button 
-              onClick={handlePrevPage} 
-              disabled={!vehiclesData?.hasPrevious}
-              variant="outline"
-              size="sm"
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Précédent
-            </Button>
-            <span className="text-sm text-gray-500">
-              Page {currentPage} - {vehicles.length} véhicule(s) sur {totalCount}
-            </span>
-            <Button 
-              onClick={handleNextPage} 
-              disabled={!vehiclesData?.hasMore}
-              variant="outline"
-              size="sm"
-            >
-              Suivant
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-
-          {/* Liste des workflows */}
-          <div className="space-y-4">
-            {vehicles.length > 0 ? (
-              vehicles.map((vehicle) => (
-                <ValidationWorkflowCard
-                  key={vehicle.id}
-                  vehiculeId={vehicle.id}
-                  vehiculeNumero={`${vehicle.numero} (${vehicle.immatriculation || vehicle.tracteur_immatriculation || 'N/A'})`}
-                  userRole={getUserRole()}
-                />
-              ))
+        {Object.entries(workflowsByStatus).map(([status, statusWorkflows]) => (
+          <TabsContent key={status} value={status} className="space-y-4">
+            {statusWorkflows.length === 0 ? (
+              <Card>
+                <CardContent className="flex items-center justify-center py-8">
+                  <div className="text-center">
+                    <div className="mx-auto mb-4 h-12 w-12 text-muted-foreground">
+                      {React.createElement(getStatusIcon(status), { className: "h-12 w-12" })}
+                    </div>
+                    <h3 className="text-lg font-semibold text-muted-foreground mb-2">
+                      Aucun workflow {getStatusLabel(status).toLowerCase()}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Les workflows avec ce statut apparaîtront ici
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-500">Aucun véhicule trouvé pour les critères sélectionnés.</p>
-                <Button onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('all');
-                  setCurrentPage(1);
-                }} variant="outline" className="mt-4">
-                  Réinitialiser les filtres
-                </Button>
+              <div className="grid gap-4">
+                {statusWorkflows.map((workflow) => (
+                  <ValidationWorkflowCard 
+                    key={workflow.id} 
+                    workflow={workflow}
+                    onUpdate={handleRefresh}
+                  />
+                ))}
               </div>
             )}
-          </div>
-        </CardContent>
-      </Card>
+          </TabsContent>
+        ))}
+      </Tabs>
     </div>
   );
 };
