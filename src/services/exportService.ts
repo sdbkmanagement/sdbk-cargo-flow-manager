@@ -30,6 +30,7 @@ export const exportService = {
       // Transformer les données pour l'export
       const exportData = bls.map(bl => ({
         'N° BL': bl.numero || '',
+        'N° Tournée': bl.numero_tournee || '',
         'Date Emission': bl.date_emission || '',
         'Véhicule': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
         'Chauffeur': bl.chauffeurs ? `${bl.chauffeurs.prenom} ${bl.chauffeurs.nom}` : '',
@@ -144,7 +145,7 @@ export const exportService = {
         throw tarifsError;
       }
 
-      // Transformer les données pour l'export Excel avec calcul du montant
+      // Transformer les données pour l'export Excel avec calcul du montant et numéro de tournée
       const exportData = await Promise.all(bls.map(async bl => {
         const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
         let prixUnitaire = bl.prix_unitaire || 0;
@@ -173,7 +174,7 @@ export const exportService = {
         
         return {
           'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
-          'N°Tournée': bl.numero || '',
+          'N°Tournée': bl.numero_tournee || '',
           'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
           'Dépôt': bl.lieu_depart || '',
           'BL': bl.numero || '',
@@ -260,7 +261,7 @@ export const exportService = {
         
         return {
           'Date Chargement': bl.date_chargement_reelle || bl.date_emission || '',
-          'N°Tournée': bl.numero || '',
+          'N°Tournée': bl.numero_tournee || '',
           'Camions': bl.vehicules ? `${bl.vehicules.numero} - ${bl.vehicules.marque} ${bl.vehicules.modele}` : '',
           'Dépôt': bl.lieu_depart || '',
           'BL': bl.numero || '',

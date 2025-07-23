@@ -58,18 +58,26 @@ export const BLSuiviDetail = ({ bl, index, onUpdate, isReadOnly = false }: BLSui
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Numéro de tournée - mis en évidence */}
+        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+          <Label htmlFor={`tournee-${index}`} className="text-orange-800 font-medium">
+            Numéro de tournée *
+          </Label>
+          <Input
+            id={`tournee-${index}`}
+            value={bl.numero_tournee || ''}
+            onChange={(e) => onUpdate('numero_tournee', e.target.value)}
+            placeholder="Ex: T2024-001"
+            disabled={isReadOnly}
+            className="mt-1 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+          />
+          <p className="text-xs text-orange-600 mt-1">
+            Ce numéro apparaîtra sur les factures et exports
+          </p>
+        </div>
+
         {/* Informations de suivi */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label>Numéro de tournée</Label>
-            <Input
-              value={bl.numero_tournee || ''}
-              onChange={(e) => onUpdate('numero_tournee', e.target.value)}
-              placeholder="Ex: T2024-001"
-              disabled={isReadOnly}
-            />
-          </div>
-          
           <div>
             <Label>Quantité livrée (L)</Label>
             <Input
