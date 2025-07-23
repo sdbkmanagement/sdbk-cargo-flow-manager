@@ -118,8 +118,9 @@ const Validations = () => {
                 {statusWorkflows.map((workflow) => (
                   <ValidationWorkflowCard 
                     key={workflow.id} 
-                    workflow={workflow}
-                    onRefresh={handleRefresh}
+                    vehiculeId={workflow.vehicule_id}
+                    vehiculeNumero={workflow.vehicule_numero || `Véhicule ${workflow.vehicule_id}`}
+                    userRole="admin"
                   />
                 ))}
               </div>
