@@ -11,7 +11,6 @@ import { PageLoader } from '@/components/ui/loading-states';
 import { useRealtimeData } from '@/hooks/useRealtimeData';
 
 // Lazy loading des pages
-const Home = lazy(() => import('@/pages/Home'));
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Fleet = lazy(() => import('@/pages/Fleet'));
 const Drivers = lazy(() => import('@/pages/Drivers'));
@@ -62,18 +61,6 @@ const ModernAppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   console.log('🏠 Affichage de l\'application pour:', user?.email);
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Suspense fallback={<PageLoader message="Chargement du module..." />}>
-        {children}
-      </Suspense>
-    </div>
-  );
-};
-
-const ModuleLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  
-  return (
-    <>
       <ModernSidebar 
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -91,11 +78,13 @@ const ModuleLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => 
         
         <main className="flex-1">
           <div className="page-container">
-            {children}
+            <Suspense fallback={<PageLoader message="Chargement du module..." />}>
+              {children}
+            </Suspense>
           </div>
         </main>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -106,15 +95,15 @@ function App() {
         <BrowserRouter>
           <ModernAppLayout>
             <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<ModuleLayout><Dashboard /></ModuleLayout>} />
-              <Route path="/fleet" element={<ModuleLayout><Fleet /></ModuleLayout>} />
-              <Route path="/drivers" element={<ModuleLayout><Drivers /></ModuleLayout>} />
-              <Route path="/missions" element={<ModuleLayout><Missions /></ModuleLayout>} />
-              <Route path="/billing" element={<ModuleLayout><Billing /></ModuleLayout>} />
-              <Route path="/rh" element={<ModuleLayout><RH /></ModuleLayout>} />
-              <Route path="/validations" element={<ModuleLayout><Validations /></ModuleLayout>} />
-              <Route path="/administration" element={<ModuleLayout><Administration /></ModuleLayout>} />
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/fleet" element={<Fleet />} />
+              <Route path="/drivers" element={<Drivers />} />
+              <Route path="/missions" element={<Missions />} />
+              <Route path="/billing" element={<Billing />} />
+              <Route path="/rh" element={<RH />} />
+              <Route path="/validations" element={<Validations />} />
+              <Route path="/administration" element={<Administration />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ModernAppLayout>
