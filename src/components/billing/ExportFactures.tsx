@@ -5,17 +5,104 @@ import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { exportService } from '@/services/exportService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarIcon, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
 
 export const ExportFactures = () => {
   const [dateDebut, setDateDebut] = useState<Date>();
   const [dateFin, setDateFin] = useState<Date>();
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+
+  const exportToCSV = async (data: any[], filename: string) => {
+    const headers = [
+      'Date Chargement',
+      'N°Tournée',
+      'Camions',
+      'Dépôt',
+      'BL',
+      'Client',
+      'Destination',
+      'Produit',
+      'Quantité',
+      'Prix Unitaire',
+      'Montant',
+      'Manquants (Total)',
+      'Manquant Compteur',
+      'Manquant Cuve',
+      'Numéros Clients'
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...data.map(item => [
+        item.date_chargement_reelle ? new Date(item.date_chargement_reelle).toLocaleDateString('fr-FR') : '',
+        item.numero_tournee || '',
+        item.vehicule || '',
+        item.lieu_depart || '',
+        item.numero || '',
+        item.client_nom || '',
+        item.destination || '',
+        item.produit || '',
+        item.quantite_livree?.toLocaleString('fr-FR') || '0',
+        item.prix_unitaire?.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) || '0,00',
+        item.montant_total?.toLocaleString('fr-FR') || '0',
+        item.manquant_total?.toLocaleString('fr-FR') || '0',
+        item.manquant_compteur?.toLocaleString('fr-FR') || '0',
+        item.manquant_cuve?.toLocaleString('fr-FR') || '0',
+        item.client_code || ''
+      ].map(field => `"${field}"`).join(','))
+    ].join('\n');
+
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const getBonsLivraisonData = async (dateDebutStr: string, dateFinStr: string) => {
+    const { data: bonsLivraison, error } = await supabase
+      .from('bons_livraison')
+      .select(`
+        *,
+        vehicules!inner(numero, immatriculation),
+        chauffeurs!inner(nom, prenom),
+        missions!inner(numero, site_depart, site_arrivee)
+      `)
+      .eq('statut', 'livre')
+      .gte('date_chargement_reelle', dateDebutStr)
+      .lte('date_chargement_reelle', dateFinStr)
+      .order('date_chargement_reelle', { ascending: false });
+
+    if (error) throw error;
+
+    return bonsLivraison?.map(bl => ({
+      date_chargement_reelle: bl.date_chargement_reelle,
+      numero_tournee: bl.numero_tournee,
+      vehicule: `${bl.vehicules?.numero} - ${bl.vehicules?.immatriculation}`,
+      lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
+      numero: bl.numero,
+      client_nom: bl.destination,
+      destination: bl.lieu_arrivee || bl.missions?.site_arrivee,
+      produit: bl.produit,
+      quantite_livree: bl.quantite_livree,
+      prix_unitaire: bl.prix_unitaire,
+      montant_total: bl.montant_total,
+      manquant_total: bl.manquant_total,
+      manquant_compteur: bl.manquant_compteur,
+      manquant_cuve: bl.manquant_cuve,
+      client_code: bl.client_code
+    })) || [];
+  };
 
   const handleExportExcel = async () => {
     if (!dateDebut || !dateFin) {
@@ -42,17 +129,21 @@ export const ExportFactures = () => {
       const dateDebutStr = format(dateDebut, 'yyyy-MM-dd');
       const dateFinStr = format(dateFin, 'yyyy-MM-dd');
       
-      await exportService.exportToExcel(dateDebutStr, dateFinStr);
+      const data = await getBonsLivraisonData(dateDebutStr, dateFinStr);
+      
+      // Pour l'instant, utiliser le CSV car l'Excel nécessite une bibliothèque supplémentaire
+      const filename = `mouvement_${format(dateDebut, 'yyyy-MM')}.csv`;
+      await exportToCSV(data, filename);
       
       toast({
         title: 'Export réussi',
-        description: `Fichier Excel généré pour la période du ${format(dateDebut, 'dd/MM/yyyy')} au ${format(dateFin, 'dd/MM/yyyy')}`,
+        description: `Fichier généré pour la période du ${format(dateDebut, 'dd/MM/yyyy')} au ${format(dateFin, 'dd/MM/yyyy')} (${data.length} entrées)`,
       });
     } catch (error) {
       console.error('Erreur export:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de générer le fichier Excel',
+        description: 'Impossible de générer le fichier',
         variant: 'destructive'
       });
     } finally {
@@ -61,37 +152,7 @@ export const ExportFactures = () => {
   };
 
   const handleExportCSV = async () => {
-    if (!dateDebut || !dateFin) {
-      toast({
-        title: 'Erreur',
-        description: 'Veuillez sélectionner les dates de début et de fin',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      const dateDebutStr = format(dateDebut, 'yyyy-MM-dd');
-      const dateFinStr = format(dateFin, 'yyyy-MM-dd');
-      
-      await exportService.exportToCSV(dateDebutStr, dateFinStr);
-      
-      toast({
-        title: 'Export réussi',
-        description: `Fichier CSV généré pour la période du ${format(dateDebut, 'dd/MM/yyyy')} au ${format(dateFin, 'dd/MM/yyyy')}`,
-      });
-    } catch (error) {
-      console.error('Erreur export:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de générer le fichier CSV',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoading(false);
-    }
+    await handleExportExcel(); // Même logique pour l'instant
   };
 
   const setPeriodesRapides = (jours: number) => {
@@ -107,7 +168,7 @@ export const ExportFactures = () => {
       {/* En-tête */}
       <div className="flex items-center gap-2">
         <Download className="w-6 h-6" />
-        <h2 className="text-2xl font-bold">Export des Factures</h2>
+        <h2 className="text-2xl font-bold">Export Mouvement Hydrocarbures</h2>
       </div>
 
       {/* Sélection des dates */}
@@ -144,7 +205,7 @@ export const ExportFactures = () => {
               size="sm"
               onClick={() => {
                 const debut = new Date();
-                debut.setDate(1); // Premier jour du mois
+                debut.setDate(1);
                 const fin = new Date();
                 setDateDebut(debut);
                 setDateFin(fin);
@@ -239,13 +300,13 @@ export const ExportFactures = () => {
                   <FileSpreadsheet className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Export Excel (.xlsx)</h3>
-                  <p className="text-sm text-gray-600">Format recommandé avec mise en forme</p>
+                  <h3 className="font-medium">Export Mouvement (.csv)</h3>
+                  <p className="text-sm text-gray-600">Format mouvement hydrocarbures TOTAL</p>
                 </div>
               </div>
               <div className="space-y-2 text-xs text-gray-600">
-                <p>✓ Colonnes formatées selon le standard TOTAL</p>
-                <p>✓ Calculs automatiques des montants</p>
+                <p>✓ Format identique au rapport mensuel</p>
+                <p>✓ Toutes les colonnes du mouvement TOTAL</p>
                 <p>✓ Compatible avec Excel et LibreOffice</p>
               </div>
               <Button
@@ -254,7 +315,7 @@ export const ExportFactures = () => {
                 className="w-full mt-3 bg-green-600 hover:bg-green-700"
               >
                 <FileSpreadsheet className="w-4 h-4 mr-2" />
-                {loading ? 'Export en cours...' : 'Exporter en Excel'}
+                {loading ? 'Export en cours...' : 'Exporter Mouvement'}
               </Button>
             </div>
 
@@ -266,13 +327,13 @@ export const ExportFactures = () => {
                 </div>
                 <div>
                   <h3 className="font-medium">Export CSV (.csv)</h3>
-                  <p className="text-sm text-gray-600">Format texte universel</p>
+                  <p className="text-sm text-gray-600">Format texte avec BOM UTF-8</p>
                 </div>
               </div>
               <div className="space-y-2 text-xs text-gray-600">
                 <p>✓ Compatible avec tous les logiciels</p>
                 <p>✓ Séparateurs adaptés au format français</p>
-                <p>✓ Encodage UTF-8 avec BOM</p>
+                <p>✓ Encodage UTF-8 avec BOM pour Excel</p>
               </div>
               <Button
                 onClick={handleExportCSV}
@@ -295,7 +356,7 @@ export const ExportFactures = () => {
         </CardHeader>
         <CardContent>
           <div className="bg-gray-50 p-4 rounded border">
-            <h4 className="font-medium mb-2">Colonnes incluses dans l'export:</h4>
+            <h4 className="font-medium mb-2">Colonnes incluses dans l'export (format TOTAL):</h4>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
               <div>• Date Chargement</div>
               <div>• N°Tournée</div>

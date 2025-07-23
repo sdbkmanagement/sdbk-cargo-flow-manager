@@ -1,43 +1,51 @@
 
 export const exportInvoicesToCSV = (invoices: any[]) => {
   const headers = [
-    'Numéro',
+    'Date Chargement',
+    'N°Tournée',
+    'Camions',
+    'Dépôt',
+    'BL',
     'Client',
-    'Société',
-    'Mission',
-    'Date émission',
-    'Date échéance',
-    'Montant HT (GNF)',
-    'TVA (GNF)',
-    'Montant TTC (GNF)',
-    'Statut',
-    'Chauffeur',
-    'Véhicule'
+    'Destination',
+    'Produit',
+    'Quantité',
+    'Prix Unitaire',
+    'Montant',
+    'Manquants (Total)',
+    'Manquant Compteur',
+    'Manquant Cuve',
+    'Numéros Clients'
   ];
 
   const csvContent = [
     headers.join(','),
     ...invoices.map(invoice => [
+      invoice.date_chargement_reelle ? new Date(invoice.date_chargement_reelle).toLocaleDateString('fr-FR') : '',
+      invoice.numero_tournee || '',
+      invoice.vehicule || '',
+      invoice.lieu_depart || '',
       invoice.numero || '',
       invoice.client_nom || '',
-      invoice.client_societe || '',
-      invoice.mission_numero || '',
-      new Date(invoice.date_emission).toLocaleDateString('fr-FR'),
-      new Date(invoice.date_echeance).toLocaleDateString('fr-FR'),
-      invoice.montant_ht?.toLocaleString('fr-FR') || '0',
-      invoice.montant_tva?.toLocaleString('fr-FR') || '0',
-      invoice.montant_ttc?.toLocaleString('fr-FR') || '0',
-      invoice.statut || '',
-      invoice.chauffeur || '',
-      invoice.vehicule || ''
+      invoice.destination || '',
+      invoice.produit || '',
+      invoice.quantite_livree?.toLocaleString('fr-FR') || '0',
+      invoice.prix_unitaire?.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) || '0,00',
+      invoice.montant_total?.toLocaleString('fr-FR') || '0',
+      invoice.manquant_total?.toLocaleString('fr-FR') || '0',
+      invoice.manquant_compteur?.toLocaleString('fr-FR') || '0',
+      invoice.manquant_cuve?.toLocaleString('fr-FR') || '0',
+      invoice.client_code || ''
     ].map(field => `"${field}"`).join(','))
   ].join('\n');
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  // Ajouter BOM UTF-8 pour Excel
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
-  link.setAttribute('download', `factures_${new Date().toISOString().split('T')[0]}.csv`);
+  link.setAttribute('download', `mouvement_${new Date().toISOString().split('T')[0]}.csv`);
   link.style.visibility = 'hidden';
   document.body.appendChild(link);
   link.click();
@@ -74,7 +82,8 @@ export const exportQuotesToCSV = (quotes: any[]) => {
     ].map(field => `"${field}"`).join(','))
   ].join('\n');
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvContent], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
@@ -83,4 +92,10 @@ export const exportQuotesToCSV = (quotes: any[]) => {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+};
+
+export const exportMovementToExcel = async (dateDebut: string, dateFin: string) => {
+  // Cette fonction sera appelée par le service d'export pour générer le fichier Excel
+  // avec le format exact du screenshot (colonnes spécialisées pour hydrocarbures)
+  console.log('Export Excel format mouvement:', { dateDebut, dateFin });
 };
