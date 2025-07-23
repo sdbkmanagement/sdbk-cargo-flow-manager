@@ -19,7 +19,7 @@ const Missions = () => {
 
   const { data: missions = [], isLoading } = useQuery({
     queryKey: ['missions'],
-    queryFn: missionsService.getMissions,
+    queryFn: missionsService.getAll,
   });
 
   const handleRefresh = () => {
@@ -44,7 +44,7 @@ const Missions = () => {
         </div>
       </div>
 
-      <MissionsStats missions={missions} />
+      <MissionsStats />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-1">
@@ -58,7 +58,6 @@ const Missions = () => {
 
       {showForm && (
         <MissionForm
-          onClose={() => setShowForm(false)}
           onSuccess={() => {
             setShowForm(false);
             handleRefresh();

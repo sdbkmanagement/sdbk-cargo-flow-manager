@@ -17,7 +17,7 @@ const Validations = () => {
 
   const { data: workflows = [], isLoading } = useQuery({
     queryKey: ['validation-workflows'],
-    queryFn: validationService.getWorkflows,
+    queryFn: validationService.getWorkflowsPaginated,
   });
 
   const handleRefresh = () => {
@@ -27,10 +27,10 @@ const Validations = () => {
   };
 
   const workflowsByStatus = {
-    'en-attente': workflows.filter(w => w.statut === 'en_attente'),
-    'en-cours': workflows.filter(w => w.statut === 'en_cours'),
-    'terminee': workflows.filter(w => w.statut === 'terminee'),
-    'rejetee': workflows.filter(w => w.statut === 'rejetee'),
+    'en-attente': Array.isArray(workflows) ? workflows.filter(w => w.statut === 'en_attente') : [],
+    'en-cours': Array.isArray(workflows) ? workflows.filter(w => w.statut === 'en_cours') : [],
+    'terminee': Array.isArray(workflows) ? workflows.filter(w => w.statut === 'terminee') : [],
+    'rejetee': Array.isArray(workflows) ? workflows.filter(w => w.statut === 'rejetee') : [],
   };
 
   const getStatusColor = (statut: string) => {
@@ -73,7 +73,7 @@ const Validations = () => {
         <RefreshButton onRefresh={handleRefresh} isLoading={isLoading} />
       </div>
 
-      <ValidationStats workflows={workflows} />
+      <ValidationStats />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -118,7 +118,6 @@ const Validations = () => {
                 {statusWorkflows.map((workflow) => (
                   <ValidationWorkflowCard 
                     key={workflow.id} 
-                    workflow={workflow}
                     onUpdate={handleRefresh}
                   />
                 ))}

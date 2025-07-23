@@ -17,7 +17,7 @@ const RH = () => {
 
   const { data: employes = [], isLoading: employesLoading } = useQuery({
     queryKey: ['employes'],
-    queryFn: rhService.getEmployes,
+    queryFn: () => rhService.getEmployes(),
   });
 
   const { data: alertes = [], isLoading: alertesLoading } = useQuery({
@@ -44,10 +44,10 @@ const RH = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <RHStats employes={employes} />
+          <RHStats />
         </div>
         <div>
-          <AlertesRH alertes={alertes} />
+          <AlertesRH />
         </div>
       </div>
 
@@ -59,7 +59,11 @@ const RH = () => {
         </TabsList>
 
         <TabsContent value="employes" className="space-y-6">
-          <EmployesList employes={employes} />
+          <EmployesList 
+            employes={employes}
+            isLoading={employesLoading}
+            onRefresh={handleRefresh}
+          />
         </TabsContent>
 
         <TabsContent value="formations" className="space-y-6">

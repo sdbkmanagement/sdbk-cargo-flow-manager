@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { DriversTabNavigation } from '@/components/drivers/DriversTabNavigation';
 import { DriversTabContent } from '@/components/drivers/DriversTabContent';
 import { RefreshButton } from '@/components/common/RefreshButton';
-import { chauffeurService } from '@/services/chauffeurs';
+import { chauffeursService } from '@/services/chauffeurs';
 import { useQueryClient } from '@tanstack/react-query';
 
 const Drivers = () => {
@@ -13,7 +13,7 @@ const Drivers = () => {
 
   const { data: chauffeurs = [], isLoading } = useQuery({
     queryKey: ['chauffeurs'],
-    queryFn: chauffeurService.getChauffeurs,
+    queryFn: chauffeursService.getAll,
   });
 
   const handleRefresh = () => {
@@ -36,12 +36,10 @@ const Drivers = () => {
 
       <DriversTabNavigation 
         activeTab={activeTab} 
-        onTabChange={setActiveTab} 
-        chauffeurs={chauffeurs}
+        onTabChange={setActiveTab}
       />
       
       <DriversTabContent 
-        activeTab={activeTab} 
         chauffeurs={chauffeurs}
         onRefresh={handleRefresh}
       />

@@ -17,7 +17,7 @@ const Fleet = () => {
 
   const { data: vehicles = [], isLoading } = useQuery({
     queryKey: ['vehicules'],
-    queryFn: vehiculesService.getVehicules,
+    queryFn: vehiculesService.getAll,
   });
 
   const { data: fleetStats } = useQuery({
