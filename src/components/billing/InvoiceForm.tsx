@@ -105,6 +105,17 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
     loadInitialData();
   }, []);
 
+  // Fonction pour récupérer un tarif hydrocarbures
+  const getTarifForDestination = async (depart: string, arrivee: string): Promise<number> => {
+    try {
+      const tarif = await tarifsHydrocarburesService.getTarif(depart, arrivee);
+      return tarif ? tarif.tarif_au_litre : 0;
+    } catch (error) {
+      console.error('Erreur récupération tarif:', error);
+      return 0;
+    }
+  };
+
   // Fonction pour appliquer le tarif hydrocarbures automatiquement
   const applyHydrocarburesTarif = async (depart: string, arrivee: string) => {
     console.log('🔄 Application du tarif hydrocarbures pour:', depart, '→', arrivee);
@@ -158,40 +169,48 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
       // Pour les hydrocarbures, définir lieu de départ et destination
       if (mission.type_transport === 'hydrocarbures') {
         console.log('🛢️ Mission hydrocarbures détectée');
-        console.log('Site départ:', mission.site_depart);
-        console.log('Site arrivée:', mission.site_arrivee);
-        
         setValue('lieuDepart', mission.site_depart);
         setValue('destination', mission.site_arrivee);
-        
-        // Attendre un peu pour que les setValue se propagent
-        setTimeout(async () => {
-          console.log('🔄 Application du tarif après setTimeout');
-          await applyHydrocarburesTarif(mission.site_depart, mission.site_arrivee);
-        }, 100);
       }
       
       // Générer les lignes de facturation à partir des bons de livraison
       if (mission.bons_livraison && mission.bons_livraison.length > 0) {
         console.log('📋 Génération des lignes à partir des BL');
-        const nouvelleLignes = mission.bons_livraison
-          .filter(bl => !bl.facture) // Seulement les BL non facturés
-          .map((bl, index) => {
-            console.log('Bon de livraison traité:', bl);
-            const prixUnitaire = bl.prix_unitaire || 0;
-            const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
-            const total = bl.montant_total || (quantite * prixUnitaire);
-            
-            return {
-              id: `bl-${bl.id}`,
-              description: `Transport ${bl.produit} - ${bl.destination} (BL: ${bl.numero})`,
-              quantite: quantite,
-              prixUnitaire: prixUnitaire,
-              total: total
-            };
-          });
         
-        console.log('Nouvelles lignes générées:', nouvelleLignes);
+        const nouvelleLignes = await Promise.all(
+          mission.bons_livraison
+            .filter(bl => !bl.facture) // Seulement les BL non facturés
+            .map(async (bl, index) => {
+              console.log('Bon de livraison traité:', bl);
+              
+              let prixUnitaire = bl.prix_unitaire || 0;
+              let description = `Transport ${bl.produit} - ${bl.destination}`;
+              
+              // Pour les hydrocarbures, récupérer le tarif automatiquement
+              if (mission.type_transport === 'hydrocarbures' && bl.lieu_arrivee) {
+                console.log(`🔍 Recherche tarif pour: ${mission.site_depart} → ${bl.lieu_arrivee}`);
+                const tarifAuto = await getTarifForDestination(mission.site_depart, bl.lieu_arrivee);
+                if (tarifAuto > 0) {
+                  prixUnitaire = tarifAuto;
+                  console.log(`✅ Tarif automatique appliqué: ${tarifAuto}`);
+                }
+                description = `Transport hydrocarbures ${mission.site_depart} → ${bl.lieu_arrivee}`;
+              }
+              
+              const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+              const total = quantite * prixUnitaire;
+              
+              return {
+                id: `bl-${bl.id}`,
+                description: `${description} (BL: ${bl.numero})`,
+                quantite: quantite,
+                prixUnitaire: prixUnitaire,
+                total: total
+              };
+            })
+        );
+        
+        console.log('Nouvelles lignes générées avec tarifs:', nouvelleLignes);
         
         if (nouvelleLignes.length > 0) {
           setInvoiceLines(nouvelleLignes);
@@ -322,15 +341,6 @@ export const InvoiceForm = ({ onClose, onInvoiceCreated }: InvoiceFormProps) => 
       }));
 
       const facture = await billingService.createFacture(factureData, lignes);
-      
-      // Marquer les BL comme facturés si c'est une mission
-      if (selectedMission) {
-        const mission = missionsTerminees.find(m => m.id === selectedMission);
-        if (mission && mission.bons_livraison) {
-          // Ici on pourrait ajouter une fonction pour marquer les BL comme facturés
-          // await billingService.markBLAsFactured(mission.bons_livraison.map(bl => bl.id));
-        }
-      }
       
       toast({
         title: "Facture créée avec succès",
