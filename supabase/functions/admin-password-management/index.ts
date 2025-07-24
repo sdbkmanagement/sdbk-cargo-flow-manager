@@ -88,10 +88,21 @@ serve(async (req) => {
     
     console.log('🔧 Processing action:', action, 'for user:', userId);
 
-    // Vérifier d'abord si l'utilisateur existe dans auth.users
+    // Fonction pour générer un mot de passe sécurisé
+    function generateSecurePassword(): string {
+      const length = 16;
+      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+      let password = '';
+      for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      return password;
+    }
+
+    // Vérifier si l'utilisateur existe dans auth.users
     const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
     
-    if (authUserError) {
+    if (authUserError && authUserError.message.includes('User not found')) {
       console.log('❌ User not found in auth.users:', authUserError);
       
       // Vérifier si l'utilisateur existe dans la table users
@@ -128,40 +139,88 @@ serve(async (req) => {
       });
       
       if (createError) {
-        console.log('❌ Failed to create auth user:', createError);
-        return new Response(
-          JSON.stringify({ error: `Impossible de créer l'utilisateur dans le système d'authentification: ${createError.message}` }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        // Si l'utilisateur existe déjà dans auth.users, essayer de le récupérer par email
+        if (createError.message.includes('already been registered')) {
+          console.log('ℹ️ User already exists in auth.users, trying to get by email');
+          
+          const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+          if (listError) {
+            console.log('❌ Failed to list users:', listError);
+            return new Response(
+              JSON.stringify({ error: 'Erreur lors de la récupération de l\'utilisateur' }),
+              { 
+                status: 500, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            );
           }
-        );
-      }
-      
-      console.log('✅ Auth user created successfully');
-      
-      // Mettre à jour l'ID si nécessaire
-      if (createdUser.user?.id !== userId) {
-        await supabaseAdmin
-          .from('users')
-          .update({ id: createdUser.user.id })
-          .eq('id', userId);
+          
+          const existingUser = existingUsers.users.find(u => u.email === dbUser.email);
+          if (existingUser) {
+            console.log('✅ Found existing auth user:', existingUser.id);
+            
+            // Mettre à jour l'ID dans la table users si nécessaire
+            if (existingUser.id !== userId) {
+              const { error: updateError } = await supabaseAdmin
+                .from('users')
+                .update({ id: existingUser.id })
+                .eq('id', userId);
+              
+              if (updateError) {
+                console.log('⚠️ Failed to update user ID:', updateError);
+              } else {
+                console.log('✅ User ID updated successfully');
+              }
+            }
+            
+            // Utiliser l'ID de l'utilisateur existant pour la suite
+            userId = existingUser.id;
+          } else {
+            console.log('❌ User not found in auth.users list');
+            return new Response(
+              JSON.stringify({ error: 'Utilisateur introuvable dans le système d\'authentification' }),
+              { 
+                status: 404, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+        } else {
+          console.log('❌ Failed to create auth user:', createError);
+          return new Response(
+            JSON.stringify({ error: `Impossible de créer l'utilisateur dans le système d'authentification: ${createError.message}` }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+      } else if (createdUser.user) {
+        console.log('✅ Auth user created successfully');
         
-        console.log('✅ User ID updated in users table');
+        // Mettre à jour l'ID si nécessaire
+        if (createdUser.user.id !== userId) {
+          await supabaseAdmin
+            .from('users')
+            .update({ id: createdUser.user.id })
+            .eq('id', userId);
+          
+          console.log('✅ User ID updated in users table');
+          userId = createdUser.user.id;
+        }
       }
+    } else if (authUser?.user) {
+      console.log('✅ User found in auth.users:', authUser.user.email);
+      userId = authUser.user.id;
     } else {
-      console.log('✅ User found in auth.users:', authUser.user?.email);
-    }
-
-    // Fonction pour générer un mot de passe sécurisé
-    function generateSecurePassword(): string {
-      const length = 16;
-      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-      let password = '';
-      for (let i = 0; i < length; i++) {
-        password += charset.charAt(Math.floor(Math.random() * charset.length));
-      }
-      return password;
+      console.log('❌ Unexpected error getting user:', authUserError);
+      return new Response(
+        JSON.stringify({ error: 'Erreur lors de la récupération de l\'utilisateur' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
     }
 
     if (action === 'reset') {
