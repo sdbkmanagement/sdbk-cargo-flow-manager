@@ -17,7 +17,7 @@ interface SecurityEvent {
   user_id: string;
   event_type: string;
   event_details: any;
-  ip_address: string;
+  ip_address: string | null;
   user_agent: string;
   created_at: string;
 }
@@ -62,15 +62,26 @@ export const SecurityDashboard: React.FC = () => {
         return;
       }
 
-      setEvents(eventsData || []);
+      // Transform the data to match our interface
+      const transformedEvents: SecurityEvent[] = (eventsData || []).map(event => ({
+        id: event.id,
+        user_id: event.user_id || '',
+        event_type: event.event_type,
+        event_details: event.event_details,
+        ip_address: event.ip_address ? String(event.ip_address) : null,
+        user_agent: event.user_agent || '',
+        created_at: event.created_at
+      }));
+
+      setEvents(transformedEvents);
 
       // Calculate stats
       const now = new Date();
       const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       
-      const recentEvents = eventsData?.filter(event => 
+      const recentEvents = transformedEvents.filter(event => 
         new Date(event.created_at) > yesterday
-      ) || [];
+      );
 
       const securityStats: SecurityStats = {
         total_events: recentEvents.length,
@@ -127,12 +138,16 @@ export const SecurityDashboard: React.FC = () => {
     
     if (typeof details === 'string') return details;
     
-    // Handle different event detail structures
-    if (details.email) return `Email: ${details.email}`;
-    if (details.user_email) return `Utilisateur: ${details.user_email}`;
-    if (details.error) return `Erreur: ${details.error}`;
-    
-    return JSON.stringify(details, null, 2);
+    try {
+      // Handle different event detail structures
+      if (details.email) return `Email: ${details.email}`;
+      if (details.user_email) return `Utilisateur: ${details.user_email}`;
+      if (details.error) return `Erreur: ${details.error}`;
+      
+      return JSON.stringify(details, null, 2);
+    } catch (error) {
+      return 'Erreur lors du formatage des détails';
+    }
   };
 
   if (!user?.roles?.includes('admin')) {
