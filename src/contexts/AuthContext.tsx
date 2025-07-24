@@ -36,6 +36,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const logSecurityEvent = async (eventType: string, details: any) => {
+    try {
+      await supabase
+        .from('security_audit_log')
+        .insert({
+          user_id: user?.id,
+          event_type: eventType,
+          event_details: details,
+          created_at: new Date().toISOString()
+        });
+    } catch (error) {
+      console.error('Failed to log security event:', error);
+    }
+  };
+
   const fetchUserData = async (supabaseUserId: string, email: string) => {
     try {
       console.log('🔍 Récupération des données utilisateur pour:', email);
@@ -49,6 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Erreur lors de la récupération des données utilisateur:', error);
+        await logSecurityEvent('user_data_fetch_failed', {
+          email,
+          error: error.message
+        });
         return null;
       }
 
@@ -78,6 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     } catch (error) {
       console.error('❌ Exception lors de la récupération des données utilisateur:', error);
+      await logSecurityEvent('user_data_fetch_exception', {
+        email,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       return null;
     }
   };
@@ -94,6 +117,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) {
         console.error('❌ Erreur de connexion:', error);
+        await logSecurityEvent('login_failed', {
+          email,
+          error: error.message
+        });
         setLoading(false);
         return { success: false, error: error.message };
       }
@@ -107,10 +134,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (userData) {
           console.log('✅ Utilisateur connecté:', userData);
           setUser(userData);
+          
+          await logSecurityEvent('login_success', {
+            user_id: userData.id,
+            email: userData.email,
+            roles: userData.roles
+          });
+          
           setLoading(false);
           return { success: true };
         } else {
           console.error('❌ Impossible de récupérer les données utilisateur');
+          await logSecurityEvent('login_failed', {
+            email,
+            error: 'User data not found'
+          });
           setLoading(false);
           return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
         }
@@ -120,6 +158,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, error: 'Échec de la connexion' };
     } catch (error: any) {
       console.error('❌ Exception lors de la connexion:', error);
+      await logSecurityEvent('login_exception', {
+        email,
+        error: error.message
+      });
       setLoading(false);
       return { success: false, error: 'Erreur de connexion' };
     }
@@ -128,11 +170,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       setLoading(true);
+      
+      await logSecurityEvent('logout_initiated', {
+        user_id: user?.id,
+        email: user?.email
+      });
+      
       await supabase.auth.signOut();
       setUser(null);
       setLoading(false);
     } catch (error) {
       console.error('❌ Erreur de déconnexion:', error);
+      await logSecurityEvent('logout_failed', {
+        user_id: user?.id,
+        email: user?.email,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
       setLoading(false);
     }
   };
