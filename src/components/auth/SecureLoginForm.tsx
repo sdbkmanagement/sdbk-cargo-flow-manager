@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,7 +28,11 @@ export const SecureLoginForm = () => {
     },
     validators: {
       email: validateEmail,
-      password: (value) => ({ isValid: value.length > 0, errors: value.length === 0 ? ['Password is required'] : [] })
+      password: (value) => ({ 
+        isValid: value.length > 0, 
+        errors: value.length === 0 ? ['Password is required'] : [],
+        warnings: []
+      })
     },
     onSubmit: async (values) => {
       // Check rate limiting before attempting login
