@@ -32,6 +32,97 @@ export const useAuth = () => {
   return context;
 };
 
+// Fonction pour obtenir les permissions de modules selon les rôles
+const getModulePermissionsByRoles = (roles: string[]): string[] => {
+  const modulePermissions = new Set<string>();
+  
+  roles.forEach(role => {
+    switch (role) {
+      case 'admin':
+        // L'admin a accès à tous les modules
+        modulePermissions.add('fleet');
+        modulePermissions.add('missions');
+        modulePermissions.add('drivers');
+        modulePermissions.add('billing');
+        modulePermissions.add('validations');
+        modulePermissions.add('rh');
+        modulePermissions.add('admin');
+        modulePermissions.add('dashboard');
+        break;
+      case 'transport':
+        // Transport a accès à Flotte et Missions
+        modulePermissions.add('fleet');
+        modulePermissions.add('missions');
+        modulePermissions.add('dashboard');
+        break;
+      case 'transitaire':
+        // Transitaire a accès aux Missions
+        modulePermissions.add('missions');
+        modulePermissions.add('dashboard');
+        break;
+      case 'rh':
+        // RH a accès aux modules RH et Chauffeurs
+        modulePermissions.add('rh');
+        modulePermissions.add('drivers');
+        modulePermissions.add('dashboard');
+        break;
+      case 'facturation':
+        // Facturation a accès aux Missions et Facturation
+        modulePermissions.add('missions');
+        modulePermissions.add('billing');
+        modulePermissions.add('dashboard');
+        break;
+      case 'maintenance':
+        // Maintenance a accès aux validations et flotte
+        modulePermissions.add('validations');
+        modulePermissions.add('fleet');
+        modulePermissions.add('dashboard');
+        break;
+      case 'administratif':
+        // Administratif a accès aux validations
+        modulePermissions.add('validations');
+        modulePermissions.add('dashboard');
+        break;
+      case 'hsecq':
+        // HSECQ a accès aux validations
+        modulePermissions.add('validations');
+        modulePermissions.add('dashboard');
+        break;
+      case 'obc':
+        // OBC a accès aux validations et missions
+        modulePermissions.add('validations');
+        modulePermissions.add('missions');
+        modulePermissions.add('dashboard');
+        break;
+      case 'direction':
+        // Direction a accès à tout sauf admin
+        modulePermissions.add('fleet');
+        modulePermissions.add('missions');
+        modulePermissions.add('drivers');
+        modulePermissions.add('billing');
+        modulePermissions.add('validations');
+        modulePermissions.add('rh');
+        modulePermissions.add('dashboard');
+        break;
+      case 'directeur_exploitation':
+        // Directeur exploitation a accès à tout sauf admin
+        modulePermissions.add('fleet');
+        modulePermissions.add('missions');
+        modulePermissions.add('drivers');
+        modulePermissions.add('billing');
+        modulePermissions.add('validations');
+        modulePermissions.add('rh');
+        modulePermissions.add('dashboard');
+        break;
+      default:
+        // Rôle par défaut : accès au dashboard uniquement
+        modulePermissions.add('dashboard');
+    }
+  });
+  
+  return Array.from(modulePermissions);
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
@@ -55,23 +146,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data) {
         console.log('✅ Données utilisateur récupérées:', data);
         
+        const userRoles = data.roles || ['transport'];
+        const modulePermissions = getModulePermissionsByRoles(userRoles);
+        
         const authUser: AuthUser = {
           id: supabaseUserId,
           email: data.email,
           nom: data.last_name || '',
           prenom: data.first_name || '',
-          role: data.roles?.[0] || 'transport',
-          roles: data.roles || ['transport'],
-          module_permissions: data.module_permissions || ['dashboard'],
+          role: userRoles[0] || 'transport',
+          roles: userRoles,
+          module_permissions: modulePermissions,
           permissions: ['read', 'write']
         };
 
-        // Donner tous les accès aux admins
+        // Donner toutes les permissions aux admins
         if (authUser.roles?.includes('admin')) {
-          authUser.module_permissions = ['fleet', 'missions', 'drivers', 'cargo', 'billing', 'validations', 'rh', 'admin', 'dashboard'];
           authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
         }
 
+        console.log('✅ Permissions de modules attribuées:', modulePermissions);
         return authUser;
       }
 
