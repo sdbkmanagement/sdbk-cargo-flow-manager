@@ -1,91 +1,50 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-}
-
-export const validateEmail = (email: string): ValidationResult => {
-  const errors: string[] = [];
-  
-  if (!email || email.trim().length === 0) {
-    errors.push('Email is required');
-  } else if (!email.match(/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/)) {
-    errors.push('Please enter a valid email address');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};
-
-export const validatePhone = (phone: string): ValidationResult => {
-  const errors: string[] = [];
-  
-  if (!phone || phone.trim().length === 0) {
-    errors.push('Phone number is required');
-  } else if (!phone.match(/^\+?[1-9]\d{1,14}$/)) {
-    errors.push('Please enter a valid phone number');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};
-
-export const validatePassword = (password: string): ValidationResult => {
-  const errors: string[] = [];
-  
-  if (!password || password.length < 8) {
-    errors.push('Password must be at least 8 characters long');
-  }
-  
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Password must contain at least one uppercase letter');
-  }
-  
-  if (!/[a-z]/.test(password)) {
-    errors.push('Password must contain at least one lowercase letter');
-  }
-  
-  if (!/\d/.test(password)) {
-    errors.push('Password must contain at least one number');
-  }
-  
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Password must contain at least one special character');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
-};
-
 export const sanitizeInput = (input: string): string => {
   if (!input) return '';
   
+  // Remove HTML tags and potentially dangerous characters
   return input
-    .replace(/[<>]/g, '')
-    .replace(/["\x00-\x1F\x7F]/g, '')
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/[<>'"&]/g, '') // Remove dangerous characters
     .trim();
 };
 
-export const validateName = (name: string, fieldName: string): ValidationResult => {
+export const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+export const validatePhone = (phone: string): boolean => {
+  const phoneRegex = /^(\+\d{1,3}[- ]?)?\d{10}$/;
+  return phoneRegex.test(phone);
+};
+
+export const validatePassword = (password: string): {
+  isValid: boolean;
+  errors: string[];
+} => {
   const errors: string[] = [];
-  const sanitized = sanitizeInput(name);
   
-  if (!sanitized || sanitized.length === 0) {
-    errors.push(`${fieldName} is required`);
-  } else if (sanitized.length < 2) {
-    errors.push(`${fieldName} must be at least 2 characters long`);
-  } else if (sanitized.length > 50) {
-    errors.push(`${fieldName} must be less than 50 characters long`);
-  } else if (!/^[a-zA-ZÀ-ÿ\s\-']+$/.test(sanitized)) {
-    errors.push(`${fieldName} can only contain letters, spaces, hyphens, and apostrophes`);
+  if (password.length < 8) {
+    errors.push('Le mot de passe doit contenir au moins 8 caractères');
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins une majuscule');
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins une minuscule');
+  }
+  
+  if (!/\d/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins un chiffre');
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('Le mot de passe doit contenir au moins un caractère spécial');
   }
   
   return {
@@ -94,58 +53,60 @@ export const validateName = (name: string, fieldName: string): ValidationResult 
   };
 };
 
-export const checkRateLimit = async (userIdentifier: string): Promise<boolean> => {
+export const checkRateLimit = async (
+  userIdentifier: string,
+  maxAttempts: number = 5,
+  windowMinutes: number = 15
+): Promise<boolean> => {
   try {
-    const { data, error } = await supabase.rpc('check_rate_limit', {
-      user_identifier: userIdentifier,
-      max_attempts: 5,
-      window_minutes: 15
-    });
-    
+    const { data, error } = await supabase
+      .from('login_attempts')
+      .select('*')
+      .eq('email', userIdentifier)
+      .eq('success', false)
+      .gte('created_at', new Date(Date.now() - windowMinutes * 60 * 1000).toISOString());
+
     if (error) {
-      console.error('Rate limit check failed:', error);
-      return false; // Fail closed for security
+      console.error('Rate limit check error:', error);
+      return true; // Allow on error to prevent lockout
     }
-    
-    return data === true;
+
+    return (data?.length || 0) < maxAttempts;
   } catch (error) {
-    console.error('Rate limit check exception:', error);
-    return false; // Fail closed for security
+    console.error('Rate limit check error:', error);
+    return true;
   }
 };
 
-export const validatePermisNumber = (permisNumber: string): ValidationResult => {
-  const errors: string[] = [];
-  const sanitized = sanitizeInput(permisNumber);
-  
-  if (!sanitized || sanitized.length === 0) {
-    errors.push('Permit number is required');
-  } else if (sanitized.length < 5) {
-    errors.push('Permit number must be at least 5 characters long');
-  } else if (sanitized.length > 20) {
-    errors.push('Permit number must be less than 20 characters long');
+export const logSecurityEvent = async (event: {
+  type: string;
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+  user_id?: string;
+  details?: Record<string, any>;
+}) => {
+  try {
+    await supabase.from('admin_audit_log').insert({
+      user_id: event.user_id,
+      action: event.type,
+      target_type: 'security_event',
+      target_id: crypto.randomUUID(),
+      details: {
+        severity: event.severity,
+        message: event.message,
+        ...event.details
+      }
+    });
+  } catch (error) {
+    console.error('Failed to log security event:', error);
   }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
 };
 
-export const validateImmatriculation = (immatriculation: string): ValidationResult => {
-  const errors: string[] = [];
-  const sanitized = sanitizeInput(immatriculation);
-  
-  if (!sanitized || sanitized.length === 0) {
-    errors.push('Registration number is required');
-  } else if (sanitized.length < 3) {
-    errors.push('Registration number must be at least 3 characters long');
-  } else if (sanitized.length > 15) {
-    errors.push('Registration number must be less than 15 characters long');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
+export const escapeHtml = (unsafe: string): string => {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 };
