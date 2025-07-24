@@ -12,15 +12,19 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { LogOut, User, Settings, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export const UserMenu = () => {
   const { user, logout, loading } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     console.log('🚪 Logout initiated from UserMenu');
     try {
       await logout();
       console.log('✅ Logout completed successfully');
+      // Rediriger vers la page d'authentification
+      navigate('/auth');
     } catch (error) {
       console.error('❌ Logout error:', error);
     }
@@ -69,7 +73,7 @@ export const UserMenu = () => {
             </div>
             <div className="px-3 py-1 rounded-lg bg-gradient-to-r from-sdbk-accent/10 to-sdbk-primary/10 border border-sdbk-accent/20">
               <p className="text-xs font-medium text-sdbk-accent capitalize">
-                {user.role}
+                {user.role} {user.roles?.includes('admin') && '(Admin)'}
               </p>
             </div>
           </div>
