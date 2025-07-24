@@ -5,15 +5,15 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { Toaster } from '@/components/ui/toaster';
-import { Dashboard } from '@/pages/Dashboard';
-import { Fleet } from '@/pages/Fleet';
-import { Missions } from '@/pages/Missions';
-import { Drivers } from '@/pages/Drivers';
-import { Billing } from '@/pages/Billing';
-import { RH } from '@/pages/RH';
-import { Administration } from '@/pages/Administration';
-import { Validations } from '@/pages/Validations';
-import { NotFound } from '@/pages/NotFound';
+import Dashboard from '@/pages/Dashboard';
+import Fleet from '@/pages/Fleet';
+import Missions from '@/pages/Missions';
+import Drivers from '@/pages/Drivers';
+import Billing from '@/pages/Billing';
+import RH from '@/pages/RH';
+import Administration from '@/pages/Administration';
+import Validations from '@/pages/Validations';
+import NotFound from '@/pages/NotFound';
 
 const queryClient = new QueryClient({
   defaultOptions: {
