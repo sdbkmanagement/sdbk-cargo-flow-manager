@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -136,10 +137,11 @@ const createMissingUser = async (supabaseUserId: string, email: string): Promise
     const userRoles = [defaultRole];
     const modulePermissions = getModulePermissionsByRoles(userRoles);
     
-    // Créer l'utilisateur dans la table users
+    // Créer l'utilisateur dans la table users avec l'ID de Supabase Auth
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
+        id: supabaseUserId, // Utiliser l'ID de Supabase Auth
         email: email,
         first_name: '',
         last_name: '',
@@ -187,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('email', email)
+        .eq('id', supabaseUserId) // Chercher par ID au lieu d'email
         .eq('status', 'active')
         .single();
 
