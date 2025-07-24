@@ -30,6 +30,32 @@ export const ChauffeurDetailView = ({ chauffeur: initialChauffeur }: ChauffeurDe
     setRefreshKey(prev => prev + 1);
   };
 
+  // Fonction pour calculer l'ancienneté
+  const calculateAnciennete = (dateEmbauche: string) => {
+    if (!dateEmbauche) return null;
+    
+    const today = new Date();
+    const embauche = new Date(dateEmbauche);
+    const diffTime = Math.abs(today.getTime() - embauche.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    const years = Math.floor(diffDays / 365);
+    const months = Math.floor((diffDays % 365) / 30);
+    const days = diffDays % 30;
+    
+    if (years > 0) {
+      if (months > 0) {
+        return `${years} an${years > 1 ? 's' : ''} et ${months} mois`;
+      } else {
+        return `${years} an${years > 1 ? 's' : ''}`;
+      }
+    } else if (months > 0) {
+      return `${months} mois`;
+    } else {
+      return `${days} jour${days > 1 ? 's' : ''}`;
+    }
+  };
+
   const getStatutBadge = (statut: string) => {
     const statusConfig = {
       'actif': { label: 'Actif', color: 'bg-green-500' },
@@ -226,6 +252,12 @@ export const ChauffeurDetailView = ({ chauffeur: initialChauffeur }: ChauffeurDe
                   <div>
                     <span className="font-medium">Date d'embauche:</span>
                     <span className="ml-2">{new Date(chauffeur.date_embauche).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                )}
+                {chauffeur.date_embauche && (
+                  <div>
+                    <span className="font-medium">Ancienneté:</span>
+                    <span className="ml-2 text-blue-600 font-medium">{calculateAnciennete(chauffeur.date_embauche)}</span>
                   </div>
                 )}
                 {chauffeur.date_obtention_permis && (
