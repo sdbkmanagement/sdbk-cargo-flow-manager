@@ -47,6 +47,35 @@ const validateRoles = (roles: string[]): boolean => {
   return roles.every(role => validRoles.includes(role));
 };
 
+// Function to call the Edge Function for password management
+const callPasswordManagementFunction = async (action: 'reset' | 'update', userId: string, newPassword?: string) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error('Utilisateur non authentifié');
+  }
+
+  const response = await fetch(`https://vyyexbyqjrasipkxezpl.supabase.co/functions/v1/admin-password-management`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${session.access_token}`,
+    },
+    body: JSON.stringify({
+      action,
+      userId,
+      newPassword
+    }),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || 'Erreur lors de la gestion du mot de passe');
+  }
+
+  return result;
+};
+
 export const userService = {
   async getUsers(): Promise<SystemUser[]> {
     console.log('🔧 Fetching all users from database');
@@ -304,21 +333,9 @@ export const userService = {
     console.log('🔧 Resetting password for user:', userId);
     
     try {
-      // Generate a new secure password if not provided
-      const password = newPassword || generateSecurePassword();
-
-      // Update password using Supabase Admin API
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        password: password
-      });
-      
-      if (error) {
-        console.error('❌ Password reset error:', error);
-        throw new Error(`Erreur lors de la réinitialisation: ${error.message}`);
-      }
-
+      const result = await callPasswordManagementFunction('reset', userId, newPassword);
       console.log('✅ Password reset successfully for user:', userId);
-      return password;
+      return result.password;
     } catch (error) {
       console.error('❌ Exception in resetPassword:', error);
       throw error;
@@ -333,15 +350,7 @@ export const userService = {
         throw new Error('Le mot de passe doit contenir au moins 6 caractères');
       }
 
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        password: newPassword
-      });
-      
-      if (error) {
-        console.error('❌ Password update error:', error);
-        throw new Error(`Erreur lors de la mise à jour du mot de passe: ${error.message}`);
-      }
-
+      await callPasswordManagementFunction('update', userId, newPassword);
       console.log('✅ Password updated successfully for user:', userId);
     } catch (error) {
       console.error('❌ Exception in updateUserPassword:', error);
