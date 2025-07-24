@@ -2,7 +2,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SecureAuthProvider } from "@/contexts/SecureAuthContext";
 import { ResponsiveLayout } from "@/components/layout/ResponsiveLayout";
@@ -35,7 +35,7 @@ function App() {
             <BrowserRouter>
               <Toaster />
               <Routes>
-                <Route path="/" element={<ResponsiveLayout />}>
+                <Route path="/" element={<ResponsiveLayout><Outlet /></ResponsiveLayout>}>
                   <Route index element={<Dashboard />} />
                   <Route path="fleet" element={<Fleet />} />
                   <Route path="drivers" element={<Drivers />} />

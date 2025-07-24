@@ -25,14 +25,14 @@ export const SecureAuthProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const { logSecurityEvent, validateSecureAction, secureLogout: baseSecureLogout } = useSecureAuth();
 
   useEffect(() => {
+    if (!user) return;
+
     // Log user session start
-    if (user) {
-      logSecurityEvent('session_start', {
-        user_id: user.id,
-        user_email: user.email,
-        user_roles: user.roles
-      });
-    }
+    logSecurityEvent('session_start', {
+      user_id: user.id,
+      user_email: user.email,
+      user_roles: user.roles
+    });
 
     // Set up auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
