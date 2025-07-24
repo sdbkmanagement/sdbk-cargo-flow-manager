@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -123,58 +122,76 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
   return Array.from(modulePermissions);
 };
 
-// Fonction pour créer automatiquement un utilisateur manquant dans la table users
-const createMissingUser = async (supabaseUserId: string, email: string): Promise<AuthUser | null> => {
+// Fonction pour vérifier si l'utilisateur existe dans la table users
+const checkExistingUser = async (email: string): Promise<any> => {
   try {
-    console.log('🔄 Création automatique de l\'utilisateur manquant:', email);
+    console.log('🔍 Vérification utilisateur existant:', email);
     
-    // Déterminer le rôle par défaut basé sur l'email
-    let defaultRole: 'admin' | 'transport' = 'transport';
-    if (email.includes('admin') || email.includes('management')) {
-      defaultRole = 'admin';
-    }
-    
-    const userRoles = [defaultRole];
-    const modulePermissions = getModulePermissionsByRoles(userRoles);
-    
-    // Créer l'utilisateur dans la table users avec l'ID de Supabase Auth
-    const { data: newUser, error } = await supabase
+    const { data, error } = await supabase
       .from('users')
-      .insert({
-        id: supabaseUserId, // Utiliser l'ID de Supabase Auth
-        email: email,
-        first_name: '',
-        last_name: '',
-        roles: userRoles,
-        module_permissions: modulePermissions,
-        status: 'active',
-        password_hash: 'managed_by_supabase_auth'
-      })
-      .select()
+      .select('*')
+      .eq('email', email)
+      .eq('status', 'active')
       .single();
 
-    if (error) {
-      console.error('❌ Erreur lors de la création automatique de l\'utilisateur:', error);
+    if (error && error.code === 'PGRST116') {
+      console.log('⚠️ Utilisateur non trouvé dans la table users');
       return null;
     }
 
-    console.log('✅ Utilisateur créé automatiquement:', newUser);
-    
-    const authUser: AuthUser = {
-      id: supabaseUserId,
-      email: newUser.email,
-      nom: newUser.last_name || '',
-      prenom: newUser.first_name || '',
-      role: userRoles[0],
-      roles: userRoles,
-      module_permissions: modulePermissions,
-      permissions: defaultRole === 'admin' ? ['read', 'write', 'delete', 'validate', 'export', 'admin'] : ['read', 'write']
-    };
+    if (error) {
+      console.error('❌ Erreur lors de la vérification utilisateur:', error);
+      return null;
+    }
 
-    return authUser;
+    console.log('✅ Utilisateur trouvé dans la table users:', data);
+    return data;
   } catch (error) {
-    console.error('❌ Exception lors de la création automatique de l\'utilisateur:', error);
+    console.error('❌ Exception lors de la vérification utilisateur:', error);
     return null;
+  }
+};
+
+// Fonction pour créer l'utilisateur Auth si nécessaire
+const createAuthUserIfNeeded = async (email: string, password: string): Promise<any> => {
+  try {
+    console.log('🔐 Tentative de création utilisateur Auth pour:', email);
+    
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password
+    });
+
+    if (error) {
+      console.error('❌ Erreur création utilisateur Auth:', error);
+      return null;
+    }
+
+    console.log('✅ Utilisateur Auth créé ou existe déjà:', data.user?.id);
+    return data;
+  } catch (error) {
+    console.error('❌ Exception création utilisateur Auth:', error);
+    return null;
+  }
+};
+
+// Fonction pour synchroniser l'ID Auth avec la table users
+const syncAuthIdWithUser = async (authUserId: string, userEmail: string): Promise<void> => {
+  try {
+    console.log('🔄 Synchronisation ID Auth avec table users');
+    
+    const { error } = await supabase
+      .from('users')
+      .update({ id: authUserId })
+      .eq('email', userEmail);
+
+    if (error) {
+      console.error('❌ Erreur synchronisation ID:', error);
+    } else {
+      console.log('✅ ID Auth synchronisé avec succès');
+    }
+  } catch (error) {
+    console.error('❌ Exception synchronisation ID:', error);
   }
 };
 
@@ -182,101 +199,105 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchUserData = async (supabaseUserId: string, email: string) => {
-    try {
-      console.log('🔍 Récupération des données utilisateur pour:', email);
-      
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', supabaseUserId) // Chercher par ID au lieu d'email
-        .eq('status', 'active')
-        .single();
-
-      if (error && error.code === 'PGRST116') {
-        // Utilisateur non trouvé dans la table users, le créer automatiquement
-        console.log('⚠️ Utilisateur non trouvé, création automatique...');
-        return await createMissingUser(supabaseUserId, email);
-      }
-
-      if (error) {
-        console.error('❌ Erreur lors de la récupération des données utilisateur:', error);
-        return null;
-      }
-
-      if (data) {
-        console.log('✅ Données utilisateur récupérées:', data);
-        
-        const userRoles = data.roles || ['transport'];
-        const modulePermissions = getModulePermissionsByRoles(userRoles);
-        
-        const authUser: AuthUser = {
-          id: supabaseUserId,
-          email: data.email,
-          nom: data.last_name || '',
-          prenom: data.first_name || '',
-          role: userRoles[0] || 'transport',
-          roles: userRoles,
-          module_permissions: modulePermissions,
-          permissions: ['read', 'write']
-        };
-
-        // Donner toutes les permissions aux admins
-        if (authUser.roles?.includes('admin')) {
-          authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
-        }
-
-        console.log('✅ Permissions de modules attribuées:', modulePermissions);
-        return authUser;
-      }
-
-      return null;
-    } catch (error) {
-      console.error('❌ Exception lors de la récupération des données utilisateur:', error);
-      return null;
-    }
-  };
-
   const login = async (email: string, password: string) => {
     console.log('🔐 Tentative de connexion pour:', email);
     setLoading(true);
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
+      const cleanEmail = email.trim();
+      
+      // 1. Vérifier si l'utilisateur existe dans la table users
+      const existingUser = await checkExistingUser(cleanEmail);
+      if (!existingUser) {
+        setLoading(false);
+        return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
+      }
+
+      // 2. Essayer de se connecter avec Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: cleanEmail,
         password
       });
 
-      if (error) {
-        console.error('❌ Erreur de connexion:', error);
+      if (authError) {
+        console.log('⚠️ Erreur Auth, tentative de création du compte Auth:', authError.message);
+        
+        // Si l'utilisateur n'existe pas dans Auth, le créer
+        if (authError.message.includes('Invalid login credentials')) {
+          const createResult = await createAuthUserIfNeeded(cleanEmail, password);
+          if (createResult && createResult.user) {
+            // Synchroniser l'ID Auth avec la table users
+            await syncAuthIdWithUser(createResult.user.id, cleanEmail);
+            
+            // Réessayer la connexion
+            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+              email: cleanEmail,
+              password
+            });
+            
+            if (retryError) {
+              setLoading(false);
+              return { success: false, error: 'Erreur lors de la reconnexion après création du compte' };
+            }
+            
+            // Utiliser les données de la retry
+            const userData = await buildUserData(retryData.user.id, existingUser);
+            if (userData) {
+              setUser(userData);
+              setLoading(false);
+              return { success: true };
+            }
+          }
+        }
+        
         setLoading(false);
-        return { success: false, error: error.message };
+        return { success: false, error: 'Erreur d\'authentification' };
       }
 
-      if (data.user) {
-        console.log('✅ Connexion Supabase réussie, récupération des données...');
-        
-        // Récupérer les données utilisateur depuis la base
-        const userData = await fetchUserData(data.user.id, data.user.email || '');
-        
-        if (userData) {
-          console.log('✅ Utilisateur connecté:', userData);
-          setUser(userData);
-          setLoading(false);
-          return { success: true };
-        } else {
-          console.error('❌ Impossible de récupérer les données utilisateur');
-          setLoading(false);
-          return { success: false, error: 'Impossible de récupérer les données utilisateur' };
-        }
+      // 3. Construire les données utilisateur
+      const userData = await buildUserData(authData.user.id, existingUser);
+      if (userData) {
+        console.log('✅ Utilisateur connecté:', userData);
+        setUser(userData);
+        setLoading(false);
+        return { success: true };
       }
 
       setLoading(false);
-      return { success: false, error: 'Échec de la connexion' };
+      return { success: false, error: 'Impossible de récupérer les données utilisateur' };
     } catch (error: any) {
       console.error('❌ Exception lors de la connexion:', error);
       setLoading(false);
       return { success: false, error: 'Erreur de connexion' };
+    }
+  };
+
+  const buildUserData = async (authUserId: string, existingUser: any): Promise<AuthUser | null> => {
+    try {
+      const userRoles = existingUser.roles || ['transport'];
+      const modulePermissions = getModulePermissionsByRoles(userRoles);
+      
+      const authUser: AuthUser = {
+        id: authUserId,
+        email: existingUser.email,
+        nom: existingUser.last_name || '',
+        prenom: existingUser.first_name || '',
+        role: userRoles[0] || 'transport',
+        roles: userRoles,
+        module_permissions: modulePermissions,
+        permissions: ['read', 'write']
+      };
+
+      // Donner toutes les permissions aux admins
+      if (authUser.roles?.includes('admin')) {
+        authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
+      }
+
+      console.log('✅ Permissions de modules attribuées:', modulePermissions);
+      return authUser;
+    } catch (error) {
+      console.error('❌ Exception lors de la construction des données utilisateur:', error);
+      return null;
     }
   };
 
