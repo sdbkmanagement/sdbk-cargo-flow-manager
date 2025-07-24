@@ -1,6 +1,7 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { SessionManager } from '@/utils/sessionManager';
 
 interface AuthUser {
   id: string;
@@ -35,6 +36,42 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // Check for existing session
+    const checkSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const userData = await fetchUserData(session.user.id, session.user.email || '');
+          if (userData) {
+            setUser(userData);
+            SessionManager.startSession();
+          }
+        }
+      } catch (error) {
+        console.error('Session check failed:', error);
+      }
+    };
+
+    checkSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        SessionManager.endSession();
+      } else if (event === 'SIGNED_IN' && session?.user) {
+        const userData = await fetchUserData(session.user.id, session.user.email || '');
+        if (userData) {
+          setUser(userData);
+          SessionManager.startSession();
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const fetchUserData = async (supabaseUserId: string, email: string) => {
     try {
@@ -87,6 +124,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     
     try {
+      // Log the login attempt
+      await supabase.from('login_attempts').insert({
+        email: email.trim(),
+        ip_address: '127.0.0.1', // In production, get real IP
+        success: false // Will be updated if successful
+      });
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password
@@ -101,12 +145,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.user) {
         console.log('✅ Connexion Supabase réussie, récupération des données...');
         
+        // Update login attempt as successful
+        await supabase.from('login_attempts').insert({
+          email: email.trim(),
+          ip_address: '127.0.0.1',
+          success: true
+        });
+
         // Récupérer les données utilisateur depuis la base
         const userData = await fetchUserData(data.user.id, data.user.email || '');
         
         if (userData) {
           console.log('✅ Utilisateur connecté:', userData);
           setUser(userData);
+          SessionManager.startSession();
           setLoading(false);
           return { success: true };
         } else {
@@ -130,6 +182,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       await supabase.auth.signOut();
       setUser(null);
+      SessionManager.endSession();
       setLoading(false);
     } catch (error) {
       console.error('❌ Erreur de déconnexion:', error);
