@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -129,7 +128,7 @@ const createMissingUser = async (supabaseUserId: string, email: string): Promise
     console.log('🔄 Création automatique de l\'utilisateur manquant:', email);
     
     // Déterminer le rôle par défaut basé sur l'email
-    let defaultRole = 'transport';
+    let defaultRole: 'admin' | 'transport' = 'transport';
     if (email.includes('admin') || email.includes('management')) {
       defaultRole = 'admin';
     }
@@ -141,7 +140,6 @@ const createMissingUser = async (supabaseUserId: string, email: string): Promise
     const { data: newUser, error } = await supabase
       .from('users')
       .insert({
-        id: supabaseUserId,
         email: email,
         first_name: '',
         last_name: '',
