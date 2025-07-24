@@ -21,6 +21,32 @@ interface UpdateUserData {
   statut: 'actif' | 'inactif' | 'suspendu';
 }
 
+// Utility function to generate secure passwords
+const generateSecurePassword = (): string => {
+  const length = 16;
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    password += charset.charAt(Math.floor(Math.random() * charset.length));
+  }
+  return password;
+};
+
+// Input validation utilities
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const sanitizeInput = (input: string): string => {
+  return input.trim().replace(/[<>]/g, '');
+};
+
+const validateRoles = (roles: string[]): boolean => {
+  const validRoles = ['admin', 'transport', 'maintenance', 'administratif', 'hsecq', 'obc', 'rh', 'facturation', 'direction', 'transitaire', 'directeur_exploitation'];
+  return roles.every(role => validRoles.includes(role));
+};
+
 export const userService = {
   async getUsers(): Promise<SystemUser[]> {
     console.log('🔧 Fetching all users from database');
@@ -46,8 +72,8 @@ export const userService = {
       return users.map(user => ({
         id: user.id,
         email: user.email,
-        nom: user.last_name || '',
-        prenom: user.first_name || '',
+        nom: sanitizeInput(user.last_name || ''),
+        prenom: sanitizeInput(user.first_name || ''),
         role: user.roles?.[0] || 'transport',
         roles: user.roles || ['transport'],
         module_permissions: user.module_permissions || [],
@@ -66,7 +92,21 @@ export const userService = {
     console.log('🔧 Creating new user:', { email: userData.email, roles: userData.roles });
     
     try {
-      // 1. Vérifier que l'utilisateur connecté est admin
+      // Input validation
+      if (!validateEmail(userData.email)) {
+        throw new Error('Format d\'email invalide');
+      }
+
+      if (!validateRoles(userData.roles)) {
+        throw new Error('Rôles invalides détectés');
+      }
+
+      // Sanitize inputs
+      const sanitizedEmail = sanitizeInput(userData.email);
+      const sanitizedNom = sanitizeInput(userData.nom);
+      const sanitizedPrenom = sanitizeInput(userData.prenom);
+
+      // Verify current user is admin
       const { data: currentUser } = await supabase.auth.getUser();
       if (!currentUser.user) {
         throw new Error('Utilisateur non connecté');
@@ -74,20 +114,23 @@ export const userService = {
 
       console.log('✅ Current user verified:', currentUser.user.id);
 
-      // 2. Créer directement l'enregistrement dans la table users avec un ID généré
+      // Generate secure password if not provided
+      const securePassword = userData.password || generateSecurePassword();
+
+      // Create user record in database first
       const newUserId = crypto.randomUUID();
       
       const { data: dbUser, error: dbError } = await supabase
         .from('users')
         .insert({
           id: newUserId,
-          email: userData.email,
-          first_name: userData.prenom,
-          last_name: userData.nom,
+          email: sanitizedEmail,
+          first_name: sanitizedPrenom,
+          last_name: sanitizedNom,
           roles: userData.roles as any,
           module_permissions: userData.module_permissions,
           status: userData.statut === 'actif' ? 'active' : userData.statut,
-          password_hash: 'to_be_set_by_user',
+          password_hash: 'managed_by_supabase_auth',
           created_by: currentUser.user.id
         })
         .select()
@@ -100,25 +143,25 @@ export const userService = {
 
       console.log('✅ User record created successfully in database');
 
-      // 3. Essayer de créer l'utilisateur dans Supabase Auth (optionnel)
+      // Try to create user in Supabase Auth
       try {
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: userData.email,
-          password: userData.password || 'TempPassword123!',
+          email: sanitizedEmail,
+          password: securePassword,
           email_confirm: true,
           user_metadata: {
-            first_name: userData.prenom,
-            last_name: userData.nom,
+            first_name: sanitizedPrenom,
+            last_name: sanitizedNom,
             roles: userData.roles
           }
         });
 
         if (authError) {
-          console.warn('⚠️ Auth creation warning (user can still login via reset):', authError);
+          console.warn('⚠️ Auth creation warning:', authError);
         } else {
           console.log('✅ Auth user created with ID:', authData.user?.id);
           
-          // Mettre à jour l'ID si la création auth a réussi
+          // Update the ID if auth creation succeeded
           if (authData.user?.id) {
             await supabase
               .from('users')
@@ -153,11 +196,20 @@ export const userService = {
     console.log('🔧 Updating user:', { userId, userData });
     
     try {
+      // Input validation
+      if (!validateRoles(userData.roles)) {
+        throw new Error('Rôles invalides détectés');
+      }
+
+      // Sanitize inputs
+      const sanitizedNom = sanitizeInput(userData.nom);
+      const sanitizedPrenom = sanitizeInput(userData.prenom);
+
       const { data: dbUser, error: dbError } = await supabase
         .from('users')
         .update({
-          first_name: userData.prenom,
-          last_name: userData.nom,
+          first_name: sanitizedPrenom,
+          last_name: sanitizedNom,
           roles: userData.roles as any,
           module_permissions: userData.module_permissions,
           status: userData.statut === 'actif' ? 'active' : userData.statut,
@@ -207,7 +259,7 @@ export const userService = {
         throw new Error(`Erreur lors de la suppression: ${error.message}`);
       }
 
-      // Essayer de supprimer aussi de Supabase Auth
+      // Try to delete from Supabase Auth
       try {
         const { error: authError } = await supabase.auth.admin.deleteUser(userId);
         if (authError) {
@@ -252,7 +304,7 @@ export const userService = {
     console.log('🔧 Resetting password for user:', userId);
     
     try {
-      // Récupérer l'email de l'utilisateur
+      // Get user email
       const { data: user, error: userError } = await supabase
         .from('users')
         .select('email')
@@ -263,8 +315,10 @@ export const userService = {
         throw new Error('Utilisateur non trouvé');
       }
 
-      // Envoyer un email de réinitialisation
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email);
+      // Send password reset email
+      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`
+      });
       
       if (error) {
         console.error('❌ Password reset error:', error);
