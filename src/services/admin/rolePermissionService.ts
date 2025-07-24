@@ -43,30 +43,105 @@ export const rolePermissionService = {
     }
   },
 
-  // Temporary implementation using local data instead of database table
   async getRolePermissions() {
-    // Return mock data structure for now
-    const mockPermissions = [
-      { id: '1', role: 'admin', module: 'fleet', permission: 'admin', created_at: new Date().toISOString() },
-      { id: '2', role: 'transport', module: 'fleet', permission: 'read', created_at: new Date().toISOString() },
-      { id: '3', role: 'maintenance', module: 'fleet', permission: 'write', created_at: new Date().toISOString() },
-    ];
-    
-    return mockPermissions;
+    try {
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select('*')
+        .order('role', { ascending: true })
+        .order('module', { ascending: true });
+
+      if (error) {
+        console.error('Erreur lors de la récupération des permissions:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Exception lors de la récupération des permissions:', error);
+      throw error;
+    }
   },
 
   async getPermissionsByRole(role: string) {
-    // Return mock data filtered by role
-    const allPermissions = await this.getRolePermissions();
-    return allPermissions.filter(p => p.role === role);
+    try {
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select('*')
+        .eq('role', role)
+        .order('module', { ascending: true });
+
+      if (error) {
+        console.error('Erreur lors de la récupération des permissions par rôle:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Exception lors de la récupération des permissions par rôle:', error);
+      throw error;
+    }
   },
 
   async updateRolePermissions(role: string, module: string, permissions: string[]) {
-    // For now, just log the operation since we don't have the table yet
-    console.log('Updating permissions:', { role, module, permissions });
-    
-    // In a real implementation, this would update the role_permissions table
-    // For now, we'll just return success
-    return Promise.resolve();
+    try {
+      // Supprimer les permissions existantes pour ce rôle et module
+      const { error: deleteError } = await supabase
+        .from('role_permissions')
+        .delete()
+        .eq('role', role)
+        .eq('module', module);
+
+      if (deleteError) {
+        console.error('Erreur lors de la suppression des permissions:', deleteError);
+        throw deleteError;
+      }
+
+      // Ajouter les nouvelles permissions
+      if (permissions.length > 0) {
+        const permissionsToInsert = permissions.map(permission => ({
+          role,
+          module,
+          permission
+        }));
+
+        const { error: insertError } = await supabase
+          .from('role_permissions')
+          .insert(permissionsToInsert);
+
+        if (insertError) {
+          console.error('Erreur lors de l\'insertion des permissions:', insertError);
+          throw insertError;
+        }
+      }
+
+      console.log('Permissions mises à jour avec succès:', { role, module, permissions });
+      return { success: true };
+    } catch (error) {
+      console.error('Exception lors de la mise à jour des permissions:', error);
+      throw error;
+    }
+  },
+
+  async hasPermission(role: string, module: string, permission: string): Promise<boolean> {
+    try {
+      const { data, error } = await supabase
+        .from('role_permissions')
+        .select('id')
+        .eq('role', role)
+        .eq('module', module)
+        .eq('permission', permission)
+        .single();
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Erreur lors de la vérification de permission:', error);
+        return false;
+      }
+
+      return !!data;
+    } catch (error) {
+      console.error('Exception lors de la vérification de permission:', error);
+      return false;
+    }
   }
 };

@@ -4,10 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Activity, AlertTriangle } from 'lucide-react';
+import { Users, Activity, AlertTriangle, Shield } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { AdminStats } from '@/components/admin/AdminStats';
+import { RolePermissionManagement } from '@/components/admin/RolePermissionManagement';
 import { CreateAdminButton } from '@/components/admin/CreateAdminButton';
 
 const Administration = () => {
@@ -70,7 +71,7 @@ const Administration = () => {
             Administration & Gestion des accès
           </h1>
           <p className="text-gray-600 mt-2">
-            Gestion des utilisateurs et sécurité du système
+            Gestion des utilisateurs, permissions et sécurité du système
           </p>
         </div>
         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
@@ -79,7 +80,7 @@ const Administration = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Vue d'ensemble
@@ -87,6 +88,10 @@ const Administration = () => {
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Gestion Utilisateurs
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            Permissions
           </TabsTrigger>
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
@@ -100,6 +105,10 @@ const Administration = () => {
 
         <TabsContent value="users" className="space-y-6">
           <UserManagement />
+        </TabsContent>
+
+        <TabsContent value="permissions" className="space-y-6">
+          <RolePermissionManagement />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6">
