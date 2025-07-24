@@ -19,6 +19,8 @@ serve(async (req) => {
   }
 
   try {
+    console.log('🔧 Starting password management function');
+    
     // Créer le client Supabase avec les permissions admin
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -34,6 +36,7 @@ serve(async (req) => {
     // Vérifier que l'utilisateur actuel est admin
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
+      console.log('❌ No authorization header');
       return new Response(
         JSON.stringify({ error: 'Token d\'authentification manquant' }),
         { 
@@ -47,6 +50,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
 
     if (userError || !user) {
+      console.log('❌ User authentication failed:', userError);
       return new Response(
         JSON.stringify({ error: 'Utilisateur non authentifié' }),
         { 
@@ -55,6 +59,8 @@ serve(async (req) => {
         }
       );
     }
+
+    console.log('✅ Current user authenticated:', user.email);
 
     // Vérifier si l'utilisateur a le rôle admin
     const { data: userData, error: roleError } = await supabaseAdmin
@@ -65,6 +71,7 @@ serve(async (req) => {
       .single();
 
     if (roleError || !userData || !userData.roles.includes('admin')) {
+      console.log('❌ Admin role check failed:', roleError, userData);
       return new Response(
         JSON.stringify({ error: 'Permissions administrateur requises' }),
         { 
@@ -74,22 +81,92 @@ serve(async (req) => {
       );
     }
 
+    console.log('✅ Admin role verified');
+
     // Traiter la demande
     const { action, userId, newPassword }: PasswordRequest = await req.json();
+    
+    console.log('🔧 Processing action:', action, 'for user:', userId);
+
+    // Vérifier d'abord si l'utilisateur existe dans auth.users
+    const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    
+    if (authUserError) {
+      console.log('❌ User not found in auth.users:', authUserError);
+      
+      // Vérifier si l'utilisateur existe dans la table users
+      const { data: dbUser, error: dbUserError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (dbUserError || !dbUser) {
+        console.log('❌ User not found in users table either:', dbUserError);
+        return new Response(
+          JSON.stringify({ error: 'Utilisateur introuvable dans le système' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      console.log('ℹ️ User exists in users table but not in auth.users, attempting to create auth user');
+      
+      // Essayer de créer l'utilisateur dans auth.users
+      const tempPassword = generateSecurePassword();
+      const { data: createdUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: dbUser.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          first_name: dbUser.first_name,
+          last_name: dbUser.last_name,
+          roles: dbUser.roles
+        }
+      });
+      
+      if (createError) {
+        console.log('❌ Failed to create auth user:', createError);
+        return new Response(
+          JSON.stringify({ error: `Impossible de créer l'utilisateur dans le système d'authentification: ${createError.message}` }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
+      console.log('✅ Auth user created successfully');
+      
+      // Mettre à jour l'ID si nécessaire
+      if (createdUser.user?.id !== userId) {
+        await supabaseAdmin
+          .from('users')
+          .update({ id: createdUser.user.id })
+          .eq('id', userId);
+        
+        console.log('✅ User ID updated in users table');
+      }
+    } else {
+      console.log('✅ User found in auth.users:', authUser.user?.email);
+    }
+
+    // Fonction pour générer un mot de passe sécurisé
+    function generateSecurePassword(): string {
+      const length = 16;
+      const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+      let password = '';
+      for (let i = 0; i < length; i++) {
+        password += charset.charAt(Math.floor(Math.random() * charset.length));
+      }
+      return password;
+    }
 
     if (action === 'reset') {
-      // Générer un mot de passe aléatoire sécurisé
-      const generatePassword = () => {
-        const length = 16;
-        const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-        let password = '';
-        for (let i = 0; i < length; i++) {
-          password += charset.charAt(Math.floor(Math.random() * charset.length));
-        }
-        return password;
-      };
-
-      const generatedPassword = generatePassword();
+      const generatedPassword = generateSecurePassword();
+      console.log('🔧 Attempting to reset password with generated password');
 
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
         userId,
@@ -97,6 +174,7 @@ serve(async (req) => {
       );
 
       if (updateError) {
+        console.log('❌ Password reset failed:', updateError);
         return new Response(
           JSON.stringify({ error: `Erreur lors de la réinitialisation: ${updateError.message}` }),
           { 
@@ -106,6 +184,7 @@ serve(async (req) => {
         );
       }
 
+      console.log('✅ Password reset successful');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -129,12 +208,14 @@ serve(async (req) => {
         );
       }
 
+      console.log('🔧 Attempting to update password');
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
         userId,
         { password: newPassword }
       );
 
       if (updateError) {
+        console.log('❌ Password update failed:', updateError);
         return new Response(
           JSON.stringify({ error: `Erreur lors de la mise à jour: ${updateError.message}` }),
           { 
@@ -144,6 +225,7 @@ serve(async (req) => {
         );
       }
 
+      console.log('✅ Password update successful');
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -165,7 +247,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Erreur dans admin-password-management:', error);
+    console.error('❌ Critical error in admin-password-management:', error);
     return new Response(
       JSON.stringify({ error: 'Erreur interne du serveur' }),
       { 
