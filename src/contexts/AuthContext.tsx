@@ -123,6 +123,61 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
   return Array.from(modulePermissions);
 };
 
+// Fonction pour créer automatiquement un utilisateur manquant dans la table users
+const createMissingUser = async (supabaseUserId: string, email: string): Promise<AuthUser | null> => {
+  try {
+    console.log('🔄 Création automatique de l\'utilisateur manquant:', email);
+    
+    // Déterminer le rôle par défaut basé sur l'email
+    let defaultRole = 'transport';
+    if (email.includes('admin') || email.includes('management')) {
+      defaultRole = 'admin';
+    }
+    
+    const userRoles = [defaultRole];
+    const modulePermissions = getModulePermissionsByRoles(userRoles);
+    
+    // Créer l'utilisateur dans la table users
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
+        id: supabaseUserId,
+        email: email,
+        first_name: '',
+        last_name: '',
+        roles: userRoles,
+        module_permissions: modulePermissions,
+        status: 'active',
+        password_hash: 'managed_by_supabase_auth'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Erreur lors de la création automatique de l\'utilisateur:', error);
+      return null;
+    }
+
+    console.log('✅ Utilisateur créé automatiquement:', newUser);
+    
+    const authUser: AuthUser = {
+      id: supabaseUserId,
+      email: newUser.email,
+      nom: newUser.last_name || '',
+      prenom: newUser.first_name || '',
+      role: userRoles[0],
+      roles: userRoles,
+      module_permissions: modulePermissions,
+      permissions: defaultRole === 'admin' ? ['read', 'write', 'delete', 'validate', 'export', 'admin'] : ['read', 'write']
+    };
+
+    return authUser;
+  } catch (error) {
+    console.error('❌ Exception lors de la création automatique de l\'utilisateur:', error);
+    return null;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
@@ -137,6 +192,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('email', email)
         .eq('status', 'active')
         .single();
+
+      if (error && error.code === 'PGRST116') {
+        // Utilisateur non trouvé dans la table users, le créer automatiquement
+        console.log('⚠️ Utilisateur non trouvé, création automatique...');
+        return await createMissingUser(supabaseUserId, email);
+      }
 
       if (error) {
         console.error('❌ Erreur lors de la récupération des données utilisateur:', error);
@@ -206,7 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.error('❌ Impossible de récupérer les données utilisateur');
           setLoading(false);
-          return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
+          return { success: false, error: 'Impossible de récupérer les données utilisateur' };
         }
       }
 
