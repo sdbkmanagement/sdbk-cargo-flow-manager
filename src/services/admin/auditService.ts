@@ -11,22 +11,13 @@ export const auditService = {
       .limit(limit);
     
     if (error) throw error;
-    
     return (data || []).map(log => ({
-      id: log.id,
-      user_id: log.user_id || '',
-      action: log.action,
-      target_type: log.target_type,
-      target_id: log.target_id || '',
-      details: typeof log.details === 'object' && log.details !== null 
-        ? log.details as Record<string, any>
-        : {},
-      created_at: log.created_at,
+      ...log,
       ip_address: log.ip_address ? String(log.ip_address) : undefined
     }));
   },
 
-  async getLoginAttempts(email?: string, limit: number = 50): Promise<LoginAttempt[]> {
+  async getLoginAttempts(email?: string, limit: number = 50) {
     let query = supabase
       .from('login_attempts')
       .select('*')
@@ -40,13 +31,10 @@ export const auditService = {
     const { data, error } = await query;
     if (error) throw error;
     
+    // Fix the ip_address type conversion
     return (data || []).map(attempt => ({
-      id: attempt.id,
-      email: attempt.email,
-      success: attempt.success,
-      ip_address: attempt.ip_address ? String(attempt.ip_address) : undefined,
-      error_message: attempt.error_message || undefined,
-      created_at: attempt.created_at
+      ...attempt,
+      ip_address: attempt.ip_address ? String(attempt.ip_address) : undefined
     }));
   }
 };

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,13 +55,12 @@ export const SecureUserForm: React.FC<SecureUserFormProps> = ({ onSuccess, onCan
       try {
         await userService.createUser({
           email: values.email,
-          nom: values.lastName,
-          prenom: values.firstName,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          phone: values.phone,
           role: selectedRole,
-          roles: [selectedRole],
-          module_permissions: selectedModules,
-          password,
-          statut: 'actif'
+          modulePermissions: selectedModules,
+          password
         });
 
         toast({

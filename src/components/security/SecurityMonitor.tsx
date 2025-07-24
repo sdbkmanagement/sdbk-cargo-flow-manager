@@ -1,174 +1,195 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useEffect, useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, AlertTriangle, Activity, Users } from 'lucide-react';
+import { Shield, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import type { SecurityEvent } from '@/types/admin';
 
-export const SecurityMonitor = () => {
+interface SecurityEvent {
+  id: string;
+  type: 'login_attempt' | 'failed_login' | 'user_created' | 'permission_change';
+  severity: 'low' | 'medium' | 'high';
+  message: string;
+  timestamp: string;
+  user_id?: string;
+  ip_address?: string;
+}
+
+export const SecurityMonitor: React.FC = () => {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
-    totalEvents: 0,
-    highSeverityEvents: 0,
-    activeUsers: 0,
-    failedLogins: 0
+    totalAttempts: 0,
+    failedAttempts: 0,
+    successRate: 0
   });
 
   useEffect(() => {
-    fetchSecurityEvents();
-    fetchSecurityStats();
-    
-    const interval = setInterval(() => {
-      fetchSecurityEvents();
-      fetchSecurityStats();
-    }, 30000); // Update every 30 seconds
-
-    return () => clearInterval(interval);
+    loadSecurityEvents();
+    loadSecurityStats();
   }, []);
 
-  const fetchSecurityEvents = async () => {
+  const loadSecurityEvents = async () => {
     try {
       const { data, error } = await supabase
         .from('admin_audit_log')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (error) throw error;
 
-      const formattedEvents: SecurityEvent[] = data.map(log => {
-        const details = typeof log.details === 'object' ? log.details as Record<string, any> : {};
-        
-        return {
-          id: log.id,
-          type: log.action as SecurityEvent['type'],
-          severity: (details.severity as SecurityEvent['severity']) || 'low',
-          message: (details.message as string) || `Action: ${log.action}`,
-          timestamp: new Date(log.created_at).toLocaleString(),
-          user_id: log.user_id || 'system',
-          ip_address: String(log.ip_address || 'unknown')
-        };
-      });
+      const mappedEvents: SecurityEvent[] = (data || []).map(log => ({
+        id: log.id,
+        type: log.action.includes('login') ? 'login_attempt' : 'user_created',
+        severity: log.action.includes('failed') ? 'high' : 'low',
+        message: `${log.action} - ${log.target_type}`,
+        timestamp: log.created_at,
+        user_id: log.user_id,
+        ip_address: log.ip_address
+      }));
 
-      setEvents(formattedEvents);
+      setEvents(mappedEvents);
     } catch (error) {
-      console.error('Error fetching security events:', error);
+      console.error('Failed to load security events:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchSecurityStats = async () => {
+  const loadSecurityStats = async () => {
     try {
-      const { data: auditData } = await supabase
-        .from('admin_audit_log')
-        .select('*')
-        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
-
-      const { data: usersData } = await supabase
-        .from('users')
-        .select('*')
-        .eq('status', 'active');
-
-      const { data: loginData } = await supabase
+      const { data, error } = await supabase
         .from('login_attempts')
-        .select('*')
-        .eq('success', false)
+        .select('success, created_at')
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
-      const highSeverityCount = auditData?.filter(e => {
-        const details = typeof e.details === 'object' ? e.details as Record<string, any> : {};
-        return details.severity === 'high';
-      }).length || 0;
+      if (error) throw error;
+
+      const total = data?.length || 0;
+      const failed = data?.filter(attempt => !attempt.success).length || 0;
+      const success = total - failed;
 
       setStats({
-        totalEvents: auditData?.length || 0,
-        highSeverityEvents: highSeverityCount,
-        activeUsers: usersData?.length || 0,
-        failedLogins: loginData?.length || 0
+        totalAttempts: total,
+        failedAttempts: failed,
+        successRate: total > 0 ? (success / total) * 100 : 0
       });
     } catch (error) {
-      console.error('Error fetching security stats:', error);
+      console.error('Failed to load security stats:', error);
     }
   };
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'destructive';
-      case 'medium': return 'secondary';
-      default: return 'outline';
+      case 'high': return 'bg-red-100 text-red-800 border-red-200';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      default: return 'bg-green-100 text-green-800 border-green-200';
     }
   };
 
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'high': return <XCircle className="h-4 w-4" />;
+      case 'medium': return <AlertTriangle className="h-4 w-4" />;
+      default: return <CheckCircle className="h-4 w-4" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p>Loading security monitor...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Security Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Événements (24h)</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Attempts (24h)</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalEvents}</div>
+            <div className="text-2xl font-bold">{stats.totalAttempts}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alertes critiques</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Failed Attempts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.highSeverityEvents}</div>
+            <div className="text-2xl font-bold text-red-600">{stats.failedAttempts}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs actifs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Success Rate</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeUsers}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tentatives échouées</CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.failedLogins}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {stats.successRate.toFixed(1)}%
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Security Events */}
       <Card>
         <CardHeader>
-          <CardTitle>Événements de sécurité récents</CardTitle>
+          <div className="flex items-center space-x-2">
+            <Shield className="h-5 w-5 text-blue-600" />
+            <CardTitle>Security Events</CardTitle>
+          </div>
+          <CardDescription>
+            Recent security events and authentication attempts
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {events.map((event) => (
-              <Alert key={event.id}>
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="flex items-center justify-between">
-                  <span>{event.message}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={getSeverityColor(event.severity)}>
-                      {event.severity}
+          {events.length === 0 ? (
+            <p className="text-center py-8 text-gray-500">No security events to display</p>
+          ) : (
+            <div className="space-y-3">
+              {events.map(event => (
+                <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex items-center space-x-3">
+                    <Badge className={getSeverityColor(event.severity)}>
+                      {getSeverityIcon(event.severity)}
+                      <span className="ml-1 capitalize">{event.severity}</span>
                     </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {event.timestamp}
-                    </span>
+                    <div>
+                      <p className="font-medium">{event.message}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(event.timestamp).toLocaleString()}
+                        {event.ip_address && ` • IP: ${event.ip_address}`}
+                      </p>
+                    </div>
                   </div>
-                </AlertDescription>
-              </Alert>
-            ))}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Security Alerts */}
+      {stats.failedAttempts > 10 && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            High number of failed login attempts detected in the last 24 hours. 
+            Consider reviewing security logs and implementing additional protection measures.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };
