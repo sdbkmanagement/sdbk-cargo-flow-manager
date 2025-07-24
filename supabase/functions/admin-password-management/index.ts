@@ -99,136 +99,123 @@ serve(async (req) => {
       return password;
     }
 
+    // Récupérer l'utilisateur de la table users
+    const { data: dbUser, error: dbUserError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (dbUserError || !dbUser) {
+      console.log('❌ User not found in users table:', dbUserError);
+      return new Response(
+        JSON.stringify({ error: 'Utilisateur introuvable dans la base de données' }),
+        { 
+          status: 404, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    console.log('✅ User found in users table:', dbUser.email);
+
     // Vérifier si l'utilisateur existe dans auth.users
     const { data: authUser, error: authUserError } = await supabaseAdmin.auth.admin.getUserById(userId);
     
-    if (authUserError && authUserError.message.includes('User not found')) {
-      console.log('❌ User not found in auth.users:', authUserError);
+    let finalUserId = userId;
+    
+    if (authUserError || !authUser.user) {
+      console.log('⚠️ User not found in auth.users, checking by email:', authUserError);
       
-      // Vérifier si l'utilisateur existe dans la table users
-      const { data: dbUser, error: dbUserError } = await supabaseAdmin
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      // Chercher par email dans auth.users
+      const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
       
-      if (dbUserError || !dbUser) {
-        console.log('❌ User not found in users table either:', dbUserError);
+      if (listError) {
+        console.log('❌ Failed to list auth users:', listError);
         return new Response(
-          JSON.stringify({ error: 'Utilisateur introuvable dans le système' }),
+          JSON.stringify({ error: 'Erreur lors de la récupération des utilisateurs' }),
           { 
-            status: 404, 
+            status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
       
-      console.log('ℹ️ User exists in users table but not in auth.users, attempting to create auth user');
+      const existingAuthUser = authUsers.users.find(u => u.email === dbUser.email);
       
-      // Essayer de créer l'utilisateur dans auth.users
-      const tempPassword = generateSecurePassword();
-      const { data: createdUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-        email: dbUser.email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          first_name: dbUser.first_name,
-          last_name: dbUser.last_name,
-          roles: dbUser.roles
-        }
-      });
-      
-      if (createError) {
-        // Si l'utilisateur existe déjà dans auth.users, essayer de le récupérer par email
-        if (createError.message.includes('already been registered')) {
-          console.log('ℹ️ User already exists in auth.users, trying to get by email');
+      if (existingAuthUser) {
+        console.log('✅ Found existing auth user by email:', existingAuthUser.id);
+        finalUserId = existingAuthUser.id;
+        
+        // Synchroniser les IDs si nécessaire
+        if (existingAuthUser.id !== userId) {
+          console.log('🔄 Synchronizing user IDs...');
+          const { error: updateError } = await supabaseAdmin
+            .from('users')
+            .update({ id: existingAuthUser.id })
+            .eq('id', userId);
           
-          const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-          if (listError) {
-            console.log('❌ Failed to list users:', listError);
-            return new Response(
-              JSON.stringify({ error: 'Erreur lors de la récupération de l\'utilisateur' }),
-              { 
-                status: 500, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              }
-            );
-          }
-          
-          const existingUser = existingUsers.users.find(u => u.email === dbUser.email);
-          if (existingUser) {
-            console.log('✅ Found existing auth user:', existingUser.id);
-            
-            // Mettre à jour l'ID dans la table users si nécessaire
-            if (existingUser.id !== userId) {
-              const { error: updateError } = await supabaseAdmin
-                .from('users')
-                .update({ id: existingUser.id })
-                .eq('id', userId);
-              
-              if (updateError) {
-                console.log('⚠️ Failed to update user ID:', updateError);
-              } else {
-                console.log('✅ User ID updated successfully');
-              }
-            }
-            
-            // Utiliser l'ID de l'utilisateur existant pour la suite
-            userId = existingUser.id;
+          if (updateError) {
+            console.warn('⚠️ Failed to update user ID:', updateError);
           } else {
-            console.log('❌ User not found in auth.users list');
-            return new Response(
-              JSON.stringify({ error: 'Utilisateur introuvable dans le système d\'authentification' }),
-              { 
-                status: 404, 
-                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-              }
-            );
+            console.log('✅ User ID synchronized');
           }
-        } else {
+        }
+      } else {
+        console.log('🔧 Creating new auth user...');
+        
+        // Créer l'utilisateur dans auth.users
+        const tempPassword = generateSecurePassword();
+        const { data: newAuthUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: dbUser.email,
+          password: tempPassword,
+          email_confirm: true,
+          user_metadata: {
+            first_name: dbUser.first_name,
+            last_name: dbUser.last_name,
+            roles: dbUser.roles
+          }
+        });
+        
+        if (createError) {
           console.log('❌ Failed to create auth user:', createError);
           return new Response(
-            JSON.stringify({ error: `Impossible de créer l'utilisateur dans le système d'authentification: ${createError.message}` }),
+            JSON.stringify({ error: `Impossible de créer l'utilisateur d'authentification: ${createError.message}` }),
             { 
               status: 500, 
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             }
           );
         }
-      } else if (createdUser.user) {
-        console.log('✅ Auth user created successfully');
         
-        // Mettre à jour l'ID si nécessaire
-        if (createdUser.user.id !== userId) {
-          await supabaseAdmin
+        if (newAuthUser.user) {
+          console.log('✅ New auth user created:', newAuthUser.user.id);
+          finalUserId = newAuthUser.user.id;
+          
+          // Synchroniser l'ID dans la table users
+          const { error: updateError } = await supabaseAdmin
             .from('users')
-            .update({ id: createdUser.user.id })
+            .update({ id: newAuthUser.user.id })
             .eq('id', userId);
           
-          console.log('✅ User ID updated in users table');
-          userId = createdUser.user.id;
+          if (updateError) {
+            console.warn('⚠️ Failed to update user ID after creation:', updateError);
+          } else {
+            console.log('✅ User ID updated after creation');
+          }
         }
       }
-    } else if (authUser?.user) {
-      console.log('✅ User found in auth.users:', authUser.user.email);
-      userId = authUser.user.id;
     } else {
-      console.log('❌ Unexpected error getting user:', authUserError);
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de la récupération de l\'utilisateur' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      console.log('✅ User found in auth.users');
     }
 
+    // Maintenant effectuer l'action demandée
     if (action === 'reset') {
       const generatedPassword = generateSecurePassword();
-      console.log('🔧 Attempting to reset password with generated password');
+      console.log('🔧 Attempting to reset password');
 
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        userId,
+        finalUserId,
         { password: generatedPassword }
       );
 
@@ -269,7 +256,7 @@ serve(async (req) => {
 
       console.log('🔧 Attempting to update password');
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        userId,
+        finalUserId,
         { password: newPassword }
       );
 

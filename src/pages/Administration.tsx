@@ -4,12 +4,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Users, Activity, AlertTriangle, Shield } from 'lucide-react';
+import { Users, Activity, AlertTriangle, Shield, Settings } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { AdminStats } from '@/components/admin/AdminStats';
 import { RolePermissionManagement } from '@/components/admin/RolePermissionManagement';
 import { CreateAdminButton } from '@/components/admin/CreateAdminButton';
+import { UserSyncDiagnostic } from '@/components/admin/UserSyncDiagnostic';
 
 const Administration = () => {
   const { user, hasRole } = useAuth();
@@ -80,7 +81,7 @@ const Administration = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
             Vue d'ensemble
@@ -92,6 +93,10 @@ const Administration = () => {
           <TabsTrigger value="permissions" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             Permissions
+          </TabsTrigger>
+          <TabsTrigger value="system" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Système
           </TabsTrigger>
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <Activity className="h-4 w-4" />
@@ -109,6 +114,10 @@ const Administration = () => {
 
         <TabsContent value="permissions" className="space-y-6">
           <RolePermissionManagement />
+        </TabsContent>
+
+        <TabsContent value="system" className="space-y-6">
+          <UserSyncDiagnostic />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6">
