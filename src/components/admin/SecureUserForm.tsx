@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,8 +56,6 @@ export const SecureUserForm: React.FC<SecureUserFormProps> = ({ onSuccess, onCan
           email: values.email,
           nom: values.lastName,
           prenom: values.firstName,
-          firstName: values.firstName,
-          lastName: values.lastName,
           role: selectedRole,
           roles: [selectedRole],
           module_permissions: selectedModules,
