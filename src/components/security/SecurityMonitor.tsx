@@ -38,15 +38,19 @@ export const SecurityMonitor = () => {
 
       if (error) throw error;
 
-      const formattedEvents: SecurityEvent[] = data.map(log => ({
-        id: log.id,
-        type: log.action as SecurityEvent['type'],
-        severity: log.details?.severity || 'low',
-        message: log.details?.message || `Action: ${log.action}`,
-        timestamp: new Date(log.created_at).toLocaleString(),
-        user_id: log.user_id || 'system',
-        ip_address: log.ip_address || 'unknown'
-      }));
+      const formattedEvents: SecurityEvent[] = data.map(log => {
+        const details = typeof log.details === 'object' ? log.details as Record<string, any> : {};
+        
+        return {
+          id: log.id,
+          type: log.action as SecurityEvent['type'],
+          severity: (details.severity as SecurityEvent['severity']) || 'low',
+          message: (details.message as string) || `Action: ${log.action}`,
+          timestamp: new Date(log.created_at).toLocaleString(),
+          user_id: log.user_id || 'system',
+          ip_address: String(log.ip_address || 'unknown')
+        };
+      });
 
       setEvents(formattedEvents);
     } catch (error) {
@@ -72,9 +76,14 @@ export const SecurityMonitor = () => {
         .eq('success', false)
         .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
 
+      const highSeverityCount = auditData?.filter(e => {
+        const details = typeof e.details === 'object' ? e.details as Record<string, any> : {};
+        return details.severity === 'high';
+      }).length || 0;
+
       setStats({
         totalEvents: auditData?.length || 0,
-        highSeverityEvents: auditData?.filter(e => e.details?.severity === 'high').length || 0,
+        highSeverityEvents: highSeverityCount,
         activeUsers: usersData?.length || 0,
         failedLogins: loginData?.length || 0
       });

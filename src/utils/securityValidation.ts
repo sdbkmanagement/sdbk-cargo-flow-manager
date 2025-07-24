@@ -1,112 +1,139 @@
 
-import { supabase } from '@/integrations/supabase/client';
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+export const validateEmail = (email: string): ValidationResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  if (!email) {
+    errors.push('Email is required');
+    return { isValid: false, errors, warnings };
+  }
+  
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    errors.push('Invalid email format');
+  }
+  
+  if (email.length > 254) {
+    errors.push('Email too long');
+  }
+  
+  return { isValid: errors.length === 0, errors, warnings };
+};
+
+export const validateName = (name: string, fieldName: string = 'Name'): ValidationResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  if (!name) {
+    errors.push(`${fieldName} is required`);
+    return { isValid: false, errors, warnings };
+  }
+  
+  if (name.length < 2) {
+    errors.push(`${fieldName} must be at least 2 characters long`);
+  }
+  
+  if (name.length > 100) {
+    errors.push(`${fieldName} must be less than 100 characters`);
+  }
+  
+  // Check for potentially dangerous characters
+  const dangerousChars = /[<>]/;
+  if (dangerousChars.test(name)) {
+    errors.push(`${fieldName} contains invalid characters`);
+  }
+  
+  return { isValid: errors.length === 0, errors, warnings };
+};
+
+export const validatePhone = (phone: string): ValidationResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  if (!phone) {
+    errors.push('Phone number is required');
+    return { isValid: false, errors, warnings };
+  }
+  
+  // Basic international phone format
+  const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+  if (!phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''))) {
+    errors.push('Invalid phone number format');
+  }
+  
+  return { isValid: errors.length === 0, errors, warnings };
+};
+
+export const validatePassword = (password: string): ValidationResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  if (!password) {
+    errors.push('Password is required');
+    return { isValid: false, errors, warnings };
+  }
+  
+  if (password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  }
+  
+  if (!/[A-Z]/.test(password)) {
+    warnings.push('Password should contain at least one uppercase letter');
+  }
+  
+  if (!/[a-z]/.test(password)) {
+    warnings.push('Password should contain at least one lowercase letter');
+  }
+  
+  if (!/\d/.test(password)) {
+    warnings.push('Password should contain at least one number');
+  }
+  
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    warnings.push('Password should contain at least one special character');
+  }
+  
+  return { isValid: errors.length === 0, errors, warnings };
+};
 
 export const sanitizeInput = (input: string): string => {
   if (!input) return '';
   
-  // Remove HTML tags and potentially dangerous characters
+  // Remove potentially dangerous characters
   return input
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/[<>'"&]/g, '') // Remove dangerous characters
+    .replace(/[<>]/g, '')
+    .replace(/["\x00-\x1F\x7F]/g, '')
     .trim();
 };
 
-export const validateEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-export const validatePhone = (phone: string): boolean => {
-  const phoneRegex = /^(\+\d{1,3}[- ]?)?\d{10}$/;
-  return phoneRegex.test(phone);
-};
-
-export const validatePassword = (password: string): {
-  isValid: boolean;
-  errors: string[];
-} => {
+export const validateRequired = (value: any, fieldName: string): ValidationResult => {
   const errors: string[] = [];
+  const warnings: string[] = [];
   
-  if (password.length < 8) {
-    errors.push('Le mot de passe doit contenir au moins 8 caractères');
+  if (!value || (typeof value === 'string' && value.trim() === '')) {
+    errors.push(`${fieldName} is required`);
   }
   
-  if (!/[A-Z]/.test(password)) {
-    errors.push('Le mot de passe doit contenir au moins une majuscule');
-  }
-  
-  if (!/[a-z]/.test(password)) {
-    errors.push('Le mot de passe doit contenir au moins une minuscule');
-  }
-  
-  if (!/\d/.test(password)) {
-    errors.push('Le mot de passe doit contenir au moins un chiffre');
-  }
-  
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
-    errors.push('Le mot de passe doit contenir au moins un caractère spécial');
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors
-  };
+  return { isValid: errors.length === 0, errors, warnings };
 };
 
-export const checkRateLimit = async (
-  userIdentifier: string,
-  maxAttempts: number = 5,
-  windowMinutes: number = 15
-): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('login_attempts')
-      .select('*')
-      .eq('email', userIdentifier)
-      .eq('success', false)
-      .gte('created_at', new Date(Date.now() - windowMinutes * 60 * 1000).toISOString());
-
-    if (error) {
-      console.error('Rate limit check error:', error);
-      return true; // Allow on error to prevent lockout
-    }
-
-    return (data?.length || 0) < maxAttempts;
-  } catch (error) {
-    console.error('Rate limit check error:', error);
-    return true;
+export const validateLength = (value: string, min: number, max: number, fieldName: string): ValidationResult => {
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  if (value.length < min) {
+    errors.push(`${fieldName} must be at least ${min} characters long`);
   }
-};
-
-export const logSecurityEvent = async (event: {
-  type: string;
-  severity: 'low' | 'medium' | 'high';
-  message: string;
-  user_id?: string;
-  details?: Record<string, any>;
-}) => {
-  try {
-    await supabase.from('admin_audit_log').insert({
-      user_id: event.user_id,
-      action: event.type,
-      target_type: 'security_event',
-      target_id: crypto.randomUUID(),
-      details: {
-        severity: event.severity,
-        message: event.message,
-        ...event.details
-      }
-    });
-  } catch (error) {
-    console.error('Failed to log security event:', error);
+  
+  if (value.length > max) {
+    errors.push(`${fieldName} must be less than ${max} characters long`);
   }
-};
-
-export const escapeHtml = (unsafe: string): string => {
-  return unsafe
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  
+  return { isValid: errors.length === 0, errors, warnings };
 };
