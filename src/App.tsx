@@ -47,7 +47,7 @@ function App() {
                     <Route path="/drivers" element={<Drivers />} />
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/rh" element={<RH />} />
-                    <Route path="/admin" element={<Administration />} />
+                    <Route path="/administration" element={<Administration />} />
                     <Route path="/validations" element={<Validations />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
