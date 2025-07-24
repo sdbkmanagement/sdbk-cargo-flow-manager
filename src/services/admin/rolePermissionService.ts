@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { AppRole } from '@/types/admin';
 
 export const rolePermissionService = {
   async getUserRole(): Promise<string | null> {
@@ -68,7 +69,7 @@ export const rolePermissionService = {
       const { data, error } = await supabase
         .from('role_permissions')
         .select('*')
-        .eq('role', role)
+        .eq('role', role as AppRole)
         .order('module', { ascending: true });
 
       if (error) {
@@ -89,7 +90,7 @@ export const rolePermissionService = {
       const { error: deleteError } = await supabase
         .from('role_permissions')
         .delete()
-        .eq('role', role)
+        .eq('role', role as AppRole)
         .eq('module', module);
 
       if (deleteError) {
@@ -100,7 +101,7 @@ export const rolePermissionService = {
       // Ajouter les nouvelles permissions
       if (permissions.length > 0) {
         const permissionsToInsert = permissions.map(permission => ({
-          role,
+          role: role as AppRole,
           module,
           permission
         }));
@@ -128,7 +129,7 @@ export const rolePermissionService = {
       const { data, error } = await supabase
         .from('role_permissions')
         .select('id')
-        .eq('role', role)
+        .eq('role', role as AppRole)
         .eq('module', module)
         .eq('permission', permission)
         .single();
