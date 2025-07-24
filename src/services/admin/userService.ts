@@ -143,12 +143,12 @@ export const userService = {
 
       console.log('✅ User record created successfully in database');
 
-      // Try to create user in Supabase Auth
+      // Try to create user in Supabase Auth with email confirmation disabled
       try {
         const { data: authData, error: authError } = await supabase.auth.admin.createUser({
           email: sanitizedEmail,
           password: securePassword,
-          email_confirm: true,
+          email_confirm: true, // Auto-confirm email to skip email verification
           user_metadata: {
             first_name: sanitizedPrenom,
             last_name: sanitizedNom,
@@ -300,24 +300,16 @@ export const userService = {
     }
   },
 
-  async resetPassword(userId: string): Promise<void> {
+  async resetPassword(userId: string, newPassword?: string): Promise<string> {
     console.log('🔧 Resetting password for user:', userId);
     
     try {
-      // Get user email
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', userId)
-        .single();
+      // Generate a new secure password if not provided
+      const password = newPassword || generateSecurePassword();
 
-      if (userError || !user) {
-        throw new Error('Utilisateur non trouvé');
-      }
-
-      // Send password reset email
-      const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: `${window.location.origin}/auth/reset-password`
+      // Update password using Supabase Admin API
+      const { error } = await supabase.auth.admin.updateUserById(userId, {
+        password: password
       });
       
       if (error) {
@@ -325,9 +317,34 @@ export const userService = {
         throw new Error(`Erreur lors de la réinitialisation: ${error.message}`);
       }
 
-      console.log('✅ Password reset email sent successfully');
+      console.log('✅ Password reset successfully for user:', userId);
+      return password;
     } catch (error) {
       console.error('❌ Exception in resetPassword:', error);
+      throw error;
+    }
+  },
+
+  async updateUserPassword(userId: string, newPassword: string): Promise<void> {
+    console.log('🔧 Updating password for user:', userId);
+    
+    try {
+      if (!newPassword || newPassword.length < 6) {
+        throw new Error('Le mot de passe doit contenir au moins 6 caractères');
+      }
+
+      const { error } = await supabase.auth.admin.updateUserById(userId, {
+        password: newPassword
+      });
+      
+      if (error) {
+        console.error('❌ Password update error:', error);
+        throw new Error(`Erreur lors de la mise à jour du mot de passe: ${error.message}`);
+      }
+
+      console.log('✅ Password updated successfully for user:', userId);
+    } catch (error) {
+      console.error('❌ Exception in updateUserPassword:', error);
       throw error;
     }
   }

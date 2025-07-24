@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -9,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Search, Edit, Trash2, UserCheck, UserX, RotateCcw } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, UserCheck, UserX, Key } from 'lucide-react';
 import { userService } from '@/services/admin/userService';
 import { OptimizedUserForm } from './OptimizedUserForm';
+import { PasswordManagement } from './PasswordManagement';
 import { ROLE_LABELS, MODULE_LABELS, type SystemUser } from '@/types/admin';
 import { toast } from '@/hooks/use-toast';
 
@@ -20,8 +20,10 @@ export const UserManagement = () => {
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
+  const [passwordUser, setPasswordUser] = useState<SystemUser | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -157,6 +159,11 @@ export const UserManagement = () => {
     queryClient.invalidateQueries({ queryKey: ['admin-users'] });
   };
 
+  const handlePasswordManagement = (user: SystemUser) => {
+    setPasswordUser(user);
+    setIsPasswordDialogOpen(true);
+  };
+
   if (error) {
     console.error('❌ User management error:', error);
     return (
@@ -214,7 +221,7 @@ export const UserManagement = () => {
                 <DialogHeader>
                   <DialogTitle>Créer un nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Configurez les rôles et permissions pour le nouvel utilisateur.
+                    Les comptes sont créés sans confirmation email requise.
                   </DialogDescription>
                 </DialogHeader>
                 <OptimizedUserForm onSuccess={handleCreateSuccess} />
@@ -315,6 +322,7 @@ export const UserManagement = () => {
                             setSelectedUser(user);
                             setIsEditDialogOpen(true);
                           }}
+                          title="Modifier l'utilisateur"
                         >
                           <Edit className="h-3 w-3" />
                         </Button>
@@ -322,10 +330,10 @@ export const UserManagement = () => {
                         <Button 
                           size="sm" 
                           variant="outline"
-                          onClick={() => resetPasswordMutation.mutate(user.id)}
-                          disabled={resetPasswordMutation.isPending}
+                          onClick={() => handlePasswordManagement(user)}
+                          title="Gérer le mot de passe"
                         >
-                          <RotateCcw className="h-3 w-3" />
+                          <Key className="h-3 w-3" />
                         </Button>
 
                         {user.statut === 'actif' ? (
@@ -333,6 +341,7 @@ export const UserManagement = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'inactif' })}
+                            title="Désactiver l'utilisateur"
                           >
                             <UserX className="h-3 w-3" />
                           </Button>
@@ -341,6 +350,7 @@ export const UserManagement = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => toggleStatusMutation.mutate({ userId: user.id, status: 'actif' })}
+                            title="Activer l'utilisateur"
                           >
                             <UserCheck className="h-3 w-3" />
                           </Button>
@@ -348,7 +358,7 @@ export const UserManagement = () => {
 
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700">
+                            <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700" title="Supprimer l'utilisateur">
                               <Trash2 className="h-3 w-3" />
                             </Button>
                           </AlertDialogTrigger>
@@ -417,6 +427,15 @@ export const UserManagement = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de gestion des mots de passe */}
+      {passwordUser && (
+        <PasswordManagement
+          user={passwordUser}
+          open={isPasswordDialogOpen}
+          onOpenChange={setIsPasswordDialogOpen}
+        />
+      )}
     </div>
   );
 };
