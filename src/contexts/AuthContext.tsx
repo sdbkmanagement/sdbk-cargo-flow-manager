@@ -122,79 +122,6 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
   return Array.from(modulePermissions);
 };
 
-// Fonction pour vérifier si l'utilisateur existe dans la table users
-const checkExistingUser = async (email: string): Promise<any> => {
-  try {
-    console.log('🔍 Vérification utilisateur existant:', email);
-    
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .eq('status', 'active')
-      .single();
-
-    if (error && error.code === 'PGRST116') {
-      console.log('⚠️ Utilisateur non trouvé dans la table users');
-      return null;
-    }
-
-    if (error) {
-      console.error('❌ Erreur lors de la vérification utilisateur:', error);
-      return null;
-    }
-
-    console.log('✅ Utilisateur trouvé dans la table users:', data);
-    return data;
-  } catch (error) {
-    console.error('❌ Exception lors de la vérification utilisateur:', error);
-    return null;
-  }
-};
-
-// Fonction pour créer l'utilisateur Auth si nécessaire
-const createAuthUserIfNeeded = async (email: string, password: string): Promise<any> => {
-  try {
-    console.log('🔐 Tentative de création utilisateur Auth pour:', email);
-    
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password
-    });
-
-    if (error) {
-      console.error('❌ Erreur création utilisateur Auth:', error);
-      return null;
-    }
-
-    console.log('✅ Utilisateur Auth créé ou existe déjà:', data.user?.id);
-    return data;
-  } catch (error) {
-    console.error('❌ Exception création utilisateur Auth:', error);
-    return null;
-  }
-};
-
-// Fonction pour synchroniser l'ID Auth avec la table users
-const syncAuthIdWithUser = async (authUserId: string, userEmail: string): Promise<void> => {
-  try {
-    console.log('🔄 Synchronisation ID Auth avec table users');
-    
-    const { error } = await supabase
-      .from('users')
-      .update({ id: authUserId })
-      .eq('email', userEmail);
-
-    if (error) {
-      console.error('❌ Erreur synchronisation ID:', error);
-    } else {
-      console.log('✅ ID Auth synchronisé avec succès');
-    }
-  } catch (error) {
-    console.error('❌ Exception synchronisation ID:', error);
-  }
-};
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(false);
@@ -207,64 +134,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const cleanEmail = email.trim();
       
       // 1. Vérifier si l'utilisateur existe dans la table users
-      const existingUser = await checkExistingUser(cleanEmail);
-      if (!existingUser) {
+      console.log('🔍 Recherche utilisateur dans la table users...');
+      const { data: existingUser, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', cleanEmail)
+        .eq('status', 'active')
+        .single();
+
+      if (userError) {
+        console.error('❌ Erreur lors de la vérification utilisateur:', userError);
         setLoading(false);
         return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
       }
 
-      // 2. Essayer de se connecter avec Supabase Auth
+      console.log('✅ Utilisateur trouvé:', existingUser);
+
+      // 2. Tenter la connexion avec Supabase Auth
+      console.log('🔐 Tentative de connexion Auth...');
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
         password
       });
 
       if (authError) {
-        console.log('⚠️ Erreur Auth, tentative de création du compte Auth:', authError.message);
-        
-        // Si l'utilisateur n'existe pas dans Auth, le créer
-        if (authError.message.includes('Invalid login credentials')) {
-          const createResult = await createAuthUserIfNeeded(cleanEmail, password);
-          if (createResult && createResult.user) {
-            // Synchroniser l'ID Auth avec la table users
-            await syncAuthIdWithUser(createResult.user.id, cleanEmail);
-            
-            // Réessayer la connexion
-            const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
-              email: cleanEmail,
-              password
-            });
-            
-            if (retryError) {
-              setLoading(false);
-              return { success: false, error: 'Erreur lors de la reconnexion après création du compte' };
-            }
-            
-            // Utiliser les données de la retry
-            const userData = await buildUserData(retryData.user.id, existingUser);
-            if (userData) {
-              setUser(userData);
-              setLoading(false);
-              return { success: true };
-            }
-          }
+        console.error('❌ Erreur Auth:', authError);
+        setLoading(false);
+        return { success: false, error: 'Identifiants invalides' };
+      }
+
+      console.log('✅ Connexion Auth réussie:', authData.user?.id);
+
+      // 3. Synchroniser l'ID Auth avec la table users si nécessaire
+      if (authData.user && existingUser.id !== authData.user.id) {
+        console.log('🔄 Synchronisation des IDs...');
+        const { error: syncError } = await supabase
+          .from('users')
+          .update({ id: authData.user.id })
+          .eq('email', cleanEmail);
+
+        if (syncError) {
+          console.error('⚠️ Erreur de synchronisation:', syncError);
+        } else {
+          console.log('✅ ID synchronisé avec succès');
+          existingUser.id = authData.user.id;
         }
-        
-        setLoading(false);
-        return { success: false, error: 'Erreur d\'authentification' };
       }
 
-      // 3. Construire les données utilisateur
-      const userData = await buildUserData(authData.user.id, existingUser);
-      if (userData) {
-        console.log('✅ Utilisateur connecté:', userData);
-        setUser(userData);
-        setLoading(false);
-        return { success: true };
-      }
-
+      // 4. Construire les données utilisateur
+      const userData = buildUserData(existingUser);
+      console.log('✅ Données utilisateur construites:', userData);
+      
+      setUser(userData);
       setLoading(false);
-      return { success: false, error: 'Impossible de récupérer les données utilisateur' };
+      return { success: true };
+
     } catch (error: any) {
       console.error('❌ Exception lors de la connexion:', error);
       setLoading(false);
@@ -272,33 +196,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const buildUserData = async (authUserId: string, existingUser: any): Promise<AuthUser | null> => {
-    try {
-      const userRoles = existingUser.roles || ['transport'];
-      const modulePermissions = getModulePermissionsByRoles(userRoles);
-      
-      const authUser: AuthUser = {
-        id: authUserId,
-        email: existingUser.email,
-        nom: existingUser.last_name || '',
-        prenom: existingUser.first_name || '',
-        role: userRoles[0] || 'transport',
-        roles: userRoles,
-        module_permissions: modulePermissions,
-        permissions: ['read', 'write']
-      };
+  const buildUserData = (dbUser: any): AuthUser => {
+    const userRoles = dbUser.roles || ['transport'];
+    const modulePermissions = getModulePermissionsByRoles(userRoles);
+    
+    const authUser: AuthUser = {
+      id: dbUser.id,
+      email: dbUser.email,
+      nom: dbUser.last_name || '',
+      prenom: dbUser.first_name || '',
+      role: userRoles[0] || 'transport',
+      roles: userRoles,
+      module_permissions: modulePermissions,
+      permissions: ['read', 'write']
+    };
 
-      // Donner toutes les permissions aux admins
-      if (authUser.roles?.includes('admin')) {
-        authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
-      }
-
-      console.log('✅ Permissions de modules attribuées:', modulePermissions);
-      return authUser;
-    } catch (error) {
-      console.error('❌ Exception lors de la construction des données utilisateur:', error);
-      return null;
+    // Donner toutes les permissions aux admins
+    if (authUser.roles?.includes('admin')) {
+      authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
     }
+
+    return authUser;
   };
 
   const logout = async () => {
