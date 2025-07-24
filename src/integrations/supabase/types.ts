@@ -2309,6 +2309,10 @@ export type Database = {
         }
         Returns: Json
       }
+      current_user_is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       has_module_permission: {
         Args: { user_id: string; module_name: string }
         Returns: boolean

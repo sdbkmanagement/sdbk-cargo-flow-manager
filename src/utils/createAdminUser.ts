@@ -3,62 +3,58 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const createAdminUser = async () => {
   try {
-    console.log('Creating admin user with Supabase Auth Admin...');
+    console.log('🔧 Création du compte admin...');
     
-    // Créer l'utilisateur via Supabase Auth Admin
+    // Données du compte admin
+    const adminEmail = 'sdbkmanagement@gmail.com';
+    const adminPassword = 'Admin123!';
+    const adminId = '3e884fae-6dd9-436f-a6f5-595672045409';
+    
+    // Créer l'utilisateur dans Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: 'ben.wemmert@gmail.com',
-      password: 'Dpstarz57!',
+      email: adminEmail,
+      password: adminPassword,
+      email_confirm: true,
       user_metadata: {
-        first_name: 'Ben',
-        last_name: 'Wemmert'
-      },
-      email_confirm: true // Auto-confirmer l'email en mode admin
+        first_name: 'Admin',
+        last_name: 'SDBK',
+        roles: ['admin']
+      }
     });
 
-    if (authError) {
-      console.error('Auth user creation error:', authError);
-      throw new Error(`Impossible de créer le compte admin: ${authError.message}`);
+    if (authError && !authError.message.includes('already registered')) {
+      console.error('❌ Erreur création Auth:', authError);
+      throw authError;
     }
 
-    if (!authData.user) {
-      throw new Error('Aucun utilisateur créé');
+    if (authData.user) {
+      console.log('✅ Utilisateur Auth créé avec l\'ID:', authData.user.id);
+      
+      // Mettre à jour l'enregistrement dans la table users avec le bon ID
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ id: authData.user.id })
+        .eq('email', adminEmail);
+
+      if (updateError) {
+        console.warn('⚠️ Mise à jour ID utilisateur:', updateError);
+      }
     }
 
-    console.log('Admin user created successfully:', authData.user.id);
-
-    // Attendre un peu pour que le trigger handle_new_user fonctionne
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // Mettre à jour le rôle en admin dans notre table users
-    const { data: updatedUser, error: updateError } = await supabase
-      .from('users')
-      .update({
-        roles: ['admin'],
-        first_name: 'Ben',
-        last_name: 'Wemmert',
-        status: 'active',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', authData.user.id)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('User profile update error:', updateError);
-      throw new Error(`Impossible de configurer le profil admin: ${updateError.message}`);
-    }
-
-    console.log('Admin profile updated successfully:', updatedUser);
+    console.log('✅ Compte admin configuré');
+    console.log('📧 Email:', adminEmail);
+    console.log('🔑 Mot de passe:', adminPassword);
     
     return {
-      success: true,
-      user: authData.user,
-      profile: updatedUser
+      email: adminEmail,
+      password: adminPassword,
+      success: true
     };
-
-  } catch (error: any) {
-    console.error('Complete error in createAdminUser:', error);
-    throw error;
+  } catch (error) {
+    console.error('❌ Erreur lors de la création du compte admin:', error);
+    return {
+      error: error instanceof Error ? error.message : 'Erreur inconnue',
+      success: false
+    };
   }
 };
