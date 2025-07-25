@@ -34,6 +34,64 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Fonction utilitaire pour parser les dates Excel (même logique que DriversImport)
+  const parseExcelDate = (value: any): Date | null => {
+    if (!value) return null;
+    
+    // Si c'est un nombre (format Excel), convertir depuis l'époque Excel
+    if (typeof value === 'number') {
+      // Excel compte les jours depuis le 1er janvier 1900
+      // Attention : Excel considère à tort 1900 comme une année bissextile
+      const excelEpoch = new Date(1899, 11, 30); // 30 décembre 1899
+      return new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+    }
+    
+    // Si c'est une chaîne, essayer de la parser
+    if (typeof value === 'string') {
+      // Essayer différents formats
+      const date = new Date(value);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+      
+      // Essayer le format DD/MM/YYYY
+      const parts = value.split('/');
+      if (parts.length === 3) {
+        const day = parseInt(parts[0]);
+        const month = parseInt(parts[1]) - 1; // Les mois commencent à 0
+        const year = parseInt(parts[2]);
+        const date = new Date(year, month, day);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    }
+    
+    // Si c'est déjà un objet Date
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+    
+    return null;
+  };
+
+  // Fonction pour formater les valeurs pour l'affichage
+  const formatValueForDisplay = (key: string, value: any): string => {
+    if (!value && value !== 0) return '';
+    
+    // Liste des colonnes qui contiennent des dates
+    const dateColumns = ['date_naissance', 'date_embauche', 'date_obtention_permis', 'date_expiration_permis'];
+    
+    if (dateColumns.includes(key.toLowerCase())) {
+      const parsedDate = parseExcelDate(value);
+      if (parsedDate) {
+        return parsedDate.toLocaleDateString('fr-FR');
+      }
+    }
+    
+    return String(value);
+  };
+
   const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([templateColumns]);
@@ -225,7 +283,7 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
                       <TableCell className="font-mono text-sm">{row._row}</TableCell>
                       {Object.keys(row).filter(key => key !== '_row').map(key => (
                         <TableCell key={key} className="max-w-32 truncate">
-                          {String(row[key] || '')}
+                          {formatValueForDisplay(key, row[key])}
                         </TableCell>
                       ))}
                     </TableRow>
