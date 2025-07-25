@@ -9,22 +9,27 @@ import {
   User,
   Calendar,
   MapPin,
-  Car
+  Car,
+  Trash2
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
 import { ChauffeurAvatar } from './ChauffeurAvatar';
+import { useToast } from '@/hooks/use-toast';
 
 interface DriversTabContentProps {
   searchTerm: string;
   onSelectChauffeur: (chauffeur: any) => void;
+  hasWritePermission?: boolean;
 }
 
 export const DriversTabContent: React.FC<DriversTabContentProps> = ({
   searchTerm,
-  onSelectChauffeur
+  onSelectChauffeur,
+  hasWritePermission = true
 }) => {
-  const { data: chauffeurs = [], isLoading } = useQuery({
+  const { toast } = useToast();
+  const { data: chauffeurs = [], isLoading, refetch } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll
   });
@@ -35,6 +40,28 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
     chauffeur.telephone?.includes(searchTerm) ||
     chauffeur.numero_permis?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleDelete = async (chauffeur: any) => {
+    if (!window.confirm(`Êtes-vous sûr de vouloir supprimer ${chauffeur.prenom} ${chauffeur.nom} ?`)) {
+      return;
+    }
+
+    try {
+      await chauffeursService.delete(chauffeur.id);
+      toast({
+        title: "Chauffeur supprimé",
+        description: `${chauffeur.prenom} ${chauffeur.nom} a été supprimé avec succès.`,
+      });
+      refetch();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le chauffeur.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const getStatutBadge = (statut: string) => {
     switch (statut) {
@@ -114,7 +141,7 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
                   </div>
 
                   {/* Actions */}
-                  <div>
+                  <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -124,6 +151,17 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
                       <Edit className="w-4 h-4" />
                       <span>Modifier</span>
                     </Button>
+                    {hasWritePermission && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(chauffeur)}
+                        className="text-red-600 hover:text-red-800 flex items-center space-x-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span>Supprimer</span>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
