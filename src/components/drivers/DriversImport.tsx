@@ -49,11 +49,52 @@ export const DriversImport: React.FC<DriversImportProps> = ({ onClose, onSuccess
           continue;
         }
 
+        // Fonction utilitaire pour parser les dates Excel
+        const parseExcelDate = (value: any): Date | null => {
+          if (!value) return null;
+          
+          // Si c'est un nombre (format Excel), convertir depuis l'époque Excel
+          if (typeof value === 'number') {
+            // Excel compte les jours depuis le 1er janvier 1900
+            // Attention : Excel considère à tort 1900 comme une année bissextile
+            const excelEpoch = new Date(1899, 11, 30); // 30 décembre 1899
+            return new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+          }
+          
+          // Si c'est une chaîne, essayer de la parser
+          if (typeof value === 'string') {
+            // Essayer différents formats
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+              return date;
+            }
+            
+            // Essayer le format DD/MM/YYYY
+            const parts = value.split('/');
+            if (parts.length === 3) {
+              const day = parseInt(parts[0]);
+              const month = parseInt(parts[1]) - 1; // Les mois commencent à 0
+              const year = parseInt(parts[2]);
+              const date = new Date(year, month, day);
+              if (!isNaN(date.getTime())) {
+                return date;
+              }
+            }
+          }
+          
+          // Si c'est déjà un objet Date
+          if (value instanceof Date) {
+            return isNaN(value.getTime()) ? null : value;
+          }
+          
+          return null;
+        };
+
         // Validation et conversion des dates
         let dateNaissance = null;
         if (row.date_naissance) {
-          const parsedDate = new Date(row.date_naissance);
-          if (isNaN(parsedDate.getTime())) {
+          const parsedDate = parseExcelDate(row.date_naissance);
+          if (!parsedDate) {
             results.errors.push(`Ligne ${row._row}: Date de naissance invalide`);
             continue;
           }
@@ -62,8 +103,8 @@ export const DriversImport: React.FC<DriversImportProps> = ({ onClose, onSuccess
 
         let dateEmbauche = null;
         if (row.date_embauche) {
-          const parsedDate = new Date(row.date_embauche);
-          if (isNaN(parsedDate.getTime())) {
+          const parsedDate = parseExcelDate(row.date_embauche);
+          if (!parsedDate) {
             results.errors.push(`Ligne ${row._row}: Date d'embauche invalide`);
             continue;
           }
@@ -72,16 +113,16 @@ export const DriversImport: React.FC<DriversImportProps> = ({ onClose, onSuccess
 
         let dateObtentionPermis = null;
         if (row.date_obtention_permis) {
-          const parsedDate = new Date(row.date_obtention_permis);
-          if (isNaN(parsedDate.getTime())) {
+          const parsedDate = parseExcelDate(row.date_obtention_permis);
+          if (!parsedDate) {
             results.errors.push(`Ligne ${row._row}: Date d'obtention du permis invalide`);
             continue;
           }
           dateObtentionPermis = parsedDate.toISOString().split('T')[0];
         }
 
-        const dateExpirationPermis = new Date(row.date_expiration_permis);
-        if (isNaN(dateExpirationPermis.getTime())) {
+        const dateExpirationPermis = parseExcelDate(row.date_expiration_permis);
+        if (!dateExpirationPermis) {
           results.errors.push(`Ligne ${row._row}: Date d'expiration du permis invalide`);
           continue;
         }
