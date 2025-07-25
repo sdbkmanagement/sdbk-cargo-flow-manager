@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { ChauffeurDetailDialog } from './ChauffeurDetailDialog';
 import { useToast } from '@/hooks/use-toast';
+import { ChauffeurAvatar } from './ChauffeurAvatar';
 
 interface ChauffeursListProps {
   chauffeurs: any[];
@@ -167,17 +168,7 @@ export const ChauffeursList = ({
               <TableRow key={chauffeur.id}>
                 <TableCell>
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                      {chauffeur.photo_url ? (
-                        <img 
-                          src={chauffeur.photo_url} 
-                          alt={`${chauffeur.prenom} ${chauffeur.nom}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-4 h-4 text-gray-400" />
-                      )}
-                    </div>
+                    <ChauffeurAvatar chauffeur={chauffeur} size="sm" />
                     <div>
                       <div className="font-medium">
                         {chauffeur.prenom} {chauffeur.nom}
