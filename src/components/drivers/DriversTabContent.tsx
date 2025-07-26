@@ -20,12 +20,14 @@ import { useToast } from '@/hooks/use-toast';
 interface DriversTabContentProps {
   searchTerm: string;
   onSelectChauffeur: (chauffeur: any) => void;
+  onEditChauffeur?: (chauffeur: any) => void;
   hasWritePermission?: boolean;
 }
 
 export const DriversTabContent: React.FC<DriversTabContentProps> = ({
   searchTerm,
   onSelectChauffeur,
+  onEditChauffeur,
   hasWritePermission = true
 }) => {
   const { toast } = useToast();
@@ -148,9 +150,20 @@ export const DriversTabContent: React.FC<DriversTabContentProps> = ({
                       onClick={() => onSelectChauffeur(chauffeur)}
                       className="flex items-center space-x-1"
                     >
-                      <Edit className="w-4 h-4" />
-                      <span>Modifier</span>
+                      <User className="w-4 h-4" />
+                      <span>Voir</span>
                     </Button>
+                    {hasWritePermission && onEditChauffeur && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onEditChauffeur(chauffeur)}
+                        className="flex items-center space-x-1"
+                      >
+                        <Edit className="w-4 h-4" />
+                        <span>Modifier</span>
+                      </Button>
+                    )}
                     {hasWritePermission && (
                       <Button
                         variant="outline"

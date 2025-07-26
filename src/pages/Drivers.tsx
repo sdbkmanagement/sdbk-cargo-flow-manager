@@ -23,6 +23,7 @@ const Drivers = () => {
   const [selectedChauffeur, setSelectedChauffeur] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
   const [showNewChauffeurForm, setShowNewChauffeurForm] = useState(false);
+  const [showEditChauffeurForm, setShowEditChauffeurForm] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
 
   // Récupération des chauffeurs avec actualisation automatique
@@ -36,6 +37,11 @@ const Drivers = () => {
   const handleSelectChauffeur = (chauffeur: any) => {
     setSelectedChauffeur(chauffeur);
     setShowDetailDialog(true);
+  };
+
+  const handleEditChauffeur = (chauffeur: any) => {
+    setSelectedChauffeur(chauffeur);
+    setShowEditChauffeurForm(true);
   };
 
   const handleNewChauffeur = () => {
@@ -56,6 +62,16 @@ const Drivers = () => {
     });
   };
 
+  const handleEditSuccess = () => {
+    setShowEditChauffeurForm(false);
+    setSelectedChauffeur(null);
+    refetch();
+    toast({
+      title: "Chauffeur modifié",
+      description: "Les informations ont été mises à jour avec succès.",
+    });
+  };
+
   const handleImportSuccess = () => {
     setShowImportDialog(false);
     refetch();
@@ -69,6 +85,11 @@ const Drivers = () => {
     setShowNewChauffeurForm(false);
   };
 
+  const handleEditFormCancel = () => {
+    setShowEditChauffeurForm(false);
+    setSelectedChauffeur(null);
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -78,6 +99,7 @@ const Drivers = () => {
           <DriversTabContent 
             searchTerm={searchTerm}
             onSelectChauffeur={handleSelectChauffeur}
+            onEditChauffeur={handleEditChauffeur}
           />
         );
       case 'planning':
@@ -158,6 +180,20 @@ const Drivers = () => {
           <ChauffeurForm 
             onSuccess={handleCreateSuccess}
             onCancel={handleFormCancel}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog pour modification de chauffeur */}
+      <Dialog open={showEditChauffeurForm} onOpenChange={setShowEditChauffeurForm}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Modifier le chauffeur</DialogTitle>
+          </DialogHeader>
+          <ChauffeurForm 
+            chauffeur={selectedChauffeur}
+            onSuccess={handleEditSuccess}
+            onCancel={handleEditFormCancel}
           />
         </DialogContent>
       </Dialog>
