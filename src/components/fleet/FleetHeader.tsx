@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Truck, Upload } from 'lucide-react';
-import { VehicleImport } from './VehicleImport';
+import { VehicleTracteurRemorqueImport } from './VehicleTracteurRemorqueImport';
 
 interface FleetHeaderProps {
   onAddVehicle: () => void;
@@ -43,7 +43,7 @@ export const FleetHeader: React.FC<FleetHeaderProps> = ({ onAddVehicle, vehicleC
           <DialogHeader>
             <DialogTitle>Import de véhicules</DialogTitle>
           </DialogHeader>
-          <VehicleImport
+          <VehicleTracteurRemorqueImport
             onClose={() => setShowVehicleImport(false)}
             onSuccess={() => {
               setShowVehicleImport(false);
