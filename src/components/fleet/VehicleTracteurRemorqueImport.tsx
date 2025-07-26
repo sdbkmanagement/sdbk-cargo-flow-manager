@@ -16,19 +16,19 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
     'Prénom du propriétaire',
     'Plaque d\'immatriculation tracteur',
     'Plaque d\'immatriculation remorque',
-    'Marque',
-    'Modèle',
-    'Configuration',
-    'Numéro de châssis',
-    'Date de fabrication',
-    'Date de mise en circulation',
+    'Marque tracteur',
+    'Modèle tracteur',
+    'Configuration tracteur',
+    'Numéro de châssis tracteur',
+    'Date de fabrication tracteur',
+    'Date de mise en circulation tracteur',
     'Volume en litres',
-    'Marque',
-    'Modèle',
-    'Configuration',
-    'Numéro de châssis',
-    'Date de fabrication',
-    'Date de mise en circulation'
+    'Marque remorque',
+    'Modèle remorque',
+    'Configuration remorque',
+    'Numéro de châssis remorque',
+    'Date de fabrication remorque',
+    'Date de mise en circulation remorque'
   ];
 
   const handleImport = async (data: any[]) => {
@@ -60,24 +60,23 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
           immatriculation: row['Plaque d\'immatriculation tracteur'] ? String(row['Plaque d\'immatriculation tracteur']).trim() : null,
           immatriculation_remorque: row['Plaque d\'immatriculation remorque'] ? String(row['Plaque d\'immatriculation remorque']).trim() : null,
           
-          // Données tracteur - utilise les premières colonnes Marque, Modèle, etc.
-          marque: row['Marque'] ? String(row['Marque']).trim() : null,
-          modele: row['Modèle'] ? String(row['Modèle']).trim() : null,
-          configuration_tracteur: row['Configuration'] ? String(row['Configuration']).trim() : null,
-          numero_chassis: row['Numéro de châssis'] ? String(row['Numéro de châssis']).trim() : null,
-          date_fabrication_tracteur: row['Date de fabrication'] ? new Date(row['Date de fabrication']).toISOString().split('T')[0] : null,
-          date_mise_circulation_tracteur: row['Date de mise en circulation'] ? new Date(row['Date de mise en circulation']).toISOString().split('T')[0] : null,
+          // Données tracteur
+          marque: row['Marque tracteur'] ? String(row['Marque tracteur']).trim() : null,
+          modele: row['Modèle tracteur'] ? String(row['Modèle tracteur']).trim() : null,
+          configuration_tracteur: row['Configuration tracteur'] ? String(row['Configuration tracteur']).trim() : null,
+          numero_chassis: row['Numéro de châssis tracteur'] ? String(row['Numéro de châssis tracteur']).trim() : null,
+          date_fabrication_tracteur: row['Date de fabrication tracteur'] ? new Date(row['Date de fabrication tracteur']).toISOString().split('T')[0] : null,
+          date_mise_circulation_tracteur: row['Date de mise en circulation tracteur'] ? new Date(row['Date de mise en circulation tracteur']).toISOString().split('T')[0] : null,
           
-          // Volume et données remorque - utilise les dernières colonnes
+          // Volume et données remorque
           capacite_max: row['Volume en litres'] ? Number(row['Volume en litres']) : null,
           unite_capacite: row['Volume en litres'] ? 'litres' : null,
-          // Pour les colonnes dupliquées, on récupère les dernières valeurs (colonnes 15-20)
-          marque_remorque: row['Marque'] ? String(row['Marque']).trim() : null,
-          modele_remorque: row['Modèle'] ? String(row['Modèle']).trim() : null,
-          configuration_remorque: row['Configuration'] ? String(row['Configuration']).trim() : null,
-          numero_chassis_remorque: row['Numéro de châssis'] ? String(row['Numéro de châssis']).trim() : null,
-          date_fabrication_remorque: row['Date de fabrication'] ? new Date(row['Date de fabrication']).toISOString().split('T')[0] : null,
-          date_mise_circulation_remorque: row['Date de mise en circulation'] ? new Date(row['Date de mise en circulation']).toISOString().split('T')[0] : null,
+          marque_remorque: row['Marque remorque'] ? String(row['Marque remorque']).trim() : null,
+          modele_remorque: row['Modèle remorque'] ? String(row['Modèle remorque']).trim() : null,
+          configuration_remorque: row['Configuration remorque'] ? String(row['Configuration remorque']).trim() : null,
+          numero_chassis_remorque: row['Numéro de châssis remorque'] ? String(row['Numéro de châssis remorque']).trim() : null,
+          date_fabrication_remorque: row['Date de fabrication remorque'] ? new Date(row['Date de fabrication remorque']).toISOString().split('T')[0] : null,
+          date_mise_circulation_remorque: row['Date de mise en circulation remorque'] ? new Date(row['Date de mise en circulation remorque']).toISOString().split('T')[0] : null,
           
           statut: 'disponible',
           validation_requise: false
