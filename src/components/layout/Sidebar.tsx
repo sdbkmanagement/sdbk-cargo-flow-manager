@@ -62,7 +62,7 @@ const navigationItems = [
   {
     title: 'Administration',
     icon: Settings,
-    href: '/administration',
+    href: '/admin',
     permissions: ['admin', 'all']
   }
 ];

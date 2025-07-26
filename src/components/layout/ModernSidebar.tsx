@@ -61,7 +61,7 @@ const menuItems = [
     icon: CheckCircle
   },
   {
-    path: '/administration',
+    path: '/admin',
     label: 'Administration',
     icon: Settings
   }
