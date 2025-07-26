@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/layout/AuthGuard';
-import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
+import { ModuleLayout } from '@/components/layout/ModuleLayout';
 import { Toaster } from '@/components/ui/toaster';
 import Home from '@/pages/Home';
 import Dashboard from '@/pages/Dashboard';
@@ -43,14 +43,12 @@ function App() {
               </AuthGuard>
             } />
             
-            {/* Routes protégées avec layout traditionnel */}
+            {/* Routes protégées avec nouveau layout fullscreen */}
             <Route 
               path="/dashboard" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Tableau de bord">
-                    <Dashboard />
-                  </ResponsiveLayout>
+                  <Dashboard />
                 </AuthGuard>
               } 
             />
@@ -58,9 +56,9 @@ function App() {
               path="/fleet" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Gestion de la flotte">
+                  <ModuleLayout title="Flotte" subtitle="Gestion véhicules et maintenance">
                     <Fleet />
-                  </ResponsiveLayout>
+                  </ModuleLayout>
                 </AuthGuard>
               } 
             />
@@ -68,9 +66,9 @@ function App() {
               path="/missions" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Gestion des missions">
+                  <ModuleLayout title="Missions" subtitle="Planification et suivi transports">
                     <Missions />
-                  </ResponsiveLayout>
+                  </ModuleLayout>
                 </AuthGuard>
               } 
             />
@@ -78,9 +76,9 @@ function App() {
               path="/drivers" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Gestion des chauffeurs">
+                  <ModuleLayout title="Chauffeurs" subtitle="Gestion conducteurs et documents">
                     <Drivers />
-                  </ResponsiveLayout>
+                  </ModuleLayout>
                 </AuthGuard>
               } 
             />
@@ -88,9 +86,9 @@ function App() {
               path="/billing" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Facturation">
+                  <ModuleLayout title="Facturation" subtitle="Devis, factures et paiements">
                     <Billing />
-                  </ResponsiveLayout>
+                  </ModuleLayout>
                 </AuthGuard>
               } 
             />
@@ -98,9 +96,9 @@ function App() {
               path="/rh" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Ressources Humaines">
+                  <ModuleLayout title="RH" subtitle="Ressources humaines et formations">
                     <RH />
-                  </ResponsiveLayout>
+                  </ModuleLayout>
                 </AuthGuard>
               } 
             />
@@ -108,9 +106,9 @@ function App() {
               path="/admin" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Administration">
+                  <ModuleLayout title="Administration" subtitle="Utilisateurs, rôles et paramètres">
                     <Administration />
-                  </ResponsiveLayout>
+                  </ModuleLayout>
                 </AuthGuard>
               } 
             />
@@ -118,9 +116,9 @@ function App() {
               path="/validations" 
               element={
                 <AuthGuard>
-                  <ResponsiveLayout title="Validations">
+                  <ModuleLayout title="Validations" subtitle="Workflows validation véhicules">
                     <Validations />
-                  </ResponsiveLayout>
+                  </ModuleLayout>
                 </AuthGuard>
               } 
             />

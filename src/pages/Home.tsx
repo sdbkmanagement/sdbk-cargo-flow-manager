@@ -1,8 +1,8 @@
 import React from 'react';
-import { ModernDashboard } from '@/components/layout/ModernDashboard';
+import { ModuleHub } from '@/components/layout/ModuleHub';
 
 const Home: React.FC = () => {
-  return <ModernDashboard />;
+  return <ModuleHub />;
 };
 
 export default Home;

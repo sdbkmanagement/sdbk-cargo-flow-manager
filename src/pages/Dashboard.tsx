@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { ModuleLayout } from '@/components/layout/ModuleLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -133,25 +134,26 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* En-tête */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Tableau de Bord</h1>
-          <p className="text-muted-foreground">Vue d'ensemble de vos opérations de transport</p>
+    <ModuleLayout title="Tableau de Bord" subtitle="Vue d'ensemble de vos opérations">
+      <div className="space-y-6">
+        {/* En-tête avec date */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Analytics & Statistiques</h2>
+            <p className="text-gray-600">Suivi en temps réel de vos activités</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm text-muted-foreground">
+              {new Date().toLocaleDateString('fr-FR', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4" />
-          <span className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString('fr-FR', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </span>
-        </div>
-      </div>
 
       {/* Statistiques principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -351,7 +353,8 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </ModuleLayout>
   );
 };
 
