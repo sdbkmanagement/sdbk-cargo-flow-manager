@@ -2234,64 +2234,7 @@ export type Database = {
       }
     }
     Views: {
-      alertes_documents_chauffeurs: {
-        Row: {
-          chauffeur_id: string | null
-          chauffeur_nom: string | null
-          date_expiration: string | null
-          document_nom: string | null
-          document_type: string | null
-          id: string | null
-          jours_restants: number | null
-          niveau_alerte: string | null
-          statut: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "documents_chauffeur_id_fkey"
-            columns: ["chauffeur_id"]
-            isOneToOne: false
-            referencedRelation: "chauffeurs"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      alertes_documents_vehicules: {
-        Row: {
-          date_expiration: string | null
-          document_nom: string | null
-          document_type: string | null
-          id: string | null
-          immatriculation: string | null
-          jours_restants: number | null
-          niveau_alerte: string | null
-          statut: string | null
-          vehicule_id: string | null
-          vehicule_numero: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "documents_vehicules_vehicule_id_fkey"
-            columns: ["vehicule_id"]
-            isOneToOne: false
-            referencedRelation: "vehicules"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      alertes_rh: {
-        Row: {
-          date_echeance: string | null
-          employe_id: string | null
-          message: string | null
-          nom_complet: string | null
-          poste: string | null
-          priorite: string | null
-          service: string | null
-          type_alerte: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       admin_create_user_with_auth: {
