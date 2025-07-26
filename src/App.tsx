@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { AuthGuard } from '@/components/layout/AuthGuard';
 import { ResponsiveLayout } from '@/components/layout/ResponsiveLayout';
 import { Toaster } from '@/components/ui/toaster';
+import Home from '@/pages/Home';
 import Dashboard from '@/pages/Dashboard';
 import Fleet from '@/pages/Fleet';
 import Missions from '@/pages/Missions';
@@ -35,19 +36,25 @@ function App() {
             {/* Route publique pour l'authentification */}
             <Route path="/auth" element={<Auth />} />
             
-            {/* Routes protégées */}
+            {/* Page d'accueil moderne sans layout */}
+            <Route path="/" element={
+              <AuthGuard>
+                <Home />
+              </AuthGuard>
+            } />
+            
+            {/* Routes protégées avec layout traditionnel */}
             <Route path="/*" element={
               <AuthGuard>
                 <ResponsiveLayout>
                   <Routes>
-                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/fleet" element={<Fleet />} />
                     <Route path="/missions" element={<Missions />} />
                     <Route path="/drivers" element={<Drivers />} />
                     <Route path="/billing" element={<Billing />} />
                     <Route path="/rh" element={<RH />} />
-                    <Route path="/administration" element={<Administration />} />
+                    <Route path="/admin" element={<Administration />} />
                     <Route path="/validations" element={<Validations />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
