@@ -12,19 +12,37 @@ export const AlertesDocuments = () => {
     queryFn: async () => {
       console.log('Fetching document alerts...');
       
-      const [vehiculesAlertes, chauffeursAlertes] = await Promise.all([
+      // Requêtes directes aux tables avec RLS au lieu des vues supprimées
+      const [vehiculesResponse, chauffeursResponse] = await Promise.all([
+        // Documents de véhicules qui expirent bientôt
         supabase
-          .from('alertes_documents_vehicules')
-          .select('*')
+          .from('documents_vehicules')
+          .select('*, vehicules!inner(numero)')
+          .not('date_expiration', 'is', null)
+          .lte('date_expiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
           .order('date_expiration', { ascending: true }),
+        
+        // Documents de chauffeurs qui expirent bientôt  
         supabase
-          .from('alertes_documents_chauffeurs')  
-          .select('*')
+          .from('documents')
+          .select('*, chauffeurs!inner(nom, prenom)')
+          .eq('entity_type', 'chauffeur')
+          .not('date_expiration', 'is', null)
+          .lte('date_expiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
           .order('date_expiration', { ascending: true })
       ]);
 
-      const alertesVehicules = vehiculesAlertes.data || [];
-      const alertesChauffeurs = chauffeursAlertes.data || [];
+      const alertesVehicules = (vehiculesResponse.data || []).map(doc => ({
+        ...doc,
+        jours_restants: Math.ceil((new Date(doc.date_expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        vehicule_numero: doc.vehicules?.numero
+      }));
+
+      const alertesChauffeurs = (chauffeursResponse.data || []).map(doc => ({
+        ...doc,
+        jours_restants: Math.ceil((new Date(doc.date_expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+        chauffeur_nom: `${doc.chauffeurs?.prenom} ${doc.chauffeurs?.nom}`
+      }));
       
       const totalAlertes = alertesVehicules.length + alertesChauffeurs.length;
       const alertesCritiques = [...alertesVehicules, ...alertesChauffeurs]

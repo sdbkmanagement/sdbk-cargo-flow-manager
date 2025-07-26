@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Clock, FileText, Eye } from 'lucide-react';
-import { alertesService, AlerteDocument } from '@/services/alertesService';
+import { supabase } from '@/integrations/supabase/client';
+import { AlerteDocument } from '@/services/alertesService';
 
 interface AlertesDocumentsVehiculesProps {
   onSelectVehicule?: (vehiculeId: string) => void;
@@ -21,10 +22,57 @@ export const AlertesDocumentsVehicules = ({ onSelectVehicule }: AlertesDocuments
   const loadAlertes = async () => {
     try {
       setLoading(true);
-      const data = await alertesService.getAlertesVehicules();
-      setAlertes(data);
+      // Requête directe à la table documents_vehicules avec jointure
+      const { data, error } = await supabase
+        .from('documents_vehicules')
+        .select(`
+          id,
+          vehicule_id,
+          nom,
+          type,
+          date_expiration,
+          statut,
+          vehicules!inner(numero, immatriculation)
+        `)
+        .not('date_expiration', 'is', null)
+        .lte('date_expiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('date_expiration', { ascending: true });
+
+      if (error) {
+        console.error('Erreur lors du chargement des alertes:', error);
+        setAlertes([]);
+        return;
+      }
+
+      // Transformer les données pour correspondre au format attendu
+      const alertesFormatted: AlerteDocument[] = (data || []).map(doc => {
+        const joursRestants = Math.ceil((new Date(doc.date_expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        let niveauAlerte = 'INFO';
+        
+        if (joursRestants < 0) {
+          niveauAlerte = 'expire';
+        } else if (joursRestants <= 7) {
+          niveauAlerte = 'a_renouveler';
+        }
+
+        return {
+          id: doc.id,
+          vehicule_id: doc.vehicule_id,
+          vehicule_numero: doc.vehicules?.numero || 'N/A',
+          immatriculation: doc.vehicules?.immatriculation || '',
+          document_nom: doc.nom,
+          document_type: doc.type,
+          date_expiration: doc.date_expiration,
+          jours_restants: joursRestants,
+          statut: doc.statut || 'valide',
+          niveau_alerte: niveauAlerte
+        };
+      });
+
+      setAlertes(alertesFormatted);
     } catch (error) {
       console.error('Erreur lors du chargement des alertes:', error);
+      setAlertes([]);
     } finally {
       setLoading(false);
     }

@@ -16,17 +16,53 @@ export interface AlerteChauffeur {
 export const alertesChauffeursService = {
   async getAlertesChauffeurs(): Promise<AlerteChauffeur[]> {
     try {
+      // Requête directe aux tables avec jointure
       const { data, error } = await supabase
-        .from('alertes_documents_chauffeurs')
-        .select('*')
-        .order('jours_restants', { ascending: true });
+        .from('documents')
+        .select(`
+          id,
+          entity_id,
+          nom,
+          type,
+          date_expiration,
+          statut,
+          chauffeurs!inner(nom, prenom)
+        `)
+        .eq('entity_type', 'chauffeur')
+        .not('date_expiration', 'is', null)
+        .lte('date_expiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('date_expiration', { ascending: true });
 
       if (error) {
         console.error('Erreur lors du chargement des alertes chauffeurs:', error);
         return [];
       }
 
-      return data || [];
+      // Transformer les données pour correspondre au format AlerteChauffeur
+      const alertes: AlerteChauffeur[] = (data || []).map(doc => {
+        const joursRestants = Math.ceil((new Date(doc.date_expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+        let niveauAlerte = 'INFO';
+        
+        if (joursRestants < 0) {
+          niveauAlerte = 'expire';
+        } else if (joursRestants <= 7) {
+          niveauAlerte = 'a_renouveler';
+        }
+
+        return {
+          id: doc.id,
+          chauffeur_id: doc.entity_id || '',
+          chauffeur_nom: doc.chauffeurs ? `${doc.chauffeurs.prenom} ${doc.chauffeurs.nom}` : 'Chauffeur inconnu',
+          document_nom: doc.nom,
+          document_type: doc.type,
+          date_expiration: doc.date_expiration,
+          jours_restants: joursRestants,
+          statut: doc.statut || 'valide',
+          niveau_alerte: niveauAlerte
+        };
+      });
+
+      return alertes;
     } catch (error) {
       console.error('Erreur générale alertes chauffeurs:', error);
       return [];

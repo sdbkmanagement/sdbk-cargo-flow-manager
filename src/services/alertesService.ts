@@ -23,105 +23,38 @@ export const alertesService = {
     try {
       console.log('🔍 Début du chargement des alertes documents chauffeurs...');
       
-      // D'abord, vérifier s'il y a des documents pour les chauffeurs
-      const { data: allDocuments, error: allDocsError } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('entity_type', 'chauffeur');
-
-      console.log('📄 Tous les documents chauffeurs:', allDocuments);
-      
-      if (allDocsError) {
-        console.error('❌ Erreur lors de la récupération de tous les documents:', allDocsError);
-      }
-
-      // Maintenant essayer la vue
+      // Requête directe à la table documents avec jointure
       const { data, error } = await supabase
-        .from('alertes_documents_chauffeurs')
-        .select('*')
-        .order('jours_restants', { ascending: true, nullsFirst: false });
-
-      console.log('🎯 Données brutes de la vue alertes_documents_chauffeurs:', data);
-      console.log('🎯 Erreur éventuelle:', error);
-
-      if (error) {
-        console.error('❌ Erreur lors du chargement des alertes chauffeurs:', error);
-        
-        // Fallback: construire les alertes manuellement
-        console.log('🔄 Tentative de fallback manuel...');
-        return await this.getAlertesChauffeursFallback();
-      }
-
-      if (!data || data.length === 0) {
-        console.log('⚠️ Aucune donnée retournée par la vue, tentative de fallback...');
-        return await this.getAlertesChauffeursFallback();
-      }
-
-      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
-      const alertesFiltered = data?.filter(alert => {
-        if (alert.jours_restants === null) return false;
-        return alert.jours_restants <= 30;
-      }) || [];
-
-      console.log('✅ Alertes chauffeurs filtrées (≤ 30 jours):', alertesFiltered);
-      return alertesFiltered;
-    } catch (error) {
-      console.error('💥 Erreur lors du chargement des alertes chauffeurs:', error);
-      return await this.getAlertesChauffeursFallback();
-    }
-  },
-
-  // Méthode de fallback pour construire les alertes manuellement
-  async getAlertesChauffeursFallback() {
-    try {
-      console.log('🔄 Exécution de la méthode fallback...');
-      
-      const { data: documents, error: docsError } = await supabase
         .from('documents')
         .select(`
           id,
           entity_id,
           nom,
           type,
-          date_expiration
+          date_expiration,
+          statut,
+          chauffeurs!inner(nom, prenom)
         `)
         .eq('entity_type', 'chauffeur')
-        .not('date_expiration', 'is', null);
+        .not('date_expiration', 'is', null)
+        .lte('date_expiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('date_expiration', { ascending: true });
 
-      if (docsError) {
-        console.error('❌ Erreur fallback documents:', docsError);
+      if (error) {
+        console.error('❌ Erreur lors du chargement des alertes chauffeurs:', error);
         return [];
       }
 
-      console.log('📄 Documents trouvés dans le fallback:', documents);
+      console.log('📄 Documents trouvés:', data);
 
-      if (!documents || documents.length === 0) {
-        console.log('⚠️ Aucun document avec date d\'expiration trouvé');
+      if (!data || data.length === 0) {
+        console.log('⚠️ Aucun document avec date d\'expiration proche trouvé');
         return [];
       }
 
-      // Récupérer les informations des chauffeurs
-      const chauffeurIds = documents.map(doc => doc.entity_id).filter(Boolean);
-      console.log('👥 IDs des chauffeurs:', chauffeurIds);
-
-      const { data: chauffeurs, error: chauffeursError } = await supabase
-        .from('chauffeurs')
-        .select('id, nom, prenom')
-        .in('id', chauffeurIds);
-
-      if (chauffeursError) {
-        console.error('❌ Erreur récupération chauffeurs:', chauffeursError);
-        return [];
-      }
-
-      console.log('👤 Chauffeurs trouvés:', chauffeurs);
-
-      // Construire les alertes manuellement
-      const alertes = documents.map(doc => {
-        const chauffeur = chauffeurs?.find(c => c.id === doc.entity_id);
-        const dateExpiration = new Date(doc.date_expiration);
-        const aujourd = new Date();
-        const joursRestants = Math.ceil((dateExpiration.getTime() - aujourd.getTime()) / (1000 * 60 * 60 * 24));
+      // Construire les alertes
+      const alertes = data.map(doc => {
+        const joursRestants = Math.ceil((new Date(doc.date_expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
         let statut = 'valide';
         let niveauAlerte = 'INFO';
@@ -140,7 +73,7 @@ export const alertesService = {
         return {
           id: doc.id,
           chauffeur_id: doc.entity_id,
-          chauffeur_nom: chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : 'Chauffeur inconnu',
+          chauffeur_nom: doc.chauffeurs ? `${doc.chauffeurs.prenom} ${doc.chauffeurs.nom}` : 'Chauffeur inconnu',
           document_nom: doc.nom,
           document_type: doc.type,
           date_expiration: doc.date_expiration,
@@ -148,13 +81,12 @@ export const alertesService = {
           statut,
           niveau_alerte: niveauAlerte
         };
-      }).filter(alerte => alerte.jours_restants <= 30); // Filtrer les alertes pertinentes
+      });
 
-      console.log('✅ Alertes construites manuellement:', alertes);
+      console.log('✅ Alertes chauffeurs construites:', alertes);
       return alertes;
-
     } catch (error) {
-      console.error('💥 Erreur dans la méthode fallback:', error);
+      console.error('💥 Erreur lors du chargement des alertes chauffeurs:', error);
       return [];
     }
   },
@@ -164,26 +96,63 @@ export const alertesService = {
     try {
       console.log('🚗 Chargement des alertes documents véhicules...');
       
+      // Requête directe à la table documents_vehicules avec jointure
       const { data, error } = await supabase
-        .from('alertes_documents_vehicules')
-        .select('*')
-        .order('jours_restants', { ascending: true, nullsFirst: false });
+        .from('documents_vehicules')
+        .select(`
+          id,
+          vehicule_id,
+          nom,
+          type,
+          date_expiration,
+          statut,
+          vehicules!inner(numero, immatriculation)
+        `)
+        .not('date_expiration', 'is', null)
+        .lte('date_expiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('date_expiration', { ascending: true });
 
       if (error) {
         console.error('❌ Erreur lors du chargement des alertes véhicules:', error);
         return [];
       }
 
-      console.log('🚗 Alertes véhicules récupérées:', data);
+      console.log('🚗 Documents véhicules trouvés:', data);
 
-      // Filtrer pour ne garder que les alertes pertinentes (moins de 30 jours ou expirés)
-      const alertesFiltered = data?.filter(alert => {
-        if (alert.jours_restants === null) return false;
-        return alert.jours_restants <= 30;
-      }) || [];
+      // Construire les alertes
+      const alertes = (data || []).map(doc => {
+        const joursRestants = Math.ceil((new Date(doc.date_expiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 
-      console.log('✅ Alertes véhicules filtrées (≤ 30 jours):', alertesFiltered);
-      return alertesFiltered;
+        let statut = 'valide';
+        let niveauAlerte = 'INFO';
+
+        if (joursRestants < 0) {
+          statut = 'expire';
+          niveauAlerte = 'URGENT - EXPIRÉ';
+        } else if (joursRestants <= 7) {
+          statut = 'a_renouveler';
+          niveauAlerte = 'URGENT';
+        } else if (joursRestants <= 30) {
+          statut = 'a_renouveler';
+          niveauAlerte = 'ATTENTION';
+        }
+
+        return {
+          id: doc.id,
+          vehicule_id: doc.vehicule_id,
+          vehicule_numero: doc.vehicules?.numero || 'N/A',
+          immatriculation: doc.vehicules?.immatriculation || '',
+          document_nom: doc.nom,
+          document_type: doc.type,
+          date_expiration: doc.date_expiration,
+          jours_restants: joursRestants,
+          statut,
+          niveau_alerte: niveauAlerte
+        };
+      });
+
+      console.log('✅ Alertes véhicules construites:', alertes);
+      return alertes;
     } catch (error) {
       console.error('💥 Erreur lors du chargement des alertes véhicules:', error);
       return [];

@@ -212,15 +212,32 @@ export const rhService = {
     return data;
   },
 
-  // Alertes RH
+  // Alertes RH - remplacer la vue par une requête directe
   async getAlertesRH() {
+    // Compter les documents chauffeurs qui expirent bientôt
     const { data, error } = await supabase
-      .from('alertes_rh')
-      .select('*')
-      .order('priorite', { ascending: false });
+      .from('documents')
+      .select('id, entity_id, nom, type, date_expiration')
+      .eq('entity_type', 'chauffeur')
+      .not('date_expiration', 'is', null)
+      .lte('date_expiration', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+      .order('date_expiration', { ascending: true });
 
     if (error) throw error;
-    return data as AlerteRH[];
+    
+    // Transformer en format AlerteRH simulé
+    const alertesSimulees = (data || []).map(doc => ({
+      type_alerte: 'document_expiration',
+      employe_id: doc.entity_id || '',
+      nom_complet: 'Document ' + doc.nom,
+      poste: 'Chauffeur',
+      service: 'Transport',
+      priorite: 'moyenne' as const,
+      description: `Document ${doc.type} expire bientôt`,
+      date_creation: doc.date_expiration || ''
+    }));
+
+    return alertesSimulees;
   },
 
   // Statistiques

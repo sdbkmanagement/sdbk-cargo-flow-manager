@@ -89,17 +89,21 @@ export const RHStats = () => {
     }
   });
 
-  // Fetch alertes count
+  // Fetch alertes count depuis les tables directes
   const { data: alertesCount, isLoading: alertesLoading } = useQuery({
     queryKey: ['rh-stats-alertes'],
     queryFn: async () => {
+      // Compter les documents qui expirent bientôt (employés/chauffeurs)
       const { data, error } = await supabase
-        .from('alertes_rh')
-        .select('priorite');
+        .from('documents')
+        .select('date_expiration')
+        .eq('entity_type', 'chauffeur')
+        .not('date_expiration', 'is', null)
+        .lte('date_expiration', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
       
       if (error) throw error;
       
-      const critiques = data?.filter(a => a.priorite === 'critique').length || 0;
+      const critiques = data?.length || 0;
       
       return { critiques };
     }

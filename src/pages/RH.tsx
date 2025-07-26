@@ -60,13 +60,40 @@ const RH = () => {
   const { data: alertes } = useQuery({
     queryKey: ['alertes-rh'],
     queryFn: async () => {
+      // Requête directe aux tables au lieu de la vue supprimée
       const { data, error } = await supabase
-        .from('alertes_rh')
-        .select('*')
-        .order('priorite', { ascending: false });
+        .from('documents')
+        .select(`
+          id, 
+          entity_id, 
+          nom, 
+          type, 
+          date_expiration, 
+          entity_type,
+          chauffeurs!inner(nom, prenom)
+        `)
+        .eq('entity_type', 'chauffeur')
+        .not('date_expiration', 'is', null)
+        .lte('date_expiration', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('date_expiration', { ascending: true });
       
       if (error) throw error;
-      return data;
+      
+      // Transformer en format Alerte attendu par AlertesRH
+      const alertesFormatted = (data || []).map(doc => ({
+        type_alerte: 'document_expiration',
+        employe_id: doc.entity_id || '',
+        nom_complet: doc.chauffeurs ? `${doc.chauffeurs.prenom} ${doc.chauffeurs.nom}` : 'Chauffeur inconnu',
+        poste: 'Chauffeur',
+        service: 'Transport',
+        priorite: 'critique' as const,
+        description: `Document ${doc.type} expire bientôt`,
+        date_creation: doc.date_expiration || '',
+        message: `Le document ${doc.nom} expire le ${new Date(doc.date_expiration).toLocaleDateString('fr-FR')}`,
+        date_echeance: doc.date_expiration
+      }));
+      
+      return alertesFormatted;
     }
   });
 
