@@ -31,8 +31,8 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+      {/* Sidebar moderne */}
       <ModernSidebar
         isCollapsed={sidebarCollapsed}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -40,7 +40,7 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
         onMobileClose={closeMobileSidebar}
       />
 
-      {/* Main content area */}
+      {/* Main content area avec nouveau design */}
       <div 
         className={cn(
           "transition-all duration-300 ease-out min-h-screen",
@@ -51,17 +51,20 @@ export const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
           "ml-0"
         )}
       >
-        {/* Header */}
+        {/* Header moderne */}
         <ModernHeader
           title={title}
           onMenuClick={toggleSidebar}
           showMenuButton={true}
         />
 
-        {/* Page content */}
-        <main className="p-3 sm:p-4 lg:p-6">
+        {/* Page content avec nouveau style */}
+        <main className="p-4 sm:p-6 lg:p-8">
           <div className="max-w-full">
-            {children}
+            {/* Conteneur moderne avec effet glassmorphism */}
+            <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-xl p-6 lg:p-8 animate-fade-in">
+              {children}
+            </div>
           </div>
         </main>
       </div>

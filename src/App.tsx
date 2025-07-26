@@ -44,23 +44,87 @@ function App() {
             } />
             
             {/* Routes protégées avec layout traditionnel */}
-            <Route path="/*" element={
-              <AuthGuard>
-                <ResponsiveLayout>
-                  <Routes>
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/fleet" element={<Fleet />} />
-                    <Route path="/missions" element={<Missions />} />
-                    <Route path="/drivers" element={<Drivers />} />
-                    <Route path="/billing" element={<Billing />} />
-                    <Route path="/rh" element={<RH />} />
-                    <Route path="/admin" element={<Administration />} />
-                    <Route path="/validations" element={<Validations />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </ResponsiveLayout>
-              </AuthGuard>
-            } />
+            <Route 
+              path="/dashboard" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Tableau de bord">
+                    <Dashboard />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/fleet" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Gestion de la flotte">
+                    <Fleet />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/missions" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Gestion des missions">
+                    <Missions />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/drivers" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Gestion des chauffeurs">
+                    <Drivers />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/billing" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Facturation">
+                    <Billing />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/rh" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Ressources Humaines">
+                    <RH />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/admin" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Administration">
+                    <Administration />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/validations" 
+              element={
+                <AuthGuard>
+                  <ResponsiveLayout title="Validations">
+                    <Validations />
+                  </ResponsiveLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Router>
         <Toaster />
