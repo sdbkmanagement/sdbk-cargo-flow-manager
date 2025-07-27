@@ -31,6 +31,75 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
     'Date de mise en circulation remorque'
   ];
 
+  const templateData = [
+    {
+      'Type de véhicule': 'tracteur_remorque',
+      'Base': 'Dakar',
+      'Type de transport': 'hydrocarbures',
+      'Nom du propriétaire': 'Société DBK',
+      'Prénom du propriétaire': '',
+      'Plaque d\'immatriculation tracteur': 'DK-1234-AB',
+      'Plaque d\'immatriculation remorque': 'DK-5678-CD',
+      'Marque tracteur': 'VOLVO',
+      'Modèle tracteur': 'FH16',
+      'Configuration tracteur': '6x4',
+      'Numéro de châssis tracteur': 'YV2A2D28XGA123456',
+      'Date de fabrication tracteur': '2022-01-15',
+      'Date de mise en circulation tracteur': '2022-03-01',
+      'Volume en litres': '35000',
+      'Marque remorque': 'TRAILOR',
+      'Modèle remorque': 'CITERNE',
+      'Configuration remorque': '3 essieux',
+      'Numéro de châssis remorque': 'TRA789123456',
+      'Date de fabrication remorque': '2022-02-10',
+      'Date de mise en circulation remorque': '2022-03-15'
+    },
+    {
+      'Type de véhicule': 'tracteur_remorque',
+      'Base': 'Thiès',
+      'Type de transport': 'marchandises_diverses',
+      'Nom du propriétaire': 'Société DBK',
+      'Prénom du propriétaire': '',
+      'Plaque d\'immatriculation tracteur': 'DK-9876-EF',
+      'Plaque d\'immatriculation remorque': 'DK-5432-GH',
+      'Marque tracteur': 'SCANIA',
+      'Modèle tracteur': 'R450',
+      'Configuration tracteur': '4x2',
+      'Numéro de châssis tracteur': 'YS2P4X20XGA987654',
+      'Date de fabrication tracteur': '2021-06-20',
+      'Date de mise en circulation tracteur': '2021-08-05',
+      'Volume en litres': '25000',
+      'Marque remorque': 'FRUEHAUF',
+      'Modèle remorque': 'PLATEAU',
+      'Configuration remorque': '2 essieux',
+      'Numéro de châssis remorque': 'FRU456789123',
+      'Date de fabrication remorque': '2021-07-10',
+      'Date de mise en circulation remorque': '2021-08-20'
+    },
+    {
+      'Type de véhicule': 'porteur',
+      'Base': 'Saint-Louis',
+      'Type de transport': 'produits_agricoles',
+      'Nom du propriétaire': 'Société DBK',
+      'Prénom du propriétaire': '',
+      'Plaque d\'immatriculation tracteur': 'DK-1111-IJ',
+      'Plaque d\'immatriculation remorque': '',
+      'Marque tracteur': 'MERCEDES',
+      'Modèle tracteur': 'ACTROS',
+      'Configuration tracteur': '8x4',
+      'Numéro de châssis tracteur': 'WDB9340341L123789',
+      'Date de fabrication tracteur': '2023-03-12',
+      'Date de mise en circulation tracteur': '2023-05-01',
+      'Volume en litres': '',
+      'Marque remorque': '',
+      'Modèle remorque': '',
+      'Configuration remorque': '',
+      'Numéro de châssis remorque': '',
+      'Date de fabrication remorque': '',
+      'Date de mise en circulation remorque': ''
+    }
+  ];
+
   const handleImport = async (data: any[]) => {
     const results = { success: 0, errors: [] as string[] };
 
@@ -135,6 +204,7 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
       title="Véhicules Tracteur + Remorque"
       description="Importez vos véhicules tracteur + remorque depuis un fichier Excel"
       templateColumns={templateColumns}
+      templateData={templateData}
       onImport={handleImport}
       onClose={onClose}
     />

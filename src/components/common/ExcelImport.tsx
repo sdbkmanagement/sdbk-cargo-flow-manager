@@ -15,6 +15,7 @@ interface ExcelImportProps {
   title: string;
   description: string;
   templateColumns: string[];
+  templateData?: any[];
   onImport: (data: any[]) => Promise<{ success: number; errors: string[] }>;
   onClose: () => void;
 }
@@ -23,6 +24,7 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
   title,
   description,
   templateColumns,
+  templateData,
   onImport,
   onClose
 }) => {
@@ -94,8 +96,17 @@ export const ExcelImport: React.FC<ExcelImportProps> = ({
 
   const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet([templateColumns]);
-    XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    
+    // Si on a des données d'exemple, les utiliser
+    if (templateData && templateData.length > 0) {
+      const ws = XLSX.utils.json_to_sheet(templateData);
+      XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    } else {
+      // Sinon, créer un template vide avec juste les en-têtes
+      const ws = XLSX.utils.aoa_to_sheet([templateColumns]);
+      XLSX.utils.book_append_sheet(wb, ws, 'Template');
+    }
+    
     XLSX.writeFile(wb, `template_${title.toLowerCase().replace(/\s+/g, '_')}.xlsx`);
   };
 
