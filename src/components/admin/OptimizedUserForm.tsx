@@ -104,17 +104,37 @@ export const OptimizedUserForm: React.FC<OptimizedUserFormProps> = ({ user, onSu
   };
 
   const handleRoleToggle = (roleId: string, checked: boolean) => {
-    const newRoles = checked 
-      ? [...formData.roles, roleId]
-      : formData.roles.filter(r => r !== roleId);
-    handleInputChange('roles', newRoles);
+    console.log('🔧 Role toggle:', { roleId, checked, currentRoles: formData.roles });
+    const currentRoles = [...formData.roles]; // Créer une copie
+    let newRoles: string[];
+    
+    if (checked) {
+      // Ajouter le rôle s'il n'existe pas déjà
+      newRoles = currentRoles.includes(roleId) ? currentRoles : [...currentRoles, roleId];
+    } else {
+      // Retirer le rôle
+      newRoles = currentRoles.filter(r => r !== roleId);
+    }
+    
+    console.log('🔧 New roles:', newRoles);
+    setFormData(prev => ({ ...prev, roles: newRoles }));
   };
 
   const handleModuleToggle = (moduleId: string, checked: boolean) => {
-    const newModules = checked 
-      ? [...formData.module_permissions, moduleId]
-      : formData.module_permissions.filter(m => m !== moduleId);
-    handleInputChange('module_permissions', newModules);
+    console.log('🔧 Module toggle:', { moduleId, checked, currentModules: formData.module_permissions });
+    const currentModules = [...formData.module_permissions]; // Créer une copie
+    let newModules: string[];
+    
+    if (checked) {
+      // Ajouter le module s'il n'existe pas déjà
+      newModules = currentModules.includes(moduleId) ? currentModules : [...currentModules, moduleId];
+    } else {
+      // Retirer le module
+      newModules = currentModules.filter(m => m !== moduleId);
+    }
+    
+    console.log('🔧 New modules:', newModules);
+    setFormData(prev => ({ ...prev, module_permissions: newModules }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
