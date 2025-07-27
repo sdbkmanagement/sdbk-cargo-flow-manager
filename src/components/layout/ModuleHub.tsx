@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { statsService } from '@/services/admin/statsService';
 
 interface ModuleTile {
   id: string;
@@ -36,84 +37,135 @@ interface ModuleTile {
   isNew?: boolean;
 }
 
-const modules: ModuleTile[] = [
-  {
-    id: 'dashboard',
-    title: 'Dashboard',
-    description: 'Vue d\'ensemble et analytics en temps réel',
-    icon: BarChart3,
-    route: '/dashboard',
-    gradient: 'from-violet-500 to-purple-600',
-    stats: 'Temps réel'
-  },
-  {
-    id: 'fleet',
-    title: 'Flotte',
-    description: 'Gestion véhicules et maintenance',
-    icon: Truck,
-    route: '/fleet',
-    gradient: 'from-blue-500 to-cyan-600',
-    stats: '24 véhicules'
-  },
-  {
-    id: 'drivers',
-    title: 'Chauffeurs',
-    description: 'Gestion conducteurs et documents',
-    icon: Users,
-    route: '/drivers',
-    gradient: 'from-emerald-500 to-teal-600',
-    stats: '18 chauffeurs'
-  },
-  {
-    id: 'missions',
-    title: 'Missions',
-    description: 'Planification et suivi transports',
-    icon: Route,
-    route: '/missions',
-    gradient: 'from-orange-500 to-red-600',
-    stats: '7 en cours'
-  },
-  {
-    id: 'billing',
-    title: 'Facturation',
-    description: 'Devis, factures et paiements',
-    icon: Coins,
-    route: '/billing',
-    gradient: 'from-yellow-500 to-orange-600',
-    stats: '12 factures'
-  },
-  {
-    id: 'rh',
-    title: 'RH',
-    description: 'Ressources humaines et formations',
-    icon: UserCog,
-    route: '/rh',
-    gradient: 'from-pink-500 to-rose-600',
-    stats: '25 employés'
-  },
-  {
-    id: 'validations',
-    title: 'Validations',
-    description: 'Workflows validation véhicules',
-    icon: CheckCircle,
-    route: '/validations',
-    gradient: 'from-indigo-500 to-blue-600',
-    stats: '3 en attente'
-  },
-  {
-    id: 'admin',
-    title: 'Administration',
-    description: 'Utilisateurs, rôles et paramètres',
-    icon: Settings,
-    route: '/admin',
-    gradient: 'from-gray-500 to-slate-600',
-    isNew: true
-  }
-];
+interface HubStats {
+  vehicules: number;
+  chauffeurs: number;
+  missionsEnCours: number;
+  factures: number;
+  employes: number;
+  missionsEnAttente: number;
+}
 
 export const ModuleHub: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const [stats, setStats] = useState<HubStats>({
+    vehicules: 0,
+    chauffeurs: 0,
+    missionsEnCours: 0,
+    factures: 0,
+    employes: 0,
+    missionsEnAttente: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadHubStats = async () => {
+      try {
+        console.log('🔄 Loading hub stats with real data...');
+        
+        const hubStats = await statsService.getDashboardStats();
+        const financialStats = await statsService.getFinancialStats();
+        
+        setStats({
+          vehicules: hubStats.vehicules,
+          chauffeurs: hubStats.chauffeurs,
+          missionsEnCours: hubStats.missionsEnCours,
+          factures: financialStats.totalFactures,
+          employes: hubStats.employes,
+          missionsEnAttente: hubStats.missionsEnAttente
+        });
+        
+        console.log('✅ Hub stats loaded:', hubStats);
+        
+      } catch (error) {
+        console.error('❌ Error loading hub stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHubStats();
+    
+    // Actualiser les données toutes les 60 secondes
+    const interval = setInterval(loadHubStats, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const modules: ModuleTile[] = [
+    {
+      id: 'dashboard',
+      title: 'Dashboard',
+      description: 'Vue d\'ensemble et analytics en temps réel',
+      icon: BarChart3,
+      route: '/dashboard',
+      gradient: 'from-violet-500 to-purple-600',
+      stats: 'Temps réel'
+    },
+    {
+      id: 'fleet',
+      title: 'Flotte',
+      description: 'Gestion véhicules et maintenance',
+      icon: Truck,
+      route: '/fleet',
+      gradient: 'from-blue-500 to-cyan-600',
+      stats: loading ? '...' : `${stats.vehicules} véhicules`
+    },
+    {
+      id: 'drivers',
+      title: 'Chauffeurs',
+      description: 'Gestion conducteurs et documents',
+      icon: Users,
+      route: '/drivers',
+      gradient: 'from-emerald-500 to-teal-600',
+      stats: loading ? '...' : `${stats.chauffeurs} chauffeurs`
+    },
+    {
+      id: 'missions',
+      title: 'Missions',
+      description: 'Planification et suivi transports',
+      icon: Route,
+      route: '/missions',
+      gradient: 'from-orange-500 to-red-600',
+      stats: loading ? '...' : `${stats.missionsEnCours} en cours`
+    },
+    {
+      id: 'billing',
+      title: 'Facturation',
+      description: 'Devis, factures et paiements',
+      icon: Coins,
+      route: '/billing',
+      gradient: 'from-yellow-500 to-orange-600',
+      stats: loading ? '...' : `${stats.factures} factures`
+    },
+    {
+      id: 'rh',
+      title: 'RH',
+      description: 'Ressources humaines et formations',
+      icon: UserCog,
+      route: '/rh',
+      gradient: 'from-pink-500 to-rose-600',
+      stats: loading ? '...' : `${stats.employes} employés`
+    },
+    {
+      id: 'validations',
+      title: 'Validations',
+      description: 'Workflows validation véhicules',
+      icon: CheckCircle,
+      route: '/validations',
+      gradient: 'from-indigo-500 to-blue-600',
+      stats: loading ? '...' : `${stats.missionsEnAttente} en attente`
+    },
+    {
+      id: 'admin',
+      title: 'Administration',
+      description: 'Utilisateurs, rôles et paramètres',
+      icon: Settings,
+      route: '/admin',
+      gradient: 'from-gray-500 to-slate-600',
+      isNew: true
+    }
+  ];
 
   const handleModuleClick = (route: string) => {
     navigate(route);
