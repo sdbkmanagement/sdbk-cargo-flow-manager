@@ -146,13 +146,44 @@ export const userService = {
       // Generate secure password if not provided
       const securePassword = userData.password || generateSecurePassword();
 
-      // 1. Create user record in database FIRST
-      const newUserId = crypto.randomUUID();
+      // 1. Create auth user via edge function first
+      console.log('🔗 Creating auth user via edge function...');
       
+      const { data: authResponse, error: functionError } = await supabase.functions.invoke('admin-password-management', {
+        body: {
+          action: 'create_user',
+          email: sanitizedEmail,
+          password: securePassword,
+          user_metadata: {
+            first_name: sanitizedPrenom,
+            last_name: sanitizedNom,
+            roles: userData.roles
+          }
+        }
+      });
+
+      if (functionError) {
+        console.error('❌ Edge function error:', functionError);
+        throw new Error(`Erreur de synchronisation avec Auth: ${functionError.message}`);
+      }
+
+      if (!authResponse?.success) {
+        console.error('❌ Auth creation failed via edge function:', authResponse);
+        throw new Error(`Erreur de synchronisation avec Auth: ${authResponse?.error || 'Erreur inconnue'}`);
+      }
+
+      console.log('✅ Auth user created via edge function:', authResponse.user?.id);
+
+      // 2. Create user record in database with auth ID
+      const authUserId = authResponse.user?.id;
+      if (!authUserId) {
+        throw new Error('ID utilisateur Auth manquant');
+      }
+
       const { data: dbUser, error: dbError } = await supabase
         .from('users')
         .insert({
-          id: newUserId,
+          id: authUserId,
           email: sanitizedEmail,
           first_name: sanitizedPrenom,
           last_name: sanitizedNom,
@@ -170,79 +201,7 @@ export const userService = {
         throw new Error(`Erreur lors de la création en base: ${dbError.message}`);
       }
 
-      console.log('✅ User record created successfully in database with ID:', newUserId);
-
-      // 2. Synchronize with Supabase Auth automatically
-      try {
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: sanitizedEmail,
-          password: securePassword,
-          email_confirm: true, // Auto-confirm email to skip email verification
-          user_metadata: {
-            first_name: sanitizedPrenom,
-            last_name: sanitizedNom,
-            roles: userData.roles,
-            db_user_id: newUserId // Store reference to our DB user
-          }
-        });
-
-        if (authError) {
-          console.error('❌ Auth creation failed:', authError);
-          // Supprimer l'utilisateur de la base de données car la synchro a échoué
-          await supabase
-            .from('users')
-            .delete()
-            .eq('id', newUserId);
-          
-          throw new Error(`Erreur de synchronisation avec Auth: ${authError.message}`);
-        } else {
-          console.log('✅ Auth user created with ID:', authData.user?.id);
-          
-          // 3. Supprimer l'ancien enregistrement et créer un nouveau avec l'ID Auth
-          if (authData.user?.id) {
-            // Supprimer l'ancien enregistrement
-            await supabase
-              .from('users')
-              .delete()
-              .eq('id', newUserId);
-            
-            // Créer un nouveau avec l'ID Auth
-            const { data: finalUser, error: finalError } = await supabase
-              .from('users')
-              .insert({
-                id: authData.user.id,
-                email: sanitizedEmail,
-                first_name: sanitizedPrenom,
-                last_name: sanitizedNom,
-                roles: userData.roles as any,
-                module_permissions: userData.module_permissions || [],
-                status: 'active',
-                password_hash: 'managed_by_supabase_auth',
-                created_by: currentUser.user.id
-              })
-              .select()
-              .single();
-            
-            if (finalError) {
-              console.error('❌ Final user creation failed:', finalError);
-              throw new Error(`Erreur lors de la création finale: ${finalError.message}`);
-            }
-            
-            console.log('🔄 User successfully synchronized with Auth ID:', authData.user.id);
-            
-            // Update our local reference
-            Object.assign(dbUser, finalUser);
-          }
-        }
-      } catch (authError) {
-        console.error('❌ Auth synchronization failed:', authError);
-        // Supprimer l'utilisateur de la base de données
-        await supabase
-          .from('users')
-          .delete()
-          .eq('id', newUserId);
-        throw authError;
-      }
+      console.log('✅ User record created successfully in database with ID:', authUserId);
 
       return {
         id: dbUser.id,

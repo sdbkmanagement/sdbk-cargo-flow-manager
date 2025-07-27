@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.50.0";
 
@@ -22,7 +21,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('🔧 Starting password management function');
+    console.log('🔧 Starting admin password management function');
     
     // Créer le client Supabase avec les permissions admin
     const supabaseAdmin = createClient(
@@ -102,9 +101,6 @@ serve(async (req) => {
       return password;
     }
 
-    let finalUserId = userId;
-
-    // Traiter les actions
     if (action === 'create_user') {
       console.log('🔧 Creating new user with email:', email);
       
@@ -118,42 +114,84 @@ serve(async (req) => {
         );
       }
 
-      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata
-      });
+      try {
+        // Créer l'utilisateur dans Supabase Auth
+        console.log('📝 Creating auth user...');
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: true,
+          user_metadata: user_metadata || {}
+        });
 
-      if (authError) {
-        console.error('❌ User creation failed:', authError);
+        if (authError) {
+          console.error('❌ Auth user creation failed:', authError);
+          return new Response(
+            JSON.stringify({ error: `Erreur lors de la création de l'utilisateur: ${authError.message}` }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+
+        if (!authUser.user) {
+          return new Response(
+            JSON.stringify({ error: 'Utilisateur créé mais données manquantes' }),
+            { 
+              status: 400, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+
+        console.log('✅ Auth user created:', authUser.user.id);
         return new Response(
-          JSON.stringify({ error: authError.message }),
+          JSON.stringify({ 
+            success: true, 
+            user: authUser.user,
+            message: 'Utilisateur créé avec succès'
+          }),
           { 
-            status: 400, 
+            status: 200, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      } catch (createError) {
+        console.error('❌ Exception during user creation:', createError);
+        return new Response(
+          JSON.stringify({ error: `Erreur lors de la création: ${createError.message}` }),
+          { 
+            status: 500, 
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           }
         );
       }
 
-      console.log('✅ User created successfully:', authUser.user?.id);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          user: authUser.user 
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-
     } else if (action === 'reset') {
+      // Récupérer l'utilisateur de la table users
+      const { data: dbUser, error: dbUserError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (dbUserError || !dbUser) {
+        console.log('❌ User not found in users table:', dbUserError);
+        return new Response(
+          JSON.stringify({ error: 'Utilisateur introuvable dans la base de données' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
       const generatedPassword = generateSecurePassword();
       console.log('🔧 Attempting to reset password');
 
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        finalUserId,
+        userId,
         { password: generatedPassword }
       );
 
@@ -194,7 +232,7 @@ serve(async (req) => {
 
       console.log('🔧 Attempting to update password');
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        finalUserId,
+        userId,
         { password: newPassword }
       );
 
