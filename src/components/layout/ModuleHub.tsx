@@ -92,7 +92,7 @@ export const ModuleHub: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const modules: ModuleTile[] = [
+  const allModules: ModuleTile[] = [
     {
       id: 'dashboard',
       title: 'Dashboard',
@@ -166,6 +166,24 @@ export const ModuleHub: React.FC = () => {
       isNew: true
     }
   ];
+
+  // Filtrer les modules selon les permissions de l'utilisateur
+  const modules = allModules.filter(module => {
+    if (!user) return false;
+    
+    // L'admin a accès à tout
+    if (user.roles?.includes('admin')) return true;
+    
+    // Pour les autres, vérifier les permissions de module
+    const modulePermissions = user.module_permissions || [];
+    
+    console.log(`🔍 Vérification accès module ${module.id}:`, {
+      userPermissions: modulePermissions,
+      hasAccess: modulePermissions.includes(module.id)
+    });
+    
+    return modulePermissions.includes(module.id);
+  });
 
   const handleModuleClick = (route: string) => {
     navigate(route);
