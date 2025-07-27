@@ -115,8 +115,66 @@ serve(async (req) => {
       }
 
       try {
-        // Créer l'utilisateur dans Supabase Auth
-        console.log('📝 Creating auth user...');
+        // 1. D'abord vérifier si l'utilisateur existe déjà dans Auth
+        console.log('🔍 Checking if user already exists in Auth...');
+        const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+        
+        if (listError) {
+          console.error('❌ Failed to list auth users:', listError);
+          return new Response(
+            JSON.stringify({ error: `Erreur lors de la vérification: ${listError.message}` }),
+            { 
+              status: 500, 
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            }
+          );
+        }
+
+        const existingAuthUser = authUsers.users.find(u => u.email === email);
+        
+        if (existingAuthUser) {
+          console.log('⚠️ User already exists in Auth:', existingAuthUser.id);
+          
+          // Vérifier s'il existe en base de données
+          const { data: dbUser, error: dbCheckError } = await supabaseAdmin
+            .from('users')
+            .select('id')
+            .eq('id', existingAuthUser.id)
+            .single();
+          
+          if (dbCheckError && dbCheckError.code !== 'PGRST116') {
+            console.error('❌ Database check error:', dbCheckError);
+            return new Response(
+              JSON.stringify({ error: 'Erreur lors de la vérification en base' }),
+              { 
+                status: 500, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+          
+          if (!dbUser) {
+            console.log('🧹 Auth user exists but not in database, cleaning up...');
+            // Supprimer l'utilisateur Auth orphelin
+            const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingAuthUser.id);
+            if (deleteError) {
+              console.warn('⚠️ Failed to cleanup orphaned auth user:', deleteError);
+            } else {
+              console.log('✅ Orphaned auth user cleaned up');
+            }
+          } else {
+            return new Response(
+              JSON.stringify({ error: 'Un utilisateur avec cette adresse email existe déjà' }),
+              { 
+                status: 400, 
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              }
+            );
+          }
+        }
+
+        // 2. Créer l'utilisateur dans Supabase Auth
+        console.log('📝 Creating new auth user...');
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -145,7 +203,7 @@ serve(async (req) => {
           );
         }
 
-        console.log('✅ Auth user created:', authUser.user.id);
+        console.log('✅ Auth user created successfully:', authUser.user.id);
         return new Response(
           JSON.stringify({ 
             success: true, 
