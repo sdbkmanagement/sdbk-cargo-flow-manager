@@ -63,7 +63,7 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
         const vehicleData: any = {
           numero: numeroGenere,
           type_transport: String(row['Type de transport']).trim(),
-          type_vehicule: String(row['Type de véhicule']).trim(),
+          type_vehicule: typeVehicule === 'porteur' ? 'porteur' : 'tracteur_remorque', // Normaliser la valeur
           base: row['Base'] ? String(row['Base']).trim() : null,
           
           // Données propriétaire
