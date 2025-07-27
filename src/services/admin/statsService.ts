@@ -201,5 +201,51 @@ export const statsService = {
         facturesEnAttente: 0
       };
     }
+  },
+
+  async getDashboardStats() {
+    try {
+      console.log('🔄 Fetching real dashboard stats...');
+      
+      // Exécuter toutes les requêtes en parallèle pour plus d'efficacité
+      const [
+        vehiculesResult,
+        chauffeursResult,
+        missionsEnCoursResult,
+        facturesResult,
+        employesResult,
+        missionsEnAttenteResult
+      ] = await Promise.all([
+        supabase.from('vehicules').select('*', { count: 'exact', head: true }),
+        supabase.from('chauffeurs').select('*', { count: 'exact', head: true }),
+        supabase.from('missions').select('*', { count: 'exact', head: true }).eq('statut', 'en_cours'),
+        supabase.from('factures').select('*', { count: 'exact', head: true }),
+        supabase.from('employes').select('*', { count: 'exact', head: true }),
+        supabase.from('missions').select('*', { count: 'exact', head: true }).eq('statut', 'en_attente')
+      ]);
+
+      const stats = {
+        vehicules: vehiculesResult.count || 0,
+        chauffeurs: chauffeursResult.count || 0,
+        missionsEnCours: missionsEnCoursResult.count || 0,
+        factures: facturesResult.count || 0,
+        employes: employesResult.count || 0,
+        missionsEnAttente: missionsEnAttenteResult.count || 0
+      };
+
+      console.log('✅ Real dashboard stats fetched:', stats);
+      return stats;
+
+    } catch (error) {
+      console.error('❌ Error in getDashboardStats:', error);
+      return {
+        vehicules: 0,
+        chauffeurs: 0,
+        missionsEnCours: 0,
+        factures: 0,
+        employes: 0,
+        missionsEnAttente: 0
+      };
+    }
   }
 };

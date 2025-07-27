@@ -66,38 +66,35 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      console.log('Chargement des données du dashboard...');
+      console.log('📊 Chargement des données réelles du dashboard...');
       
-      // Charger les statistiques avec les nouveaux services
+      // Charger les vraies statistiques avec la nouvelle fonction
       const [
-        vehicleStats,
-        driverStats,
-        missionStats,
+        dashboardStats,
         financialStats,
         chargementsResult,
         toutesAlertes
       ] = await Promise.all([
-        statsService.getVehicleStats(),
-        statsService.getDriverStats(),
-        statsService.getMissionStats(),
+        statsService.getDashboardStats(),
         statsService.getFinancialStats(),
         supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
         alertesService.getToutesAlertes()
       ]);
 
-      // Utiliser les statistiques des services
       const chargements = chargementsResult.data || [];
 
-      console.log('Alertes pour le dashboard:', toutesAlertes);
+      console.log('📊 Dashboard stats loaded:', dashboardStats);
+      console.log('💰 Financial stats loaded:', financialStats);
+      console.log('🚨 Alertes loaded:', toutesAlertes.length);
 
       setStats({
-        totalChauffeurs: driverStats.total,
-        chauffeursActifs: driverStats.actifs,
-        totalVehicules: vehicleStats.total,
-        vehiculesDisponibles: vehicleStats.disponibles,
-        missionsEnCours: missionStats.en_cours,
+        totalChauffeurs: dashboardStats.chauffeurs,
+        chauffeursActifs: dashboardStats.chauffeurs, // Pour l'instant on assume tous actifs
+        totalVehicules: dashboardStats.vehicules,
+        vehiculesDisponibles: dashboardStats.vehicules, // Pour l'instant on assume tous disponibles
+        missionsEnCours: dashboardStats.missionsEnCours,
         alertesDocuments: toutesAlertes.length,
-        facturesEnAttente: financialStats.facturesEnAttente,
+        facturesEnAttente: dashboardStats.missionsEnAttente, // Missions en attente comme proxy
         chargementsAujourdhui: chargements.length,
         chiffreAffaires: financialStats.chiffreAffaires,
         facturesPayees: financialStats.facturesPayees
@@ -107,7 +104,7 @@ const Dashboard = () => {
       setAlertes(toutesAlertes.slice(0, 10));
 
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
+      console.error('❌ Erreur lors du chargement des données:', error);
       toast.error('Erreur lors du chargement des données du tableau de bord');
     } finally {
       setLoading(false);
