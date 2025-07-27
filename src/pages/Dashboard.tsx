@@ -190,9 +190,9 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">
-              {new Intl.NumberFormat('fr-FR', { 
+              {new Intl.NumberFormat('fr-GN', { 
                 style: 'currency', 
-                currency: 'EUR',
+                currency: 'GNF',
                 minimumFractionDigits: 0,
                 maximumFractionDigits: 0
               }).format(stats.chiffreAffaires)}
