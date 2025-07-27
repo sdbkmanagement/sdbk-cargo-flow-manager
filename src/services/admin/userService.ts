@@ -146,13 +146,34 @@ export const userService = {
       // Generate secure password if not provided
       const securePassword = userData.password || generateSecurePassword();
 
-      // Create user record in database first
-      const newUserId = crypto.randomUUID();
-      
+      // Create user in Supabase Auth FIRST
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: sanitizedEmail,
+        password: securePassword,
+        email_confirm: true, // Auto-confirm email to skip email verification
+        user_metadata: {
+          first_name: sanitizedPrenom,
+          last_name: sanitizedNom,
+          roles: userData.roles
+        }
+      });
+
+      if (authError) {
+        console.error('❌ Auth creation error:', authError);
+        throw new Error(`Erreur lors de la création auth: ${authError.message}`);
+      }
+
+      if (!authData.user) {
+        throw new Error('Aucun utilisateur créé par Supabase Auth');
+      }
+
+      console.log('✅ Auth user created with ID:', authData.user.id);
+
+      // Now create user record in database with the auth ID
       const { data: dbUser, error: dbError } = await supabase
         .from('users')
         .insert({
-          id: newUserId,
+          id: authData.user.id, // Use the auth user ID directly
           email: sanitizedEmail,
           first_name: sanitizedPrenom,
           last_name: sanitizedNom,
@@ -167,40 +188,16 @@ export const userService = {
 
       if (dbError) {
         console.error('❌ DB creation error:', dbError);
+        // If database creation fails, try to clean up the auth user
+        try {
+          await supabase.auth.admin.deleteUser(authData.user.id);
+        } catch (cleanupError) {
+          console.error('❌ Cleanup error:', cleanupError);
+        }
         throw new Error(`Erreur lors de la création en base: ${dbError.message}`);
       }
 
-      console.log('✅ User record created successfully in database');
-
-      // Try to create user in Supabase Auth with email confirmation disabled
-      try {
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-          email: sanitizedEmail,
-          password: securePassword,
-          email_confirm: true, // Auto-confirm email to skip email verification
-          user_metadata: {
-            first_name: sanitizedPrenom,
-            last_name: sanitizedNom,
-            roles: userData.roles
-          }
-        });
-
-        if (authError) {
-          console.warn('⚠️ Auth creation warning:', authError);
-        } else {
-          console.log('✅ Auth user created with ID:', authData.user?.id);
-          
-          // Update the ID if auth creation succeeded
-          if (authData.user?.id) {
-            await supabase
-              .from('users')
-              .update({ id: authData.user.id })
-              .eq('id', newUserId);
-          }
-        }
-      } catch (authError) {
-        console.warn('⚠️ Auth creation failed, but user record exists:', authError);
-      }
+      console.log('✅ User record created successfully in database with matching auth ID');
 
       return {
         id: dbUser.id,
