@@ -187,37 +187,61 @@ export const userService = {
         });
 
         if (authError) {
-          console.warn('⚠️ Auth creation failed:', authError);
-          // Keep the database user but mark it as not synchronized
+          console.error('❌ Auth creation failed:', authError);
+          // Supprimer l'utilisateur de la base de données car la synchro a échoué
           await supabase
             .from('users')
-            .update({ 
-              password_hash: `not_synced_${securePassword}` // Store password temporarily
-            })
+            .delete()
             .eq('id', newUserId);
           
-          console.log('📝 User created in DB but not synchronized with Auth yet');
+          throw new Error(`Erreur de synchronisation avec Auth: ${authError.message}`);
         } else {
           console.log('✅ Auth user created with ID:', authData.user?.id);
           
-          // 3. Update the database record with the auth ID for perfect sync
-          if (authData.user?.id && authData.user.id !== newUserId) {
+          // 3. Supprimer l'ancien enregistrement et créer un nouveau avec l'ID Auth
+          if (authData.user?.id) {
+            // Supprimer l'ancien enregistrement
             await supabase
               .from('users')
-              .update({ 
-                id: authData.user.id,
-                password_hash: 'managed_by_supabase_auth'
-              })
+              .delete()
               .eq('id', newUserId);
             
-            console.log('🔄 Database user ID updated to match Auth ID:', authData.user.id);
+            // Créer un nouveau avec l'ID Auth
+            const { data: finalUser, error: finalError } = await supabase
+              .from('users')
+              .insert({
+                id: authData.user.id,
+                email: sanitizedEmail,
+                first_name: sanitizedPrenom,
+                last_name: sanitizedNom,
+                roles: userData.roles as any,
+                module_permissions: userData.module_permissions || [],
+                status: 'active',
+                password_hash: 'managed_by_supabase_auth',
+                created_by: currentUser.user.id
+              })
+              .select()
+              .single();
+            
+            if (finalError) {
+              console.error('❌ Final user creation failed:', finalError);
+              throw new Error(`Erreur lors de la création finale: ${finalError.message}`);
+            }
+            
+            console.log('🔄 User successfully synchronized with Auth ID:', authData.user.id);
             
             // Update our local reference
-            dbUser.id = authData.user.id;
+            Object.assign(dbUser, finalUser);
           }
         }
       } catch (authError) {
-        console.warn('⚠️ Auth synchronization failed, user exists in DB only:', authError);
+        console.error('❌ Auth synchronization failed:', authError);
+        // Supprimer l'utilisateur de la base de données
+        await supabase
+          .from('users')
+          .delete()
+          .eq('id', newUserId);
+        throw authError;
       }
 
       return {
