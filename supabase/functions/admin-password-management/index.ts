@@ -8,9 +8,12 @@ const corsHeaders = {
 };
 
 interface PasswordRequest {
-  action: 'reset' | 'update';
-  userId: string;
+  action: 'reset' | 'update' | 'create_user';
+  userId?: string;
   newPassword?: string;
+  email?: string;
+  password?: string;
+  user_metadata?: any;
 }
 
 serve(async (req) => {
@@ -84,9 +87,9 @@ serve(async (req) => {
     console.log('✅ Admin role verified');
 
     // Traiter la demande
-    const { action, userId, newPassword }: PasswordRequest = await req.json();
+    const { action, userId, newPassword, email, password, user_metadata }: PasswordRequest = await req.json();
     
-    console.log('🔧 Processing action:', action, 'for user:', userId);
+    console.log('🔧 Processing action:', action, 'for user:', userId || email);
 
     // Fonction pour générer un mot de passe sécurisé
     function generateSecurePassword(): string {
@@ -99,23 +102,27 @@ serve(async (req) => {
       return password;
     }
 
-    // Récupérer l'utilisateur de la table users
-    const { data: dbUser, error: dbUserError } = await supabaseAdmin
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    if (dbUserError || !dbUser) {
-      console.log('❌ User not found in users table:', dbUserError);
-      return new Response(
-        JSON.stringify({ error: 'Utilisateur introuvable dans la base de données' }),
-        { 
-          status: 404, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
-    }
+    // Skip user table lookup for create_user action
+    if (action === 'create_user') {
+      // Jump to create_user handling directly
+    } else {
+      // Récupérer l'utilisateur de la table users
+      const { data: dbUser, error: dbUserError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (dbUserError || !dbUser) {
+        console.log('❌ User not found in users table:', dbUserError);
+        return new Response(
+          JSON.stringify({ error: 'Utilisateur introuvable dans la base de données' }),
+          { 
+            status: 404, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
 
     console.log('✅ User found in users table:', dbUser.email);
 
@@ -210,7 +217,50 @@ serve(async (req) => {
     }
 
     // Maintenant effectuer l'action demandée
-    if (action === 'reset') {
+    if (action === 'create_user') {
+      console.log('🔧 Creating new user with email:', email);
+      
+      if (!email || !password) {
+        return new Response(
+          JSON.stringify({ error: 'Email et mot de passe requis pour la création' }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata
+      });
+
+      if (authError) {
+        console.error('❌ User creation failed:', authError);
+        return new Response(
+          JSON.stringify({ error: authError.message }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
+      console.log('✅ User created successfully:', authUser.user?.id);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          user: authUser.user 
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+
+    } else if (action === 'reset') {
       const generatedPassword = generateSecurePassword();
       console.log('🔧 Attempting to reset password');
 

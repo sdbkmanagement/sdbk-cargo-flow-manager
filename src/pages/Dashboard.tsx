@@ -68,42 +68,36 @@ const Dashboard = () => {
       setLoading(true);
       console.log('Chargement des données du dashboard...');
       
-      // Charger les statistiques
+      // Charger les statistiques avec les nouveaux services
       const [
-        chauffeursResult,
-        vehiculesResult,
-        missionsResult,
-        facturesResult,
-        chargementsResult,
+        vehicleStats,
+        driverStats,
+        missionStats,
         financialStats,
+        chargementsResult,
         toutesAlertes
       ] = await Promise.all([
-        supabase.from('chauffeurs').select('id, statut'),
-        supabase.from('vehicules').select('id, statut'),
-        supabase.from('missions').select('id, statut'),
-        supabase.from('factures').select('id, statut'),
-        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
+        statsService.getVehicleStats(),
+        statsService.getDriverStats(),
+        statsService.getMissionStats(),
         statsService.getFinancialStats(),
+        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
         alertesService.getToutesAlertes()
       ]);
 
-      // Calculer les statistiques
-      const chauffeurs = chauffeursResult.data || [];
-      const vehicules = vehiculesResult.data || [];
-      const missions = missionsResult.data || [];
-      const factures = facturesResult.data || [];
+      // Utiliser les statistiques des services
       const chargements = chargementsResult.data || [];
 
       console.log('Alertes pour le dashboard:', toutesAlertes);
 
       setStats({
-        totalChauffeurs: chauffeurs.length,
-        chauffeursActifs: chauffeurs.filter((c: any) => c.statut === 'actif').length,
-        totalVehicules: vehicules.length,
-        vehiculesDisponibles: vehicules.filter((v: any) => v.statut === 'disponible').length,
-        missionsEnCours: missions.filter((m: any) => m.statut === 'en_cours').length,
+        totalChauffeurs: driverStats.total,
+        chauffeursActifs: driverStats.actifs,
+        totalVehicules: vehicleStats.total,
+        vehiculesDisponibles: vehicleStats.disponibles,
+        missionsEnCours: missionStats.en_cours,
         alertesDocuments: toutesAlertes.length,
-        facturesEnAttente: factures.filter((f: any) => f.statut === 'en_attente').length,
+        facturesEnAttente: financialStats.facturesEnAttente,
         chargementsAujourdhui: chargements.length,
         chiffreAffaires: financialStats.chiffreAffaires,
         facturesPayees: financialStats.facturesPayees
