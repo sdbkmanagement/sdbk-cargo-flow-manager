@@ -16,12 +16,14 @@ import {
   UserCheck,
   TrendingUp,
   Calendar,
-  XCircle
+  XCircle,
+  DollarSign
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { alertesService } from '@/services/alertesService';
+import { statsService } from '@/services/admin/statsService';
 
 interface DashboardStats {
   totalChauffeurs: number;
@@ -32,6 +34,8 @@ interface DashboardStats {
   alertesDocuments: number;
   facturesEnAttente: number;
   chargementsAujourdhui: number;
+  chiffreAffaires: number;
+  facturesPayees: number;
 }
 
 const Dashboard = () => {
@@ -44,7 +48,9 @@ const Dashboard = () => {
     missionsEnCours: 0,
     alertesDocuments: 0,
     facturesEnAttente: 0,
-    chargementsAujourdhui: 0
+    chargementsAujourdhui: 0,
+    chiffreAffaires: 0,
+    facturesPayees: 0
   });
   const [loading, setLoading] = useState(true);
   const [alertes, setAlertes] = useState<any[]>([]);
@@ -68,17 +74,18 @@ const Dashboard = () => {
         vehiculesResult,
         missionsResult,
         facturesResult,
-        chargementsResult
+        chargementsResult,
+        financialStats,
+        toutesAlertes
       ] = await Promise.all([
         supabase.from('chauffeurs').select('id, statut'),
         supabase.from('vehicules').select('id, statut'),
         supabase.from('missions').select('id, statut'),
         supabase.from('factures').select('id, statut'),
-        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0])
+        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
+        statsService.getFinancialStats(),
+        alertesService.getToutesAlertes()
       ]);
-
-      // Charger toutes les alertes en utilisant le service
-      const toutesAlertes = await alertesService.getToutesAlertes();
 
       // Calculer les statistiques
       const chauffeurs = chauffeursResult.data || [];
@@ -97,7 +104,9 @@ const Dashboard = () => {
         missionsEnCours: missions.filter((m: any) => m.statut === 'en_cours').length,
         alertesDocuments: toutesAlertes.length,
         facturesEnAttente: factures.filter((f: any) => f.statut === 'en_attente').length,
-        chargementsAujourdhui: chargements.length
+        chargementsAujourdhui: chargements.length,
+        chiffreAffaires: financialStats.chiffreAffaires,
+        facturesPayees: financialStats.facturesPayees
       });
 
       // Limiter à 10 alertes pour l'affichage
@@ -156,7 +165,7 @@ const Dashboard = () => {
         </div>
 
       {/* Statistiques principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Chauffeurs</CardTitle>
@@ -179,6 +188,26 @@ const Dashboard = () => {
             <div className="text-2xl font-bold">{stats.totalVehicules}</div>
             <p className="text-xs text-muted-foreground">
               {stats.vehiculesDisponibles} disponibles
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Chiffre d'Affaires</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {new Intl.NumberFormat('fr-FR', { 
+                style: 'currency', 
+                currency: 'EUR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+              }).format(stats.chiffreAffaires)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {stats.facturesPayees} factures payées
             </p>
           </CardContent>
         </Card>

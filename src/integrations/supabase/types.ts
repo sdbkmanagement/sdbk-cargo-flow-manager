@@ -1290,6 +1290,7 @@ export type Database = {
       factures: {
         Row: {
           chauffeur: string | null
+          chiffre_affaire_associe: number | null
           client_contact: string | null
           client_email: string | null
           client_id: string | null
@@ -1312,6 +1313,7 @@ export type Database = {
         }
         Insert: {
           chauffeur?: string | null
+          chiffre_affaire_associe?: number | null
           client_contact?: string | null
           client_email?: string | null
           client_id?: string | null
@@ -1334,6 +1336,7 @@ export type Database = {
         }
         Update: {
           chauffeur?: string | null
+          chiffre_affaire_associe?: number | null
           client_contact?: string | null
           client_email?: string | null
           client_id?: string | null
@@ -2091,6 +2094,7 @@ export type Database = {
           base: string | null
           capacite_max: number | null
           chauffeur_assigne: string | null
+          configuration_remorque: string | null
           consommation_moyenne: number | null
           created_at: string
           date_fabrication: string | null
@@ -2134,6 +2138,7 @@ export type Database = {
           base?: string | null
           capacite_max?: number | null
           chauffeur_assigne?: string | null
+          configuration_remorque?: string | null
           consommation_moyenne?: number | null
           created_at?: string
           date_fabrication?: string | null
@@ -2177,6 +2182,7 @@ export type Database = {
           base?: string | null
           capacite_max?: number | null
           chauffeur_assigne?: string | null
+          configuration_remorque?: string | null
           consommation_moyenne?: number | null
           created_at?: string
           date_fabrication?: string | null

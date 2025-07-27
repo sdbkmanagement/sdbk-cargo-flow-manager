@@ -28,5 +28,55 @@ export const statsService = {
       suspendus,
       byRole
     };
+  },
+
+  async getFinancialStats() {
+    try {
+      // Chiffre d'affaires basé sur les factures payées
+      const { data: facturesPaye, error: facturesError } = await supabase
+        .from('factures')
+        .select('montant_ttc')
+        .eq('statut', 'paye');
+
+      if (facturesError) throw facturesError;
+
+      const chiffreAffaires = facturesPaye?.reduce((total, facture) => 
+        total + (Number(facture.montant_ttc) || 0), 0) || 0;
+
+      // Factures en attente
+      const { data: facturesEnAttente, error: attenteError } = await supabase
+        .from('factures')
+        .select('montant_ttc')
+        .eq('statut', 'en_attente');
+
+      if (attenteError) throw attenteError;
+
+      const montantEnAttente = facturesEnAttente?.reduce((total, facture) => 
+        total + (Number(facture.montant_ttc) || 0), 0) || 0;
+
+      // Nombre total de factures
+      const { count: totalFactures, error: countError } = await supabase
+        .from('factures')
+        .select('*', { count: 'exact', head: true });
+
+      if (countError) throw countError;
+
+      return {
+        chiffreAffaires,
+        montantEnAttente,
+        totalFactures: totalFactures || 0,
+        facturesPayees: facturesPaye?.length || 0,
+        facturesEnAttente: facturesEnAttente?.length || 0
+      };
+    } catch (error) {
+      console.error('Erreur lors du chargement des stats financières:', error);
+      return {
+        chiffreAffaires: 0,
+        montantEnAttente: 0,
+        totalFactures: 0,
+        facturesPayees: 0,
+        facturesEnAttente: 0
+      };
+    }
   }
 };
