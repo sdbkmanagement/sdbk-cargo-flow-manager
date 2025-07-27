@@ -2,6 +2,7 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import { cn } from '@/lib/utils';
 import { 
   LayoutDashboard, 
@@ -28,42 +29,51 @@ const menuItems = [
   {
     path: '/dashboard',
     label: 'Tableau de bord',
-    icon: LayoutDashboard
+    icon: LayoutDashboard,
+    module: 'dashboard'
   },
   {
     path: '/fleet',
     label: 'Flotte',
-    icon: Truck
+    icon: Truck,
+    module: 'fleet'
   },
   {
     path: '/drivers',
     label: 'Chauffeurs',
-    icon: Users
+    icon: Users,
+    module: 'drivers'
   },
   {
     path: '/missions',
     label: 'Missions',
-    icon: FileText
+    icon: FileText,
+    module: 'missions'
   },
   {
     path: '/billing',
     label: 'Facturation',
-    icon: Coins
+    icon: Coins,
+    module: 'billing'
   },
   {
     path: '/rh',
     label: 'RH',
-    icon: UserCog
+    icon: UserCog,
+    module: 'rh'
   },
   {
     path: '/validations',
     label: 'Validations',
-    icon: CheckCircle
+    icon: CheckCircle,
+    module: 'validations',
+    requiresValidationRole: true
   },
   {
     path: '/admin',
     label: 'Administration',
-    icon: Settings
+    icon: Settings,
+    module: 'admin'
   }
 ];
 
@@ -73,8 +83,44 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
   isMobileOpen = false,
   onMobileClose
 }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
+  const { hasValidationAccess } = useValidationPermissions();
   const location = useLocation();
+
+  // Filtrer les éléments du menu selon les permissions
+  const filteredMenuItems = menuItems.filter(item => {
+    if (!user) return false;
+
+    console.log('🔍 Checking access for module:', item.module, {
+      userRoles: user.roles,
+      modulePermissions: user.module_permissions,
+      itemModule: item.module
+    });
+
+    // L'admin a accès à tout
+    if (hasRole('admin')) {
+      console.log('✅ Admin access granted for:', item.module);
+      return true;
+    }
+
+    // Vérifier l'accès spécial pour les validations
+    if (item.requiresValidationRole) {
+      const hasAccess = hasValidationAccess();
+      console.log(`${hasAccess ? '✅' : '❌'} Validation access:`, hasAccess);
+      return hasAccess;
+    }
+
+    // Vérifier les permissions de module
+    const modulePermissions = user.module_permissions || [];
+    const hasAccess = modulePermissions.includes(item.module);
+    
+    console.log(`${hasAccess ? '✅' : '❌'} Module access for ${item.module}:`, {
+      hasAccess,
+      modulePermissions
+    });
+
+    return hasAccess;
+  });
 
   const handleLogout = async () => {
     console.log('🚪 Logout initiated from sidebar');
@@ -145,7 +191,7 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
 
             {/* Menu items */}
             <ul className="space-y-1 lg:space-y-2 font-medium">
-              {menuItems.map((item) => {
+              {filteredMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 
