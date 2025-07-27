@@ -171,18 +171,29 @@ export const ModuleHub: React.FC = () => {
   const modules = allModules.filter(module => {
     if (!user) return false;
     
+    console.log(`🔍 Vérification utilisateur:`, {
+      email: user.email,
+      roles: user.roles,
+      modulePermissions: user.module_permissions
+    });
+    
     // L'admin a accès à tout
-    if (user.roles?.includes('admin')) return true;
+    if (user.roles?.includes('admin')) {
+      console.log(`✅ Utilisateur admin - accès complet au module ${module.id}`);
+      return true;
+    }
     
     // Pour les autres, vérifier les permissions de module
     const modulePermissions = user.module_permissions || [];
+    const hasAccess = modulePermissions.includes(module.id);
     
     console.log(`🔍 Vérification accès module ${module.id}:`, {
+      userEmail: user.email,
       userPermissions: modulePermissions,
-      hasAccess: modulePermissions.includes(module.id)
+      hasAccess: hasAccess
     });
     
-    return modulePermissions.includes(module.id);
+    return hasAccess;
   });
 
   const handleModuleClick = (route: string) => {
