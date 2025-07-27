@@ -146,34 +146,13 @@ export const userService = {
       // Generate secure password if not provided
       const securePassword = userData.password || generateSecurePassword();
 
-      // Create user in Supabase Auth FIRST
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: sanitizedEmail,
-        password: securePassword,
-        email_confirm: true, // Auto-confirm email to skip email verification
-        user_metadata: {
-          first_name: sanitizedPrenom,
-          last_name: sanitizedNom,
-          roles: userData.roles
-        }
-      });
-
-      if (authError) {
-        console.error('❌ Auth creation error:', authError);
-        throw new Error(`Erreur lors de la création auth: ${authError.message}`);
-      }
-
-      if (!authData.user) {
-        throw new Error('Aucun utilisateur créé par Supabase Auth');
-      }
-
-      console.log('✅ Auth user created with ID:', authData.user.id);
-
-      // Now create user record in database with the auth ID
+      // 1. Create user record in database FIRST
+      const newUserId = crypto.randomUUID();
+      
       const { data: dbUser, error: dbError } = await supabase
         .from('users')
         .insert({
-          id: authData.user.id, // Use the auth user ID directly
+          id: newUserId,
           email: sanitizedEmail,
           first_name: sanitizedPrenom,
           last_name: sanitizedNom,
@@ -188,16 +167,58 @@ export const userService = {
 
       if (dbError) {
         console.error('❌ DB creation error:', dbError);
-        // If database creation fails, try to clean up the auth user
-        try {
-          await supabase.auth.admin.deleteUser(authData.user.id);
-        } catch (cleanupError) {
-          console.error('❌ Cleanup error:', cleanupError);
-        }
         throw new Error(`Erreur lors de la création en base: ${dbError.message}`);
       }
 
-      console.log('✅ User record created successfully in database with matching auth ID');
+      console.log('✅ User record created successfully in database with ID:', newUserId);
+
+      // 2. Synchronize with Supabase Auth automatically
+      try {
+        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+          email: sanitizedEmail,
+          password: securePassword,
+          email_confirm: true, // Auto-confirm email to skip email verification
+          user_metadata: {
+            first_name: sanitizedPrenom,
+            last_name: sanitizedNom,
+            roles: userData.roles,
+            db_user_id: newUserId // Store reference to our DB user
+          }
+        });
+
+        if (authError) {
+          console.warn('⚠️ Auth creation failed:', authError);
+          // Keep the database user but mark it as not synchronized
+          await supabase
+            .from('users')
+            .update({ 
+              password_hash: `not_synced_${securePassword}` // Store password temporarily
+            })
+            .eq('id', newUserId);
+          
+          console.log('📝 User created in DB but not synchronized with Auth yet');
+        } else {
+          console.log('✅ Auth user created with ID:', authData.user?.id);
+          
+          // 3. Update the database record with the auth ID for perfect sync
+          if (authData.user?.id && authData.user.id !== newUserId) {
+            await supabase
+              .from('users')
+              .update({ 
+                id: authData.user.id,
+                password_hash: 'managed_by_supabase_auth'
+              })
+              .eq('id', newUserId);
+            
+            console.log('🔄 Database user ID updated to match Auth ID:', authData.user.id);
+            
+            // Update our local reference
+            dbUser.id = authData.user.id;
+          }
+        }
+      } catch (authError) {
+        console.warn('⚠️ Auth synchronization failed, user exists in DB only:', authError);
+      }
 
       return {
         id: dbUser.id,
