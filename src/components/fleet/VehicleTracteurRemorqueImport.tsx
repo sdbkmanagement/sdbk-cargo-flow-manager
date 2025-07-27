@@ -46,8 +46,12 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
 
         // Validation spécifique pour les véhicules de type "porteur"
         if (typeVehicule === 'porteur') {
-          if (!row['Marque tracteur'] || !row['Modèle tracteur'] || !row['Plaque d\'immatriculation tracteur']) {
-            results.errors.push(`Ligne ${row._row}: Pour un véhicule de type "porteur", la marque tracteur, le modèle tracteur et la plaque d'immatriculation tracteur sont obligatoires`);
+          const marqueValue = row['Marque tracteur'] ? String(row['Marque tracteur']).trim() : '';
+          const modeleValue = row['Modèle tracteur'] ? String(row['Modèle tracteur']).trim() : '';
+          const immatriculationValue = row['Plaque d\'immatriculation tracteur'] ? String(row['Plaque d\'immatriculation tracteur']).trim() : '';
+          
+          if (!marqueValue || !modeleValue || !immatriculationValue) {
+            results.errors.push(`Ligne ${row._row}: Pour un véhicule de type "porteur", la marque tracteur ("${marqueValue}"), le modèle tracteur ("${modeleValue}") et la plaque d'immatriculation tracteur ("${immatriculationValue}") sont obligatoires et ne peuvent pas être vides`);
             continue;
           }
         }
@@ -72,9 +76,10 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
 
         // Pour les véhicules de type "porteur", utiliser les données du tracteur comme données principales
         if (typeVehicule === 'porteur') {
-          vehicleData.marque = row['Marque tracteur'] ? String(row['Marque tracteur']).trim() : null;
-          vehicleData.modele = row['Modèle tracteur'] ? String(row['Modèle tracteur']).trim() : null;
-          vehicleData.immatriculation = row['Plaque d\'immatriculation tracteur'] ? String(row['Plaque d\'immatriculation tracteur']).trim() : null;
+          // S'assurer que les valeurs ne sont jamais null pour respecter la contrainte
+          vehicleData.marque = String(row['Marque tracteur']).trim();
+          vehicleData.modele = String(row['Modèle tracteur']).trim();
+          vehicleData.immatriculation = String(row['Plaque d\'immatriculation tracteur']).trim();
           vehicleData.configuration = row['Configuration tracteur'] ? String(row['Configuration tracteur']).trim() : null;
           vehicleData.numero_chassis = row['Numéro de châssis tracteur'] ? String(row['Numéro de châssis tracteur']).trim() : null;
           vehicleData.date_fabrication = row['Date de fabrication tracteur'] ? new Date(row['Date de fabrication tracteur']).toISOString().split('T')[0] : null;
