@@ -180,28 +180,67 @@ export const userService = {
         throw new Error('ID utilisateur Auth manquant');
       }
 
-      const { data: dbUser, error: dbError } = await supabase
+      // 3. Check if user already exists in database
+      const { data: existingUser } = await supabase
         .from('users')
-        .insert({
-          id: authUserId,
-          email: sanitizedEmail,
-          first_name: sanitizedPrenom,
-          last_name: sanitizedNom,
-          roles: userData.roles as any,
-          module_permissions: userData.module_permissions,
-          status: userData.statut === 'actif' ? 'active' : userData.statut,
-          password_hash: 'managed_by_supabase_auth',
-          created_by: currentUser.user.id
-        })
-        .select()
+        .select('*')
+        .eq('id', authUserId)
         .single();
 
-      if (dbError) {
-        console.error('❌ DB creation error:', dbError);
-        throw new Error(`Erreur lors de la création en base: ${dbError.message}`);
+      let dbUser;
+      
+      if (existingUser) {
+        console.log('✅ User already exists in database, updating:', authUserId);
+        // Update existing user
+        const { data: updatedUser, error: updateError } = await supabase
+          .from('users')
+          .update({
+            email: sanitizedEmail,
+            first_name: sanitizedPrenom,
+            last_name: sanitizedNom,
+            roles: userData.roles as any,
+            module_permissions: userData.module_permissions,
+            status: userData.statut === 'actif' ? 'active' : userData.statut,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', authUserId)
+          .select()
+          .single();
+
+        if (updateError) {
+          console.error('❌ DB update error:', updateError);
+          throw new Error(`Erreur lors de la mise à jour en base: ${updateError.message}`);
+        }
+        
+        dbUser = updatedUser;
+      } else {
+        console.log('✅ Creating new user record in database:', authUserId);
+        // Create new user record
+        const { data: newUser, error: dbError } = await supabase
+          .from('users')
+          .insert({
+            id: authUserId,
+            email: sanitizedEmail,
+            first_name: sanitizedPrenom,
+            last_name: sanitizedNom,
+            roles: userData.roles as any,
+            module_permissions: userData.module_permissions,
+            status: userData.statut === 'actif' ? 'active' : userData.statut,
+            password_hash: 'managed_by_supabase_auth',
+            created_by: currentUser.user.id
+          })
+          .select()
+          .single();
+
+        if (dbError) {
+          console.error('❌ DB creation error:', dbError);
+          throw new Error(`Erreur lors de la création en base: ${dbError.message}`);
+        }
+        
+        dbUser = newUser;
       }
 
-      console.log('✅ User record created successfully in database with ID:', authUserId);
+      console.log('✅ User record synchronized successfully in database with ID:', authUserId);
 
       return {
         id: dbUser.id,
