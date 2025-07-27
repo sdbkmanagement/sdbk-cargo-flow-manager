@@ -198,7 +198,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const buildUserData = (dbUser: any): AuthUser => {
     const userRoles = dbUser.roles || ['transport'];
-    const modulePermissions = getModulePermissionsByRoles(userRoles);
+    
+    // Utiliser les permissions de modules définies en base de données
+    // Ne calculer automatiquement que pour les admins ou si aucune permission n'est définie
+    let modulePermissions: string[] = [];
+    
+    if (dbUser.module_permissions && dbUser.module_permissions.length > 0) {
+      // Utiliser les permissions explicites de la base de données
+      modulePermissions = dbUser.module_permissions;
+      console.log('📋 Utilisation des permissions explicites de la DB:', modulePermissions);
+    } else if (userRoles.includes('admin')) {
+      // Pour les admins, donner accès à tout
+      modulePermissions = getModulePermissionsByRoles(['admin']);
+      console.log('👑 Permissions admin automatiques:', modulePermissions);
+    } else {
+      // Pour les autres, utiliser les permissions par défaut du rôle
+      modulePermissions = getModulePermissionsByRoles(userRoles);
+      console.log('🎯 Permissions par défaut du rôle:', modulePermissions);
+    }
+    
+    // Toujours ajouter le dashboard pour tous les utilisateurs connectés
+    if (!modulePermissions.includes('dashboard')) {
+      modulePermissions.push('dashboard');
+    }
     
     const authUser: AuthUser = {
       id: dbUser.id,
