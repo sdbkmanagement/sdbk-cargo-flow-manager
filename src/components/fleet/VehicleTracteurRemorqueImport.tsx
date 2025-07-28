@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ExcelImport } from '@/components/common/ExcelImport';
 import vehiculesService from '@/services/vehicules';
@@ -109,16 +108,23 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
     const typeMapping: { [key: string]: string } = {
       'hydrocarbures': 'hydrocarbures',
       'hydrocarbure': 'hydrocarbures',
+      'hydrovarbures': 'hydrocarbures', // Gestion de la faute de frappe courante
+      'hydrovarbure': 'hydrocarbures',
       'petrole': 'hydrocarbures',
+      'pétrole': 'hydrocarbures',
       'essence': 'hydrocarbures',
       'gasoil': 'hydrocarbures',
+      'gas-oil': 'hydrocarbures',
       'carburant': 'hydrocarbures',
+      'carburants': 'hydrocarbures',
       'marchandise': 'marchandise',
       'marchandises': 'marchandise',
       'bauxite': 'marchandise',
       'ciment': 'marchandise',
       'materiaux': 'marchandise',
+      'matériaux': 'marchandise',
       'general': 'marchandise',
+      'général': 'marchandise',
       'divers': 'marchandise'
     };
 
