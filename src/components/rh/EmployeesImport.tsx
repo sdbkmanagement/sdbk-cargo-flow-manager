@@ -1,116 +1,156 @@
-import React from 'react';
-import { ExcelImport } from '@/components/common/ExcelImport';
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Upload, Download, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { rhService } from '@/services/rh';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface EmployeesImportProps {
-  onClose: () => void;
-  onSuccess: () => void;
+interface ImportResult {
+  success: boolean;
+  message: string;
+  imported: number;
+  errors: string[];
 }
 
-export const EmployeesImport: React.FC<EmployeesImportProps> = ({ onClose, onSuccess }) => {
-  const templateColumns = [
-    'nom',
-    'prenom',
-    'poste',
-    'service',
-    'date_embauche',
-    'type_contrat',
-    'telephone',
-    'email',
-    'statut',
-    'date_fin_contrat',
-    'remarques'
-  ];
+export const EmployeesImport = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
-  const handleImport = async (data: any[]) => {
-    const results = { success: 0, errors: [] as string[] };
+  // Vérifier si l'utilisateur est admin
+  const isAdmin = user?.roles?.includes('admin') || user?.role === 'admin';
 
-    for (const row of data) {
-      try {
-        // Validation des champs obligatoires
-        if (!row.nom || !row.prenom || !row.poste || !row.service || !row.date_embauche) {
-          results.errors.push(`Ligne ${row._row}: Nom, prénom, poste, service et date d'embauche sont obligatoires`);
-          continue;
-        }
+  // Si pas admin, ne pas afficher le composant
+  if (!isAdmin) {
+    return null;
+  }
 
-        // Validation et conversion des dates
-        const dateEmbauche = new Date(row.date_embauche);
-        if (isNaN(dateEmbauche.getTime())) {
-          results.errors.push(`Ligne ${row._row}: Date d'embauche invalide`);
-          continue;
-        }
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setImportResult(null);
+    }
+  };
 
-        let dateFinContrat = null;
-        if (row.date_fin_contrat) {
-          const parsedDate = new Date(row.date_fin_contrat);
-          if (isNaN(parsedDate.getTime())) {
-            results.errors.push(`Ligne ${row._row}: Date de fin de contrat invalide`);
-            continue;
-          }
-          dateFinContrat = parsedDate.toISOString().split('T')[0];
-        }
+  const handleImport = async () => {
+    if (!file) return;
 
-        // Validation des valeurs énumérées avant la création
-        const typeContrat = row.type_contrat ? String(row.type_contrat).trim() : 'CDI';
-        const statut = row.statut ? String(row.statut).trim() : 'actif';
-        
-        const validStatuts = ['actif', 'inactif', 'en_arret'];
-        if (!validStatuts.includes(statut)) {
-          results.errors.push(`Ligne ${row._row}: Statut invalide (doit être: ${validStatuts.join(', ')})`);
-          continue;
-        }
-
-        const validTypeContrats = ['CDI', 'CDD', 'Stage', 'Interim'];
-        if (!validTypeContrats.includes(typeContrat)) {
-          results.errors.push(`Ligne ${row._row}: Type de contrat invalide (doit être: ${validTypeContrats.join(', ')})`);
-          continue;
-        }
-
-        // Préparation des données
-        const employeData = {
-          nom: String(row.nom).trim(),
-          prenom: String(row.prenom).trim(),
-          poste: String(row.poste).trim(),
-          service: String(row.service).trim(),
-          date_embauche: dateEmbauche.toISOString().split('T')[0],
-          type_contrat: typeContrat as 'CDI' | 'CDD' | 'Stage' | 'Interim',
-          telephone: row.telephone ? String(row.telephone).trim() : null,
-          email: row.email ? String(row.email).trim() : null,
-          statut: statut as 'actif' | 'inactif' | 'en_arret',
-          date_fin_contrat: dateFinContrat,
-          remarques: row.remarques ? String(row.remarques).trim() : null
-        };
-
-        // Validation de l'email
-        if (employeData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employeData.email)) {
-          results.errors.push(`Ligne ${row._row}: Email invalide`);
-          continue;
-        }
-
-        // Import
-        await rhService.createEmploye(employeData);
-        results.success++;
-
-      } catch (error: any) {
-        const errorMessage = error?.message || 'Erreur inconnue';
-        results.errors.push(`Ligne ${row._row}: ${errorMessage}`);
+    setIsImporting(true);
+    try {
+      const result = await rhService.importEmployees(file);
+      setImportResult(result);
+      
+      if (result.success) {
+        toast({
+          title: "Import réussi",
+          description: `${result.imported} employés importés avec succès`,
+        });
+      } else {
+        toast({
+          title: "Erreur d'import",
+          description: result.message,
+          variant: "destructive",
+        });
       }
+    } catch (error) {
+      console.error('Erreur import:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'import",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
     }
+  };
 
-    if (results.success > 0) {
-      onSuccess();
-    }
-
-    return results;
+  const handleDownloadTemplate = () => {
+    const templateUrl = '/templates/template-employes.xlsx';
+    const link = document.createElement('a');
+    link.href = templateUrl;
+    link.download = 'template-employes.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <ExcelImport
-      title="Employés"
-      description="Importez vos employés depuis un fichier Excel"
-      templateColumns={templateColumns}
-      onImport={handleImport}
-      onClose={onClose}
-    />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="w-5 h-5" />
+          Import Employés
+        </CardTitle>
+        <CardDescription>
+          Importez vos employés depuis un fichier Excel
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Télécharger le modèle
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Sélectionner le fichier Excel
+          </label>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelect}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+
+        {file && (
+          <Alert>
+            <FileText className="h-4 w-4" />
+            <AlertDescription>
+              Fichier sélectionné: {file.name}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Button 
+          onClick={handleImport}
+          disabled={!file || isImporting}
+          className="w-full"
+        >
+          {isImporting ? 'Import en cours...' : 'Importer les employés'}
+        </Button>
+
+        {importResult && (
+          <Alert className={importResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+            {importResult.success ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <X className="h-4 w-4 text-red-600" />
+            )}
+            <AlertDescription className={importResult.success ? 'text-green-700' : 'text-red-700'}>
+              {importResult.message}
+              {importResult.errors.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {importResult.errors.map((error, index) => (
+                    <li key={index} className="text-sm">• {error}</li>
+                  ))}
+                </ul>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 };

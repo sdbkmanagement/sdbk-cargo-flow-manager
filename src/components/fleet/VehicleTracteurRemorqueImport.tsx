@@ -1,277 +1,176 @@
-import React from 'react';
-import { ExcelImport } from '@/components/common/ExcelImport';
-import vehiculesService from '@/services/vehicules';
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Upload, Download, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { vehiculesService } from '@/services/vehicules';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface VehicleTracteurRemorqueImportProps {
-  onClose: () => void;
-  onSuccess: () => void;
+interface ImportResult {
+  success: boolean;
+  message: string;
+  imported: number;
+  errors: string[];
 }
 
-export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImportProps> = ({ onClose, onSuccess }) => {
-  const templateColumns = [
-    'Type de véhicule',
-    'Base',
-    'Type de transport',
-    'Nom du propriétaire',
-    'Prénom du propriétaire',
-    'Plaque d\'immatriculation tracteur',
-    'Plaque d\'immatriculation remorque',
-    'Marque tracteur',
-    'Modèle tracteur',
-    'Configuration tracteur',
-    'Numéro de châssis tracteur',
-    'Date de fabrication tracteur',
-    'Date de mise en circulation tracteur',
-    'Volume en litres',
-    'Marque remorque',
-    'Modèle remorque',
-    'Configuration remorque',
-    'Numéro de châssis remorque',
-    'Date de fabrication remorque',
-    'Date de mise en circulation remorque'
-  ];
+export const VehicleTracteurRemorqueImport = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
-  const templateData = [
-    {
-      'Type de véhicule': 'tracteur_remorque',
-      'Base': 'Dakar',
-      'Type de transport': 'hydrocarbures',
-      'Nom du propriétaire': 'Société DBK',
-      'Prénom du propriétaire': '',
-      'Plaque d\'immatriculation tracteur': 'DK-1234-AB',
-      'Plaque d\'immatriculation remorque': 'DK-5678-CD',
-      'Marque tracteur': 'VOLVO',
-      'Modèle tracteur': 'FH16',
-      'Configuration tracteur': '6x4',
-      'Numéro de châssis tracteur': 'YV2A2D28XGA123456',
-      'Date de fabrication tracteur': '2022-01-15',
-      'Date de mise en circulation tracteur': '2022-03-01',
-      'Volume en litres': '35000',
-      'Marque remorque': 'TRAILOR',
-      'Modèle remorque': 'CITERNE',
-      'Configuration remorque': '3 essieux',
-      'Numéro de châssis remorque': 'TRA789123456',
-      'Date de fabrication remorque': '2022-02-10',
-      'Date de mise en circulation remorque': '2022-03-15'
-    },
-    {
-      'Type de véhicule': 'tracteur_remorque',
-      'Base': 'Thiès',
-      'Type de transport': 'marchandise',
-      'Nom du propriétaire': 'Société DBK',
-      'Prénom du propriétaire': '',
-      'Plaque d\'immatriculation tracteur': 'DK-9876-EF',
-      'Plaque d\'immatriculation remorque': 'DK-5432-GH',
-      'Marque tracteur': 'SCANIA',
-      'Modèle tracteur': 'R450',
-      'Configuration tracteur': '4x2',
-      'Numéro de châssis tracteur': 'YS2P4X20XGA987654',
-      'Date de fabrication tracteur': '2021-06-20',
-      'Date de mise en circulation tracteur': '2021-08-05',
-      'Volume en litres': '25000',
-      'Marque remorque': 'FRUEHAUF',
-      'Modèle remorque': 'PLATEAU',
-      'Configuration remorque': '2 essieux',
-      'Numéro de châssis remorque': 'FRU456789123',
-      'Date de fabrication remorque': '2021-07-10',
-      'Date de mise en circulation remorque': '2021-08-20'
-    },
-    {
-      'Type de véhicule': 'porteur',
-      'Base': 'Saint-Louis',
-      'Type de transport': 'hydrocarbures',
-      'Nom du propriétaire': 'Société DBK',
-      'Prénom du propriétaire': '',
-      'Plaque d\'immatriculation tracteur': 'DK-1111-IJ',
-      'Plaque d\'immatriculation remorque': '',
-      'Marque tracteur': 'MERCEDES',
-      'Modèle tracteur': 'ACTROS',
-      'Configuration tracteur': '8x4',
-      'Numéro de châssis tracteur': 'WDB9340341L123789',
-      'Date de fabrication tracteur': '2023-03-12',
-      'Date de mise en circulation tracteur': '2023-05-01',
-      'Volume en litres': '',
-      'Marque remorque': '',
-      'Modèle remorque': '',
-      'Configuration remorque': '',
-      'Numéro de châssis remorque': '',
-      'Date de fabrication remorque': '',
-      'Date de mise en circulation remorque': ''
-    }
-  ];
+  // Vérifier si l'utilisateur est admin
+  const isAdmin = user?.roles?.includes('admin') || user?.role === 'admin';
 
-  // Fonction pour normaliser le type de transport
-  const normalizeTypeTransport = (typeTransport: string): string => {
-    const normalizedType = String(typeTransport).trim().toLowerCase();
-    
-    // Mapping des valeurs communes vers les valeurs autorisées
-    const typeMapping: { [key: string]: string } = {
-      'hydrocarbures': 'hydrocarbures',
+  // Si pas admin, ne pas afficher le composant
+  if (!isAdmin) {
+    return null;
+  }
+
+  const normalizeTypeTransport = (type: string): string => {
+    const normalized = type.toLowerCase().trim();
+    const mapping: { [key: string]: string } = {
       'hydrocarbure': 'hydrocarbures',
-      'hydrovarbures': 'hydrocarbures', // Gestion de la faute de frappe courante
-      'hydrovarbure': 'hydrocarbures',
-      'petrole': 'hydrocarbures',
-      'pétrole': 'hydrocarbures',
-      'essence': 'hydrocarbures',
-      'gasoil': 'hydrocarbures',
-      'gas-oil': 'hydrocarbures',
-      'carburant': 'hydrocarbures',
-      'carburants': 'hydrocarbures',
-      'marchandise': 'marchandise',
-      'marchandises': 'marchandise',
-      'bauxite': 'marchandise',
-      'ciment': 'marchandise',
-      'materiaux': 'marchandise',
-      'matériaux': 'marchandise',
-      'general': 'marchandise',
-      'général': 'marchandise',
-      'divers': 'marchandise'
+      'hydrocarbures': 'hydrocarbures',
+      'hydrovarbures': 'hydrocarbures', // Gestion de la faute de frappe
+      'hydrovarbure': 'hydrocarbures', // Gestion de la faute de frappe
+      'marchandise': 'marchandises',
+      'marchandises': 'marchandises',
+      'benne': 'benne',
+      'citerne': 'citerne',
+      'plateau': 'plateau',
+      'frigorifique': 'frigorifique',
+      'porte-conteneur': 'porte-conteneur',
+      'porte-voiture': 'porte-voiture',
+      'savoyarde': 'savoyarde'
     };
-
-    const mappedType = typeMapping[normalizedType];
-    
-    if (!mappedType) {
-      console.warn(`Type de transport non reconnu: "${typeTransport}". Utilisation de "marchandise" par défaut.`);
-      return 'marchandise';
-    }
-    
-    return mappedType;
+    return mapping[normalized] || normalized;
   };
 
-  const handleImport = async (data: any[]) => {
-    const results = { success: 0, errors: [] as string[] };
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setImportResult(null);
+    }
+  };
 
-    for (const row of data) {
-      try {
-        // Validation des champs obligatoires
-        if (!row['Type de transport'] || !row['Type de véhicule']) {
-          results.errors.push(`Ligne ${row._row}: Type de transport et type de véhicule sont obligatoires`);
-          continue;
-        }
+  const handleImport = async () => {
+    if (!file) return;
 
-        // Normaliser le type de transport
-        const rawTypeTransport = String(row['Type de transport']).trim();
-        const normalizedTypeTransport = normalizeTypeTransport(rawTypeTransport);
-        
-        console.log(`Ligne ${row._row}: Type de transport original: "${rawTypeTransport}" -> normalisé: "${normalizedTypeTransport}"`);
-
-        const typeVehicule = String(row['Type de véhicule']).trim().toLowerCase();
-        const normalizedTypeVehicule = typeVehicule === 'porteur' ? 'porteur' : 'tracteur_remorque';
-
-        // Validation spécifique pour les véhicules de type "porteur"
-        if (normalizedTypeVehicule === 'porteur') {
-          const marqueValue = row['Marque tracteur'] ? String(row['Marque tracteur']).trim() : '';
-          const modeleValue = row['Modèle tracteur'] ? String(row['Modèle tracteur']).trim() : '';
-          const immatriculationValue = row['Plaque d\'immatriculation tracteur'] ? String(row['Plaque d\'immatriculation tracteur']).trim() : '';
-          
-          if (!marqueValue || !modeleValue || !immatriculationValue) {
-            results.errors.push(`Ligne ${row._row}: Pour un véhicule de type "porteur", la marque, le modèle et la plaque d'immatriculation sont obligatoires`);
-            continue;
-          }
-        }
-
-        // Générer un numéro automatique
-        const numeroGenere = `V-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-        
-        // Fonction pour parser les dates
-        const parseDate = (value: any): string | null => {
-          if (!value) return null;
-          try {
-            // Si c'est un nombre (format Excel), convertir depuis l'époque Excel
-            if (typeof value === 'number') {
-              const excelEpoch = new Date(1899, 11, 30);
-              const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
-              return date.toISOString().split('T')[0];
-            }
-            // Si c'est une chaîne ou un objet Date
-            const date = new Date(value);
-            if (!isNaN(date.getTime())) {
-              return date.toISOString().split('T')[0];
-            }
-          } catch (error) {
-            console.error('Erreur parsing date:', error);
-          }
-          return null;
-        };
-
-        // Préparer les données selon le type de véhicule
-        const vehicleData: any = {
-          numero: numeroGenere,
-          type_transport: normalizedTypeTransport, // Utiliser le type normalisé
-          type_vehicule: normalizedTypeVehicule,
-          base: row['Base'] ? String(row['Base']).trim() : null,
-          proprietaire_nom: row['Nom du propriétaire'] ? String(row['Nom du propriétaire']).trim() : null,
-          proprietaire_prenom: row['Prénom du propriétaire'] ? String(row['Prénom du propriétaire']).trim() : null,
-          statut: 'disponible',
-          validation_requise: false
-        };
-
-        // Pour les véhicules de type "porteur", utiliser les données du tracteur comme données principales
-        if (normalizedTypeVehicule === 'porteur') {
-          vehicleData.marque = String(row['Marque tracteur']).trim();
-          vehicleData.modele = String(row['Modèle tracteur']).trim();
-          vehicleData.immatriculation = String(row['Plaque d\'immatriculation tracteur']).trim();
-          vehicleData.configuration = row['Configuration tracteur'] ? String(row['Configuration tracteur']).trim() : null;
-          vehicleData.numero_chassis = row['Numéro de châssis tracteur'] ? String(row['Numéro de châssis tracteur']).trim() : null;
-          vehicleData.date_fabrication = parseDate(row['Date de fabrication tracteur']);
-          vehicleData.date_mise_circulation = parseDate(row['Date de mise en circulation tracteur']);
-        } else {
-          // Pour tracteur+remorque, utiliser la structure avec préfixes
-          vehicleData.tracteur_immatriculation = row['Plaque d\'immatriculation tracteur'] ? String(row['Plaque d\'immatriculation tracteur']).trim() : null;
-          vehicleData.remorque_immatriculation = row['Plaque d\'immatriculation remorque'] ? String(row['Plaque d\'immatriculation remorque']).trim() : null;
-          
-          // Données tracteur
-          vehicleData.tracteur_marque = row['Marque tracteur'] ? String(row['Marque tracteur']).trim() : null;
-          vehicleData.tracteur_modele = row['Modèle tracteur'] ? String(row['Modèle tracteur']).trim() : null;
-          vehicleData.tracteur_configuration = row['Configuration tracteur'] ? String(row['Configuration tracteur']).trim() : null;
-          vehicleData.tracteur_numero_chassis = row['Numéro de châssis tracteur'] ? String(row['Numéro de châssis tracteur']).trim() : null;
-          vehicleData.tracteur_date_fabrication = parseDate(row['Date de fabrication tracteur']);
-          vehicleData.tracteur_date_mise_circulation = parseDate(row['Date de mise en circulation tracteur']);
-          
-          // Données remorque
-          vehicleData.remorque_volume_litres = row['Volume en litres'] ? Number(row['Volume en litres']) : null;
-          vehicleData.remorque_marque = row['Marque remorque'] ? String(row['Marque remorque']).trim() : null;
-          vehicleData.remorque_modele = row['Modèle remorque'] ? String(row['Modèle remorque']).trim() : null;
-          vehicleData.remorque_configuration = row['Configuration remorque'] ? String(row['Configuration remorque']).trim() : null;
-          vehicleData.remorque_numero_chassis = row['Numéro de châssis remorque'] ? String(row['Numéro de châssis remorque']).trim() : null;
-          vehicleData.remorque_date_fabrication = parseDate(row['Date de fabrication remorque']);
-          vehicleData.remorque_date_mise_circulation = parseDate(row['Date de mise en circulation remorque']);
-        }
-
-        // Validation des valeurs numériques
-        if (vehicleData.remorque_volume_litres && isNaN(vehicleData.remorque_volume_litres)) {
-          results.errors.push(`Ligne ${row._row}: Volume en litres invalide`);
-          continue;
-        }
-
-        console.log('Données à importer:', vehicleData);
-
-        // Import
-        await vehiculesService.create(vehicleData);
-        results.success++;
-
-      } catch (error: any) {
-        console.error('Erreur lors de l\'import:', error);
-        const errorMessage = error?.message || 'Erreur inconnue';
-        results.errors.push(`Ligne ${row._row}: ${errorMessage}`);
+    setIsImporting(true);
+    try {
+      const result = await vehiculesService.importTracteurRemorque(file);
+      setImportResult(result);
+      
+      if (result.success) {
+        toast({
+          title: "Import réussi",
+          description: `${result.imported} véhicules importés avec succès`,
+        });
+      } else {
+        toast({
+          title: "Erreur d'import",
+          description: result.message,
+          variant: "destructive",
+        });
       }
+    } catch (error) {
+      console.error('Erreur import:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'import",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
     }
+  };
 
-    if (results.success > 0) {
-      onSuccess();
-    }
-
-    return results;
+  const handleDownloadTemplate = () => {
+    const templateUrl = '/templates/template-tracteur-remorque.xlsx';
+    const link = document.createElement('a');
+    link.href = templateUrl;
+    link.download = 'template-tracteur-remorque.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <ExcelImport
-      title="Véhicules Tracteur + Remorque"
-      description="Importez vos véhicules tracteur + remorque depuis un fichier Excel"
-      templateColumns={templateColumns}
-      templateData={templateData}
-      onImport={handleImport}
-      onClose={onClose}
-    />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="w-5 h-5" />
+          Import Tracteur-Remorque
+        </CardTitle>
+        <CardDescription>
+          Importez vos tracteurs et remorques depuis un fichier Excel
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Télécharger le modèle
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Sélectionner le fichier Excel
+          </label>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelect}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+
+        {file && (
+          <Alert>
+            <FileText className="h-4 w-4" />
+            <AlertDescription>
+              Fichier sélectionné: {file.name}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Button 
+          onClick={handleImport}
+          disabled={!file || isImporting}
+          className="w-full"
+        >
+          {isImporting ? 'Import en cours...' : 'Importer les véhicules'}
+        </Button>
+
+        {importResult && (
+          <Alert className={importResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+            {importResult.success ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <X className="h-4 w-4 text-red-600" />
+            )}
+            <AlertDescription className={importResult.success ? 'text-green-700' : 'text-red-700'}>
+              {importResult.message}
+              {importResult.errors.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {importResult.errors.map((error, index) => (
+                    <li key={index} className="text-sm">• {error}</li>
+                  ))}
+                </ul>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 };

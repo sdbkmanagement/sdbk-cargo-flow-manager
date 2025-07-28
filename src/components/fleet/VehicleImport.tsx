@@ -1,90 +1,156 @@
-import React from 'react';
-import { ExcelImport } from '@/components/common/ExcelImport';
-import vehiculesService from '@/services/vehicules';
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Upload, Download, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { vehiculesService } from '@/services/vehicules';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
-interface VehicleImportProps {
-  onClose: () => void;
-  onSuccess: () => void;
+interface ImportResult {
+  success: boolean;
+  message: string;
+  imported: number;
+  errors: string[];
 }
 
-export const VehicleImport: React.FC<VehicleImportProps> = ({ onClose, onSuccess }) => {
-  const templateColumns = [
-    'numero',
-    'marque',
-    'modele',
-    'immatriculation',
-    'type_transport',
-    'type_vehicule',
-    'capacite_max',
-    'unite_capacite',
-    'annee_fabrication',
-    'numero_chassis',
-    'base',
-    'statut'
-  ];
+export const VehicleImport = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
 
-  const handleImport = async (data: any[]) => {
-    const results = { success: 0, errors: [] as string[] };
+  // Vérifier si l'utilisateur est admin
+  const isAdmin = user?.roles?.includes('admin') || user?.role === 'admin';
 
-    for (const row of data) {
-      try {
-        // Validation des champs obligatoires
-        if (!row.numero || !row.type_transport) {
-          results.errors.push(`Ligne ${row._row}: Numéro et type de transport sont obligatoires`);
-          continue;
-        }
+  // Si pas admin, ne pas afficher le composant
+  if (!isAdmin) {
+    return null;
+  }
 
-        // Préparation des données
-        const vehicleData = {
-          numero: String(row.numero).trim(),
-          marque: row.marque ? String(row.marque).trim() : null,
-          modele: row.modele ? String(row.modele).trim() : null,
-          immatriculation: row.immatriculation ? String(row.immatriculation).trim() : null,
-          type_transport: String(row.type_transport).trim(),
-          type_vehicule: row.type_vehicule ? String(row.type_vehicule).trim() : 'porteur',
-          capacite_max: row.capacite_max ? Number(row.capacite_max) : null,
-          unite_capacite: row.unite_capacite ? String(row.unite_capacite).trim() : null,
-          annee_fabrication: row.annee_fabrication ? Number(row.annee_fabrication) : null,
-          numero_chassis: row.numero_chassis ? String(row.numero_chassis).trim() : null,
-          base: row.base ? String(row.base).trim() : null,
-          statut: row.statut ? String(row.statut).trim() : 'disponible'
-        };
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setImportResult(null);
+    }
+  };
 
-        // Validation des valeurs
-        if (vehicleData.capacite_max && isNaN(vehicleData.capacite_max)) {
-          results.errors.push(`Ligne ${row._row}: Capacité max invalide`);
-          continue;
-        }
+  const handleImport = async () => {
+    if (!file) return;
 
-        if (vehicleData.annee_fabrication && (isNaN(vehicleData.annee_fabrication) || vehicleData.annee_fabrication < 1900)) {
-          results.errors.push(`Ligne ${row._row}: Année de fabrication invalide`);
-          continue;
-        }
-
-        // Import
-        await vehiculesService.create(vehicleData);
-        results.success++;
-
-      } catch (error: any) {
-        const errorMessage = error?.message || 'Erreur inconnue';
-        results.errors.push(`Ligne ${row._row}: ${errorMessage}`);
+    setIsImporting(true);
+    try {
+      const result = await vehiculesService.importVehicles(file);
+      setImportResult(result);
+      
+      if (result.success) {
+        toast({
+          title: "Import réussi",
+          description: `${result.imported} véhicules importés avec succès`,
+        });
+      } else {
+        toast({
+          title: "Erreur d'import",
+          description: result.message,
+          variant: "destructive",
+        });
       }
+    } catch (error) {
+      console.error('Erreur import:', error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'import",
+        variant: "destructive",
+      });
+    } finally {
+      setIsImporting(false);
     }
+  };
 
-    if (results.success > 0) {
-      onSuccess();
-    }
-
-    return results;
+  const handleDownloadTemplate = () => {
+    const templateUrl = '/templates/template-vehicules.xlsx';
+    const link = document.createElement('a');
+    link.href = templateUrl;
+    link.download = 'template-vehicules.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <ExcelImport
-      title="Véhicules"
-      description="Importez vos véhicules depuis un fichier Excel"
-      templateColumns={templateColumns}
-      onImport={handleImport}
-      onClose={onClose}
-    />
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Upload className="w-5 h-5" />
+          Import Véhicules
+        </CardTitle>
+        <CardDescription>
+          Importez vos véhicules depuis un fichier Excel
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleDownloadTemplate}
+            className="flex items-center gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Télécharger le modèle
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">
+            Sélectionner le fichier Excel
+          </label>
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            onChange={handleFileSelect}
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+
+        {file && (
+          <Alert>
+            <FileText className="h-4 w-4" />
+            <AlertDescription>
+              Fichier sélectionné: {file.name}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Button 
+          onClick={handleImport}
+          disabled={!file || isImporting}
+          className="w-full"
+        >
+          {isImporting ? 'Import en cours...' : 'Importer les véhicules'}
+        </Button>
+
+        {importResult && (
+          <Alert className={importResult.success ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+            {importResult.success ? (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            ) : (
+              <X className="h-4 w-4 text-red-600" />
+            )}
+            <AlertDescription className={importResult.success ? 'text-green-700' : 'text-red-700'}>
+              {importResult.message}
+              {importResult.errors.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                  {importResult.errors.map((error, index) => (
+                    <li key={index} className="text-sm">• {error}</li>
+                  ))}
+                </ul>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+      </CardContent>
+    </Card>
   );
 };
