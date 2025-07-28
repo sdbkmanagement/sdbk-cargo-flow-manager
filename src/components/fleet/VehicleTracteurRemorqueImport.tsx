@@ -58,7 +58,7 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
     {
       'Type de véhicule': 'tracteur_remorque',
       'Base': 'Thiès',
-      'Type de transport': 'bauxite',
+      'Type de transport': 'marchandise',
       'Nom du propriétaire': 'Société DBK',
       'Prénom du propriétaire': '',
       'Plaque d\'immatriculation tracteur': 'DK-9876-EF',
@@ -101,6 +101,37 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
     }
   ];
 
+  // Fonction pour normaliser le type de transport
+  const normalizeTypeTransport = (typeTransport: string): string => {
+    const normalizedType = String(typeTransport).trim().toLowerCase();
+    
+    // Mapping des valeurs communes vers les valeurs autorisées
+    const typeMapping: { [key: string]: string } = {
+      'hydrocarbures': 'hydrocarbures',
+      'hydrocarbure': 'hydrocarbures',
+      'petrole': 'hydrocarbures',
+      'essence': 'hydrocarbures',
+      'gasoil': 'hydrocarbures',
+      'carburant': 'hydrocarbures',
+      'marchandise': 'marchandise',
+      'marchandises': 'marchandise',
+      'bauxite': 'marchandise',
+      'ciment': 'marchandise',
+      'materiaux': 'marchandise',
+      'general': 'marchandise',
+      'divers': 'marchandise'
+    };
+
+    const mappedType = typeMapping[normalizedType];
+    
+    if (!mappedType) {
+      console.warn(`Type de transport non reconnu: "${typeTransport}". Utilisation de "marchandise" par défaut.`);
+      return 'marchandise';
+    }
+    
+    return mappedType;
+  };
+
   const handleImport = async (data: any[]) => {
     const results = { success: 0, errors: [] as string[] };
 
@@ -111,6 +142,12 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
           results.errors.push(`Ligne ${row._row}: Type de transport et type de véhicule sont obligatoires`);
           continue;
         }
+
+        // Normaliser le type de transport
+        const rawTypeTransport = String(row['Type de transport']).trim();
+        const normalizedTypeTransport = normalizeTypeTransport(rawTypeTransport);
+        
+        console.log(`Ligne ${row._row}: Type de transport original: "${rawTypeTransport}" -> normalisé: "${normalizedTypeTransport}"`);
 
         const typeVehicule = String(row['Type de véhicule']).trim().toLowerCase();
         const normalizedTypeVehicule = typeVehicule === 'porteur' ? 'porteur' : 'tracteur_remorque';
@@ -154,7 +191,7 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
         // Préparer les données selon le type de véhicule
         const vehicleData: any = {
           numero: numeroGenere,
-          type_transport: String(row['Type de transport']).trim(),
+          type_transport: normalizedTypeTransport, // Utiliser le type normalisé
           type_vehicule: normalizedTypeVehicule,
           base: row['Base'] ? String(row['Base']).trim() : null,
           proprietaire_nom: row['Nom du propriétaire'] ? String(row['Nom du propriétaire']).trim() : null,
