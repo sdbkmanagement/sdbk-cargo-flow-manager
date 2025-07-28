@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ExcelImport } from '@/components/common/ExcelImport';
 import vehiculesService from '@/services/vehicules';
@@ -57,7 +58,7 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
     {
       'Type de véhicule': 'tracteur_remorque',
       'Base': 'Thiès',
-      'Type de transport': 'marchandises_diverses',
+      'Type de transport': 'bauxite',
       'Nom du propriétaire': 'Société DBK',
       'Prénom du propriétaire': '',
       'Plaque d\'immatriculation tracteur': 'DK-9876-EF',
@@ -79,7 +80,7 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
     {
       'Type de véhicule': 'porteur',
       'Base': 'Saint-Louis',
-      'Type de transport': 'produits_agricoles',
+      'Type de transport': 'hydrocarbures',
       'Nom du propriétaire': 'Société DBK',
       'Prénom du propriétaire': '',
       'Plaque d\'immatriculation tracteur': 'DK-1111-IJ',
@@ -112,49 +113,67 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
         }
 
         const typeVehicule = String(row['Type de véhicule']).trim().toLowerCase();
+        const normalizedTypeVehicule = typeVehicule === 'porteur' ? 'porteur' : 'tracteur_remorque';
 
         // Validation spécifique pour les véhicules de type "porteur"
-        if (typeVehicule === 'porteur') {
+        if (normalizedTypeVehicule === 'porteur') {
           const marqueValue = row['Marque tracteur'] ? String(row['Marque tracteur']).trim() : '';
           const modeleValue = row['Modèle tracteur'] ? String(row['Modèle tracteur']).trim() : '';
           const immatriculationValue = row['Plaque d\'immatriculation tracteur'] ? String(row['Plaque d\'immatriculation tracteur']).trim() : '';
           
           if (!marqueValue || !modeleValue || !immatriculationValue) {
-            results.errors.push(`Ligne ${row._row}: Pour un véhicule de type "porteur", la marque tracteur ("${marqueValue}"), le modèle tracteur ("${modeleValue}") et la plaque d'immatriculation tracteur ("${immatriculationValue}") sont obligatoires et ne peuvent pas être vides`);
+            results.errors.push(`Ligne ${row._row}: Pour un véhicule de type "porteur", la marque, le modèle et la plaque d'immatriculation sont obligatoires`);
             continue;
           }
         }
 
-        // Générer un numéro automatique si pas fourni
-        const numeroGenere = `TR-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+        // Générer un numéro automatique
+        const numeroGenere = `V-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
         
+        // Fonction pour parser les dates
+        const parseDate = (value: any): string | null => {
+          if (!value) return null;
+          try {
+            // Si c'est un nombre (format Excel), convertir depuis l'époque Excel
+            if (typeof value === 'number') {
+              const excelEpoch = new Date(1899, 11, 30);
+              const date = new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
+              return date.toISOString().split('T')[0];
+            }
+            // Si c'est une chaîne ou un objet Date
+            const date = new Date(value);
+            if (!isNaN(date.getTime())) {
+              return date.toISOString().split('T')[0];
+            }
+          } catch (error) {
+            console.error('Erreur parsing date:', error);
+          }
+          return null;
+        };
+
         // Préparer les données selon le type de véhicule
         const vehicleData: any = {
           numero: numeroGenere,
           type_transport: String(row['Type de transport']).trim(),
-          type_vehicule: typeVehicule === 'porteur' ? 'porteur' : 'tracteur_remorque', // Normaliser la valeur
+          type_vehicule: normalizedTypeVehicule,
           base: row['Base'] ? String(row['Base']).trim() : null,
-          
-          // Données propriétaire
           proprietaire_nom: row['Nom du propriétaire'] ? String(row['Nom du propriétaire']).trim() : null,
           proprietaire_prenom: row['Prénom du propriétaire'] ? String(row['Prénom du propriétaire']).trim() : null,
-          
           statut: 'disponible',
           validation_requise: false
         };
 
         // Pour les véhicules de type "porteur", utiliser les données du tracteur comme données principales
-        if (typeVehicule === 'porteur') {
-          // S'assurer que les valeurs ne sont jamais null pour respecter la contrainte
+        if (normalizedTypeVehicule === 'porteur') {
           vehicleData.marque = String(row['Marque tracteur']).trim();
           vehicleData.modele = String(row['Modèle tracteur']).trim();
           vehicleData.immatriculation = String(row['Plaque d\'immatriculation tracteur']).trim();
           vehicleData.configuration = row['Configuration tracteur'] ? String(row['Configuration tracteur']).trim() : null;
           vehicleData.numero_chassis = row['Numéro de châssis tracteur'] ? String(row['Numéro de châssis tracteur']).trim() : null;
-          vehicleData.date_fabrication = row['Date de fabrication tracteur'] ? new Date(row['Date de fabrication tracteur']).toISOString().split('T')[0] : null;
-          vehicleData.date_mise_circulation = row['Date de mise en circulation tracteur'] ? new Date(row['Date de mise en circulation tracteur']).toISOString().split('T')[0] : null;
+          vehicleData.date_fabrication = parseDate(row['Date de fabrication tracteur']);
+          vehicleData.date_mise_circulation = parseDate(row['Date de mise en circulation tracteur']);
         } else {
-          // Pour tracteur+remorque, garder la structure existante
+          // Pour tracteur+remorque, utiliser la structure avec préfixes
           vehicleData.tracteur_immatriculation = row['Plaque d\'immatriculation tracteur'] ? String(row['Plaque d\'immatriculation tracteur']).trim() : null;
           vehicleData.remorque_immatriculation = row['Plaque d\'immatriculation remorque'] ? String(row['Plaque d\'immatriculation remorque']).trim() : null;
           
@@ -163,17 +182,17 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
           vehicleData.tracteur_modele = row['Modèle tracteur'] ? String(row['Modèle tracteur']).trim() : null;
           vehicleData.tracteur_configuration = row['Configuration tracteur'] ? String(row['Configuration tracteur']).trim() : null;
           vehicleData.tracteur_numero_chassis = row['Numéro de châssis tracteur'] ? String(row['Numéro de châssis tracteur']).trim() : null;
-          vehicleData.tracteur_date_fabrication = row['Date de fabrication tracteur'] ? new Date(row['Date de fabrication tracteur']).toISOString().split('T')[0] : null;
-          vehicleData.tracteur_date_mise_circulation = row['Date de mise en circulation tracteur'] ? new Date(row['Date de mise en circulation tracteur']).toISOString().split('T')[0] : null;
+          vehicleData.tracteur_date_fabrication = parseDate(row['Date de fabrication tracteur']);
+          vehicleData.tracteur_date_mise_circulation = parseDate(row['Date de mise en circulation tracteur']);
           
-          // Volume et données remorque
+          // Données remorque
           vehicleData.remorque_volume_litres = row['Volume en litres'] ? Number(row['Volume en litres']) : null;
           vehicleData.remorque_marque = row['Marque remorque'] ? String(row['Marque remorque']).trim() : null;
           vehicleData.remorque_modele = row['Modèle remorque'] ? String(row['Modèle remorque']).trim() : null;
           vehicleData.remorque_configuration = row['Configuration remorque'] ? String(row['Configuration remorque']).trim() : null;
           vehicleData.remorque_numero_chassis = row['Numéro de châssis remorque'] ? String(row['Numéro de châssis remorque']).trim() : null;
-          vehicleData.remorque_date_fabrication = row['Date de fabrication remorque'] ? new Date(row['Date de fabrication remorque']).toISOString().split('T')[0] : null;
-          vehicleData.remorque_date_mise_circulation = row['Date de mise en circulation remorque'] ? new Date(row['Date de mise en circulation remorque']).toISOString().split('T')[0] : null;
+          vehicleData.remorque_date_fabrication = parseDate(row['Date de fabrication remorque']);
+          vehicleData.remorque_date_mise_circulation = parseDate(row['Date de mise en circulation remorque']);
         }
 
         // Validation des valeurs numériques
@@ -182,11 +201,14 @@ export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImpo
           continue;
         }
 
+        console.log('Données à importer:', vehicleData);
+
         // Import
         await vehiculesService.create(vehicleData);
         results.success++;
 
       } catch (error: any) {
+        console.error('Erreur lors de l\'import:', error);
         const errorMessage = error?.message || 'Erreur inconnue';
         results.errors.push(`Ligne ${row._row}: ${errorMessage}`);
       }
