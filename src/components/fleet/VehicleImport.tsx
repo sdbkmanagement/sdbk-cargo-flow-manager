@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Download, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Upload, Download, FileText, CheckCircle, X } from 'lucide-react';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,7 +15,12 @@ interface ImportResult {
   errors: string[];
 }
 
-export const VehicleImport = () => {
+interface VehicleImportProps {
+  onSuccess?: () => void;
+  onClose?: () => void;
+}
+
+export const VehicleImport: React.FC<VehicleImportProps> = ({ onSuccess, onClose }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
@@ -50,6 +56,7 @@ export const VehicleImport = () => {
           title: "Import réussi",
           description: `${result.imported} véhicules importés avec succès`,
         });
+        onSuccess?.();
       } else {
         toast({
           title: "Erreur d'import",

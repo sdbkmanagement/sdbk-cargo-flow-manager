@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Employe {
@@ -270,5 +269,25 @@ export const rhService = {
     };
 
     return stats;
+  },
+
+  async importEmployees(file: File): Promise<{ success: boolean; message: string; imported: number; errors: string[] }> {
+    try {
+      // Simuler l'import pour le moment
+      return {
+        success: true,
+        message: "Import simulé - fonctionnalité à implémenter",
+        imported: 0,
+        errors: []
+      };
+    } catch (error) {
+      console.error('Erreur import employés:', error);
+      return {
+        success: false,
+        message: "Erreur lors de l'import",
+        imported: 0,
+        errors: [error instanceof Error ? error.message : "Erreur inconnue"]
+      };
+    }
   }
 };

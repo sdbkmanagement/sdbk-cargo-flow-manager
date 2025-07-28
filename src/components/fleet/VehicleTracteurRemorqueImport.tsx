@@ -1,8 +1,9 @@
+
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Upload, Download, FileText, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { Upload, Download, FileText, CheckCircle, X } from 'lucide-react';
 import { vehiculesService } from '@/services/vehicules';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,7 +15,12 @@ interface ImportResult {
   errors: string[];
 }
 
-export const VehicleTracteurRemorqueImport = () => {
+interface VehicleTracteurRemorqueImportProps {
+  onSuccess?: () => void;
+  onClose?: () => void;
+}
+
+export const VehicleTracteurRemorqueImport: React.FC<VehicleTracteurRemorqueImportProps> = ({ onSuccess, onClose }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [file, setFile] = useState<File | null>(null);
@@ -28,26 +34,6 @@ export const VehicleTracteurRemorqueImport = () => {
   if (!isAdmin) {
     return null;
   }
-
-  const normalizeTypeTransport = (type: string): string => {
-    const normalized = type.toLowerCase().trim();
-    const mapping: { [key: string]: string } = {
-      'hydrocarbure': 'hydrocarbures',
-      'hydrocarbures': 'hydrocarbures',
-      'hydrovarbures': 'hydrocarbures', // Gestion de la faute de frappe
-      'hydrovarbure': 'hydrocarbures', // Gestion de la faute de frappe
-      'marchandise': 'marchandises',
-      'marchandises': 'marchandises',
-      'benne': 'benne',
-      'citerne': 'citerne',
-      'plateau': 'plateau',
-      'frigorifique': 'frigorifique',
-      'porte-conteneur': 'porte-conteneur',
-      'porte-voiture': 'porte-voiture',
-      'savoyarde': 'savoyarde'
-    };
-    return mapping[normalized] || normalized;
-  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
@@ -70,6 +56,7 @@ export const VehicleTracteurRemorqueImport = () => {
           title: "Import réussi",
           description: `${result.imported} véhicules importés avec succès`,
         });
+        onSuccess?.();
       } else {
         toast({
           title: "Erreur d'import",
