@@ -32,7 +32,7 @@ export const validationService = {
   // Cache optimisé pour éviter les requêtes répétées
   _cache: new Map<string, { data: any; timestamp: number }>(),
   
-  _getCached(key: string, maxAge: number = 10000) { // Réduit à 10 secondes
+  _getCached(key: string, maxAge: number = 10000) {
     const cached = this._cache.get(key);
     if (cached && Date.now() - cached.timestamp < maxAge) {
       return cached.data;
@@ -49,10 +49,33 @@ export const validationService = {
     }
   },
 
+  // Fonction pour vérifier si l'utilisateur peut créer des workflows
+  async canCreateWorkflow(): Promise<boolean> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data: userData, error } = await supabase
+        .from('users')
+        .select('roles, status')
+        .eq('id', user.id)
+        .single();
+
+      if (error || !userData) return false;
+
+      const validRoles = ['admin', 'maintenance', 'hsecq', 'obc', 'administratif'];
+      return userData.status === 'active' && 
+             userData.roles.some((role: string) => validRoles.includes(role));
+    } catch (error) {
+      console.error('Erreur lors de la vérification des permissions:', error);
+      return false;
+    }
+  },
+
   // Optimisation: Récupérer les workflows avec pagination légère
   async getWorkflowsPaginated(page: number = 1, limit: number = 20) {
     const cacheKey = `workflows_${page}_${limit}`;
-    const cached = this._getCached(cacheKey, 5000); // Cache plus court
+    const cached = this._getCached(cacheKey, 5000);
     if (cached) return cached;
 
     console.log(`Chargement rapide workflows page ${page}, limite ${limit}`);
@@ -112,118 +135,158 @@ export const validationService = {
     return result;
   },
 
-  // Optimisation: Récupérer un workflow spécifique avec cache court
+  // Récupérer un workflow spécifique avec gestion améliorée des erreurs
   async getWorkflowByVehicule(vehiculeId: string): Promise<ValidationWorkflowWithEtapes | null> {
     const cacheKey = `workflow_${vehiculeId}`;
-    const cached = this._getCached(cacheKey, 5000); // Cache plus court
+    const cached = this._getCached(cacheKey, 5000);
     if (cached) return cached;
 
-    console.log(`Chargement rapide workflow pour véhicule ${vehiculeId}`);
+    console.log(`Chargement workflow pour véhicule ${vehiculeId}`);
 
-    const { data, error } = await supabase
-      .from('validation_workflows')
-      .select(`
-        id,
-        vehicule_id,
-        statut_global,
-        created_at,
-        updated_at,
-        etapes:validation_etapes(
+    try {
+      const { data, error } = await supabase
+        .from('validation_workflows')
+        .select(`
           id,
-          workflow_id,
-          etape,
-          statut,
-          commentaire,
-          date_validation,
-          validateur_nom,
-          validateur_role,
+          vehicule_id,
+          statut_global,
           created_at,
-          updated_at
-        )
-      `)
-      .eq('vehicule_id', vehiculeId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+          updated_at,
+          etapes:validation_etapes(
+            id,
+            workflow_id,
+            etape,
+            statut,
+            commentaire,
+            date_validation,
+            validateur_nom,
+            validateur_role,
+            created_at,
+            updated_at
+          )
+        `)
+        .eq('vehicule_id', vehiculeId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (error) throw error;
+      if (error) {
+        console.error('Erreur lors de la récupération du workflow:', error);
+        throw error;
+      }
 
-    if (!data) {
-      // Créer un nouveau workflow si aucun n'existe
-      return await this.createWorkflowForVehicule(vehiculeId);
+      if (!data) {
+        console.log(`Aucun workflow trouvé pour le véhicule ${vehiculeId}, création automatique...`);
+        return await this.createWorkflowForVehicule(vehiculeId);
+      }
+
+      const transformedData = {
+        ...data,
+        etapes: data.etapes?.map((etape: any) => ({
+          id: etape.id,
+          workflow_id: etape.workflow_id,
+          etape: etape.etape as EtapeType,
+          statut: etape.statut as StatutEtape,
+          commentaire: etape.commentaire,
+          date_validation: etape.date_validation,
+          validateur_nom: etape.validateur_nom,
+          validateur_role: etape.validateur_role,
+          created_at: etape.created_at,
+          updated_at: etape.updated_at
+        })) || []
+      } as ValidationWorkflowWithEtapes;
+
+      this._setCache(cacheKey, transformedData);
+      return transformedData;
+    } catch (error) {
+      console.error('Erreur complète lors de la récupération du workflow:', error);
+      throw error;
     }
-
-    const transformedData = {
-      ...data,
-      etapes: data.etapes?.map((etape: any) => ({
-        id: etape.id,
-        workflow_id: etape.workflow_id,
-        etape: etape.etape as EtapeType,
-        statut: etape.statut as StatutEtape,
-        commentaire: etape.commentaire,
-        date_validation: etape.date_validation,
-        validateur_nom: etape.validateur_nom,
-        validateur_role: etape.validateur_role,
-        created_at: etape.created_at,
-        updated_at: etape.updated_at
-      })) || []
-    } as ValidationWorkflowWithEtapes;
-
-    this._setCache(cacheKey, transformedData);
-    return transformedData;
   },
 
-  // Optimisation: Créer un workflow plus rapidement avec moins de vérifications
+  // Créer un workflow avec gestion des permissions améliorée
   async createWorkflowForVehicule(vehiculeId: string): Promise<ValidationWorkflowWithEtapes> {
-    console.log(`Création rapide workflow pour véhicule ${vehiculeId}`);
+    console.log(`Création workflow pour véhicule ${vehiculeId}`);
 
-    // Transaction plus simple
-    const { data: workflow, error: workflowError } = await supabase
-      .from('validation_workflows')
-      .insert({
-        vehicule_id: vehiculeId,
-        statut_global: 'en_validation'
-      })
-      .select()
-      .single();
+    // Vérifier les permissions avant la création
+    const canCreate = await this.canCreateWorkflow();
+    if (!canCreate) {
+      throw new Error('Permissions insuffisantes pour créer un workflow de validation');
+    }
 
-    if (workflowError) throw workflowError;
+    try {
+      // Vérifier si le véhicule existe
+      const { data: vehicule, error: vehiculeError } = await supabase
+        .from('vehicules')
+        .select('id')
+        .eq('id', vehiculeId)
+        .single();
 
-    // Créer les 4 étapes en batch
-    const etapes = [
-      { workflow_id: workflow.id, etape: 'maintenance', statut: 'en_attente' },
-      { workflow_id: workflow.id, etape: 'administratif', statut: 'en_attente' },
-      { workflow_id: workflow.id, etape: 'hsecq', statut: 'en_attente' },
-      { workflow_id: workflow.id, etape: 'obc', statut: 'en_attente' }
-    ];
+      if (vehiculeError || !vehicule) {
+        throw new Error(`Véhicule avec l'ID ${vehiculeId} non trouvé`);
+      }
 
-    const { data: etapesCreated, error: etapesError } = await supabase
-      .from('validation_etapes')
-      .insert(etapes)
-      .select();
+      // Créer le workflow
+      const { data: workflow, error: workflowError } = await supabase
+        .from('validation_workflows')
+        .insert({
+          vehicule_id: vehiculeId,
+          statut_global: 'en_validation'
+        })
+        .select()
+        .single();
 
-    if (etapesError) throw etapesError;
+      if (workflowError) {
+        console.error('Erreur lors de la création du workflow:', workflowError);
+        throw new Error(`Erreur lors de la création du workflow: ${workflowError.message}`);
+      }
 
-    const result = {
-      ...workflow,
-      etapes: etapesCreated?.map((etape: any) => ({
-        id: etape.id,
-        workflow_id: etape.workflow_id,
-        etape: etape.etape as EtapeType,
-        statut: etape.statut as StatutEtape,
-        commentaire: etape.commentaire,
-        date_validation: etape.date_validation,
-        validateur_nom: etape.validateur_nom,
-        validateur_role: etape.validateur_role,
-        created_at: etape.created_at,
-        updated_at: etape.updated_at
-      })) || []
-    } as ValidationWorkflowWithEtapes;
+      // Créer les 4 étapes en batch
+      const etapes = [
+        { workflow_id: workflow.id, etape: 'maintenance', statut: 'en_attente' },
+        { workflow_id: workflow.id, etape: 'administratif', statut: 'en_attente' },
+        { workflow_id: workflow.id, etape: 'hsecq', statut: 'en_attente' },
+        { workflow_id: workflow.id, etape: 'obc', statut: 'en_attente' }
+      ];
 
-    // Invalider seulement le cache spécifique
-    this._cache.delete(`workflow_${vehiculeId}`);
-    
-    return result;
+      const { data: etapesCreated, error: etapesError } = await supabase
+        .from('validation_etapes')
+        .insert(etapes)
+        .select();
+
+      if (etapesError) {
+        console.error('Erreur lors de la création des étapes:', etapesError);
+        // Nettoyer le workflow créé en cas d'erreur
+        await supabase.from('validation_workflows').delete().eq('id', workflow.id);
+        throw new Error(`Erreur lors de la création des étapes: ${etapesError.message}`);
+      }
+
+      const result = {
+        ...workflow,
+        etapes: etapesCreated?.map((etape: any) => ({
+          id: etape.id,
+          workflow_id: etape.workflow_id,
+          etape: etape.etape as EtapeType,
+          statut: etape.statut as StatutEtape,
+          commentaire: etape.commentaire,
+          date_validation: etape.date_validation,
+          validateur_nom: etape.validateur_nom,
+          validateur_role: etape.validateur_role,
+          created_at: etape.created_at,
+          updated_at: etape.updated_at
+        })) || []
+      } as ValidationWorkflowWithEtapes;
+
+      console.log('✅ Workflow créé avec succès:', result);
+      
+      // Invalider le cache
+      this._cache.delete(`workflow_${vehiculeId}`);
+      
+      return result;
+    } catch (error) {
+      console.error('💥 Erreur lors de la création du workflow:', error);
+      throw error;
+    }
   },
 
   // Fonction améliorée pour la mise à jour avec historique
@@ -291,7 +354,7 @@ export const validationService = {
 
       console.log('📝 Données de mise à jour:', updateData);
 
-      // Effectuer la mise à jour avec une requête plus robuste
+      // Effectuer la mise à jour
       const { data, error } = await supabase
         .from('validation_etapes')
         .update(updateData)
@@ -304,7 +367,6 @@ export const validationService = {
         console.error('🔍 Code d\'erreur:', error.code);
         console.error('🔍 Message détaillé:', error.message);
         
-        // Messages d'erreur plus spécifiques
         if (error.code === '23505') {
           throw new Error('Conflit de données: cette validation a peut-être déjà été mise à jour');
         } else if (error.code === '23503') {
@@ -332,7 +394,6 @@ export const validationService = {
     } catch (error) {
       console.error('💥 Erreur complète dans updateEtapeStatut:', error);
       
-      // Re-lancer l'erreur avec un message plus clair
       if (error instanceof Error) {
         throw error;
       } else {
@@ -354,7 +415,7 @@ export const validationService = {
       .select('*')
       .eq('workflow_id', workflowId)
       .order('created_at', { ascending: false })
-      .limit(100); // Augmenter la limite pour voir plus d'historique
+      .limit(100);
 
     if (error) throw error;
     
@@ -365,12 +426,11 @@ export const validationService = {
   // Statistiques optimisées avec cache plus long
   async getStatistiquesGlobales() {
     const cacheKey = 'stats_globales';
-    const cached = this._getCached(cacheKey, 30000); // Cache 30 secondes
+    const cached = this._getCached(cacheKey, 30000);
     if (cached) return cached;
 
-    console.log('Chargement rapide des statistiques globales');
+    console.log('Chargement des statistiques globales');
 
-    // Requête optimisée avec compteurs directs
     const { data, error } = await supabase
       .from('validation_workflows')
       .select('statut_global');
@@ -388,7 +448,7 @@ export const validationService = {
     return stats;
   },
 
-  // Nettoyage de cache intelligent amélioré
+  // Nettoyage de cache intelligent
   clearCache(pattern?: string) {
     if (pattern) {
       for (const [key] of this._cache) {
