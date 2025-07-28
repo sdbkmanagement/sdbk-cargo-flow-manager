@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -171,6 +172,13 @@ export const ModuleHub: React.FC = () => {
   const modules = allModules.filter(module => {
     if (!user) return false;
     
+    // Filtrer le dashboard - uniquement pour les admins
+    if (module.id === 'dashboard') {
+      const isAdmin = user.roles?.includes('admin') || user.role === 'admin';
+      console.log(`🔍 Vérification accès dashboard - Admin: ${isAdmin}`);
+      return isAdmin;
+    }
+    
     console.log(`🔍 Vérification utilisateur:`, {
       email: user.email,
       roles: user.roles,
@@ -329,39 +337,6 @@ export const ModuleHub: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Section actions rapides */}
-        <div className="mt-20 bg-white/60 backdrop-blur-sm rounded-2xl p-8 border border-white/20 max-w-4xl mx-auto">
-          <h3 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-            Actions Rapides
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Button 
-              variant="outline" 
-              className="h-20 flex flex-col gap-2 bg-blue-50 hover:bg-blue-100 border-blue-200"
-              onClick={() => navigate('/missions')}
-            >
-              <Route className="w-6 h-6 text-blue-600" />
-              <span className="font-medium">Nouvelle Mission</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-20 flex flex-col gap-2 bg-emerald-50 hover:bg-emerald-100 border-emerald-200"
-              onClick={() => navigate('/drivers')}
-            >
-              <Users className="w-6 h-6 text-emerald-600" />
-              <span className="font-medium">Gérer Chauffeurs</span>
-            </Button>
-            <Button 
-              variant="outline" 
-              className="h-20 flex flex-col gap-2 bg-orange-50 hover:bg-orange-100 border-orange-200"
-              onClick={() => navigate('/fleet')}
-            >
-              <Truck className="w-6 h-6 text-orange-600" />
-              <span className="font-medium">Ajouter Véhicule</span>
-            </Button>
-          </div>
         </div>
       </main>
     </div>
