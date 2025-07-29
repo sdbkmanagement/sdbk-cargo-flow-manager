@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -25,35 +26,38 @@ export const VehicleTable = ({
   const getStatusBadge = (statut: string) => {
     const statusConfig = {
       'disponible': { 
-        variant: 'default' as const, 
         label: 'Disponible',
-        className: 'bg-green-500 text-white border-green-500 hover:bg-green-600'
+        className: 'bg-green-600 text-white hover:bg-green-700 border-green-600'
       },
       'en_mission': { 
-        variant: 'secondary' as const, 
         label: 'En mission',
-        className: 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
+        className: 'bg-blue-600 text-white hover:bg-blue-700 border-blue-600'
       },
       'maintenance': { 
-        variant: 'destructive' as const, 
         label: 'Maintenance',
-        className: 'bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600'
+        className: 'bg-orange-600 text-white hover:bg-orange-700 border-orange-600'
       },
       'validation_requise': { 
-        variant: 'outline' as const, 
         label: 'Validation requise',
-        className: 'bg-purple-500 text-white border-purple-500 hover:bg-purple-600'
+        className: 'bg-purple-600 text-white hover:bg-purple-700 border-purple-600'
+      },
+      'indisponible': { 
+        label: 'Indisponible',
+        className: 'bg-red-600 text-white hover:bg-red-700 border-red-600'
+      },
+      'hors_service': { 
+        label: 'Hors service',
+        className: 'bg-gray-600 text-white hover:bg-gray-700 border-gray-600'
       }
     };
     
     const config = statusConfig[statut as keyof typeof statusConfig] || { 
-      variant: 'secondary' as const, 
       label: statut,
-      className: 'bg-gray-500 text-white border-gray-500 hover:bg-gray-600'
+      className: 'bg-gray-600 text-white hover:bg-gray-700 border-gray-600'
     };
     
     return (
-      <Badge variant={config.variant} className={config.className}>
+      <Badge className={`font-semibold ${config.className}`}>
         {config.label}
       </Badge>
     );
