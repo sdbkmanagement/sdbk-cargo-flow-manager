@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export type EtapeType = 'maintenance' | 'administratif' | 'hsecq' | 'obc';
@@ -423,29 +424,83 @@ export const validationService = {
     return data || [];
   },
 
-  // Statistiques optimisées avec cache plus long
+  // Statistiques en temps réel directement depuis la base de données
   async getStatistiquesGlobales() {
     const cacheKey = 'stats_globales';
-    const cached = this._getCached(cacheKey, 30000);
+    const cached = this._getCached(cacheKey, 10000); // Cache réduit à 10 secondes pour plus de fraîcheur
     if (cached) return cached;
 
-    console.log('Chargement des statistiques globales');
+    console.log('🔄 Récupération des statistiques en temps réel depuis la base de données');
 
-    const { data, error } = await supabase
-      .from('validation_workflows')
-      .select('statut_global');
+    try {
+      // Récupérer TOUTES les données des workflows pour calculer les statistiques exactes
+      const { data: workflows, error } = await supabase
+        .from('validation_workflows')
+        .select(`
+          id,
+          statut_global,
+          created_at,
+          etapes:validation_etapes(
+            id,
+            etape,
+            statut
+          )
+        `);
 
-    if (error) throw error;
+      if (error) {
+        console.error('❌ Erreur lors de la récupération des workflows:', error);
+        throw error;
+      }
 
-    const stats = {
-      total: data.length,
-      en_validation: data.filter(w => w.statut_global === 'en_validation').length,
-      valides: data.filter(w => w.statut_global === 'valide').length,
-      rejetes: data.filter(w => w.statut_global === 'rejete').length
-    };
+      if (!workflows) {
+        console.log('⚠️ Aucun workflow trouvé');
+        const emptyStats = { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
+        this._setCache(cacheKey, emptyStats);
+        return emptyStats;
+      }
 
-    this._setCache(cacheKey, stats);
-    return stats;
+      console.log(`📊 ${workflows.length} workflows trouvés pour calcul des statistiques`);
+
+      // Calculer les statistiques détaillées
+      const stats = {
+        total: workflows.length,
+        en_validation: 0,
+        valides: 0,
+        rejetes: 0
+      };
+
+      workflows.forEach(workflow => {
+        switch (workflow.statut_global) {
+          case 'en_validation':
+            stats.en_validation++;
+            break;
+          case 'valide':
+            stats.valides++;
+            break;
+          case 'rejete':
+            stats.rejetes++;
+            break;
+        }
+      });
+
+      console.log('📈 Statistiques calculées:', stats);
+
+      // Vérification de cohérence
+      const somme = stats.en_validation + stats.valides + stats.rejetes;
+      if (somme !== stats.total) {
+        console.warn(`⚠️ Incohérence détectée: somme=${somme}, total=${stats.total}`);
+      }
+
+      this._setCache(cacheKey, stats);
+      return stats;
+
+    } catch (error) {
+      console.error('💥 Erreur lors de la récupération des statistiques:', error);
+      
+      // En cas d'erreur, retourner des stats par défaut
+      const defaultStats = { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
+      return defaultStats;
+    }
   },
 
   // Nettoyage de cache intelligent
