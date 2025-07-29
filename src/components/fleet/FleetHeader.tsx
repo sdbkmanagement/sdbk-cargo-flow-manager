@@ -1,57 +1,46 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Truck, Upload } from 'lucide-react';
-import { VehicleTracteurRemorqueImport } from './VehicleTracteurRemorqueImport';
+import { Plus, Download, Upload } from 'lucide-react';
+import { VehicleRenumberButton } from './VehicleRenumberButton';
 
 interface FleetHeaderProps {
-  onAddVehicle: () => void;
-  vehicleCount: number;
+  onNewVehicle: () => void;
+  onImport?: () => void;
+  onExport?: () => void;
+  onRefresh?: () => void;
 }
 
-export const FleetHeader: React.FC<FleetHeaderProps> = ({ onAddVehicle, vehicleCount }) => {
-  const [showVehicleImport, setShowVehicleImport] = useState(false);
-
+export const FleetHeader = ({ onNewVehicle, onImport, onExport, onRefresh }: FleetHeaderProps) => {
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Truck className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Gestion de flotte</h1>
-          <span className="text-muted-foreground">({vehicleCount} véhicules)</span>
-        </div>
-        
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowVehicleImport(true)}
-            className="flex items-center gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Import Véhicules
-          </Button>
-          <Button onClick={onAddVehicle}>
-            Ajouter un véhicule
-          </Button>
-        </div>
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Gestion de la flotte</h1>
+        <p className="text-gray-600">Gérez vos véhicules et leur maintenance</p>
       </div>
-
-      {/* Dialog pour l'import de véhicules */}
-      <Dialog open={showVehicleImport} onOpenChange={setShowVehicleImport}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Import de véhicules</DialogTitle>
-          </DialogHeader>
-          <VehicleTracteurRemorqueImport
-            onClose={() => setShowVehicleImport(false)}
-            onSuccess={() => {
-              setShowVehicleImport(false);
-              window.location.reload();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      
+      <div className="flex flex-wrap gap-2">
+        <VehicleRenumberButton onComplete={onRefresh} />
+        
+        {onImport && (
+          <Button variant="outline" onClick={onImport} className="gap-2">
+            <Upload className="h-4 w-4" />
+            Importer
+          </Button>
+        )}
+        
+        {onExport && (
+          <Button variant="outline" onClick={onExport} className="gap-2">
+            <Download className="h-4 w-4" />
+            Exporter
+          </Button>
+        )}
+        
+        <Button onClick={onNewVehicle} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Nouveau véhicule
+        </Button>
+      </div>
     </div>
   );
 };
