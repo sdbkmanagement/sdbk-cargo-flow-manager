@@ -3,12 +3,12 @@ export const CHAUFFEUR_DOCUMENT_TYPES = {
   permis_conduire: {
     label: 'Permis de conduire',
     duree_mois: 120, // 10 ans
-    obligatoire: false
+    obligatoire: true
   },
   visite_medicale: {
     label: 'Visite médicale',
     duree_mois: 12, // 1 an
-    obligatoire: false
+    obligatoire: true
   },
   formation_adr: {
     label: 'Formation ADR',
@@ -18,7 +18,7 @@ export const CHAUFFEUR_DOCUMENT_TYPES = {
   formation_hse: {
     label: 'Formation HSE',
     duree_mois: 36, // 3 ans
-    obligatoire: false
+    obligatoire: true
   },
   formation_conduite: {
     label: 'Formation conduite',
@@ -28,7 +28,7 @@ export const CHAUFFEUR_DOCUMENT_TYPES = {
   certificat_medical: {
     label: 'Certificat médical',
     duree_mois: 12, // 1 an
-    obligatoire: false
+    obligatoire: true
   },
   carte_professionnelle: {
     label: 'Carte professionnelle',
@@ -38,7 +38,7 @@ export const CHAUFFEUR_DOCUMENT_TYPES = {
   carte_identite: {
     label: 'Carte d\'identité',
     duree_mois: 120, // 10 ans
-    obligatoire: false
+    obligatoire: true
   },
   attestation_assurance: {
     label: 'Attestation d\'assurance',
@@ -48,7 +48,7 @@ export const CHAUFFEUR_DOCUMENT_TYPES = {
   contrat_travail: {
     label: 'Contrat de travail',
     duree_mois: null, // Pas d'expiration automatique
-    obligatoire: false
+    obligatoire: true
   },
   photo_profil: {
     label: 'Photo de profil',

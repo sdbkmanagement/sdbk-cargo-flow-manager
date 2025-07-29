@@ -289,83 +289,6 @@ export const validationService = {
     }
   },
 
-  // Fonction pour réinitialiser un workflow après une mission
-  async resetWorkflowAfterMission(vehiculeId: string): Promise<void> {
-    console.log(`🔄 Réinitialisation du workflow pour véhicule ${vehiculeId} après mission`);
-
-    try {
-      // Récupérer le workflow existant
-      const { data: workflow, error: workflowError } = await supabase
-        .from('validation_workflows')
-        .select('id')
-        .eq('vehicule_id', vehiculeId)
-        .single();
-
-      if (workflowError || !workflow) {
-        console.log('Workflow non trouvé, création d\'un nouveau workflow');
-        await this.createWorkflowForVehicule(vehiculeId);
-        return;
-      }
-
-      // Réinitialiser toutes les étapes
-      const { error: etapesError } = await supabase
-        .from('validation_etapes')
-        .update({
-          statut: 'en_attente',
-          date_validation: null,
-          commentaire: null,
-          validateur_nom: null,
-          validateur_role: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('workflow_id', workflow.id);
-
-      if (etapesError) {
-        console.error('Erreur lors de la réinitialisation des étapes:', etapesError);
-        throw etapesError;
-      }
-
-      // Mettre à jour le statut global du workflow
-      const { error: workflowUpdateError } = await supabase
-        .from('validation_workflows')
-        .update({
-          statut_global: 'en_validation',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', workflow.id);
-
-      if (workflowUpdateError) {
-        console.error('Erreur lors de la mise à jour du workflow:', workflowUpdateError);
-        throw workflowUpdateError;
-      }
-
-      // Mettre à jour le véhicule
-      const { error: vehiculeError } = await supabase
-        .from('vehicules')
-        .update({
-          statut: 'validation_requise',
-          validation_requise: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', vehiculeId);
-
-      if (vehiculeError) {
-        console.error('Erreur lors de la mise à jour du véhicule:', vehiculeError);
-        throw vehiculeError;
-      }
-
-      // Invalider le cache
-      this._cache.delete(`workflow_${vehiculeId}`);
-      this.clearCache('workflow_');
-      this.clearCache('stats');
-
-      console.log('✅ Workflow réinitialisé avec succès après mission');
-    } catch (error) {
-      console.error('💥 Erreur lors de la réinitialisation du workflow:', error);
-      throw error;
-    }
-  },
-
   // Fonction améliorée pour la mise à jour avec historique
   async updateEtapeStatut(
     etapeId: string,
@@ -500,79 +423,29 @@ export const validationService = {
     return data || [];
   },
 
-  // Statistiques en temps réel directement depuis la base de données
+  // Statistiques optimisées avec cache plus long
   async getStatistiquesGlobales() {
     const cacheKey = 'stats_globales';
-    const cached = this._getCached(cacheKey, 5000); // Cache réduit à 5 secondes pour plus de fraîcheur
+    const cached = this._getCached(cacheKey, 30000);
     if (cached) return cached;
 
-    console.log('🔄 Récupération des statistiques de validation depuis la base de données');
+    console.log('Chargement des statistiques globales');
 
-    try {
-      // Utiliser une requête simple et directe pour les statistiques
-      const { data: workflows, error, count } = await supabase
-        .from('validation_workflows')
-        .select('statut_global', { count: 'exact' });
+    const { data, error } = await supabase
+      .from('validation_workflows')
+      .select('statut_global');
 
-      if (error) {
-        console.error('❌ Erreur lors de la récupération des workflows:', error);
-        throw new Error(`Erreur base de données: ${error.message}`);
-      }
+    if (error) throw error;
 
-      console.log(`📊 ${count || 0} workflows trouvés pour calcul des statistiques`);
+    const stats = {
+      total: data.length,
+      en_validation: data.filter(w => w.statut_global === 'en_validation').length,
+      valides: data.filter(w => w.statut_global === 'valide').length,
+      rejetes: data.filter(w => w.statut_global === 'rejete').length
+    };
 
-      // Initialiser les statistiques
-      const stats = {
-        total: count || 0,
-        en_validation: 0,
-        valides: 0,
-        rejetes: 0
-      };
-
-      // Compter les statuts si des données existent
-      if (workflows && workflows.length > 0) {
-        workflows.forEach(workflow => {
-          switch (workflow.statut_global) {
-            case 'en_validation':
-              stats.en_validation++;
-              break;
-            case 'valide':
-              stats.valides++;
-              break;
-            case 'rejete':
-              stats.rejetes++;
-              break;
-            default:
-              // Pour les autres statuts, les compter comme "en validation"
-              stats.en_validation++;
-          }
-        });
-      }
-
-      console.log('📈 Statistiques calculées avec succès:', stats);
-
-      // Vérification de cohérence
-      const somme = stats.en_validation + stats.valides + stats.rejetes;
-      if (somme !== stats.total) {
-        console.warn(`⚠️ Incohérence détectée: somme=${somme}, total=${stats.total}`);
-        // Corriger le total si nécessaire
-        stats.total = somme;
-      }
-
-      this._setCache(cacheKey, stats);
-      return stats;
-
-    } catch (error) {
-      console.error('💥 Erreur lors de la récupération des statistiques:', error);
-      
-      // En cas d'erreur, retourner des stats par défaut au lieu de lancer l'erreur
-      const defaultStats = { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
-      console.log('📊 Retour des statistiques par défaut:', defaultStats);
-      
-      // Mettre en cache les stats par défaut pour éviter les requêtes répétées
-      this._setCache(cacheKey, defaultStats);
-      return defaultStats;
-    }
+    this._setCache(cacheKey, stats);
+    return stats;
   },
 
   // Nettoyage de cache intelligent

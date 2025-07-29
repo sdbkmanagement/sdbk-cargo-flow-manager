@@ -1,227 +1,630 @@
-
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import vehiculesService from '@/services/vehicules';
-import { chauffeursService } from '@/services/chauffeurs';
-import missionsService from '@/services/missions';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { missionsService } from '@/services/missions';
+import { bonsLivraisonService } from '@/services/bonsLivraison';
+import { ArrowLeft, Save, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { BLMultiplesForm } from './BLMultiplesForm';
+import { BLSuiviForm } from './BLSuiviForm';
+import { BonLivraison } from '@/types/bl';
 
 interface MissionFormProps {
+  mission?: any;
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
+export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) => {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  
   const [formData, setFormData] = useState({
-    vehicule_id: '',
-    chauffeur_id: '',
-    type_transport: '',
-    site_depart: '',
-    site_arrivee: '',
-    volume_poids: '',
-    unite_mesure: 'tonnes',
-    observations: ''
+    type_transport: mission?.type_transport || '',
+    site_depart: mission?.site_depart || '',
+    site_arrivee: mission?.site_arrivee || '',
+    volume_poids: mission?.volume_poids || '',
+    unite_mesure: mission?.unite_mesure || 'tonnes',
+    vehicule_id: mission?.vehicule_id || '',
+    chauffeur_id: mission?.chauffeur_id || '',
+    statut: mission?.statut || 'en_cours'
   });
 
-  const { data: vehicules, isLoading: vehiculesLoading } = useQuery({
-    queryKey: ['vehicules'],
-    queryFn: vehiculesService.getAll
+  const [bls, setBls] = useState<BonLivraison[]>([]);
+  const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
+  const [vehiculeAvailability, setVehiculeAvailability] = useState<{
+    available: boolean;
+    message: string;
+  } | null>(null);
+
+  // Récupérer les véhicules disponibles
+  const { data: vehicules = [], isLoading: vehiculesLoading } = useQuery({
+    queryKey: ['available-vehicules'],
+    queryFn: missionsService.getAvailableVehicules,
+    refetchInterval: 30000 // Actualiser toutes les 30 secondes
   });
 
-  const { data: chauffeurs } = useQuery({
-    queryKey: ['chauffeurs'],
-    queryFn: chauffeursService.getAll
+  // Récupérer les chauffeurs assignés au véhicule sélectionné
+  const { data: chauffeursAssignesVehicule = [] } = useQuery({
+    queryKey: ['chauffeurs-assignes-vehicule', formData.vehicule_id],
+    queryFn: () => missionsService.getChauffeursAssignesVehicule(formData.vehicule_id),
+    enabled: !!formData.vehicule_id
   });
 
-  const generateMissionNumber = () => {
-    const now = new Date();
-    const year = now.getFullYear().toString().slice(-2);
-    const month = (now.getMonth() + 1).toString().padStart(2, '0');
-    const day = now.getDate().toString().padStart(2, '0');
-    const time = now.getTime().toString().slice(-6);
-    return `M${year}${month}${day}-${time}`;
-  };
+  // Vérifier la disponibilité du véhicule sélectionné
+  useEffect(() => {
+    if (formData.vehicule_id && !mission?.id) {
+      const checkAvailability = async () => {
+        try {
+          const availability = await missionsService.checkVehiculeAvailability(formData.vehicule_id);
+          setVehiculeAvailability(availability);
+        } catch (error) {
+          console.error('Erreur lors de la vérification de disponibilité:', error);
+          setVehiculeAvailability({
+            available: false,
+            message: 'Erreur lors de la vérification'
+          });
+        }
+      };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      await missionsService.create({
-        numero: generateMissionNumber(),
-        vehicule_id: formData.vehicule_id,
-        chauffeur_id: formData.chauffeur_id,
-        type_transport: formData.type_transport,
-        site_depart: formData.site_depart,
-        site_arrivee: formData.site_arrivee,
-        volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
-        unite_mesure: formData.unite_mesure,
-        observations: formData.observations,
-        statut: 'en_attente',
-        created_by: 'current_user'
+      checkAvailability();
+    } else if (mission?.id) {
+      // Si on modifie une mission existante, le véhicule est considéré comme disponible
+      setVehiculeAvailability({
+        available: true,
+        message: 'Véhicule assigné à cette mission'
       });
+    } else {
+      setVehiculeAvailability(null);
+    }
+  }, [formData.vehicule_id, mission?.id]);
 
+  // Logique d'auto-assignation du/des chauffeur(s)
+  useEffect(() => {
+    if (chauffeursAssignesVehicule.length > 0 && formData.vehicule_id) {
+      console.log('Chauffeurs assignés au véhicule:', chauffeursAssignesVehicule);
+      
+      if (!mission?.id) {
+        if (chauffeursAssignesVehicule.length === 1) {
+          const chauffeurAssigne = chauffeursAssignesVehicule[0];
+          setFormData(prev => ({ 
+            ...prev, 
+            chauffeur_id: chauffeurAssigne.id 
+          }));
+          
+          toast({
+            title: 'Chauffeur assigné automatiquement',
+            description: `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est assigné à ce véhicule.`
+          });
+        } else {
+          const chauffeurAssigne = chauffeursAssignesVehicule[0];
+          setFormData(prev => ({ 
+            ...prev, 
+            chauffeur_id: chauffeurAssigne.id 
+          }));
+          
+          toast({
+            title: 'Premier chauffeur assigné',
+            description: `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est le premier chauffeur assigné à ce véhicule.`
+          });
+        }
+      }
+      
+      setChauffeursAssignes(chauffeursAssignesVehicule);
+    } else {
+      setChauffeursAssignes([]);
+      
+      if (!mission?.id && formData.vehicule_id) {
+        setFormData(prev => ({ ...prev, chauffeur_id: '' }));
+      }
+    }
+  }, [chauffeursAssignesVehicule, formData.vehicule_id, mission?.id, toast]);
+
+  // Charger les BL existants si on modifie une mission
+  useEffect(() => {
+    if (mission?.id) {
+      const chargerBLs = async () => {
+        try {
+          const data = await bonsLivraisonService.getByMissionId(mission.id);
+          // Cast des données pour s'assurer du bon typage
+          const blsTyped = data.map(bl => ({
+            ...bl,
+            produit: bl.produit as 'essence' | 'gasoil',
+            unite_mesure: bl.unite_mesure as 'litres',
+            statut: bl.statut as 'emis' | 'charge' | 'en_route' | 'livre' | 'termine'
+          }));
+          setBls(blsTyped);
+        } catch (error) {
+          console.error('Erreur lors du chargement des BL:', error);
+        }
+      };
+      chargerBLs();
+    } else {
+      // Pour une nouvelle mission d'hydrocarbures, créer un BL par défaut avec tous les champs requis
+      if (formData.type_transport === 'hydrocarbures') {
+        const defaultBL: BonLivraison = {
+          numero: `BL-${Date.now()}`,
+          destination: '',
+          lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
+          lieu_arrivee: '',
+          vehicule_id: formData.vehicule_id,
+          chauffeur_id: formData.chauffeur_id,
+          date_emission: new Date().toISOString().split('T')[0],
+          produit: 'essence',
+          quantite_prevue: 0,
+          unite_mesure: 'litres',
+          statut: 'emis'
+        };
+        setBls([defaultBL]);
+      }
+    }
+  }, [mission?.id, formData.type_transport, formData.vehicule_id, formData.chauffeur_id]);
+
+  // Mutation pour créer/modifier une mission
+  const saveMutation = useMutation({
+    mutationFn: async (data: any) => {
+      if (mission?.id) {
+        // Mettre à jour la mission
+        const missionUpdated = await missionsService.update(mission.id, data);
+        
+        // Mettre à jour les BL si c'est un transport d'hydrocarbures
+        if (data.type_transport === 'hydrocarbures' && bls.length > 0) {
+          for (const bl of bls) {
+            const blData = {
+              ...bl,
+              mission_id: mission.id,
+              vehicule_id: data.vehicule_id,
+              chauffeur_id: data.chauffeur_id
+            };
+            
+            if (bl.id) {
+              await bonsLivraisonService.update(bl.id, blData);
+            } else {
+              await bonsLivraisonService.create(blData);
+            }
+          }
+        }
+        
+        return missionUpdated;
+      } else {
+        // Créer la mission
+        const missionCreated = await missionsService.create(data);
+        
+        // Créer les BL si c'est un transport d'hydrocarbures
+        if (data.type_transport === 'hydrocarbures' && bls.length > 0) {
+          for (const bl of bls) {
+            const blData = {
+              ...bl,
+              mission_id: missionCreated.id,
+              vehicule_id: data.vehicule_id,
+              chauffeur_id: data.chauffeur_id
+            };
+            
+            await bonsLivraisonService.create(blData);
+          }
+        }
+        
+        return missionCreated;
+      }
+    },
+    onSuccess: () => {
       toast({
-        title: 'Mission créée',
-        description: 'La mission a été créée avec succès'
+        title: mission?.id ? 'Mission mise à jour' : 'Mission créée',
+        description: 'La mission a été sauvegardée avec succès.'
       });
-
       onSuccess();
-    } catch (error) {
-      console.error('Erreur lors de la création:', error);
+    },
+    onError: (error: any) => {
       toast({
         title: 'Erreur',
-        description: error instanceof Error ? error.message : 'Erreur lors de la création de la mission',
+        description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
         variant: 'destructive'
       });
-    } finally {
-      setIsLoading(false);
     }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.chauffeur_id) {
+      toast({
+        title: 'Erreur',
+        description: 'Aucun chauffeur n\'est assigné au véhicule sélectionné.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Vérifier la disponibilité du véhicule pour les nouvelles missions
+    if (!mission?.id && vehiculeAvailability && !vehiculeAvailability.available) {
+      toast({
+        title: 'Véhicule non disponible',
+        description: vehiculeAvailability.message,
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validation spécifique aux hydrocarbures
+    if (formData.type_transport === 'hydrocarbures' && bls.length === 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Vous devez ajouter au moins un BL pour un transport d\'hydrocarbures.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Validation des BL simplifiée - seulement les champs actuellement présents
+    if (formData.type_transport === 'hydrocarbures') {
+      console.log('🔍 Validation des BL:', bls);
+      
+      const blsIncomplets = bls.filter(bl => {
+        // Validation simplifiée basée sur les champs actuellement visibles
+        const dateValide = bl.date_emission && bl.date_emission.trim() !== '';
+        const quantiteValide = bl.quantite_prevue && bl.quantite_prevue > 0;
+        const lieuDepartValide = bl.lieu_depart && bl.lieu_depart.trim() !== '';
+        const destinationChoisie = bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '';
+        
+        const estComplet = dateValide && quantiteValide && lieuDepartValide && destinationChoisie;
+        
+        console.log('🔍 BL validation:', {
+          id: bl.id || 'nouveau',
+          dateValide,
+          quantiteValide,
+          lieuDepartValide,
+          destinationChoisie,
+          estComplet
+        });
+        
+        return !estComplet;
+      });
+      
+      if (blsIncomplets.length > 0) {
+        toast({
+          title: 'Erreur de validation',
+          description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir tous les champs obligatoires.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+    
+    const submitData = {
+      ...formData,
+      volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null
+    };
+
+    console.log('💾 Sauvegarde de la mission:', submitData);
+    console.log('📋 BLs associés:', bls);
+    saveMutation.mutate(submitData);
+  };
+
+  // Effet pour mettre à jour automatiquement site_depart et site_arrivee basé sur les BL
+  useEffect(() => {
+    if (bls.length > 0) {
+      // Pour site_depart, prendre le premier BL avec lieu_depart défini
+      const premierBLAvecDepart = bls.find(bl => bl.lieu_depart && bl.lieu_depart.trim() !== '');
+      if (premierBLAvecDepart && premierBLAvecDepart.lieu_depart !== formData.site_depart) {
+        setFormData(prev => ({ ...prev, site_depart: premierBLAvecDepart.lieu_depart }));
+      }
+      
+      // Pour site_arrivee, prendre le premier BL avec lieu_arrivee défini
+      const premierBLAvecArrivee = bls.find(bl => bl.lieu_arrivee && bl.lieu_arrivee.trim() !== '');
+      if (premierBLAvecArrivee && premierBLAvecArrivee.lieu_arrivee !== formData.site_arrivee) {
+        setFormData(prev => ({ ...prev, site_arrivee: premierBLAvecArrivee.lieu_arrivee }));
+      }
+    }
+  }, [bls, formData.site_depart, formData.site_arrivee]);
+
+  const updateFormData = (field: string, value: string) => {
+    setFormData(prev => {
+      const newData = { ...prev, [field]: value };
+      
+      // Si le type de transport change, ajuster l'unité de mesure
+      if (field === 'type_transport') {
+        if (value === 'hydrocarbures' || value === 'lubrifiants') {
+          newData.unite_mesure = 'litres';
+        } else if (value === 'marchandises') {
+          newData.unite_mesure = 'tonnes';
+        }
+        
+        // Réinitialiser les BL si on change le type de transport
+        if (value !== 'hydrocarbures') {
+          setBls([]);
+        }
+      }
+      
+      // Si le véhicule change, réinitialiser le chauffeur sauf si on modifie une mission existante
+      if (field === 'vehicule_id' && !mission?.id) {
+        newData.chauffeur_id = '';
+      }
+      
+      return newData;
+    });
+  };
+
+  // Obtenir le nom du chauffeur assigné pour l'affichage
+  const getChauffeurAssigneNom = () => {
+    const chauffeur = chauffeursAssignes.find(c => c.id === formData.chauffeur_id);
+    return chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '';
+  };
+
+  const isHydrocarbures = formData.type_transport === 'hydrocarbures';
+  const isTerminee = formData.statut === 'terminee';
+
+  // Fonction pour vérifier si le bouton doit être activé
+  const isSaveButtonEnabled = () => {
+    // Vérifications de base
+    if (!formData.type_transport || !formData.vehicule_id || !formData.chauffeur_id) {
+      return false;
+    }
+    
+    // Si c'est une nouvelle mission, vérifier la disponibilité du véhicule
+    if (!mission?.id && vehiculeAvailability && !vehiculeAvailability.available) {
+      return false;
+    }
+    
+    // Si c'est un transport d'hydrocarbures, vérifier les BL
+    if (isHydrocarbures) {
+      if (bls.length === 0) return false;
+      
+      // Vérifier que tous les BL ont les champs obligatoires remplis
+      const tousBlsValides = bls.every(bl => {
+        return bl.date_emission && 
+               bl.date_emission.trim() !== '' &&
+               bl.quantite_prevue > 0 &&
+               bl.lieu_depart && 
+               bl.lieu_depart.trim() !== '' &&
+               bl.lieu_arrivee && 
+               bl.lieu_arrivee.trim() !== '';
+      });
+      
+      if (!tousBlsValides) return false;
+    }
+    
+    return !saveMutation.isPending;
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="vehicule">Véhicule *</Label>
-          <Select value={formData.vehicule_id} onValueChange={(value) => setFormData({...formData, vehicule_id: value})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un véhicule" />
-            </SelectTrigger>
-            <SelectContent>
-              {vehiculesLoading ? (
-                <SelectItem value="loading" disabled>Chargement...</SelectItem>
-              ) : (
-                vehicules?.map((vehicule) => (
-                  <SelectItem key={vehicule.id} value={vehicule.id}>
-                    {vehicule.immatriculation || vehicule.tracteur_immatriculation || vehicule.numero}
-                  </SelectItem>
-                ))
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button variant="ghost" onClick={onCancel}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">
+              {mission?.id ? 'Modifier la mission' : 'Nouvelle mission'}
+            </h1>
+            {mission?.numero && (
+              <p className="text-gray-600">{mission.numero}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Informations de base */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Informations de la mission</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="type_transport">Type de transport *</Label>
+                  <Select value={formData.type_transport} onValueChange={(value) => updateFormData('type_transport', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner le type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
+                      <SelectItem value="lubrifiants">Lubrifiants</SelectItem>
+                      <SelectItem value="marchandises">Marchandises</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="statut">Statut</Label>
+                  {!mission?.id ? (
+                    <div className="flex items-center h-10 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md">
+                      <span className="text-gray-700">En cours</span>
+                    </div>
+                  ) : (
+                    <Select value={formData.statut} onValueChange={(value) => updateFormData('statut', value)}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="en_cours">En cours</SelectItem>
+                        <SelectItem value="terminee">Terminée</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              </div>
+
+              {/* Champs pour tous les types de transport sauf hydrocarbures */}
+              {!isHydrocarbures && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="site_depart">Site de départ</Label>
+                      <Input
+                        id="site_depart"
+                        value={formData.site_depart}
+                        onChange={(e) => updateFormData('site_depart', e.target.value)}
+                        placeholder="Ex: Kamsar"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="site_arrivee">Site d'arrivée</Label>
+                      <Input
+                        id="site_arrivee"
+                        value={formData.site_arrivee}
+                        onChange={(e) => updateFormData('site_arrivee', e.target.value)}
+                        placeholder="Ex: Conakry"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="volume_poids">Volume/Poids</Label>
+                      <Input
+                        id="volume_poids"
+                        type="number"
+                        step="0.1"
+                        value={formData.volume_poids}
+                        onChange={(e) => updateFormData('volume_poids', e.target.value)}
+                        placeholder="0.0"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="unite_mesure">Unité</Label>
+                      <Select value={formData.unite_mesure} onValueChange={(value) => updateFormData('unite_mesure', value)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tonnes">Tonnes</SelectItem>
+                          <SelectItem value="litres">Litres</SelectItem>
+                          <SelectItem value="m3">m³</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </>
               )}
-            </SelectContent>
-          </Select>
+            </CardContent>
+          </Card>
+
+          {/* Assignation des ressources */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Assignation des ressources</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="vehicule_id">Véhicule *</Label>
+                <Select value={formData.vehicule_id} onValueChange={(value) => updateFormData('vehicule_id', value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un véhicule" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehiculesLoading ? (
+                      <SelectItem value="loading" disabled>Chargement...</SelectItem>
+                    ) : vehicules.length === 0 ? (
+                      <SelectItem value="no_vehicle" disabled>Aucun véhicule disponible</SelectItem>
+                    ) : (
+                      vehicules.map(vehicule => (
+                        <SelectItem key={vehicule.id} value={vehicule.id}>
+                          {vehicule.numero} - {vehicule.marque} {vehicule.modele}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                
+                {/* Affichage de l'état de disponibilité du véhicule */}
+                {vehiculeAvailability && (
+                  <div className="mt-2">
+                    <Alert className={vehiculeAvailability.available ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+                      {vehiculeAvailability.available ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                      )}
+                      <AlertDescription className={vehiculeAvailability.available ? 'text-green-700' : 'text-red-700'}>
+                        {vehiculeAvailability.message}
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <Label htmlFor="chauffeur_display">Chauffeur assigné</Label>
+                <div className="mt-2">
+                  {formData.vehicule_id ? (
+                    chauffeursAssignes.length > 0 ? (
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-green-600 font-semibold">
+                            ✓ {getChauffeurAssigneNom()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-green-600 mt-1">
+                          Chauffeur automatiquement assigné selon le véhicule
+                        </p>
+                        {chauffeursAssignes.length > 1 && (
+                          <p className="text-xs text-green-500 mt-1">
+                            ({chauffeursAssignes.length} chauffeurs assignés à ce véhicule)
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <Alert className="border-red-200 bg-red-50">
+                        <AlertTriangle className="h-4 w-4 text-red-500" />
+                        <AlertDescription className="text-red-700">
+                          <strong>Erreur :</strong> Aucun chauffeur n'est assigné à ce véhicule. 
+                          Veuillez d'abord assigner un chauffeur dans le module Flotte.
+                        </AlertDescription>
+                      </Alert>
+                    )
+                  ) : (
+                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
+                      <p className="text-sm text-gray-500">
+                        Sélectionnez d'abord un véhicule pour voir le chauffeur assigné
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <div>
-          <Label htmlFor="chauffeur">Chauffeur *</Label>
-          <Select value={formData.chauffeur_id} onValueChange={(value) => setFormData({...formData, chauffeur_id: value})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un chauffeur" />
-            </SelectTrigger>
-            <SelectContent>
-              {chauffeurs?.map((chauffeur) => (
-                <SelectItem key={chauffeur.id} value={chauffeur.id}>
-                  {chauffeur.prenom} {chauffeur.nom}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Section BL pour les hydrocarbures */}
+        {isHydrocarbures && (
+          <>
+            {!isTerminee ? (
+              <BLMultiplesForm
+                bls={bls}
+                onBLsChange={setBls}
+                vehiculeId={formData.vehicule_id}
+                chauffeurId={formData.chauffeur_id}
+              />
+            ) : (
+              <BLSuiviForm
+                bls={bls}
+                onBLsChange={setBls}
+                isReadOnly={false}
+              />
+            )}
+          </>
+        )}
+
+        <div className="flex justify-end space-x-4">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Annuler
+          </Button>
+          <Button 
+            type="submit" 
+            className="bg-orange-500 hover:bg-orange-600"
+            disabled={!isSaveButtonEnabled()}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {saveMutation.isPending ? 'Sauvegarde...' : 'Sauvegarder'}
+          </Button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="type_transport">Type de transport *</Label>
-          <Select value={formData.type_transport} onValueChange={(value) => setFormData({...formData, type_transport: value})}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner le type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Bauxite">Bauxite</SelectItem>
-              <SelectItem value="Alumine">Alumine</SelectItem>
-              <SelectItem value="Carburant">Carburant</SelectItem>
-              <SelectItem value="Personnel">Personnel</SelectItem>
-              <SelectItem value="Equipement">Equipement</SelectItem>
-              <SelectItem value="Vivres">Vivres</SelectItem>
-              <SelectItem value="Autre">Autre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="volume_poids">Volume/Poids</Label>
-            <Input
-              id="volume_poids"
-              type="number"
-              step="0.01"
-              value={formData.volume_poids}
-              onChange={(e) => setFormData({...formData, volume_poids: e.target.value})}
-              placeholder="0.00"
-            />
-          </div>
-          <div>
-            <Label htmlFor="unite_mesure">Unité</Label>
-            <Select value={formData.unite_mesure} onValueChange={(value) => setFormData({...formData, unite_mesure: value})}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="tonnes">Tonnes</SelectItem>
-                <SelectItem value="kg">Kilogrammes</SelectItem>
-                <SelectItem value="litres">Litres</SelectItem>
-                <SelectItem value="m3">Mètres cubes</SelectItem>
-                <SelectItem value="unites">Unités</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="site_depart">Site de départ *</Label>
-          <Input
-            id="site_depart"
-            value={formData.site_depart}
-            onChange={(e) => setFormData({...formData, site_depart: e.target.value})}
-            placeholder="Site de départ"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="site_arrivee">Site d'arrivée *</Label>
-          <Input
-            id="site_arrivee"
-            value={formData.site_arrivee}
-            onChange={(e) => setFormData({...formData, site_arrivee: e.target.value})}
-            placeholder="Site d'arrivée"
-            required
-          />
-        </div>
-      </div>
-
-      <div>
-        <Label htmlFor="observations">Observations</Label>
-        <Textarea
-          id="observations"
-          value={formData.observations}
-          onChange={(e) => setFormData({...formData, observations: e.target.value})}
-          placeholder="Observations ou instructions particulières..."
-          rows={3}
-        />
-      </div>
-
-      <div className="flex justify-end gap-2 pt-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annuler
-        </Button>
-        <Button 
-          type="submit" 
-          disabled={isLoading}
-        >
-          {isLoading ? 'Création...' : 'Créer la mission'}
-        </Button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 };

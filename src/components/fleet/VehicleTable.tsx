@@ -28,29 +28,29 @@ export const VehicleTable = ({
       'disponible': { 
         variant: 'default' as const, 
         label: 'Disponible',
-        className: 'bg-green-500 text-white border-green-600 hover:bg-green-600'
+        className: 'bg-green-100 text-green-800 border-green-200'
       },
       'en_mission': { 
         variant: 'secondary' as const, 
         label: 'En mission',
-        className: 'bg-orange-500 text-white border-orange-600 hover:bg-orange-600'
+        className: 'bg-orange-100 text-orange-800 border-orange-200'
       },
       'maintenance': { 
         variant: 'destructive' as const, 
         label: 'Maintenance',
-        className: 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+        className: 'bg-red-100 text-red-800 border-red-200'
       },
       'validation_requise': { 
         variant: 'outline' as const, 
         label: 'Validation requise',
-        className: 'bg-yellow-500 text-white border-yellow-600 hover:bg-yellow-600'
+        className: 'bg-yellow-100 text-yellow-800 border-yellow-200'
       }
     };
     
     const config = statusConfig[statut as keyof typeof statusConfig] || { 
       variant: 'secondary' as const, 
       label: statut,
-      className: 'bg-gray-500 text-white border-gray-600 hover:bg-gray-600'
+      className: 'bg-gray-100 text-gray-800 border-gray-200'
     };
     
     return (
@@ -111,7 +111,7 @@ export const VehicleTable = ({
                   }
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="bg-blue-500 text-white border-blue-600 hover:bg-blue-600">
+                  <Badge variant="outline">
                     {vehicle.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
                   </Badge>
                 </TableCell>

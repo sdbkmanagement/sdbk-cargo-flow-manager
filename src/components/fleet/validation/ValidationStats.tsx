@@ -2,48 +2,22 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw } from 'lucide-react';
 import { validationService } from '@/services/validation';
-import { toast } from '@/hooks/use-toast';
 
 export const ValidationStats = () => {
-  const { 
-    data: stats, 
-    isLoading, 
-    error, 
-    refetch,
-    isRefetching,
-    isError 
-  } = useQuery({
+  const { data: stats, isLoading, refetch } = useQuery({
     queryKey: ['validation-stats'],
     queryFn: validationService.getStatistiquesGlobales,
-    staleTime: 5000,
-    gcTime: 15000,
-    refetchOnWindowFocus: true,
-    refetchInterval: 15000,
-    retry: 3,
-    retryDelay: 1000,
+    staleTime: 30000, // Cache 30 secondes
+    gcTime: 60000, // Keep in cache for 1 minute
   });
 
-  const handleRefresh = async () => {
-    console.log('🔄 Actualisation manuelle des statistiques demandée');
+  const handleRefresh = () => {
     validationService.clearCache('stats');
-    
-    try {
-      await refetch();
-      toast({
-        title: "Statistiques actualisées",
-        description: "Les données ont été synchronisées avec succès",
-      });
-    } catch (error) {
-      console.error('❌ Erreur lors de l\'actualisation:', error);
-      toast({
-        title: "Erreur d'actualisation",
-        description: "Impossible de récupérer les dernières données",
-        variant: "destructive",
-      });
-    }
+    refetch();
   };
 
   if (isLoading) {
@@ -59,68 +33,18 @@ export const ValidationStats = () => {
     );
   }
 
-  if (isError || error) {
-    return (
-      <Card className="border-red-200 bg-red-50">
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-red-600">
-              <WifiOff className="h-5 w-5 mr-2" />
-              <div>
-                <span className="font-medium">Erreur lors du chargement des statistiques</span>
-                {error && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {error instanceof Error ? error.message : 'Erreur inconnue'}
-                  </p>
-                )}
-              </div>
-            </div>
-            <Button 
-              onClick={handleRefresh} 
-              variant="outline" 
-              size="sm" 
-              disabled={isRefetching}
-              className="border-red-300 text-red-600 hover:bg-red-100"
-            >
-              <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
-              Réessayer
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Utiliser des valeurs par défaut si stats est undefined
   const statsData = stats || { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
-
-  // Vérification de cohérence des données
-  const somme = statsData.en_validation + statsData.valides + statsData.rejetes;
-  const isInconsistent = somme !== statsData.total;
-
-  console.log('📊 Affichage des statistiques:', statsData);
 
   return (
     <Card className="transition-all duration-200 hover:shadow-md">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <div className="flex items-center space-x-2">
-          <CardTitle className="text-sm font-medium">
-            Statut des Validations
-          </CardTitle>
-          {isInconsistent && (
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-          )}
-          <Wifi className="h-4 w-4 text-green-500" />
-        </div>
+        <CardTitle className="text-sm font-medium">
+          Statut des Validations
+        </CardTitle>
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          <Button 
-            onClick={handleRefresh} 
-            variant="ghost" 
-            size="sm"
-            disabled={isRefetching}
-          >
-            <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
+          <Button onClick={handleRefresh} variant="ghost" size="sm">
+            <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
       </CardHeader>
@@ -170,19 +94,6 @@ export const ValidationStats = () => {
             </div>
           </div>
         )}
-
-        {/* Indicateur de dernière mise à jour */}
-        <div className="mt-3 pt-2 border-t text-xs text-gray-400 text-center">
-          <div className="flex items-center justify-center gap-2">
-            <Wifi className="h-3 w-3 text-green-500" />
-            <span>Données synchronisées en temps réel</span>
-          </div>
-          {isInconsistent && (
-            <div className="text-amber-600 mt-1 text-xs">
-              ⚠️ Incohérence détectée (somme: {somme}, total: {statsData.total})
-            </div>
-          )}
-        </div>
       </CardContent>
     </Card>
   );
