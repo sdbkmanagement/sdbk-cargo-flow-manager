@@ -517,32 +517,34 @@ export const validationService = {
     return data || [];
   },
 
-  // Statistiques corrigées pour compter tous les véhicules nécessitant une validation
+  // Statistiques corrigées pour compter correctement les véhicules en attente de validation
   async getStatistiquesGlobales() {
     console.log('🔄 Chargement des statistiques globales de validation...');
 
     try {
-      // Récupérer tous les véhicules qui nécessitent une validation
-      const { data: vehiculesValidation, error: vehiculesError } = await supabase
+      // Récupérer TOUS les véhicules
+      const { data: allVehicles, error: vehiculesError } = await supabase
         .from('vehicules')
-        .select('id, statut, validation_requise')
-        .or('statut.eq.validation_requise,validation_requise.eq.true');
+        .select('id, statut, validation_requise');
 
       if (vehiculesError) {
         console.error('❌ Erreur lors de la récupération des véhicules:', vehiculesError);
         throw vehiculesError;
       }
 
-      console.log(`📊 ${vehiculesValidation?.length || 0} véhicules nécessitent une validation`);
+      console.log(`📊 ${allVehicles?.length || 0} véhicules trouvés au total`);
       
-      // Compter directement les véhicules par statut
+      // Compter les véhicules par statut
       let enValidation = 0;
       let valides = 0;
       let rejetes = 0;
 
-      vehiculesValidation?.forEach(vehicule => {
+      allVehicles?.forEach(vehicule => {
+        console.log(`🚗 Véhicule ${vehicule.id}: statut=${vehicule.statut}, validation_requise=${vehicule.validation_requise}`);
+        
         if (vehicule.statut === 'validation_requise' || vehicule.validation_requise === true) {
           enValidation++;
+          console.log(`✅ Véhicule ${vehicule.id} compté comme en validation`);
         } else if (vehicule.statut === 'disponible' && vehicule.validation_requise === false) {
           valides++;
         } else if (vehicule.statut === 'indisponible') {
@@ -550,15 +552,18 @@ export const validationService = {
         }
       });
 
+      // Le total comprend tous les véhicules qui ont besoin de validation ou qui sont dans le processus
+      const total = enValidation + valides + rejetes;
+
       const stats = {
-        total: vehiculesValidation?.length || 0,
+        total: total,
         en_validation: enValidation,
         valides: valides,
         rejetes: rejetes
       };
 
-      console.log('✅ Statistiques calculées:', stats);
-      console.log(`🔍 Détail: Total=${stats.total}, En validation=${stats.en_validation}, Validés=${stats.valides}, Rejetés=${stats.rejetes}`);
+      console.log('✅ Statistiques finales calculées:', stats);
+      console.log(`🔍 Détail final: Total=${stats.total}, En validation=${stats.en_validation}, Validés=${stats.valides}, Rejetés=${stats.rejetes}`);
       
       this._setCache('stats_globales', stats);
       return stats;
@@ -566,27 +571,8 @@ export const validationService = {
     } catch (error) {
       console.error('💥 Erreur lors du calcul des statistiques:', error);
       
-      // Fallback simple: compter tous les véhicules avec validation_requise = true
-      try {
-        const { data: fallbackVehicules, error: fallbackError } = await supabase
-          .from('vehicules')
-          .select('statut, validation_requise');
-
-        if (fallbackError) throw fallbackError;
-
-        const fallbackStats = {
-          total: fallbackVehicules?.length || 0,
-          en_validation: fallbackVehicules?.filter(v => v.validation_requise === true || v.statut === 'validation_requise').length || 0,
-          valides: fallbackVehicules?.filter(v => v.statut === 'disponible' && v.validation_requise === false).length || 0,
-          rejetes: fallbackVehicules?.filter(v => v.statut === 'indisponible').length || 0
-        };
-
-        console.log('⚠️ Statistiques fallback:', fallbackStats);
-        return fallbackStats;
-      } catch (fallbackError) {
-        console.error('❌ Erreur fallback:', fallbackError);
-        return { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
-      }
+      // Retourner des statistiques par défaut en cas d'erreur
+      return { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
     }
   },
 

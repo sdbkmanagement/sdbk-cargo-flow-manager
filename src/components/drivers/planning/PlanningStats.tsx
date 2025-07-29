@@ -2,6 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Users, 
   Calendar, 
@@ -11,6 +12,7 @@ import {
   AlertCircle,
   XCircle
 } from 'lucide-react';
+import { validationService } from '@/services/validation';
 
 interface PlanningStatsProps {
   totalChauffeurs: number;
@@ -29,6 +31,14 @@ export const PlanningStats = ({
   missionsTerminees,
   missionsAnnulees
 }: PlanningStatsProps) => {
+  // Récupérer les vraies statistiques de validation
+  const { data: validationStats } = useQuery({
+    queryKey: ['validation-stats-dashboard'],
+    queryFn: validationService.getStatistiquesGlobales,
+    refetchInterval: 15000,
+    staleTime: 0,
+  });
+
   const stats = [
     {
       title: 'Chauffeurs disponibles',
@@ -57,11 +67,18 @@ export const PlanningStats = ({
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-100'
+    },
+    {
+      title: 'Validations en attente',
+      value: validationStats?.en_validation || 0,
+      icon: AlertCircle,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
       {stats.map((stat, index) => {
         const Icon = stat.icon;
         return (
