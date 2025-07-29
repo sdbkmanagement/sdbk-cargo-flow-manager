@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Search, Truck, CheckCircle, Wrench, AlertTriangle } from 'lucide-react';
+import { Truck, CheckCircle, Wrench, AlertTriangle } from 'lucide-react';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { ValidationTab } from '@/components/fleet/ValidationTab';
 import { MaintenanceTab } from '@/components/fleet/MaintenanceTab';
@@ -21,7 +20,6 @@ import type { Vehicule } from '@/services/vehicules';
 
 const Fleet = () => {
   const [activeTab, setActiveTab] = useState('vehicles');
-  const [searchTerm, setSearchTerm] = useState('');
   const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [showDocumentManager, setShowDocumentManager] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
@@ -124,20 +122,6 @@ const Fleet = () => {
         vehicleCount={vehicles.length}
       />
 
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex gap-2 items-center">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un véhicule..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
-            />
-          </div>
-        </div>
-      </div>
-
       <FleetStats stats={stats} />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -165,15 +149,12 @@ const Fleet = () => {
             <CardHeader>
               <CardTitle>Liste des véhicules</CardTitle>
               <CardDescription>
-                Gestion de votre flotte de véhicules
+                Gestion de votre flotte de véhicules avec filtres avancés
               </CardDescription>
             </CardHeader>
             <CardContent>
               <VehicleListTab 
-                vehicles={vehicles.filter(vehicle => 
-                  vehicle.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  vehicle.immatriculation?.toLowerCase().includes(searchTerm.toLowerCase())
-                )}
+                vehicles={vehicles}
                 onEdit={handleModifyVehicle}
                 onDelete={handleDeleteVehicle}
                 onViewDocuments={handleManageDocuments}
