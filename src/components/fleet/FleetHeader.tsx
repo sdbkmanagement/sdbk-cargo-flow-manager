@@ -2,8 +2,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
-import { VehicleRenumberButton } from './VehicleRenumberButton';
-import { VehicleStatusUpdateButton } from './VehicleStatusUpdateButton';
 
 interface FleetHeaderProps {
   onNewVehicle: () => void;
@@ -19,9 +17,6 @@ export const FleetHeader = ({ onNewVehicle, onRefresh }: FleetHeaderProps) => {
       </div>
       
       <div className="flex flex-wrap items-center gap-3">
-        <VehicleStatusUpdateButton onSuccess={onRefresh} />
-        <VehicleRenumberButton onComplete={onRefresh} />
-        
         <Button
           onClick={onRefresh}
           variant="outline"
