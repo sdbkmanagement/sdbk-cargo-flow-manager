@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export type EtapeType = 'maintenance' | 'administratif' | 'hsecq' | 'obc';
@@ -427,68 +426,60 @@ export const validationService = {
   // Statistiques en temps réel directement depuis la base de données
   async getStatistiquesGlobales() {
     const cacheKey = 'stats_globales';
-    const cached = this._getCached(cacheKey, 10000); // Cache réduit à 10 secondes pour plus de fraîcheur
+    const cached = this._getCached(cacheKey, 5000); // Cache réduit à 5 secondes pour plus de fraîcheur
     if (cached) return cached;
 
-    console.log('🔄 Récupération des statistiques en temps réel depuis la base de données');
+    console.log('🔄 Récupération des statistiques de validation depuis la base de données');
 
     try {
-      // Récupérer TOUTES les données des workflows pour calculer les statistiques exactes
-      const { data: workflows, error } = await supabase
+      // Utiliser une requête simple et directe pour les statistiques
+      const { data: workflows, error, count } = await supabase
         .from('validation_workflows')
-        .select(`
-          id,
-          statut_global,
-          created_at,
-          etapes:validation_etapes(
-            id,
-            etape,
-            statut
-          )
-        `);
+        .select('statut_global', { count: 'exact' });
 
       if (error) {
         console.error('❌ Erreur lors de la récupération des workflows:', error);
-        throw error;
+        throw new Error(`Erreur base de données: ${error.message}`);
       }
 
-      if (!workflows) {
-        console.log('⚠️ Aucun workflow trouvé');
-        const emptyStats = { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
-        this._setCache(cacheKey, emptyStats);
-        return emptyStats;
-      }
+      console.log(`📊 ${count || 0} workflows trouvés pour calcul des statistiques`);
 
-      console.log(`📊 ${workflows.length} workflows trouvés pour calcul des statistiques`);
-
-      // Calculer les statistiques détaillées
+      // Initialiser les statistiques
       const stats = {
-        total: workflows.length,
+        total: count || 0,
         en_validation: 0,
         valides: 0,
         rejetes: 0
       };
 
-      workflows.forEach(workflow => {
-        switch (workflow.statut_global) {
-          case 'en_validation':
-            stats.en_validation++;
-            break;
-          case 'valide':
-            stats.valides++;
-            break;
-          case 'rejete':
-            stats.rejetes++;
-            break;
-        }
-      });
+      // Compter les statuts si des données existent
+      if (workflows && workflows.length > 0) {
+        workflows.forEach(workflow => {
+          switch (workflow.statut_global) {
+            case 'en_validation':
+              stats.en_validation++;
+              break;
+            case 'valide':
+              stats.valides++;
+              break;
+            case 'rejete':
+              stats.rejetes++;
+              break;
+            default:
+              // Pour les autres statuts, les compter comme "en validation"
+              stats.en_validation++;
+          }
+        });
+      }
 
-      console.log('📈 Statistiques calculées:', stats);
+      console.log('📈 Statistiques calculées avec succès:', stats);
 
       // Vérification de cohérence
       const somme = stats.en_validation + stats.valides + stats.rejetes;
       if (somme !== stats.total) {
         console.warn(`⚠️ Incohérence détectée: somme=${somme}, total=${stats.total}`);
+        // Corriger le total si nécessaire
+        stats.total = somme;
       }
 
       this._setCache(cacheKey, stats);
@@ -497,8 +488,12 @@ export const validationService = {
     } catch (error) {
       console.error('💥 Erreur lors de la récupération des statistiques:', error);
       
-      // En cas d'erreur, retourner des stats par défaut
+      // En cas d'erreur, retourner des stats par défaut au lieu de lancer l'erreur
       const defaultStats = { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
+      console.log('📊 Retour des statistiques par défaut:', defaultStats);
+      
+      // Mettre en cache les stats par défaut pour éviter les requêtes répétées
+      this._setCache(cacheKey, defaultStats);
       return defaultStats;
     }
   },

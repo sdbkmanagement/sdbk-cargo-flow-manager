@@ -3,7 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { validationService } from '@/services/validation';
 import { toast } from '@/hooks/use-toast';
 
@@ -13,14 +13,17 @@ export const ValidationStats = () => {
     isLoading, 
     error, 
     refetch,
-    isRefetching 
+    isRefetching,
+    isError 
   } = useQuery({
     queryKey: ['validation-stats'],
     queryFn: validationService.getStatistiquesGlobales,
-    staleTime: 10000,
-    gcTime: 30000,
+    staleTime: 5000,
+    gcTime: 15000,
     refetchOnWindowFocus: true,
-    refetchInterval: 30000,
+    refetchInterval: 15000,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   const handleRefresh = async () => {
@@ -31,7 +34,7 @@ export const ValidationStats = () => {
       await refetch();
       toast({
         title: "Statistiques actualisées",
-        description: "Les données ont été synchronisées avec la base de données",
+        description: "Les données ont été synchronisées avec succès",
       });
     } catch (error) {
       console.error('❌ Erreur lors de l\'actualisation:', error);
@@ -49,22 +52,37 @@ export const ValidationStats = () => {
         <CardContent className="p-6">
           <div className="flex items-center justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-            <span className="ml-2">Synchronisation des statistiques...</span>
+            <span className="ml-2">Chargement des statistiques...</span>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (error) {
+  if (isError || error) {
     return (
-      <Card className="border-red-200">
+      <Card className="border-red-200 bg-red-50">
         <CardContent className="p-6">
-          <div className="flex items-center justify-center text-red-600">
-            <AlertCircle className="h-5 w-5 mr-2" />
-            <span>Erreur lors du chargement des statistiques</span>
-            <Button onClick={handleRefresh} variant="outline" size="sm" className="ml-4">
-              <RefreshCw className="w-4 h-4 mr-2" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-red-600">
+              <WifiOff className="h-5 w-5 mr-2" />
+              <div>
+                <span className="font-medium">Erreur lors du chargement des statistiques</span>
+                {error && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {error instanceof Error ? error.message : 'Erreur inconnue'}
+                  </p>
+                )}
+              </div>
+            </div>
+            <Button 
+              onClick={handleRefresh} 
+              variant="outline" 
+              size="sm" 
+              disabled={isRefetching}
+              className="border-red-300 text-red-600 hover:bg-red-100"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefetching ? 'animate-spin' : ''}`} />
               Réessayer
             </Button>
           </div>
@@ -73,6 +91,7 @@ export const ValidationStats = () => {
     );
   }
 
+  // Utiliser des valeurs par défaut si stats est undefined
   const statsData = stats || { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
 
   // Vérification de cohérence des données
@@ -91,6 +110,7 @@ export const ValidationStats = () => {
           {isInconsistent && (
             <AlertCircle className="h-4 w-4 text-amber-500" />
           )}
+          <Wifi className="h-4 w-4 text-green-500" />
         </div>
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -153,9 +173,12 @@ export const ValidationStats = () => {
 
         {/* Indicateur de dernière mise à jour */}
         <div className="mt-3 pt-2 border-t text-xs text-gray-400 text-center">
-          Données synchronisées en temps réel
+          <div className="flex items-center justify-center gap-2">
+            <Wifi className="h-3 w-3 text-green-500" />
+            <span>Données synchronisées en temps réel</span>
+          </div>
           {isInconsistent && (
-            <div className="text-amber-600 mt-1">
+            <div className="text-amber-600 mt-1 text-xs">
               ⚠️ Incohérence détectée (somme: {somme}, total: {statsData.total})
             </div>
           )}
