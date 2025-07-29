@@ -5,6 +5,7 @@ import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { useVehicles } from '@/hooks/useVehicles';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const Fleet = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -15,6 +16,12 @@ const Fleet = () => {
     setSelectedVehicleId(id);
     setIsFormOpen(true);
   }, []);
+
+  const handleCloseForm = useCallback(() => {
+    setIsFormOpen(false);
+    setSelectedVehicleId(null);
+    refetch();
+  }, [refetch]);
 
   // Calculer les statistiques à partir des véhicules
   const stats = React.useMemo(() => {
@@ -61,16 +68,19 @@ const Fleet = () => {
         }}
       />
 
-      {isFormOpen && (
-        <VehicleForm
-          vehicule={selectedVehicleId ? vehicles.find(v => v.id === selectedVehicleId) : undefined}
-          onSuccess={() => {
-            setIsFormOpen(false);
-            setSelectedVehicleId(null);
-            refetch(); // Refresh vehicle list after form close
-          }}
-        />
-      )}
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedVehicleId ? 'Modifier le véhicule' : 'Nouveau véhicule'}
+            </DialogTitle>
+          </DialogHeader>
+          <VehicleForm
+            vehicule={selectedVehicleId ? vehicles.find(v => v.id === selectedVehicleId) : undefined}
+            onSuccess={handleCloseForm}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
