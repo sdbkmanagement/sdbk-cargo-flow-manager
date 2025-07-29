@@ -1,5 +1,4 @@
 import { supabase } from '@/integrations/supabase/client';
-import { vehiculeSyncService } from './vehiculeSyncService';
 
 export type EtapeType = 'maintenance' | 'administratif' | 'hsecq' | 'obc';
 export type StatutEtape = 'en_attente' | 'valide' | 'rejete';
@@ -70,94 +69,6 @@ export const validationService = {
     } catch (error) {
       console.error('Erreur lors de la vérification des permissions:', error);
       return false;
-    }
-  },
-
-  // Synchronisation automatique de tous les véhicules
-  async syncAllVehicles(): Promise<void> {
-    console.log('🔄 Synchronisation automatique de tous les véhicules...');
-    
-    try {
-      // Récupérer tous les véhicules qui ont des workflows
-      const { data: workflows, error } = await supabase
-        .from('validation_workflows')
-        .select(`
-          id,
-          vehicule_id,
-          statut_global,
-          etapes:validation_etapes(
-            id,
-            etape,
-            statut
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('❌ Erreur lors de la récupération des workflows:', error);
-        return;
-      }
-
-      if (!workflows || workflows.length === 0) {
-        console.log('ℹ️ Aucun workflow trouvé');
-        return;
-      }
-
-      console.log(`📊 ${workflows.length} workflows trouvés`);
-
-      // Traiter chaque workflow
-      for (const workflow of workflows) {
-        if (!workflow.etapes || workflow.etapes.length === 0) continue;
-
-        const etapesValidees = workflow.etapes.filter(etape => etape.statut === 'valide');
-        const etapesRejetees = workflow.etapes.filter(etape => etape.statut === 'rejete');
-
-        let nouveauStatutGlobal = 'en_validation';
-        let nouveauStatutVehicule = 'validation_requise';
-        let validationRequise = true;
-
-        // Déterminer le nouveau statut
-        if (etapesRejetees.length > 0) {
-          nouveauStatutGlobal = 'rejete';
-          nouveauStatutVehicule = 'indisponible';
-          validationRequise = false;
-        } else if (etapesValidees.length === 4) {
-          nouveauStatutGlobal = 'valide';
-          nouveauStatutVehicule = 'disponible';
-          validationRequise = false;
-        }
-
-        // Mettre à jour le workflow si nécessaire
-        if (workflow.statut_global !== nouveauStatutGlobal) {
-          await supabase
-            .from('validation_workflows')
-            .update({ 
-              statut_global: nouveauStatutGlobal,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', workflow.id);
-        }
-
-        // Mettre à jour le véhicule
-        await supabase
-          .from('vehicules')
-          .update({ 
-            statut: nouveauStatutVehicule,
-            validation_requise: validationRequise,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', workflow.vehicule_id);
-
-        console.log(`✅ Véhicule ${workflow.vehicule_id} synchronisé: ${nouveauStatutVehicule}`);
-      }
-
-      // Invalider les caches
-      this.clearCache();
-      
-      console.log('🎉 Synchronisation automatique terminée');
-      
-    } catch (error) {
-      console.error('💥 Erreur lors de la synchronisation automatique:', error);
     }
   },
 
@@ -378,7 +289,7 @@ export const validationService = {
     }
   },
 
-  // Fonction améliorée pour la mise à jour avec synchronisation automatique
+  // Fonction améliorée pour la mise à jour avec gestion du statut véhicule
   async updateEtapeStatut(
     etapeId: string,
     statut: StatutEtape,
@@ -475,9 +386,8 @@ export const validationService = {
 
       console.log('✅ Mise à jour réussie:', data);
 
-      // Déclencher la synchronisation automatique de tous les véhicules
-      console.log('🔄 Déclenchement de la synchronisation automatique...');
-      await this.syncAllVehicles();
+      // Vérifier si toutes les étapes du workflow sont validées
+      await this.checkAndUpdateVehicleStatus(data.workflow_id);
 
       // Invalider les caches pertinents
       this.clearCache('workflow_');
