@@ -522,7 +522,7 @@ export const validationService = {
     console.log('🔄 Chargement des statistiques globales de validation...');
 
     try {
-      // 1. Récupérer tous les véhicules qui nécessitent une validation
+      // Récupérer tous les véhicules qui nécessitent une validation
       const { data: vehiculesValidation, error: vehiculesError } = await supabase
         .from('vehicules')
         .select('id, statut, validation_requise')
@@ -534,62 +534,31 @@ export const validationService = {
       }
 
       console.log(`📊 ${vehiculesValidation?.length || 0} véhicules nécessitent une validation`);
-
-      // 2. Récupérer tous les workflows de validation existants
-      const { data: workflows, error: workflowsError } = await supabase
-        .from('validation_workflows')
-        .select('id, vehicule_id, statut_global');
-
-      if (workflowsError) {
-        console.error('❌ Erreur lors de la récupération des workflows:', workflowsError);
-        throw workflowsError;
-      }
-
-      console.log(`📋 ${workflows?.length || 0} workflows existants`);
-
-      // 3. Calculer les statistiques
-      const vehiculesNecessitantValidation = vehiculesValidation?.length || 0;
       
-      const workflowsMap = new Map();
-      workflows?.forEach(w => workflowsMap.set(w.vehicule_id, w));
-
+      // Compter directement les véhicules par statut
       let enValidation = 0;
       let valides = 0;
       let rejetes = 0;
 
-      // Pour chaque véhicule nécessitant une validation
       vehiculesValidation?.forEach(vehicule => {
-        const workflow = workflowsMap.get(vehicule.id);
-        
-        if (!workflow) {
-          // Pas de workflow = en attente de validation
+        if (vehicule.statut === 'validation_requise' || vehicule.validation_requise === true) {
           enValidation++;
-        } else {
-          // Workflow existant, vérifier le statut
-          switch (workflow.statut_global) {
-            case 'en_validation':
-              enValidation++;
-              break;
-            case 'valide':
-              valides++;
-              break;
-            case 'rejete':
-              rejetes++;
-              break;
-            default:
-              enValidation++;
-          }
+        } else if (vehicule.statut === 'disponible' && vehicule.validation_requise === false) {
+          valides++;
+        } else if (vehicule.statut === 'indisponible') {
+          rejetes++;
         }
       });
 
       const stats = {
-        total: vehiculesNecessitantValidation,
+        total: vehiculesValidation?.length || 0,
         en_validation: enValidation,
         valides: valides,
         rejetes: rejetes
       };
 
       console.log('✅ Statistiques calculées:', stats);
+      console.log(`🔍 Détail: Total=${stats.total}, En validation=${stats.en_validation}, Validés=${stats.valides}, Rejetés=${stats.rejetes}`);
       
       this._setCache('stats_globales', stats);
       return stats;
@@ -597,25 +566,27 @@ export const validationService = {
     } catch (error) {
       console.error('💥 Erreur lors du calcul des statistiques:', error);
       
-      // Fallback: retourner des statistiques basiques depuis les workflows seulement
-      const { data, error: fallbackError } = await supabase
-        .from('validation_workflows')
-        .select('statut_global');
+      // Fallback simple: compter tous les véhicules avec validation_requise = true
+      try {
+        const { data: fallbackVehicules, error: fallbackError } = await supabase
+          .from('vehicules')
+          .select('statut, validation_requise');
 
-      if (fallbackError) {
+        if (fallbackError) throw fallbackError;
+
+        const fallbackStats = {
+          total: fallbackVehicules?.length || 0,
+          en_validation: fallbackVehicules?.filter(v => v.validation_requise === true || v.statut === 'validation_requise').length || 0,
+          valides: fallbackVehicules?.filter(v => v.statut === 'disponible' && v.validation_requise === false).length || 0,
+          rejetes: fallbackVehicules?.filter(v => v.statut === 'indisponible').length || 0
+        };
+
+        console.log('⚠️ Statistiques fallback:', fallbackStats);
+        return fallbackStats;
+      } catch (fallbackError) {
         console.error('❌ Erreur fallback:', fallbackError);
         return { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
       }
-
-      const fallbackStats = {
-        total: data.length,
-        en_validation: data.filter(w => w.statut_global === 'en_validation').length,
-        valides: data.filter(w => w.statut_global === 'valide').length,
-        rejetes: data.filter(w => w.statut_global === 'rejete').length
-      };
-
-      console.log('⚠️ Statistiques fallback:', fallbackStats);
-      return fallbackStats;
     }
   },
 

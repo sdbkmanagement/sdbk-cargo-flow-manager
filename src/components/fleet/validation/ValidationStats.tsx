@@ -11,9 +11,11 @@ export const ValidationStats = () => {
   const { data: stats, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['validation-stats'],
     queryFn: validationService.getStatistiquesGlobales,
-    staleTime: 10000, // Cache seulement 10 secondes pour des données plus fraîches
-    gcTime: 30000, // Keep in cache for 30 seconds
-    refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
+    staleTime: 0, // Données toujours fraîches
+    gcTime: 10000, // Keep in cache for 10 seconds only
+    refetchInterval: 15000, // Actualisation automatique toutes les 15 secondes
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 
   const handleRefresh = async () => {
@@ -36,6 +38,9 @@ export const ValidationStats = () => {
   }
 
   const statsData = stats || { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
+
+  // Debug log
+  console.log('📊 Rendu ValidationStats avec:', statsData);
 
   return (
     <Card className="transition-all duration-200 hover:shadow-md">
@@ -108,6 +113,7 @@ export const ValidationStats = () => {
           <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
             <div>Dernière actualisation: {new Date().toLocaleTimeString()}</div>
             <div>En validation: {statsData.en_validation} | Validés: {statsData.valides} | Rejetés: {statsData.rejetes}</div>
+            <div>Total calculé: {statsData.total}</div>
           </div>
         )}
       </CardContent>
