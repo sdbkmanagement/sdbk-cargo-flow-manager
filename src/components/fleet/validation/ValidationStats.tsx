@@ -8,16 +8,18 @@ import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw } from 'lucide-react'
 import { validationService } from '@/services/validation';
 
 export const ValidationStats = () => {
-  const { data: stats, isLoading, refetch } = useQuery({
+  const { data: stats, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['validation-stats'],
     queryFn: validationService.getStatistiquesGlobales,
-    staleTime: 30000, // Cache 30 secondes
-    gcTime: 60000, // Keep in cache for 1 minute
+    staleTime: 10000, // Cache seulement 10 secondes pour des données plus fraîches
+    gcTime: 30000, // Keep in cache for 30 seconds
+    refetchInterval: 30000, // Actualisation automatique toutes les 30 secondes
   });
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    console.log('🔄 Actualisation manuelle des statistiques de validation');
     validationService.clearCache('stats');
-    refetch();
+    await refetch();
   };
 
   if (isLoading) {
@@ -43,8 +45,14 @@ export const ValidationStats = () => {
         </CardTitle>
         <div className="flex items-center gap-2">
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          <Button onClick={handleRefresh} variant="ghost" size="sm">
-            <RefreshCw className="w-4 h-4" />
+          <Button 
+            onClick={handleRefresh} 
+            variant="ghost" 
+            size="sm"
+            disabled={isRefetching}
+            className="h-8 w-8 p-0"
+          >
+            <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </CardHeader>
@@ -92,6 +100,14 @@ export const ValidationStats = () => {
                 style={{ width: `${(statsData.valides / statsData.total) * 100}%` }}
               />
             </div>
+          </div>
+        )}
+
+        {/* Debug info for development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
+            <div>Dernière actualisation: {new Date().toLocaleTimeString()}</div>
+            <div>En attente: {statsData.en_validation} | Validés: {statsData.valides} | Rejetés: {statsData.rejetes}</div>
           </div>
         )}
       </CardContent>
