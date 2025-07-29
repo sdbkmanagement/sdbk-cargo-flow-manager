@@ -12,8 +12,13 @@ export interface DocumentUpload {
 export const documentUploadService = {
   async uploadDocument(file: File, vehiculeId: string, documentType: string): Promise<string> {
     try {
-      const fileName = `vehicules/${vehiculeId}/${documentType}_${Date.now()}_${file.name}`;
+      console.log('Début upload document:', { file: file.name, vehiculeId, documentType });
       
+      const fileExt = file.name.split('.').pop();
+      const fileName = `vehicules/${vehiculeId}/${documentType}_${Date.now()}.${fileExt}`;
+      
+      console.log('Nom de fichier généré:', fileName);
+
       const { data, error } = await supabase.storage
         .from('documents')
         .upload(fileName, file, {
@@ -22,15 +27,18 @@ export const documentUploadService = {
         });
 
       if (error) {
-        console.error('Erreur upload fichier:', error);
-        throw error;
+        console.error('Erreur upload storage:', error);
+        throw new Error(`Erreur upload: ${error.message}`);
       }
+
+      console.log('Upload réussi:', data);
 
       // Récupérer l'URL publique
       const { data: urlData } = supabase.storage
         .from('documents')
         .getPublicUrl(data.path);
 
+      console.log('URL publique générée:', urlData.publicUrl);
       return urlData.publicUrl;
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
@@ -44,8 +52,11 @@ export const documentUploadService = {
     url: string;
     dateExpiration?: string;
     hasExpiration: boolean;
+    commentaire?: string;
   }) {
     try {
+      console.log('Sauvegarde du document en base:', documentData);
+      
       const { data, error } = await supabase
         .from('documents_vehicules')
         .insert([{
@@ -54,6 +65,7 @@ export const documentUploadService = {
           type: documentData.type,
           url: documentData.url,
           date_expiration: documentData.dateExpiration || null,
+          commentaire: documentData.commentaire || null,
           statut: documentData.dateExpiration ? 
             (new Date(documentData.dateExpiration) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'a_renouveler' : 'valide') : 
             'valide'
@@ -62,10 +74,11 @@ export const documentUploadService = {
         .single();
 
       if (error) {
-        console.error('Erreur sauvegarde document:', error);
-        throw error;
+        console.error('Erreur sauvegarde document en base:', error);
+        throw new Error(`Erreur sauvegarde: ${error.message}`);
       }
 
+      console.log('Document sauvegardé:', data);
       return data;
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -24,14 +25,48 @@ export const VehicleTable = ({
 }: VehicleTableProps) => {
   const getStatusBadge = (statut: string) => {
     const statusConfig = {
-      'disponible': { variant: 'available' as const, label: 'Disponible' },
-      'en_mission': { variant: 'mission' as const, label: 'En mission' },
-      'maintenance': { variant: 'maintenance' as const, label: 'Maintenance' },
-      'validation_requise': { variant: 'pending' as const, label: 'Validation requise' }
+      'disponible': { 
+        variant: 'default' as const, 
+        label: 'Disponible',
+        className: 'bg-green-100 text-green-800 border-green-200'
+      },
+      'en_mission': { 
+        variant: 'secondary' as const, 
+        label: 'En mission',
+        className: 'bg-orange-100 text-orange-800 border-orange-200'
+      },
+      'maintenance': { 
+        variant: 'destructive' as const, 
+        label: 'Maintenance',
+        className: 'bg-red-100 text-red-800 border-red-200'
+      },
+      'validation_requise': { 
+        variant: 'outline' as const, 
+        label: 'Validation requise',
+        className: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      }
     };
     
-    const config = statusConfig[statut as keyof typeof statusConfig] || { variant: 'secondary' as const, label: statut };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    const config = statusConfig[statut as keyof typeof statusConfig] || { 
+      variant: 'secondary' as const, 
+      label: statut,
+      className: 'bg-gray-100 text-gray-800 border-gray-200'
+    };
+    
+    return (
+      <Badge variant={config.variant} className={config.className}>
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getMainImmatriculation = (vehicle: Vehicule) => {
+    if (vehicle.type_vehicule === 'tracteur_remorque') {
+      // Pour tracteur-remorque, privilégier l'immatriculation de la remorque (citerne)
+      return vehicle.remorque_immatriculation || vehicle.tracteur_immatriculation || '-';
+    }
+    // Pour porteur, afficher l'immatriculation du porteur
+    return vehicle.immatriculation || '-';
   };
 
   return (
@@ -61,11 +96,13 @@ export const VehicleTable = ({
               <TableRow key={vehicle.id}>
                 <TableCell className="font-medium">{vehicle.numero}</TableCell>
                 <TableCell>{vehicle.type_vehicule}</TableCell>
-                <TableCell>
-                  {vehicle.type_vehicule === 'porteur' 
-                    ? vehicle.immatriculation 
-                    : vehicle.tracteur_immatriculation
-                  }
+                <TableCell className="font-medium">
+                  {getMainImmatriculation(vehicle)}
+                  {vehicle.type_vehicule === 'tracteur_remorque' && (
+                    <div className="text-xs text-gray-500 mt-1">
+                      Tracteur: {vehicle.tracteur_immatriculation || '-'}
+                    </div>
+                  )}
                 </TableCell>
                 <TableCell>
                   {vehicle.type_vehicule === 'porteur' 
