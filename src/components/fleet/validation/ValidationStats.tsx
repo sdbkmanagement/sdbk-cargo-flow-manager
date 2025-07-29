@@ -17,10 +17,10 @@ export const ValidationStats = () => {
   } = useQuery({
     queryKey: ['validation-stats'],
     queryFn: validationService.getStatistiquesGlobales,
-    staleTime: 10000, // Les données sont considérées comme fraîches pendant 10 secondes
-    gcTime: 30000, // Garder en cache pendant 30 secondes
-    refetchOnWindowFocus: true, // Rafraîchir quand la fenêtre reprend le focus
-    refetchInterval: 30000, // Rafraîchir automatiquement toutes les 30 secondes
+    staleTime: 10000,
+    gcTime: 30000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
   });
 
   const handleRefresh = async () => {
@@ -89,7 +89,7 @@ export const ValidationStats = () => {
             Statut des Validations
           </CardTitle>
           {isInconsistent && (
-            <AlertCircle className="h-4 w-4 text-amber-500" title="Incohérence détectée dans les données" />
+            <AlertCircle className="h-4 w-4 text-amber-500" />
           )}
         </div>
         <div className="flex items-center gap-2">
