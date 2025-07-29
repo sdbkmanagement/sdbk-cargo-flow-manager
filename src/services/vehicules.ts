@@ -107,9 +107,16 @@ const vehiculesService = {
 
   async create(vehicule: Omit<Vehicule, 'id' | 'created_at' | 'updated_at'>): Promise<Vehicule | null> {
     try {
+      // Set default status to validation_requise for new vehicles
+      const vehiculeData = {
+        ...vehicule,
+        statut: 'validation_requise',
+        validation_requise: true
+      };
+
       const { data, error } = await supabase
         .from('vehicules')
-        .insert([vehicule])
+        .insert([vehiculeData])
         .select()
         .single();
 
@@ -388,6 +395,42 @@ const vehiculesService = {
         message: "Erreur lors de l'import",
         imported: 0,
         errors: [error instanceof Error ? error.message : "Erreur inconnue"]
+      };
+    }
+  },
+
+  async updateAllVehiclesToValidation(): Promise<{ success: boolean; updated: number; message: string }> {
+    try {
+      console.log('Mise à jour de tous les véhicules vers statut validation...');
+      
+      const { data, error } = await supabase
+        .from('vehicules')
+        .update({ 
+          statut: 'validation_requise',
+          validation_requise: true 
+        })
+        .neq('statut', 'validation_requise')
+        .select('id');
+
+      if (error) {
+        console.error('Erreur lors de la mise à jour des véhicules:', error);
+        throw error;
+      }
+
+      const updated = data?.length || 0;
+      console.log(`${updated} véhicules mis à jour vers le statut validation`);
+      
+      return {
+        success: true,
+        updated,
+        message: `${updated} véhicules mis à jour vers le statut "validation requise"`
+      };
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour globale:', error);
+      return {
+        success: false,
+        updated: 0,
+        message: "Erreur lors de la mise à jour des véhicules"
       };
     }
   }
