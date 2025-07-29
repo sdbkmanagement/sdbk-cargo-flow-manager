@@ -93,7 +93,8 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
           nom: docConfig?.label || documentType,
           url: urlData.publicUrl,
           date_expiration: dateExpiration,
-          statut: 'valide'
+          statut: 'valide',
+          taille: file.size
         });
 
       if (saveError) throw saveError;
