@@ -289,6 +289,83 @@ export const validationService = {
     }
   },
 
+  // Fonction pour réinitialiser un workflow après une mission
+  async resetWorkflowAfterMission(vehiculeId: string): Promise<void> {
+    console.log(`🔄 Réinitialisation du workflow pour véhicule ${vehiculeId} après mission`);
+
+    try {
+      // Récupérer le workflow existant
+      const { data: workflow, error: workflowError } = await supabase
+        .from('validation_workflows')
+        .select('id')
+        .eq('vehicule_id', vehiculeId)
+        .single();
+
+      if (workflowError || !workflow) {
+        console.log('Workflow non trouvé, création d\'un nouveau workflow');
+        await this.createWorkflowForVehicule(vehiculeId);
+        return;
+      }
+
+      // Réinitialiser toutes les étapes
+      const { error: etapesError } = await supabase
+        .from('validation_etapes')
+        .update({
+          statut: 'en_attente',
+          date_validation: null,
+          commentaire: null,
+          validateur_nom: null,
+          validateur_role: null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('workflow_id', workflow.id);
+
+      if (etapesError) {
+        console.error('Erreur lors de la réinitialisation des étapes:', etapesError);
+        throw etapesError;
+      }
+
+      // Mettre à jour le statut global du workflow
+      const { error: workflowUpdateError } = await supabase
+        .from('validation_workflows')
+        .update({
+          statut_global: 'en_validation',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', workflow.id);
+
+      if (workflowUpdateError) {
+        console.error('Erreur lors de la mise à jour du workflow:', workflowUpdateError);
+        throw workflowUpdateError;
+      }
+
+      // Mettre à jour le véhicule
+      const { error: vehiculeError } = await supabase
+        .from('vehicules')
+        .update({
+          statut: 'validation_requise',
+          validation_requise: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', vehiculeId);
+
+      if (vehiculeError) {
+        console.error('Erreur lors de la mise à jour du véhicule:', vehiculeError);
+        throw vehiculeError;
+      }
+
+      // Invalider le cache
+      this._cache.delete(`workflow_${vehiculeId}`);
+      this.clearCache('workflow_');
+      this.clearCache('stats');
+
+      console.log('✅ Workflow réinitialisé avec succès après mission');
+    } catch (error) {
+      console.error('💥 Erreur lors de la réinitialisation du workflow:', error);
+      throw error;
+    }
+  },
+
   // Fonction améliorée pour la mise à jour avec historique
   async updateEtapeStatut(
     etapeId: string,
