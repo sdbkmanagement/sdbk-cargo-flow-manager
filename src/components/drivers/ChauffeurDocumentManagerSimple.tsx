@@ -1,364 +1,287 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Upload, Eye, Edit, Trash2, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { DocumentUpload } from '@/components/common/DocumentUpload';
+import { 
+  Upload, 
+  FileText, 
+  Eye, 
+  Edit, 
+  Trash2, 
+  AlertTriangle,
+  Plus
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { documentsSimpleService } from '@/services/documentsSimple';
+import { supabase } from '@/integrations/supabase/client';
 import { CHAUFFEUR_DOCUMENT_TYPES } from '@/types/chauffeur';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 
 interface ChauffeurDocumentManagerProps {
   chauffeur: any;
-  onUpdate: () => void;
+  onUpdate?: () => void;
 }
 
 export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocumentManagerProps) => {
   const [documents, setDocuments] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showUpload, setShowUpload] = useState<string | null>(null);
-  const [editingDocument, setEditingDocument] = useState<any>(null);
-  const [documentToDelete, setDocumentToDelete] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (chauffeur?.id) {
-      loadDocuments();
-    }
-  }, [chauffeur?.id]);
+    loadDocuments();
+  }, [chauffeur.id]);
 
   const loadDocuments = async () => {
     try {
-      console.log('Chargement des documents pour le chauffeur:', chauffeur.id);
-      const docs = await documentsSimpleService.getByEntity('chauffeur', chauffeur.id);
-      setDocuments(docs);
-      console.log('Documents chargés:', docs.length);
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('entity_type', 'chauffeur')
+        .eq('entity_id', chauffeur.id);
+
+      if (error) throw error;
+
+      setDocuments(data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des documents:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de charger les documents",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de charger les documents',
+        variant: 'destructive'
       });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpload = async (documentType: string, file: File, dateExpiration?: string) => {
-    if (!chauffeur?.id) {
+  const uploadDocument = async (file: File, documentType: string) => {
+    try {
+      setUploading(documentType);
+      
+      // Upload du fichier
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${chauffeur.id}/${documentType}_${Date.now()}.${fileExt}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Obtenir l'URL publique
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fileName);
+
+      // Calculer la date d'expiration si nécessaire
+      let dateExpiration = null;
+      const docConfig = CHAUFFEUR_DOCUMENT_TYPES[documentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES];
+      if (docConfig && docConfig.duree_mois) {
+        const now = new Date();
+        dateExpiration = new Date(now.setMonth(now.getMonth() + docConfig.duree_mois)).toISOString().split('T')[0];
+      }
+
+      // Sauvegarder en base
+      const { error: saveError } = await supabase
+        .from('documents')
+        .upsert({
+          entity_type: 'chauffeur',
+          entity_id: chauffeur.id,
+          type: documentType,
+          nom: docConfig?.label || documentType,
+          url: urlData.publicUrl,
+          date_expiration: dateExpiration,
+          statut: 'valide'
+        });
+
+      if (saveError) throw saveError;
+
       toast({
-        title: "Erreur",
-        description: "Aucun chauffeur sélectionné",
-        variant: "destructive",
+        title: 'Succès',
+        description: 'Document téléchargé avec succès'
       });
+
+      loadDocuments();
+      onUpdate?.();
+    } catch (error) {
+      console.error('Erreur lors de l\'upload:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de télécharger le document',
+        variant: 'destructive'
+      });
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const deleteDocument = async (documentId: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
       return;
     }
 
-    setIsLoading(true);
     try {
-      console.log('Début upload document:', { 
-        documentType, 
-        fileName: file.name, 
-        dateExpiration,
-        chauffeurId: chauffeur.id 
-      });
-      
-      // Upload du fichier
-      const url = await documentsSimpleService.uploadFile(file, 'chauffeur', chauffeur.id, documentType);
-      console.log('Fichier uploadé avec succès, URL:', url);
-      
-      // Préparer les données du document
-      const documentData = {
-        entity_type: 'chauffeur' as const,
-        entity_id: chauffeur.id,
-        nom: CHAUFFEUR_DOCUMENT_TYPES[documentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES]?.label || documentType,
-        type: documentType,
-        url: url,
-        taille: file.size,
-        date_expiration: dateExpiration || null,
-      };
+      const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', documentId);
 
-      console.log('Données du document à sauvegarder:', documentData);
+      if (error) throw error;
 
-      let savedDocument;
-      if (editingDocument) {
-        savedDocument = await documentsSimpleService.update(editingDocument.id, documentData);
-        toast({
-          title: "Document modifié",
-          description: "Le document a été mis à jour avec succès",
-        });
-        setEditingDocument(null);
-      } else {
-        savedDocument = await documentsSimpleService.create(documentData);
-        toast({
-          title: "Document ajouté",
-          description: "Le document a été téléchargé avec succès",
-        });
-      }
-      
-      console.log('Document sauvegardé:', savedDocument);
-      setShowUpload(null);
-      await loadDocuments();
-      onUpdate();
-      
-    } catch (error) {
-      console.error('Erreur lors de l\'upload:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
       toast({
-        title: "Erreur",
-        description: `Impossible de télécharger le document: ${errorMessage}`,
-        variant: "destructive",
+        title: 'Succès',
+        description: 'Document supprimé avec succès'
       });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const handleDelete = async (document: any) => {
-    try {
-      setIsLoading(true);
-      
-      // Supprimer le fichier du storage
-      if (document.url) {
-        await documentsSimpleService.deleteFile(document.url);
-      }
-      
-      // Supprimer l'enregistrement de la base
-      await documentsSimpleService.delete(document.id);
-      
-      toast({
-        title: "Document supprimé",
-        description: "Le document a été supprimé avec succès",
-      });
-      
-      setDocumentToDelete(null);
-      await loadDocuments();
-      onUpdate();
+      loadDocuments();
+      onUpdate?.();
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le document",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de supprimer le document',
+        variant: 'destructive'
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  // Calcul du statut côté client pour l'affichage
-  const getDocumentStatus = (document: any) => {
-    if (!document.date_expiration) return { status: 'permanent', label: 'Permanent', color: 'bg-blue-500' };
+  const getDocumentStatus = (doc: any) => {
+    if (!doc.date_expiration) return 'valide';
     
     const now = new Date();
-    const expDate = new Date(document.date_expiration);
+    const expDate = new Date(doc.date_expiration);
     const daysUntilExpiry = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     
-    if (daysUntilExpiry < 0) return { status: 'expired', label: 'Expiré', color: 'bg-red-500' };
-    if (daysUntilExpiry <= 30) return { status: 'expiring', label: `Expire dans ${daysUntilExpiry}j`, color: 'bg-orange-500' };
-    return { status: 'valid', label: 'Valide', color: 'bg-green-500' };
+    if (daysUntilExpiry < 0) return 'expire';
+    if (daysUntilExpiry <= 30) return 'a_renouveler';
+    return 'valide';
   };
 
-  const getDocumentIcon = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'expired': return <AlertTriangle className="w-4 h-4" />;
-      case 'expiring': return <Clock className="w-4 h-4" />;
-      case 'valid': return <CheckCircle className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
+      case 'expire':
+        return <Badge variant="destructive">Expiré</Badge>;
+      case 'a_renouveler':
+        return <Badge className="bg-orange-500 text-white">À renouveler</Badge>;
+      default:
+        return <Badge className="bg-green-500 text-white">Valide</Badge>;
     }
   };
 
-  const getExpirationDate = (documentType: string) => {
-    const config = CHAUFFEUR_DOCUMENT_TYPES[documentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES];
-    if (!config?.duree_mois) return null;
+  const existingDocuments = Object.keys(CHAUFFEUR_DOCUMENT_TYPES).map(type => {
+    const config = CHAUFFEUR_DOCUMENT_TYPES[type as keyof typeof CHAUFFEUR_DOCUMENT_TYPES];
+    const existingDoc = documents.find(doc => doc.type === type);
     
-    const now = new Date();
-    const expiration = new Date(now);
-    expiration.setMonth(expiration.getMonth() + config.duree_mois);
-    return expiration.toISOString().split('T')[0];
-  };
+    return {
+      type,
+      config,
+      document: existingDoc,
+      status: existingDoc ? getDocumentStatus(existingDoc) : null
+    };
+  });
 
-  const startEdit = (document: any, documentType: string) => {
-    setEditingDocument(document);
-    setShowUpload(documentType);
-  };
-
-  const isExpirationRequired = (documentType: string) => {
-    return documentType !== 'photo_profil' && documentType !== 'contrat_travail';
-  };
-
-  if (!chauffeur) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center text-gray-500">
-            Aucun chauffeur sélectionné
-          </div>
-        </CardContent>
-      </Card>
-    );
+  if (loading) {
+    return <div className="text-center py-4">Chargement des documents...</div>;
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="w-5 h-5" />
-            Documents de {chauffeur.prenom} {chauffeur.nom}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(CHAUFFEUR_DOCUMENT_TYPES).map(([key, config]) => {
-              const existingDoc = documents.find(doc => doc.type === key);
-              const status = existingDoc ? getDocumentStatus(existingDoc) : null;
-              
-              return (
-                <div key={key} className="border rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-medium">{config.label}</h4>
-                      {config.obligatoire && (
-                        <span className="text-xs text-red-600">Obligatoire</span>
-                      )}
-                      {config.duree_mois && (
-                        <p className="text-sm text-gray-500">
-                          Durée: {config.duree_mois} mois
-                        </p>
-                      )}
-                    </div>
-                    {status && (
-                      <Badge className={`${status.color} text-white flex items-center gap-1`}>
-                        {getDocumentIcon(status.status)}
-                        {status.label}
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  {existingDoc ? (
-                    <div className="space-y-2">
-                      {existingDoc.date_expiration && (
-                        <p className="text-sm text-gray-600">
-                          Expire le: {new Date(existingDoc.date_expiration).toLocaleDateString('fr-FR')}
-                        </p>
-                      )}
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(existingDoc.url, '_blank')}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Voir
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => startEdit(existingDoc, key)}
-                          disabled={isLoading}
-                        >
-                          <Edit className="w-4 h-4 mr-1" />
-                          Modifier
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setDocumentToDelete(existingDoc)}
-                          className="text-red-600 hover:text-red-800"
-                          disabled={isLoading}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Supprimer
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => setShowUpload(key)}
-                      className="w-full"
-                      disabled={isLoading}
-                    >
-                      <Upload className="w-4 h-4 mr-1" />
-                      Ajouter
-                    </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <FileText className="w-5 h-5 mr-2" />
+          Documents de {chauffeur.prenom} {chauffeur.nom}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {existingDocuments.map(({ type, config, document, status }) => (
+            <Card key={type} className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium">{config.label}</h4>
+                  {status && getStatusBadge(status)}
+                </div>
+                
+                <div className="text-sm text-gray-600">
+                  {config.duree_mois && (
+                    <div>Durée: {config.duree_mois} mois</div>
                   )}
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Dialog d'upload/modification */}
-      {showUpload && (
-        <Dialog open={!!showUpload} onOpenChange={() => {
-          setShowUpload(null);
-          setEditingDocument(null);
-        }}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingDocument ? 'Modifier' : 'Télécharger'}: {CHAUFFEUR_DOCUMENT_TYPES[showUpload as keyof typeof CHAUFFEUR_DOCUMENT_TYPES]?.label}
-              </DialogTitle>
-            </DialogHeader>
-            <DocumentUpload
-              onUpload={(file, expirationDate) => {
-                const defaultExpiration = expirationDate || getExpirationDate(showUpload);
-                handleUpload(showUpload, file, defaultExpiration);
-              }}
-              onCancel={() => {
-                setShowUpload(null);
-                setEditingDocument(null);
-              }}
-              acceptedTypes=".pdf,.jpg,.jpeg,.png"
-              maxSize={10 * 1024 * 1024}
-              showExpirationDate={isExpirationRequired(showUpload)}
-              requiredExpirationDate={isExpirationRequired(showUpload)}
-              defaultExpirationDate={editingDocument?.date_expiration || getExpirationDate(showUpload)}
-              isLoading={isLoading}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
-
-      {/* Dialog de confirmation de suppression */}
-      <AlertDialog open={!!documentToDelete} onOpenChange={() => setDocumentToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
-            <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer ce document ? Cette action est irréversible.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Annuler</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={() => documentToDelete && handleDelete(documentToDelete)}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Suppression...' : 'Supprimer'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+                {document ? (
+                  <div className="space-y-2">
+                    {document.date_expiration && (
+                      <div className="text-sm">
+                        Expire le: {new Date(document.date_expiration).toLocaleDateString('fr-FR')}
+                      </div>
+                    )}
+                    
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(document.url, '_blank')}
+                      >
+                        <Eye className="w-4 h-4 mr-1" />
+                        Voir
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+                          input.onchange = (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0];
+                            if (file) uploadDocument(file, type);
+                          };
+                          input.click();
+                        }}
+                        disabled={uploading === type}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Modifier
+                      </Button>
+                      
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteDocument(document.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        Supprimer
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) uploadDocument(file, type);
+                      };
+                      input.click();
+                    }}
+                    disabled={uploading === type}
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {uploading === type ? 'Téléchargement...' : 'Ajouter'}
+                  </Button>
+                )}
+              </div>
+            </Card>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
