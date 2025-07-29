@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -74,10 +73,13 @@ export const ModuleHub: React.FC = () => {
           missionsEnCours: hubStats.missionsEnCours,
           factures: financialStats.totalFactures,
           employes: hubStats.employes,
-          missionsEnAttente: hubStats.missionsEnAttente
+          missionsEnAttente: hubStats.validationsEnAttente
         });
         
-        console.log('✅ Hub stats loaded:', hubStats);
+        console.log('✅ Hub stats loaded:', {
+          ...hubStats,
+          validationsEnAttente: hubStats.validationsEnAttente
+        });
         
       } catch (error) {
         console.error('❌ Error loading hub stats:', error);
@@ -88,8 +90,8 @@ export const ModuleHub: React.FC = () => {
 
     loadHubStats();
     
-    // Actualiser les données toutes les 60 secondes
-    const interval = setInterval(loadHubStats, 60000);
+    // Actualiser les données toutes les 30 secondes pour les validations
+    const interval = setInterval(loadHubStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -168,11 +170,9 @@ export const ModuleHub: React.FC = () => {
     }
   ];
 
-  // Filtrer les modules selon les permissions de l'utilisateur
   const modules = allModules.filter(module => {
     if (!user) return false;
     
-    // Filtrer le dashboard - uniquement pour les admins
     if (module.id === 'dashboard') {
       const isAdmin = user.roles?.includes('admin') || user.role === 'admin';
       console.log(`🔍 Vérification accès dashboard - Admin: ${isAdmin}`);
@@ -185,13 +185,11 @@ export const ModuleHub: React.FC = () => {
       modulePermissions: user.module_permissions
     });
     
-    // L'admin a accès à tout
     if (user.roles?.includes('admin')) {
       console.log(`✅ Utilisateur admin - accès complet au module ${module.id}`);
       return true;
     }
     
-    // Pour les autres, vérifier les permissions de module
     const modulePermissions = user.module_permissions || [];
     const hasAccess = modulePermissions.includes(module.id);
     
@@ -218,11 +216,9 @@ export const ModuleHub: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
-      {/* Top Bar moderne */}
       <header className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            {/* Logo et titre */}
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Truck className="w-6 h-6 text-white" />
@@ -235,15 +231,12 @@ export const ModuleHub: React.FC = () => {
               </div>
             </div>
 
-            {/* Actions droite */}
             <div className="flex items-center gap-4">
-              {/* Notifications */}
               <Button variant="ghost" size="sm" className="relative">
                 <Bell className="w-5 h-5" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
               </Button>
 
-              {/* Menu utilisateur */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center gap-2">
@@ -270,9 +263,7 @@ export const ModuleHub: React.FC = () => {
         </div>
       </header>
 
-      {/* Contenu principal Hub */}
       <main className="max-w-7xl mx-auto px-6 py-12">
-        {/* Titre et description */}
         <div className="text-center mb-16">
           <h2 className="text-4xl font-bold text-gray-900 mb-4">
             Bienvenue sur votre plateforme
@@ -283,7 +274,6 @@ export const ModuleHub: React.FC = () => {
           </p>
         </div>
 
-        {/* Grille des modules - Layout optimisé */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-6xl mx-auto">
           {modules.map((module, index) => (
             <div
@@ -292,18 +282,14 @@ export const ModuleHub: React.FC = () => {
               style={{ animationDelay: `${index * 0.1}s` }}
               onClick={() => handleModuleClick(module.route)}
             >
-              {/* Carte module */}
               <div className="relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
-                {/* Header avec gradient */}
                 <div className={`h-32 bg-gradient-to-br ${module.gradient} relative`}>
                   <div className="absolute inset-0 bg-black/10"></div>
                   
-                  {/* Icône */}
                   <div className="absolute top-6 left-6">
                     <module.icon className="w-8 h-8 text-white drop-shadow-lg" />
                   </div>
                   
-                  {/* Badge nouveau */}
                   {module.isNew && (
                     <div className="absolute top-4 right-4">
                       <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
@@ -312,7 +298,6 @@ export const ModuleHub: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Statistiques */}
                   {module.stats && (
                     <div className="absolute bottom-4 left-6">
                       <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
@@ -321,11 +306,9 @@ export const ModuleHub: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Effet brillance hover */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </div>
 
-                {/* Contenu */}
                 <div className="p-6">
                   <h3 className="font-semibold text-lg text-gray-900 mb-2">
                     {module.title}
