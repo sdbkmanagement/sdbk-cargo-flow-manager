@@ -21,23 +21,33 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   const getStatusBadge = (statut: string) => {
-    const variants: { [key: string]: 'default' | 'secondary' | 'destructive' | 'outline' } = {
-      'disponible': 'default',
-      'en_mission': 'secondary',
-      'maintenance': 'destructive',
-      'validation_requise': 'outline'
+    const statusConfig = {
+      'disponible': {
+        label: 'Disponible',
+        className: 'bg-green-500 text-white border-green-600 hover:bg-green-600'
+      },
+      'en_mission': {
+        label: 'En Mission',
+        className: 'bg-orange-500 text-white border-orange-600 hover:bg-orange-600'
+      },
+      'maintenance': {
+        label: 'Maintenance',
+        className: 'bg-red-500 text-white border-red-600 hover:bg-red-600'
+      },
+      'validation_requise': {
+        label: 'Validation Requise',
+        className: 'bg-yellow-500 text-white border-yellow-600 hover:bg-yellow-600'
+      }
     };
 
-    const labels: { [key: string]: string } = {
-      'disponible': 'Disponible',
-      'en_mission': 'En Mission',
-      'maintenance': 'Maintenance',
-      'validation_requise': 'Validation Requise'
+    const config = statusConfig[statut as keyof typeof statusConfig] || {
+      label: statut,
+      className: 'bg-gray-500 text-white border-gray-600 hover:bg-gray-600'
     };
 
     return (
-      <Badge variant={variants[statut] || 'outline'}>
-        {labels[statut] || statut}
+      <Badge className={config.className}>
+        {config.label}
       </Badge>
     );
   };
@@ -45,49 +55,17 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
   const getTransportBadge = (type: string) => {
     if (type === 'hydrocarbures') {
       return (
-        <Badge className="bg-blue-600 text-white border-blue-600 hover:bg-blue-700">
+        <Badge className="bg-blue-500 text-white border-blue-600 hover:bg-blue-700">
           Hydrocarbures
         </Badge>
       );
     } else {
       return (
-        <Badge variant="secondary" className="bg-gray-100 text-gray-900 border-gray-300">
-          Marchandise
+        <Badge className="bg-purple-500 text-white border-purple-600 hover:bg-purple-600">
+          Bauxite
         </Badge>
       );
     }
-  };
-
-  const getVolumeDisplay = (vehicle: Vehicule) => {
-    if (vehicle.type_vehicule === 'tracteur_remorque' && vehicle.remorque_volume_litres) {
-      const unit = vehicle.type_transport === 'hydrocarbures' ? 'L' : 't';
-      return `${vehicle.remorque_volume_litres}${unit}`;
-    } else if (vehicle.type_vehicule === 'porteur' && vehicle.volume_tonnes) {
-      const unit = vehicle.type_transport === 'hydrocarbures' ? 'L' : 't';
-      return `${vehicle.volume_tonnes}${unit}`;
-    }
-    return 'Non défini';
-  };
-
-  const handleDelete = async (vehicleId: string) => {
-    try {
-      await onDelete(vehicleId);
-      toast({
-        title: "Véhicule supprimé",
-        description: "Le véhicule a été supprimé avec succès.",
-      });
-    } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le véhicule.",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleViewDetails = (vehicle: Vehicule) => {
-    setSelectedVehicle(vehicle);
-    setShowDetailDialog(true);
   };
 
   if (vehicles.length === 0) {
@@ -241,4 +219,36 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
       />
     </div>
   );
+
+  function getVolumeDisplay(vehicle: Vehicule) {
+    if (vehicle.type_vehicule === 'tracteur_remorque' && vehicle.remorque_volume_litres) {
+      const unit = vehicle.type_transport === 'hydrocarbures' ? 'L' : 't';
+      return `${vehicle.remorque_volume_litres}${unit}`;
+    } else if (vehicle.type_vehicule === 'porteur' && vehicle.volume_tonnes) {
+      const unit = vehicle.type_transport === 'hydrocarbures' ? 'L' : 't';
+      return `${vehicle.volume_tonnes}${unit}`;
+    }
+    return 'Non défini';
+  }
+
+  async function handleDelete(vehicleId: string) {
+    try {
+      await onDelete(vehicleId);
+      toast({
+        title: "Véhicule supprimé",
+        description: "Le véhicule a été supprimé avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le véhicule.",
+        variant: "destructive"
+      });
+    }
+  }
+
+  function handleViewDetails(vehicle: Vehicule) {
+    setSelectedVehicle(vehicle);
+    setShowDetailDialog(true);
+  }
 };
