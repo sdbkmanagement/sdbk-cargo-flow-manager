@@ -107,7 +107,7 @@ export const ValidationStats = () => {
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-2 p-2 bg-blue-50 rounded text-xs">
             <div>Dernière actualisation: {new Date().toLocaleTimeString()}</div>
-            <div>En attente: {statsData.en_validation} | Validés: {statsData.valides} | Rejetés: {statsData.rejetes}</div>
+            <div>En validation: {statsData.en_validation} | Validés: {statsData.valides} | Rejetés: {statsData.rejetes}</div>
           </div>
         )}
       </CardContent>
