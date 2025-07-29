@@ -58,6 +58,35 @@ export const ChauffeurDetailView = ({ chauffeur, documents = [], onRefresh }: Ch
     }
   };
 
+  const getRequiredDocuments = () => {
+    return Object.entries(CHAUFFEUR_DOCUMENT_TYPES).filter(([_, config]) => config.obligatoire);
+  };
+
+  const getMissingDocuments = () => {
+    const requiredDocs = getRequiredDocuments();
+    const existingTypes = documents.map(doc => doc.type);
+    return requiredDocs.filter(([type]) => !existingTypes.includes(type));
+  };
+
+  const getExpiringDocuments = () => {
+    const now = new Date();
+    return documents.filter(doc => {
+      if (!doc.date_expiration) return false;
+      const expDate = new Date(doc.date_expiration);
+      const daysUntilExpiry = Math.ceil((expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      return daysUntilExpiry <= 30 && daysUntilExpiry >= 0;
+    });
+  };
+
+  const getExpiredDocuments = () => {
+    const now = new Date();
+    return documents.filter(doc => {
+      if (!doc.date_expiration) return false;
+      const expDate = new Date(doc.date_expiration);
+      return expDate < now;
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Informations personnelles */}
@@ -134,6 +163,67 @@ export const ChauffeurDetailView = ({ chauffeur, documents = [], onRefresh }: Ch
         </CardContent>
       </Card>
 
+      {/* Résumé de conformité */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2 text-orange-500" />
+            État de conformité
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">{getMissingDocuments().length}</div>
+                <div className="text-sm text-red-600">Documents manquants</div>
+              </div>
+            </div>
+            
+            <div className="bg-orange-50 p-4 rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{getExpiringDocuments().length}</div>
+                <div className="text-sm text-orange-600">À renouveler</div>
+              </div>
+            </div>
+            
+            <div className="bg-red-50 p-4 rounded-lg">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">{getExpiredDocuments().length}</div>
+                <div className="text-sm text-red-600">Expirés</div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Documents manquants */}
+      {getMissingDocuments().length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-red-600">
+              <AlertTriangle className="w-5 h-5 mr-2" />
+              Documents manquants
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-2">
+              {getMissingDocuments().map(([type, config]) => (
+                <div key={type} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <FileText className="w-4 h-4 text-red-500" />
+                    <span className="text-sm font-medium">{config.label}</span>
+                  </div>
+                  <Badge variant="destructive" className="text-xs">
+                    Requis
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Documents */}
       <Card>
         <CardHeader>
@@ -172,6 +262,12 @@ export const ChauffeurDetailView = ({ chauffeur, documents = [], onRefresh }: Ch
                           <h4 className="font-medium">{doc.nom}</h4>
                           <div className="flex items-center space-x-2 text-sm text-gray-500">
                             <span>{docType?.label || doc.type}</span>
+                            {doc.date_expiration && (
+                              <>
+                                <span>•</span>
+                                <span>Expire le {new Date(doc.date_expiration).toLocaleDateString('fr-FR')}</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
