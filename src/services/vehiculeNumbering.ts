@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export const renameAllVehiclesToSequential = async (): Promise<{ success: boolean; message: string; updated: number }> => {
   try {
-    console.log('Début de la renommage des véhicules...');
+    console.log('Début de la renumérotation des véhicules...');
 
     // 1. Récupérer tous les véhicules triés par date de création
     const { data: vehicles, error: fetchError } = await supabase
@@ -36,11 +36,6 @@ export const renameAllVehiclesToSequential = async (): Promise<{ success: boolea
       const vehicle = vehicles[i];
       const newNumber = `V${(i + 1).toString().padStart(3, '0')}`;
       
-      // Ne pas mettre à jour si le numéro est déjà correct
-      if (vehicle.numero === newNumber) {
-        continue;
-      }
-
       console.log(`Renommage de ${vehicle.numero} vers ${newNumber}`);
 
       const { error: updateError } = await supabase
@@ -53,6 +48,7 @@ export const renameAllVehiclesToSequential = async (): Promise<{ success: boolea
         errors.push(`Erreur pour le véhicule ${vehicle.numero}: ${updateError.message}`);
       } else {
         updatedCount++;
+        console.log(`✓ Véhicule renommé: ${vehicle.numero} → ${newNumber}`);
       }
     }
 
@@ -66,7 +62,7 @@ export const renameAllVehiclesToSequential = async (): Promise<{ success: boolea
 
     return {
       success: true,
-      message: `${updatedCount} véhicules renommés avec succès`,
+      message: `${updatedCount} véhicules renommés avec succès en format séquentiel (V001, V002, etc.)`,
       updated: updatedCount
     };
 
@@ -77,5 +73,43 @@ export const renameAllVehiclesToSequential = async (): Promise<{ success: boolea
       message: `Erreur générale: ${error instanceof Error ? error.message : 'Erreur inconnue'}`,
       updated: 0
     };
+  }
+};
+
+// Fonction pour obtenir le prochain numéro séquentiel pour les nouveaux véhicules
+export const getNextSequentialNumber = async (): Promise<string> => {
+  try {
+    const { data: vehicles, error } = await supabase
+      .from('vehicules')
+      .select('numero')
+      .like('numero', 'V%')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Erreur lors de la récupération du dernier numéro:', error);
+      return 'V001';
+    }
+
+    if (!vehicles || vehicles.length === 0) {
+      return 'V001';
+    }
+
+    // Trouver le numéro le plus élevé
+    let maxNumber = 0;
+    vehicles.forEach(vehicle => {
+      if (vehicle.numero && vehicle.numero.startsWith('V')) {
+        const numberPart = parseInt(vehicle.numero.substring(1));
+        if (!isNaN(numberPart) && numberPart > maxNumber) {
+          maxNumber = numberPart;
+        }
+      }
+    });
+
+    // Le prochain numéro
+    const nextNumber = maxNumber + 1;
+    return `V${nextNumber.toString().padStart(3, '0')}`;
+  } catch (error) {
+    console.error('Erreur lors de la génération du numéro séquentiel:', error);
+    return 'V001';
   }
 };

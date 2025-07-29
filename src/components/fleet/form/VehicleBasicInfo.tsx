@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { UseFormRegister, FieldErrors, UseFormWatch, UseFormSetValue } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
@@ -6,47 +5,37 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, AlertCircle } from 'lucide-react';
-import { vehiculesService } from '@/services/vehicules';
+import { getNextSequentialNumber } from '@/services/vehiculeNumbering';
 
 interface VehicleBasicInfoProps {
   register: UseFormRegister<any>;
   errors: FieldErrors;
   watch: UseFormWatch<any>;
   setValue: UseFormSetValue<any>;
+  isEditing?: boolean;
 }
 
-export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleBasicInfoProps) => {
+export const VehicleBasicInfo = ({ register, errors, watch, setValue, isEditing = false }: VehicleBasicInfoProps) => {
   const typeVehicule = watch('type_vehicule');
 
   // Generate proper sequential vehicle numbers starting from V001
   useEffect(() => {
     const generateSequentialNumber = async () => {
+      // Only generate number for new vehicles, not when editing
+      if (isEditing) return;
+      
       try {
-        const vehicles = await vehiculesService.getAll();
-        // Find the highest existing number
-        let maxNumber = 0;
-        vehicles.forEach(vehicle => {
-          if (vehicle.numero && vehicle.numero.startsWith('V')) {
-            const numberPart = parseInt(vehicle.numero.substring(1));
-            if (!isNaN(numberPart) && numberPart > maxNumber) {
-              maxNumber = numberPart;
-            }
-          }
-        });
-        
-        // Next number should be maxNumber + 1, starting from 1 if no vehicles exist
-        const nextNumber = maxNumber + 1;
-        const formattedNumber = `V${nextNumber.toString().padStart(3, '0')}`;
-        setValue('numero', formattedNumber);
+        const nextNumber = await getNextSequentialNumber();
+        setValue('numero', nextNumber);
+        console.log(`Nouveau numéro généré: ${nextNumber}`);
       } catch (error) {
         console.error('Erreur lors de la génération du numéro:', error);
-        // Fallback to a basic sequential number
         setValue('numero', 'V001');
       }
     };
     
     generateSequentialNumber();
-  }, [setValue]);
+  }, [setValue, isEditing]);
 
   return (
     <Card>
@@ -84,7 +73,7 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleB
           {/* Base d'intégration */}
           <div className="space-y-2">
             <Label htmlFor="base" className="text-sm font-medium">Base</Label>
-            <Select onValueChange={(value) => setValue('base', value)}>
+            <Select onValueChange={(value) => setValue('base', value)} value={watch('base')}>
               <SelectTrigger>
                 <SelectValue placeholder="Sélectionner la base" />
               </SelectTrigger>
@@ -95,6 +84,25 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleB
               </SelectContent>
             </Select>
           </div>
+        </div>
+
+        {/* Numéro automatisé - montrer en premier maintenant */}
+        <div className="space-y-2">
+          <Label htmlFor="numero" className="text-sm font-medium">
+            Numéro du véhicule {!isEditing && '(automatisé)'}
+          </Label>
+          <Input
+            id="numero"
+            {...register('numero')}
+            placeholder="Format: V001, V002, V003..."
+            readOnly={!isEditing}
+            className={!isEditing ? 'bg-muted' : ''}
+          />
+          {!isEditing && (
+            <p className="text-xs text-muted-foreground">
+              Le numéro sera généré automatiquement de manière séquentielle
+            </p>
+          )}
         </div>
 
         {/* Type de transport */}
@@ -197,18 +205,6 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue }: VehicleB
               )}
             </div>
           )}
-        </div>
-
-        {/* Numéro automatisé */}
-        <div className="space-y-2">
-          <Label htmlFor="numero" className="text-sm font-medium">Numéro du véhicule (automatisé)</Label>
-          <Input
-            id="numero"
-            {...register('numero')}
-            placeholder="Format: V001, V002, V003..."
-            readOnly
-            className="bg-muted"
-          />
         </div>
       </CardContent>
     </Card>
