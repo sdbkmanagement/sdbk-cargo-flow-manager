@@ -54,6 +54,14 @@ function AppContent() {
         <Route path="administration" element={<Administration />} />
         <Route path="validations" element={<Validations />} />
       </Route>
+      {/* Routes directes pour compatibilité */}
+      <Route path="/fleet" element={<Fleet />} />
+      <Route path="/drivers" element={<Drivers />} />
+      <Route path="/missions" element={<Missions />} />
+      <Route path="/billing" element={<Billing />} />
+      <Route path="/rh" element={<RH />} />
+      <Route path="/administration" element={<Administration />} />
+      <Route path="/validations" element={<Validations />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
