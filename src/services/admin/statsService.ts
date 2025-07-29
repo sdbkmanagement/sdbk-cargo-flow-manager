@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { validationService } from '@/services/validation';
 
@@ -7,7 +8,7 @@ export interface DashboardStats {
   missionsEnCours: number;
   missionsEnAttente: number;
   employes: number;
-  validationsEnAttente: number; // Ajout de cette statistique
+  validationsEnAttente: number;
 }
 
 export interface FinancialStats {
@@ -15,6 +16,14 @@ export interface FinancialStats {
   chiffreAffaires: number;
   facturesPayees: number;
   facturesEnAttente: number;
+}
+
+export interface UserStats {
+  total: number;
+  actifs: number;
+  inactifs: number;
+  suspendus: number;
+  byRole: Record<string, number>;
 }
 
 export const statsService = {
@@ -65,6 +74,58 @@ export const statsService = {
         missionsEnAttente: 0,
         employes: 0,
         validationsEnAttente: 0
+      };
+    }
+  },
+
+  async getUserStats(): Promise<UserStats> {
+    console.log('👥 Chargement des statistiques utilisateurs...');
+    
+    try {
+      const { data: users, error } = await supabase
+        .from('users')
+        .select('status, roles');
+
+      if (error) {
+        console.error('❌ Erreur lors de la récupération des utilisateurs:', error);
+        throw error;
+      }
+
+      const total = users?.length || 0;
+      const actifs = users?.filter(u => u.status === 'active').length || 0;
+      const inactifs = users?.filter(u => u.status === 'inactive').length || 0;
+      const suspendus = users?.filter(u => u.status === 'suspended').length || 0;
+
+      // Compter par rôle
+      const byRole: Record<string, number> = {};
+      users?.forEach(user => {
+        if (user.roles && Array.isArray(user.roles)) {
+          user.roles.forEach(role => {
+            byRole[role] = (byRole[role] || 0) + 1;
+          });
+        }
+      });
+
+      const stats = {
+        total,
+        actifs,
+        inactifs,
+        suspendus,
+        byRole
+      };
+
+      console.log('✅ Statistiques utilisateurs chargées:', stats);
+      return stats;
+
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des statistiques utilisateurs:', error);
+      
+      return {
+        total: 0,
+        actifs: 0,
+        inactifs: 0,
+        suspendus: 0,
+        byRole: {}
       };
     }
   },
