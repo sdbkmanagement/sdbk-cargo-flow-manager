@@ -289,7 +289,7 @@ export const validationService = {
     }
   },
 
-  // Fonction améliorée pour la mise à jour avec historique
+  // Fonction améliorée pour la mise à jour avec gestion du statut véhicule
   async updateEtapeStatut(
     etapeId: string,
     statut: StatutEtape,
@@ -386,6 +386,9 @@ export const validationService = {
 
       console.log('✅ Mise à jour réussie:', data);
 
+      // Vérifier si toutes les étapes du workflow sont validées
+      await this.checkAndUpdateVehicleStatus(data.workflow_id);
+
       // Invalider les caches pertinents
       this.clearCache('workflow_');
       this.clearCache('stats');
@@ -399,6 +402,97 @@ export const validationService = {
       } else {
         throw new Error('Erreur inconnue lors de la mise à jour de la validation');
       }
+    }
+  },
+
+  // Nouvelle méthode pour vérifier et mettre à jour le statut du véhicule
+  async checkAndUpdateVehicleStatus(workflowId: string) {
+    console.log(`🔍 Vérification du statut global pour workflow ${workflowId}`);
+
+    try {
+      // Récupérer le workflow avec ses étapes
+      const { data: workflow, error: workflowError } = await supabase
+        .from('validation_workflows')
+        .select(`
+          id,
+          vehicule_id,
+          statut_global,
+          etapes:validation_etapes(
+            id,
+            etape,
+            statut
+          )
+        `)
+        .eq('id', workflowId)
+        .single();
+
+      if (workflowError || !workflow) {
+        console.error('❌ Erreur lors de la récupération du workflow:', workflowError);
+        return;
+      }
+
+      console.log(`📊 Workflow trouvé avec ${workflow.etapes.length} étapes`);
+
+      // Vérifier si toutes les étapes sont validées
+      const etapesValidees = workflow.etapes.filter(etape => etape.statut === 'valide');
+      const etapesRejetees = workflow.etapes.filter(etape => etape.statut === 'rejete');
+      
+      console.log(`✅ ${etapesValidees.length} étapes validées`);
+      console.log(`❌ ${etapesRejetees.length} étapes rejetées`);
+
+      let nouveauStatutGlobal = 'en_validation';
+      let nouveauStatutVehicule = 'validation_requise';
+
+      // Déterminer le nouveau statut
+      if (etapesRejetees.length > 0) {
+        nouveauStatutGlobal = 'rejete';
+        nouveauStatutVehicule = 'indisponible';
+      } else if (etapesValidees.length === workflow.etapes.length) {
+        nouveauStatutGlobal = 'valide';
+        nouveauStatutVehicule = 'disponible';
+      }
+
+      console.log(`🎯 Nouveau statut global: ${nouveauStatutGlobal}`);
+      console.log(`🚗 Nouveau statut véhicule: ${nouveauStatutVehicule}`);
+
+      // Mettre à jour le workflow si nécessaire
+      if (workflow.statut_global !== nouveauStatutGlobal) {
+        const { error: updateWorkflowError } = await supabase
+          .from('validation_workflows')
+          .update({ 
+            statut_global: nouveauStatutGlobal,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', workflowId);
+
+        if (updateWorkflowError) {
+          console.error('❌ Erreur lors de la mise à jour du workflow:', updateWorkflowError);
+        } else {
+          console.log('✅ Workflow mis à jour avec succès');
+        }
+      }
+
+      // Mettre à jour le statut du véhicule
+      const { error: updateVehiculeError } = await supabase
+        .from('vehicules')
+        .update({ 
+          statut: nouveauStatutVehicule,
+          validation_requise: nouveauStatutVehicule === 'validation_requise',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', workflow.vehicule_id);
+
+      if (updateVehiculeError) {
+        console.error('❌ Erreur lors de la mise à jour du véhicule:', updateVehiculeError);
+      } else {
+        console.log(`✅ Véhicule ${workflow.vehicule_id} mis à jour vers statut: ${nouveauStatutVehicule}`);
+      }
+
+      // Invalider les caches des véhicules
+      this.clearCache('vehicules');
+      
+    } catch (error) {
+      console.error('💥 Erreur lors de la vérification du statut:', error);
     }
   },
 

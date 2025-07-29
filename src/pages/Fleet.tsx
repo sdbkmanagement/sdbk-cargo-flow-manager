@@ -5,7 +5,9 @@ import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { useVehicles } from '@/hooks/useVehicles';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
+import { VehicleSyncDiagnostic } from '@/components/fleet/VehicleSyncDiagnostic';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const Fleet = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -54,19 +56,32 @@ const Fleet = () => {
 
       <FleetStats stats={stats} />
 
-      <VehicleListTab
-        vehicles={vehicles}
-        onEdit={handleEditVehicle}
-        onDelete={async (id: string) => {
-          // Implémenter la logique de suppression ici
-          console.log(`Suppression du véhicule avec l'ID: ${id}`);
-          await refetch(); // Refresh vehicle list after deletion
-        }}
-        onViewDocuments={(vehicle) => {
-          // Implémenter la logique pour afficher les documents ici
-          console.log(`Affichage des documents pour le véhicule: ${vehicle.numero}`);
-        }}
-      />
+      <Tabs defaultValue="list" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="list">Liste des véhicules</TabsTrigger>
+          <TabsTrigger value="diagnostic">Diagnostic de synchronisation</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-4">
+          <VehicleListTab
+            vehicles={vehicles}
+            onEdit={handleEditVehicle}
+            onDelete={async (id: string) => {
+              // Implémenter la logique de suppression ici
+              console.log(`Suppression du véhicule avec l'ID: ${id}`);
+              await refetch(); // Refresh vehicle list after deletion
+            }}
+            onViewDocuments={(vehicle) => {
+              // Implémenter la logique pour afficher les documents ici
+              console.log(`Affichage des documents pour le véhicule: ${vehicle.numero}`);
+            }}
+          />
+        </TabsContent>
+
+        <TabsContent value="diagnostic" className="space-y-4">
+          <VehicleSyncDiagnostic />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
