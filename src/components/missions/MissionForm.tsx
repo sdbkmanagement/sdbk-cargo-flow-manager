@@ -141,7 +141,7 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
               ) : (
                 vehicules?.map((vehicule) => (
                   <SelectItem key={vehicule.id} value={vehicule.id}>
-                    {vehicule.numero} - {vehicule.immatriculation || vehicule.tracteur_immatriculation}
+                    {vehicule.immatriculation || vehicule.tracteur_immatriculation || vehicule.numero}
                   </SelectItem>
                 ))
               )}
