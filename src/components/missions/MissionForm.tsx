@@ -10,7 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import vehiculesService from '@/services/vehicules';
-import chauffeursService from '@/services/chauffeurs';
+import { chauffeursService } from '@/services/chauffeurs';
 import missionsService from '@/services/missions';
 
 interface MissionFormProps {
@@ -91,7 +91,8 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
         volume_poids: formData.volume_poids ? parseFloat(formData.volume_poids) : null,
         unite_mesure: formData.unite_mesure,
         observations: formData.observations,
-        statut: 'en_attente'
+        statut: 'en_attente',
+        created_by: 'current_user' // Ajout du champ requis
       });
 
       toast({

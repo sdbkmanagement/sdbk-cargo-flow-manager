@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,7 +13,6 @@ const Missions = () => {
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
-  const [selectedMission, setSelectedMission] = useState(null);
   const [activeTab, setActiveTab] = useState('en-cours');
 
   // Actualisation automatique toutes les 30 secondes
@@ -49,18 +47,11 @@ const Missions = () => {
   );
 
   const handleCreateMission = () => {
-    setSelectedMission(null);
-    setShowForm(true);
-  };
-
-  const handleEditMission = (mission: any) => {
-    setSelectedMission(mission);
     setShowForm(true);
   };
 
   const handleFormSuccess = () => {
     setShowForm(false);
-    setSelectedMission(null);
     // Actualisation immédiate après modification
     queryClient.invalidateQueries({ queryKey: ['missions'] });
     queryClient.invalidateQueries({ queryKey: ['missions-stats'] });
@@ -68,7 +59,6 @@ const Missions = () => {
 
   const handleFormCancel = () => {
     setShowForm(false);
-    setSelectedMission(null);
   };
 
   if (!hasPermission('missions_read')) {
@@ -115,7 +105,6 @@ const Missions = () => {
   if (showForm) {
     return (
       <MissionForm
-        mission={selectedMission}
         onSuccess={handleFormSuccess}
         onCancel={handleFormCancel}
       />
@@ -165,7 +154,7 @@ const Missions = () => {
         <TabsContent value="en-cours" className="mt-6">
           <MissionsTable
             missions={missionsEnCours}
-            onEdit={handleEditMission}
+            onEdit={() => {}}
             hasWritePermission={hasPermission('missions_write')}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
           />
@@ -174,7 +163,7 @@ const Missions = () => {
         <TabsContent value="terminees" className="mt-6">
           <MissionsTable
             missions={missionsTerminees}
-            onEdit={handleEditMission}
+            onEdit={() => {}}
             hasWritePermission={hasPermission('missions_write')}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
           />

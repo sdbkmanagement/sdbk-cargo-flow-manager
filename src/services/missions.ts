@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 
 type Mission = Database['public']['Tables']['missions']['Row'];
+type MissionInsert = Database['public']['Tables']['missions']['Insert'];
 
 export const missionsService = {
   async getAll() {
@@ -19,7 +20,25 @@ export const missionsService = {
     return data || [];
   },
 
-  async create(mission: Omit<Mission, 'id' | 'created_at' | 'updated_at' | 'numero'>) {
+  async getStats() {
+    const { data: missions, error } = await supabase
+      .from('missions')
+      .select('statut');
+
+    if (error) throw error;
+
+    const stats = {
+      total: missions.length,
+      en_attente: missions.filter(m => m.statut === 'en_attente').length,
+      en_cours: missions.filter(m => m.statut === 'en_cours').length,
+      terminees: missions.filter(m => m.statut === 'terminee').length,
+      annulees: missions.filter(m => m.statut === 'annulee').length
+    };
+
+    return stats;
+  },
+
+  async create(mission: MissionInsert) {
     // Vérifier que le véhicule est validé avant de créer la mission
     const { data: vehicule, error: vehiculeError } = await supabase
       .from('vehicules')
