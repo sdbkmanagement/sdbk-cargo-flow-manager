@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import vehiculesService from '@/services/vehicules';
 import { chauffeursService } from '@/services/chauffeurs';
@@ -20,51 +19,27 @@ interface MissionFormProps {
 export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedVehicule, setSelectedVehicule] = useState<string>('');
-  const [validationCheck, setValidationCheck] = useState<{ canCreate: boolean; reason?: string } | null>(null);
   
   const [formData, setFormData] = useState({
+    vehicule_id: '',
+    chauffeur_id: '',
     type_transport: '',
     site_depart: '',
     site_arrivee: '',
-    chauffeur_id: '',
     volume_poids: '',
     unite_mesure: 'tonnes',
     observations: ''
   });
 
-  // Récupérer uniquement les véhicules disponibles et validés
   const { data: vehicules, isLoading: vehiculesLoading } = useQuery({
-    queryKey: ['vehicules-disponibles-valides'],
-    queryFn: async () => {
-      const allVehicules = await vehiculesService.getAll();
-      return allVehicules.filter(v => 
-        v.statut === 'disponible' && 
-        !v.validation_requise
-      );
-    }
+    queryKey: ['vehicules'],
+    queryFn: vehiculesService.getAll
   });
 
   const { data: chauffeurs } = useQuery({
-    queryKey: ['chauffeurs-disponibles'],
-    queryFn: async () => {
-      const allChauffeurs = await chauffeursService.getAll();
-      return allChauffeurs.filter(c => c.statut === 'actif');
-    }
+    queryKey: ['chauffeurs'],
+    queryFn: chauffeursService.getAll
   });
-
-  // Vérifier la validation quand un véhicule est sélectionné
-  useEffect(() => {
-    if (selectedVehicule) {
-      const checkValidation = async () => {
-        const result = await missionsService.canCreateMission(selectedVehicule);
-        setValidationCheck(result);
-      };
-      checkValidation();
-    } else {
-      setValidationCheck(null);
-    }
-  }, [selectedVehicule]);
 
   const generateMissionNumber = () => {
     const now = new Date();
@@ -77,22 +52,12 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validationCheck?.canCreate) {
-      toast({
-        title: 'Validation requise',
-        description: validationCheck?.reason || 'Le véhicule doit être validé avant de partir en mission',
-        variant: 'destructive'
-      });
-      return;
-    }
-
     setIsLoading(true);
 
     try {
       await missionsService.create({
         numero: generateMissionNumber(),
-        vehicule_id: selectedVehicule,
+        vehicule_id: formData.vehicule_id,
         chauffeur_id: formData.chauffeur_id,
         type_transport: formData.type_transport,
         site_depart: formData.site_depart,
@@ -127,17 +92,13 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label htmlFor="vehicule">Véhicule *</Label>
-          <Select value={selectedVehicule} onValueChange={setSelectedVehicule}>
+          <Select value={formData.vehicule_id} onValueChange={(value) => setFormData({...formData, vehicule_id: value})}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un véhicule" />
             </SelectTrigger>
             <SelectContent>
               {vehiculesLoading ? (
                 <SelectItem value="loading" disabled>Chargement...</SelectItem>
-              ) : vehicules?.length === 0 ? (
-                <SelectItem value="no-vehicles" disabled>
-                  Aucun véhicule disponible et validé
-                </SelectItem>
               ) : (
                 vehicules?.map((vehicule) => (
                   <SelectItem key={vehicule.id} value={vehicule.id}>
@@ -147,27 +108,6 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
               )}
             </SelectContent>
           </Select>
-
-          {/* Afficher le statut de validation */}
-          {selectedVehicule && validationCheck && (
-            <div className="mt-2">
-              {validationCheck.canCreate ? (
-                <Alert className="border-green-200 bg-green-50">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">
-                    ✅ Véhicule validé - Prêt pour mission
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription>
-                    ❌ {validationCheck.reason}
-                  </AlertDescription>
-                </Alert>
-              )}
-            </div>
-          )}
         </div>
 
         <div>
@@ -271,23 +211,13 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
         />
       </div>
 
-      {vehicules?.length === 0 && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Aucun véhicule n'est actuellement disponible et validé pour les missions. 
-            Veuillez vérifier que les véhicules passent par le workflow de validation.
-          </AlertDescription>
-        </Alert>
-      )}
-
       <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Annuler
         </Button>
         <Button 
           type="submit" 
-          disabled={isLoading || !validationCheck?.canCreate || !selectedVehicule || !formData.chauffeur_id}
+          disabled={isLoading}
         >
           {isLoading ? 'Création...' : 'Créer la mission'}
         </Button>
