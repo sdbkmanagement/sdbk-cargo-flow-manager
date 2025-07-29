@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { useRealtimeData } from "./hooks/useRealtimeData";
 import { useAutoSync } from "./hooks/useAutoSync";
+import { initializeSync } from "./services/initSync";
+import { useEffect } from "react";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -25,6 +27,18 @@ const queryClient = new QueryClient();
 function AppContent() {
   useRealtimeData();
   useAutoSync(); // Activer la synchronisation automatique
+
+  // Initialize sync after React and QueryClient are ready
+  useEffect(() => {
+    const runInitSync = async () => {
+      // Small delay to ensure everything is properly initialized
+      setTimeout(() => {
+        initializeSync();
+      }, 1000);
+    };
+    
+    runInitSync();
+  }, []);
 
   return (
     <Routes>
