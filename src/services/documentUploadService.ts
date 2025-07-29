@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface DocumentUpload {
@@ -12,23 +11,62 @@ export interface DocumentUpload {
 export const documentUploadService = {
   async uploadDocument(file: File, vehiculeId: string, documentType: string): Promise<string> {
     try {
-      console.log('Début upload document:', { file: file.name, vehiculeId, documentType });
+      console.log('=== DEBUT UPLOAD DOCUMENT ===');
+      console.log('Fichier:', {
+        name: file.name,
+        size: file.size,
+        type: file.type
+      });
+      console.log('Paramètres:', { vehiculeId, documentType });
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `vehicules/${vehiculeId}/${documentType}_${Date.now()}.${fileExt}`;
-      
-      console.log('Nom de fichier généré:', fileName);
+      // Validation du fichier
+      if (!file) {
+        throw new Error('Aucun fichier sélectionné');
+      }
 
+      if (file.size === 0) {
+        throw new Error('Le fichier est vide');
+      }
+
+      if (file.size > 10 * 1024 * 1024) { // 10MB
+        throw new Error('Le fichier est trop volumineux (maximum 10MB)');
+      }
+
+      // Nettoyer le nom du fichier
+      const fileExt = file.name.split('.').pop()?.toLowerCase();
+      if (!fileExt) {
+        throw new Error('Extension de fichier manquante');
+      }
+
+      const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'];
+      if (!allowedExtensions.includes(fileExt)) {
+        throw new Error(`Type de fichier non autorisé. Extensions acceptées: ${allowedExtensions.join(', ')}`);
+      }
+
+      // Générer un nom de fichier propre
+      const timestamp = Date.now();
+      const cleanFileName = `${documentType}_${timestamp}.${fileExt}`;
+      const fileName = `vehicules/${vehiculeId}/${cleanFileName}`;
+      
+      console.log('Nom fichier généré:', fileName);
+
+      // Upload vers Supabase Storage
+      console.log('Début upload vers Supabase Storage...');
       const { data, error } = await supabase.storage
         .from('documents')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: false,
+          contentType: file.type
         });
 
       if (error) {
         console.error('Erreur upload storage:', error);
-        throw new Error(`Erreur upload: ${error.message}`);
+        throw new Error(`Erreur lors de l'upload: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('Aucune donnée retournée par l\'upload');
       }
 
       console.log('Upload réussi:', data);
@@ -38,10 +76,17 @@ export const documentUploadService = {
         .from('documents')
         .getPublicUrl(data.path);
 
+      if (!urlData?.publicUrl) {
+        throw new Error('Impossible de générer l\'URL publique');
+      }
+
       console.log('URL publique générée:', urlData.publicUrl);
+      console.log('=== FIN UPLOAD DOCUMENT ===');
+      
       return urlData.publicUrl;
     } catch (error) {
-      console.error('Erreur lors de l\'upload:', error);
+      console.error('=== ERREUR UPLOAD DOCUMENT ===');
+      console.error('Erreur:', error);
       throw error;
     }
   },
@@ -55,8 +100,31 @@ export const documentUploadService = {
     commentaire?: string;
   }) {
     try {
-      console.log('Sauvegarde du document en base:', documentData);
+      console.log('=== DEBUT SAUVEGARDE DOCUMENT ===');
+      console.log('Données document:', documentData);
       
+      if (!vehiculeId) {
+        throw new Error('ID véhicule manquant');
+      }
+
+      if (!documentData.nom || !documentData.type || !documentData.url) {
+        throw new Error('Données document incomplètes');
+      }
+
+      // Calculer le statut du document
+      let statut = 'valide';
+      if (documentData.dateExpiration) {
+        const expirationDate = new Date(documentData.dateExpiration);
+        const today = new Date();
+        const thirtyDaysFromNow = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        
+        if (expirationDate < today) {
+          statut = 'expire';
+        } else if (expirationDate < thirtyDaysFromNow) {
+          statut = 'a_renouveler';
+        }
+      }
+
       const { data, error } = await supabase
         .from('documents_vehicules')
         .insert([{
@@ -66,22 +134,27 @@ export const documentUploadService = {
           url: documentData.url,
           date_expiration: documentData.dateExpiration || null,
           commentaire: documentData.commentaire || null,
-          statut: documentData.dateExpiration ? 
-            (new Date(documentData.dateExpiration) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) ? 'a_renouveler' : 'valide') : 
-            'valide'
+          statut: statut
         }])
         .select()
         .single();
 
       if (error) {
         console.error('Erreur sauvegarde document en base:', error);
-        throw new Error(`Erreur sauvegarde: ${error.message}`);
+        throw new Error(`Erreur lors de la sauvegarde: ${error.message}`);
+      }
+
+      if (!data) {
+        throw new Error('Aucune donnée retournée par la sauvegarde');
       }
 
       console.log('Document sauvegardé:', data);
+      console.log('=== FIN SAUVEGARDE DOCUMENT ===');
+      
       return data;
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde:', error);
+      console.error('=== ERREUR SAUVEGARDE DOCUMENT ===');
+      console.error('Erreur:', error);
       throw error;
     }
   },
