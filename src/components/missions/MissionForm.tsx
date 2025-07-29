@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -67,6 +66,15 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
     }
   }, [selectedVehicule]);
 
+  const generateMissionNumber = () => {
+    const now = new Date();
+    const year = now.getFullYear().toString().slice(-2);
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const time = now.getTime().toString().slice(-6);
+    return `M${year}${month}${day}-${time}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -83,6 +91,7 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
 
     try {
       await missionsService.create({
+        numero: generateMissionNumber(),
         vehicule_id: selectedVehicule,
         chauffeur_id: formData.chauffeur_id,
         type_transport: formData.type_transport,
@@ -92,7 +101,7 @@ export const MissionForm = ({ onSuccess, onCancel }: MissionFormProps) => {
         unite_mesure: formData.unite_mesure,
         observations: formData.observations,
         statut: 'en_attente',
-        created_by: 'current_user' // Ajout du champ requis
+        created_by: 'current_user'
       });
 
       toast({
