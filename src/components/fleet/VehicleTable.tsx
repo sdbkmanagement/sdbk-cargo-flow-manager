@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -28,29 +27,29 @@ export const VehicleTable = ({
       'disponible': { 
         variant: 'default' as const, 
         label: 'Disponible',
-        className: 'bg-green-100 text-green-800 border-green-200'
+        className: 'bg-green-500 text-white border-green-500 hover:bg-green-600'
       },
       'en_mission': { 
         variant: 'secondary' as const, 
         label: 'En mission',
-        className: 'bg-orange-100 text-orange-800 border-orange-200'
+        className: 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600'
       },
       'maintenance': { 
         variant: 'destructive' as const, 
         label: 'Maintenance',
-        className: 'bg-red-100 text-red-800 border-red-200'
+        className: 'bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600'
       },
       'validation_requise': { 
         variant: 'outline' as const, 
         label: 'Validation requise',
-        className: 'bg-yellow-100 text-yellow-800 border-yellow-200'
+        className: 'bg-purple-500 text-white border-purple-500 hover:bg-purple-600'
       }
     };
     
     const config = statusConfig[statut as keyof typeof statusConfig] || { 
       variant: 'secondary' as const, 
       label: statut,
-      className: 'bg-gray-100 text-gray-800 border-gray-200'
+      className: 'bg-gray-500 text-white border-gray-500 hover:bg-gray-600'
     };
     
     return (
@@ -174,4 +173,13 @@ export const VehicleTable = ({
       </Table>
     </div>
   );
+};
+
+const getMainImmatriculation = (vehicle: Vehicule) => {
+  if (vehicle.type_vehicule === 'tracteur_remorque') {
+    // Pour tracteur-remorque, privilégier l'immatriculation de la remorque (citerne)
+    return vehicle.remorque_immatriculation || vehicle.tracteur_immatriculation || '-';
+  }
+  // Pour porteur, afficher l'immatriculation du porteur
+  return vehicle.immatriculation || '-';
 };
