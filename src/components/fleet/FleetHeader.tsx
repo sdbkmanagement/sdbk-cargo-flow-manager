@@ -20,7 +20,7 @@ export const FleetHeader = ({ onNewVehicle, onRefresh }: FleetHeaderProps) => {
       
       <div className="flex flex-wrap items-center gap-3">
         <VehicleStatusUpdateButton onSuccess={onRefresh} />
-        <VehicleRenumberButton onSuccess={onRefresh} />
+        <VehicleRenumberButton onComplete={onRefresh} />
         
         <Button
           onClick={onRefresh}
