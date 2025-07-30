@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
@@ -17,7 +18,7 @@ export const DriversDocuments = () => {
 
   const filteredChauffeurs = chauffeurs.filter(chauffeur =>
     `${chauffeur.prenom} ${chauffeur.nom}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    chauffeur.numero_employee?.toLowerCase().includes(searchTerm.toLowerCase())
+    chauffeur.matricule?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const selectedChauffeur = selectedChauffeurId 
@@ -59,9 +60,9 @@ export const DriversDocuments = () => {
                   <div className="font-medium">
                     {chauffeur.prenom} {chauffeur.nom}
                   </div>
-                  {chauffeur.numero_employee && (
+                  {chauffeur.matricule && (
                     <div className="text-sm text-gray-500">
-                      #{chauffeur.numero_employee}
+                      #{chauffeur.matricule}
                     </div>
                   )}
                 </div>
