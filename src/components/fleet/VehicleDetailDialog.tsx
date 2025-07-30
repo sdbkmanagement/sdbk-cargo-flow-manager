@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Wrench, Users, Truck } from 'lucide-react';
+import { FileText, Wrench, Users, Truck, UserCheck } from 'lucide-react';
 import { ChauffeurAssignmentManager } from './ChauffeurAssignmentManager';
 import { DocumentManagerVehicule } from './DocumentManagerVehicule';
 import { VehicleMaintenanceHistory } from './VehicleMaintenanceHistory';
@@ -59,7 +59,7 @@ export const VehicleDetailDialog = ({ vehicule, open, onOpenChange }: VehicleDet
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Truck className="h-5 w-5" />
@@ -120,6 +120,17 @@ export const VehicleDetailDialog = ({ vehicule, open, onOpenChange }: VehicleDet
               </div>
             </CardContent>
           </Card>
+
+          {/* Section d'assignation de chauffeur mise en avant */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="flex items-center gap-2 mb-3">
+              <UserCheck className="h-5 w-5 text-blue-600" />
+              <h3 className="text-lg font-semibold text-blue-900">Assignation de chauffeur</h3>
+            </div>
+            <p className="text-sm text-blue-700 mb-4">
+              Gérez l'assignation des chauffeurs à ce véhicule dans l'onglet "Chauffeurs" ci-dessous.
+            </p>
+          </div>
 
           {/* Onglets pour les différentes sections */}
           <Tabs defaultValue="chauffeurs" className="w-full">

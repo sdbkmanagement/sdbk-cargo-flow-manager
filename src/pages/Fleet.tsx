@@ -3,16 +3,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { FleetStats } from '@/components/fleet/FleetStats';
+import { VehicleDetailDialog } from '@/components/fleet/VehicleDetailDialog';
 import { useVehicles } from '@/hooks/useVehicles';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
 import { VehicleSyncDiagnostic } from '@/components/fleet/VehicleSyncDiagnostic';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { Vehicule } from '@/services/vehicules';
 
 const Fleet = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const { data: vehicles = [], isLoading, error, refetch } = useVehicles();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
+  const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState<Vehicule | null>(null);
 
   const handleEditVehicle = useCallback((id: string) => {
     setSelectedVehicleId(id);
@@ -24,6 +27,10 @@ const Fleet = () => {
     setSelectedVehicleId(null);
     refetch();
   }, [refetch]);
+
+  const handleViewDocuments = useCallback((vehicle: Vehicule) => {
+    setSelectedVehicleForDetails(vehicle);
+  }, []);
 
   // Calculer les statistiques à partir des véhicules
   const stats = React.useMemo(() => {
@@ -71,10 +78,7 @@ const Fleet = () => {
               console.log(`Suppression du véhicule avec l'ID: ${id}`);
               await refetch(); // Refresh vehicle list after deletion
             }}
-            onViewDocuments={(vehicle) => {
-              // Implémenter la logique pour afficher les documents ici
-              console.log(`Affichage des documents pour le véhicule: ${vehicle.numero}`);
-            }}
+            onViewDocuments={handleViewDocuments}
           />
         </TabsContent>
 
@@ -96,6 +100,16 @@ const Fleet = () => {
           />
         </DialogContent>
       </Dialog>
+
+      <VehicleDetailDialog
+        vehicule={selectedVehicleForDetails}
+        open={!!selectedVehicleForDetails}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedVehicleForDetails(null);
+          }
+        }}
+      />
     </div>
   );
 };
