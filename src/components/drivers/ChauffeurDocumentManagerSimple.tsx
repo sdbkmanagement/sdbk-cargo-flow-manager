@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,6 +26,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const fileInputRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -171,6 +172,22 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
     }
   };
 
+  const handleFileSelect = (documentType: string) => {
+    const input = fileInputRefs.current[documentType];
+    if (input) {
+      input.click();
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, documentType: string) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      uploadDocument(file, documentType);
+    }
+    // Reset the input value to allow selecting the same file again
+    event.target.value = '';
+  };
+
   const existingDocuments = Object.keys(CHAUFFEUR_DOCUMENT_TYPES).map(type => {
     const config = CHAUFFEUR_DOCUMENT_TYPES[type as keyof typeof CHAUFFEUR_DOCUMENT_TYPES];
     const existingDoc = documents.find(doc => doc.type === type);
@@ -232,16 +249,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          const input = document.createElement('input');
-                          input.type = 'file';
-                          input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
-                          input.onchange = (e) => {
-                            const file = (e.target as HTMLInputElement).files?.[0];
-                            if (file) uploadDocument(file, type);
-                          };
-                          input.click();
-                        }}
+                        onClick={() => handleFileSelect(type)}
                         disabled={uploading === type}
                       >
                         <Edit className="w-4 h-4 mr-1" />
@@ -261,16 +269,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                   </div>
                 ) : (
                   <Button
-                    onClick={() => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
-                      input.onchange = (e) => {
-                        const file = (e.target as HTMLInputElement).files?.[0];
-                        if (file) uploadDocument(file, type);
-                      };
-                      input.click();
-                    }}
+                    onClick={() => handleFileSelect(type)}
                     disabled={uploading === type}
                     className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                   >
@@ -278,6 +277,15 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                     {uploading === type ? 'Téléchargement...' : 'Ajouter'}
                   </Button>
                 )}
+
+                {/* Hidden file input for each document type */}
+                <input
+                  ref={(el) => (fileInputRefs.current[type] = el)}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  onChange={(e) => handleFileChange(e, type)}
+                  style={{ display: 'none' }}
+                />
               </div>
             </Card>
           ))}
