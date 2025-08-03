@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,29 +70,35 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
   };
 
   const uploadDocument = async () => {
-    if (!selectedFile || !selectedDocumentType) return;
+    if (!selectedDocumentType) return;
 
     try {
       setUploading(selectedDocumentType);
       
-      // Upload du fichier
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${chauffeur.id}/${selectedDocumentType}_${Date.now()}.${fileExt}`;
+      let finalUrl = null;
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('documents')
-        .upload(fileName, selectedFile);
+      // Upload du fichier seulement s'il y en a un
+      if (selectedFile) {
+        const fileExt = selectedFile.name.split('.').pop();
+        const fileName = `${chauffeur.id}/${selectedDocumentType}_${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(fileName, selectedFile);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      // Obtenir l'URL publique
-      const { data: urlData } = supabase.storage
-        .from('documents')
-        .getPublicUrl(fileName);
+        // Obtenir l'URL publique
+        const { data: urlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(fileName);
+        
+        finalUrl = urlData.publicUrl;
+      }
 
       // Calculer la date d'expiration si nécessaire et pas fournie manuellement
       let finalExpirationDate = expirationDate;
-      if (!finalExpirationDate) {
+      if (!finalExpirationDate && selectedFile) {
         const docConfig = CHAUFFEUR_DOCUMENT_TYPES[selectedDocumentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES];
         if (docConfig && docConfig.duree_mois) {
           const now = new Date();
@@ -100,39 +107,47 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
         }
       }
 
-      // Sauvegarder en base
-      const { error: saveError } = await supabase
-        .from('documents')
-        .upsert({
-          entity_type: 'chauffeur',
-          entity_id: chauffeur.id,
-          type: selectedDocumentType,
-          nom: CHAUFFEUR_DOCUMENT_TYPES[selectedDocumentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES]?.label || selectedDocumentType,
-          url: urlData.publicUrl,
-          date_expiration: finalExpirationDate || null,
-          statut: 'valide',
-          taille: selectedFile.size
+      // Sauvegarder en base - permettre de créer juste avec une date
+      if (finalUrl || finalExpirationDate) {
+        const { error: saveError } = await supabase
+          .from('documents')
+          .upsert({
+            entity_type: 'chauffeur',
+            entity_id: chauffeur.id,
+            type: selectedDocumentType,
+            nom: CHAUFFEUR_DOCUMENT_TYPES[selectedDocumentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES]?.label || selectedDocumentType,
+            url: finalUrl,
+            date_expiration: finalExpirationDate || null,
+            statut: 'valide',
+            taille: selectedFile?.size || 0
+          });
+
+        if (saveError) throw saveError;
+
+        toast({
+          title: 'Succès',
+          description: finalUrl ? 'Document téléchargé avec succès' : 'Date d\'expiration ajoutée avec succès'
         });
 
-      if (saveError) throw saveError;
-
-      toast({
-        title: 'Succès',
-        description: 'Document téléchargé avec succès'
-      });
-
-      // Reset form and close dialog
-      setSelectedFile(null);
-      setExpirationDate('');
-      setShowUploadDialog(false);
-      setSelectedDocumentType(null);
-      loadDocuments();
-      onUpdate?.();
+        // Reset form and close dialog
+        setSelectedFile(null);
+        setExpirationDate('');
+        setShowUploadDialog(false);
+        setSelectedDocumentType(null);
+        loadDocuments();
+        onUpdate?.();
+      } else {
+        toast({
+          title: 'Erreur',
+          description: 'Veuillez ajouter au moins un fichier ou une date d\'expiration',
+          variant: 'destructive'
+        });
+      }
     } catch (error) {
       console.error('Erreur lors de l\'upload:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de télécharger le document',
+        description: 'Impossible de sauvegarder les informations',
         variant: 'destructive'
       });
     } finally {
@@ -259,14 +274,16 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                       )}
                       
                       <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(document.url, '_blank')}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Voir
-                        </Button>
+                        {document.url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(document.url, '_blank')}
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            Voir
+                          </Button>
+                        )}
                         
                         <Button
                           variant="outline"
@@ -316,7 +333,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
           
           <div className="space-y-4">
             <div>
-              <Label htmlFor="file-upload">Fichier *</Label>
+              <Label htmlFor="file-upload">Fichier</Label>
               <Input
                 id="file-upload"
                 type="file"
@@ -329,6 +346,9 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
                   Fichier sélectionné: {selectedFile.name}
                 </p>
               )}
+              <p className="text-xs text-gray-500 mt-1">
+                Optionnel - Vous pouvez ajouter seulement une date d'expiration
+              </p>
             </div>
 
             <div>
@@ -343,7 +363,7 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
               <p className="text-xs text-gray-500 mt-1">
                 {selectedDocumentType && CHAUFFEUR_DOCUMENT_TYPES[selectedDocumentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES]?.duree_mois
                   ? `Durée par défaut: ${CHAUFFEUR_DOCUMENT_TYPES[selectedDocumentType as keyof typeof CHAUFFEUR_DOCUMENT_TYPES].duree_mois} mois`
-                  : 'Laissez vide si le document n\'expire pas'
+                  : 'Optionnel - Laissez vide si le document n\'expire pas'
                 }
               </p>
             </div>
@@ -359,10 +379,10 @@ export const ChauffeurDocumentManager = ({ chauffeur, onUpdate }: ChauffeurDocum
             </Button>
             <Button
               onClick={uploadDocument}
-              disabled={!selectedFile || uploading !== null}
+              disabled={uploading !== null}
             >
               <Upload className="w-4 h-4 mr-2" />
-              {uploading ? 'Téléchargement...' : 'Télécharger'}
+              {uploading ? 'Sauvegarde...' : 'Sauvegarder'}
             </Button>
           </DialogFooter>
         </DialogContent>

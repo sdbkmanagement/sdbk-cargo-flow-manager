@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,10 +80,11 @@ export const DocumentManagerChauffeur = ({
   };
 
   const handleUpload = async () => {
-    if (!newDocument.file || !newDocument.nom) {
+    // Vérifier qu'au moins un champ est rempli
+    if (!newDocument.file && !newDocument.nom && !newDocument.dateExpiration) {
       toast({
         title: "Erreur",
-        description: "Veuillez sélectionner un fichier et saisir un nom",
+        description: "Veuillez remplir au moins un champ",
         variant: "destructive"
       });
       return;
@@ -92,14 +92,19 @@ export const DocumentManagerChauffeur = ({
 
     setLoading(true);
     try {
-      const url = await alertesChauffeursService.uploadDocument(
-        newDocument.file,
-        chauffeurId,
-        newDocument.type || 'autre'
-      );
+      let url = null;
+      
+      // Upload du fichier seulement s'il y en a un
+      if (newDocument.file) {
+        url = await alertesChauffeursService.uploadDocument(
+          newDocument.file,
+          chauffeurId,
+          newDocument.type || 'autre'
+        );
+      }
 
       await alertesChauffeursService.saveDocument(chauffeurId, {
-        nom: newDocument.nom,
+        nom: newDocument.nom || 'Document sans nom',
         type: newDocument.type || 'autre',
         url: url,
         dateExpiration: newDocument.dateExpiration || undefined
@@ -107,7 +112,7 @@ export const DocumentManagerChauffeur = ({
 
       toast({
         title: "Succès",
-        description: "Document téléchargé avec succès",
+        description: url ? "Document téléchargé avec succès" : "Informations sauvegardées avec succès",
       });
 
       setNewDocument({
@@ -123,7 +128,7 @@ export const DocumentManagerChauffeur = ({
       console.error('Erreur lors de l\'upload:', error);
       toast({
         title: "Erreur",
-        description: "Impossible de télécharger le document",
+        description: "Impossible de sauvegarder les informations",
         variant: "destructive"
       });
     } finally {
@@ -210,7 +215,7 @@ export const DocumentManagerChauffeur = ({
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="nom">Nom du document *</Label>
+                    <Label htmlFor="nom">Nom du document</Label>
                     <Input
                       id="nom"
                       value={newDocument.nom}
@@ -240,13 +245,16 @@ export const DocumentManagerChauffeur = ({
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="file">Fichier *</Label>
+                    <Label htmlFor="file">Fichier</Label>
                     <Input
                       id="file"
                       type="file"
                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
                       onChange={(e) => setNewDocument({...newDocument, file: e.target.files?.[0] || null})}
                     />
+                    <p className="text-xs text-gray-500">
+                      Tous les champs sont optionnels
+                    </p>
                   </div>
                 </div>
                 
@@ -261,7 +269,7 @@ export const DocumentManagerChauffeur = ({
                   </Button>
                   <Button onClick={handleUpload} disabled={loading}>
                     <Upload className="w-4 h-4 mr-2" />
-                    {loading ? 'Téléchargement...' : 'Télécharger'}
+                    {loading ? 'Sauvegarde...' : 'Sauvegarder'}
                   </Button>
                 </div>
               </CardContent>
@@ -315,13 +323,15 @@ export const DocumentManagerChauffeur = ({
                         </TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(doc.url, '_blank')}
-                            >
-                              Voir
-                            </Button>
+                            {doc.url && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(doc.url, '_blank')}
+                              >
+                                Voir
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="sm"

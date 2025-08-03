@@ -66,7 +66,7 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
         <Alert>
           <Info className="h-4 w-4" />
           <AlertDescription>
-            Les documents avec dates d'expiration généreront des alertes automatiques 1 mois avant échéance.
+            Tous les documents et dates sont optionnels. Les documents avec dates d'expiration généreront des alertes automatiques 1 mois avant échéance.
             Documents sans alerte : Carte grise et Numéro de police.
           </AlertDescription>
         </Alert>
@@ -80,7 +80,7 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
           
           {typeVehicule === 'tracteur_remorque' ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">2 cartes grises requises (tracteur + remorque)</p>
+              <p className="text-sm text-muted-foreground">2 cartes grises (tracteur + remorque) - Optionnel</p>
               
               {/* Carte grise tracteur */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -114,7 +114,7 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">1 carte grise</p>
+              <p className="text-sm text-muted-foreground">1 carte grise - Optionnel</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -137,12 +137,12 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
         <div className="border rounded-lg p-4 space-y-4">
           <div className="flex items-center gap-2">
             <h4 className="font-medium">Assurance</h4>
-            <AlertCircle className="h-4 w-4 text-destructive" />
+            <AlertCircle className="h-4 w-4 text-amber-500" />
           </div>
           
           {typeVehicule === 'tracteur_remorque' ? (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">2 assurances requises (tracteur + remorque)</p>
+              <p className="text-sm text-muted-foreground">2 assurances (tracteur + remorque) - Optionnel</p>
               
               {/* Assurance tracteur */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,22 +158,14 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="assurance_tracteur_expiration" className="text-sm flex items-center gap-1">
+                  <Label htmlFor="assurance_tracteur_expiration" className="text-sm">
                     Date d'expiration assurance tracteur
-                    <AlertCircle className="h-4 w-4 text-destructive" />
                   </Label>
                   <Input
                     id="assurance_tracteur_expiration"
                     type="date"
-                    {...register('assurance_tracteur_expiration', {
-                      required: 'Date d\'expiration assurance tracteur requise'
-                    })}
+                    {...register('assurance_tracteur_expiration')}
                   />
-                  {errors.assurance_tracteur_expiration && (
-                    <p className="text-sm text-destructive">
-                      {String(errors.assurance_tracteur_expiration?.message)}
-                    </p>
-                  )}
                 </div>
               </div>
               
@@ -191,28 +183,20 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="assurance_remorque_expiration" className="text-sm flex items-center gap-1">
+                  <Label htmlFor="assurance_remorque_expiration" className="text-sm">
                     Date d'expiration assurance remorque
-                    <AlertCircle className="h-4 w-4 text-destructive" />
                   </Label>
                   <Input
                     id="assurance_remorque_expiration"
                     type="date"
-                    {...register('assurance_remorque_expiration', {
-                      required: 'Date d\'expiration assurance remorque requise'
-                    })}
+                    {...register('assurance_remorque_expiration')}
                   />
-                  {errors.assurance_remorque_expiration && (
-                    <p className="text-sm text-destructive">
-                      {String(errors.assurance_remorque_expiration?.message)}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-muted-foreground">1 assurance</p>
+              <p className="text-sm text-muted-foreground">1 assurance - Optionnel</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -227,22 +211,14 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="assurance_expiration" className="text-sm flex items-center gap-1">
+                  <Label htmlFor="assurance_expiration" className="text-sm">
                     Date d'expiration assurance
-                    <AlertCircle className="h-4 w-4 text-destructive" />
                   </Label>
                   <Input
                     id="assurance_expiration"
                     type="date"
-                    {...register('assurance_expiration', {
-                      required: 'Date d\'expiration assurance requise'
-                    })}
+                    {...register('assurance_expiration')}
                   />
-                  {errors.assurance_expiration && (
-                    <p className="text-sm text-destructive">
-                      {String(errors.assurance_expiration?.message)}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -275,22 +251,14 @@ export const VehicleDocuments = ({ register, errors, watch }: VehicleDocumentsPr
                 {/* Date d'expiration si applicable */}
                 {doc.hasExpiration && (
                   <div className="space-y-2">
-                    <Label htmlFor={`${doc.name}_expiration`} className="text-sm flex items-center gap-1">
+                    <Label htmlFor={`${doc.name}_expiration`} className="text-sm">
                       Date d'expiration
-                      <AlertCircle className="h-4 w-4 text-destructive" />
                     </Label>
                     <Input
                       id={`${doc.name}_expiration`}
                       type="date"
-                      {...register(`${doc.name}_expiration`, {
-                        required: 'Date d\'expiration requise'
-                      })}
+                      {...register(`${doc.name}_expiration`)}
                     />
-                    {errors[`${doc.name}_expiration`] && (
-                      <p className="text-sm text-destructive">
-                        {String(errors[`${doc.name}_expiration`]?.message)}
-                      </p>
-                    )}
                   </div>
                 )}
 

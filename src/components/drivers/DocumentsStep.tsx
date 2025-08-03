@@ -51,7 +51,7 @@ export const DocumentsStep = ({ form, uploadedDocuments, onDocumentsChange }: Do
             name="numeroPermis"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Numéro de permis *</FormLabel>
+                <FormLabel>Numéro de permis</FormLabel>
                 <FormControl>
                   <Input placeholder="Numéro du permis de conduire" {...field} />
                 </FormControl>
@@ -65,7 +65,7 @@ export const DocumentsStep = ({ form, uploadedDocuments, onDocumentsChange }: Do
             name="dateExpirationPermis"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date d'expiration du permis *</FormLabel>
+                <FormLabel>Date d'expiration du permis</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -76,7 +76,7 @@ export const DocumentsStep = ({ form, uploadedDocuments, onDocumentsChange }: Do
         </div>
 
         <div>
-          <Label>Types de permis autorisés *</Label>
+          <Label>Types de permis autorisés</Label>
           <div className="grid grid-cols-2 gap-4 mt-2">
             {typePermisOptions.map((option) => (
               <div key={option.value} className="flex items-center space-x-2">
@@ -106,7 +106,7 @@ export const DocumentsStep = ({ form, uploadedDocuments, onDocumentsChange }: Do
             />
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Documents recommandés : Permis de conduire, Visite médicale, Formation ADR, Carte professionnelle
+            Documents recommandés : Permis de conduire, Visite médicale, Formation ADR, Carte professionnelle - Tous optionnels
           </p>
         </div>
       </CardContent>

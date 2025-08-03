@@ -135,10 +135,11 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
   };
 
   const handleUpload = async () => {
-    if (!newDocument.file || !newDocument.nom.trim() || !newDocument.type) {
+    // Vérifier qu'au moins un champ significatif est rempli
+    if (!newDocument.file && !newDocument.nom.trim() && !newDocument.dateExpiration) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir tous les champs obligatoires et sélectionner un fichier",
+        description: "Veuillez remplir au moins un champ (nom, date ou fichier)",
         variant: "destructive"
       });
       return;
@@ -152,33 +153,36 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
         type: newDocument.type,
         dateExpiration: newDocument.dateExpiration,
         commentaire: newDocument.commentaire,
-        fichier: {
+        fichier: newDocument.file ? {
           name: newDocument.file.name,
           size: newDocument.file.size,
           type: newDocument.file.type
-        }
+        } : 'Aucun fichier'
       });
 
-      // Upload du fichier
-      const url = await documentsSimpleService.uploadFile(
-        newDocument.file,
-        'vehicule',
-        vehiculeId,
-        newDocument.type
-      );
-
-      console.log('Fichier uploadé, URL:', url);
+      let url = null;
+      
+      // Upload du fichier seulement s'il y en a un
+      if (newDocument.file) {
+        url = await documentsSimpleService.uploadFile(
+          newDocument.file,
+          'vehicule',
+          vehiculeId,
+          newDocument.type
+        );
+        console.log('Fichier uploadé, URL:', url);
+      }
 
       // Création du document en base
       const documentData = {
         entity_type: 'vehicule',
         entity_id: vehiculeId,
-        nom: newDocument.nom.trim(),
-        type: newDocument.type,
+        nom: newDocument.nom.trim() || 'Document sans nom',
+        type: newDocument.type || 'autre',
         url: url,
         date_expiration: newDocument.dateExpiration || null,
         commentaire: newDocument.commentaire?.trim() || null,
-        taille: newDocument.file.size
+        taille: newDocument.file?.size || 0
       };
 
       console.log('Création document en base:', documentData);
@@ -189,7 +193,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
 
       toast({
         title: "Succès",
-        description: "Document téléchargé avec succès",
+        description: url ? "Document téléchargé avec succès" : "Informations sauvegardées avec succès",
       });
 
       // Reset form
@@ -209,7 +213,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
       console.error('=== ERREUR UPLOAD DOCUMENT ===');
       console.error('Erreur complète:', error);
       
-      let errorMessage = 'Impossible de télécharger le document';
+      let errorMessage = 'Impossible de sauvegarder les informations';
       if (error?.message) {
         errorMessage = error.message;
       }
@@ -310,7 +314,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="type">Type de document *</Label>
+                <Label htmlFor="type">Type de document</Label>
                 <Select
                   value={newDocument.type}
                   onValueChange={(value) => setNewDocument(prev => ({ ...prev, type: value }))}
@@ -329,7 +333,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="nom">Nom du document *</Label>
+                <Label htmlFor="nom">Nom du document</Label>
                 <Input
                   id="nom"
                   value={newDocument.nom}
@@ -349,7 +353,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="file">Fichier *</Label>
+                <Label htmlFor="file">Fichier</Label>
                 <Input
                   id="file"
                   type="file"
@@ -374,6 +378,10 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
               />
             </div>
             
+            <div className="text-sm text-gray-500 bg-gray-50 p-2 rounded">
+              Tous les champs sont optionnels. Vous pouvez ajouter seulement une date d'expiration si nécessaire.
+            </div>
+            
             <div className="flex justify-end space-x-2">
               <Button
                 variant="outline"
@@ -390,12 +398,12 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
                 {uploading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Téléchargement...
+                    Sauvegarde...
                   </>
                 ) : (
                   <>
                     <Upload className="w-4 h-4 mr-2" />
-                    Télécharger
+                    Sauvegarder
                   </>
                 )}
               </Button>
@@ -454,13 +462,15 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(doc.url, '_blank')}
-                        >
-                          Voir
-                        </Button>
+                        {doc.url && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(doc.url, '_blank')}
+                          >
+                            Voir
+                          </Button>
+                        )}
                         <Button
                           variant="outline"
                           size="sm"

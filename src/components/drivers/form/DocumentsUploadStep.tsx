@@ -83,7 +83,7 @@ export const DocumentsUploadStep = ({ documents, onDocumentsChange }: DocumentsU
             <Card key={document.id} className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor={`titre-${document.id}`}>Titre du document *</Label>
+                  <Label htmlFor={`titre-${document.id}`}>Titre du document</Label>
                   <Input
                     id={`titre-${document.id}`}
                     value={document.titre}
@@ -137,6 +137,9 @@ export const DocumentsUploadStep = ({ documents, onDocumentsChange }: DocumentsU
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
+                <p className="text-xs text-gray-500">
+                  Tous les champs sont optionnels
+                </p>
               </div>
             </Card>
           ))
