@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { ExportButton } from '@/components/common/ExportButton';
+import { exportDriversService } from '@/services/exportDriversService';
 
 const Drivers = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -51,6 +52,18 @@ const Drivers = () => {
 
   const handleImport = () => {
     setShowImportDialog(true);
+  };
+
+  const handleExportExcel = () => {
+    exportDriversService.exportToExcel(chauffeurs, 'liste_chauffeurs');
+  };
+
+  const handleExportCSV = () => {
+    exportDriversService.exportToCSV(chauffeurs, 'liste_chauffeurs');
+  };
+
+  const handleExportAlerts = () => {
+    exportDriversService.exportAlertsToExcel(chauffeurs, 'alertes_chauffeurs');
   };
 
   const handleCreateSuccess = () => {
@@ -123,6 +136,12 @@ const Drivers = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <ExportButton
+            onExportExcel={handleExportExcel}
+            onExportCSV={handleExportCSV}
+            onExportAlerts={handleExportAlerts}
+            disabled={chauffeurs.length === 0}
+          />
           <Button 
             onClick={handleImport}
             variant="outline"
