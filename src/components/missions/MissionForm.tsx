@@ -40,6 +40,18 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     message: string;
   } | null>(null);
 
+  // Fonction pour formater l'affichage du véhicule avec son immatriculation
+  const getVehiculeDisplayText = (vehicule: any) => {
+    if (vehicule.type_vehicule === 'tracteur_remorque') {
+      // Pour tracteur-remorque, privilégier l'immatriculation de la remorque (citerne)
+      const immatriculation = vehicule.remorque_immatriculation || vehicule.tracteur_immatriculation || '';
+      return `${vehicule.numero} - ${vehicule.marque} ${vehicule.modele}${immatriculation ? ` (${immatriculation})` : ''}`;
+    }
+    // Pour porteur, afficher l'immatriculation du porteur
+    const immatriculation = vehicule.immatriculation || '';
+    return `${vehicule.numero} - ${vehicule.marque} ${vehicule.modele}${immatriculation ? ` (${immatriculation})` : ''}`;
+  };
+
   // Récupérer les véhicules disponibles
   const { data: vehicules = [], isLoading: vehiculesLoading } = useQuery({
     queryKey: ['available-vehicules'],
@@ -525,7 +537,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                     ) : (
                       vehicules.map(vehicule => (
                         <SelectItem key={vehicule.id} value={vehicule.id}>
-                          {vehicule.numero} - {vehicule.marque} {vehicule.modele}
+                          {getVehiculeDisplayText(vehicule)}
                         </SelectItem>
                       ))
                     )}
