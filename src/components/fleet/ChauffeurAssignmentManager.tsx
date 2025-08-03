@@ -47,6 +47,18 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
     return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
   };
 
+  // Fonction pour formater l'affichage du véhicule avec son immatriculation
+  const getVehiculeDisplayText = (vehicule: Vehicule) => {
+    if (vehicule.type_vehicule === 'tracteur_remorque') {
+      // Pour tracteur-remorque, privilégier l'immatriculation de la remorque (citerne)
+      const immatriculation = vehicule.remorque_immatriculation || vehicule.tracteur_immatriculation || '';
+      return `${vehicule.numero} - ${immatriculation}`;
+    }
+    // Pour porteur, afficher l'immatriculation du porteur
+    const immatriculation = vehicule.immatriculation || '';
+    return `${vehicule.numero} - ${immatriculation}`;
+  };
+
   const handleAssignChauffeur = async () => {
     if (!selectedChauffeurId) {
       toast({
@@ -124,7 +136,7 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2">
           <UserCheck className="h-5 w-5" />
-          Chauffeurs assignés
+          Chauffeurs assignés au véhicule {getVehiculeDisplayText(vehicule)}
         </CardTitle>
         <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
           <DialogTrigger asChild>
@@ -135,7 +147,7 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Assigner un chauffeur au véhicule {vehicule.numero}</DialogTitle>
+              <DialogTitle>Assigner un chauffeur au véhicule {getVehiculeDisplayText(vehicule)}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -198,7 +210,7 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
         {affectationsActives.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
             <UserCheck className="h-12 w-12 mx-auto text-gray-300 mb-2" />
-            <p>Aucun chauffeur assigné à ce véhicule</p>
+            <p>Aucun chauffeur assigné au véhicule {getVehiculeDisplayText(vehicule)}</p>
             <p className="text-sm">Cliquez sur "Assigner chauffeur" pour commencer</p>
           </div>
         ) : (
