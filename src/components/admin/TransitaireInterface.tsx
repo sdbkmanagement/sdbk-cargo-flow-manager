@@ -1,14 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { processusSDBKService, type ClientTotal } from '@/services/processus-sdbk';
 import { supabase } from '@/integrations/supabase/client';
-import { Truck, FileText, MapPin, Clock } from 'lucide-react';
+import { Truck, FileText, MapPin, Clock, Plus, Route } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface VehiculeDisponible {
   id: string;
@@ -23,10 +22,10 @@ interface VehiculeDisponible {
 }
 
 export const TransitaireInterface = () => {
+  const navigate = useNavigate();
   const [vehiculesDisponibles, setVehiculesDisponibles] = useState<VehiculeDisponible[]>([]);
   const [clientsTotal, setClientsTotal] = useState<ClientTotal[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedVehicule, setSelectedVehicule] = useState<VehiculeDisponible | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -73,25 +72,47 @@ export const TransitaireInterface = () => {
     }
   };
 
-  const creerBonLivraison = (vehicule: VehiculeDisponible) => {
-    setSelectedVehicule(vehicule);
-    // TODO: Ouvrir le dialogue BL avec le véhicule pré-sélectionné
+  const creerNouvelleMission = () => {
+    navigate('/missions');
     toast({
-      title: 'Information',
-      description: `BL pour ${vehicule.numero} - Interface à implémenter`,
+      title: 'Redirection vers les missions',
+      description: 'Vous pouvez maintenant créer une nouvelle mission avec ses BL',
+    });
+  };
+
+  const creerBonLivraison = (vehicule: VehiculeDisponible) => {
+    // Naviguer vers la création d'une mission avec ce véhicule pré-sélectionné
+    navigate('/missions', { 
+      state: { 
+        preSelectedVehicle: vehicule,
+        action: 'create_with_bl' 
+      } 
+    });
+    toast({
+      title: 'Création de mission',
+      description: `Mission avec BL pour ${vehicule.numero} - Redirection en cours`,
     });
   };
 
   return (
     <div className="space-y-6">
-      {/* En-tête */}
-      <div className="flex items-center gap-2">
-        <FileText className="w-6 h-6" />
-        <h2 className="text-2xl font-bold">Interface Transitaire</h2>
-        <Badge variant="outline">Émission des Bons de Livraison</Badge>
+      {/* En-tête Transitaire */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <FileText className="w-6 h-6" />
+          <h2 className="text-2xl font-bold">Interface Transitaire</h2>
+          <Badge variant="outline">Émission des Missions & BL</Badge>
+        </div>
+        <Button 
+          onClick={creerNouvelleMission}
+          className="bg-orange-500 hover:bg-orange-600"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nouvelle Mission Complète
+        </Button>
       </div>
 
-      {/* Instructions */}
+      {/* Instructions pour transitaires */}
       <Card className="border-blue-200 bg-blue-50">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">
@@ -99,10 +120,39 @@ export const TransitaireInterface = () => {
             <div>
               <p className="text-blue-800 font-medium mb-1">Instructions pour les transitaires</p>
               <p className="text-blue-700 text-sm">
-                Sélectionnez un véhicule disponible pour créer un Bon de Livraison. Assurez-vous que toutes les informations
-                client, destination et produit sont correctes avant émission.
+                Créez une nouvelle mission complète avec vos Bons de Livraison associés en utilisant le bouton 
+                "Nouvelle Mission Complète" ci-dessus, ou sélectionnez un véhicule disponible ci-dessous 
+                pour une création rapide.
               </p>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Accès rapide aux missions */}
+      <Card className="border-green-200 bg-green-50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Route className="w-5 h-5 text-green-600" />
+            Accès Rapide - Gestion des Missions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex gap-4">
+            <Button 
+              onClick={() => navigate('/missions')}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Route className="w-4 h-4 mr-2" />
+              Voir toutes les missions
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={creerNouvelleMission}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Créer mission + BL
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -156,7 +206,7 @@ export const TransitaireInterface = () => {
                       className="w-full bg-blue-600 hover:bg-blue-700"
                     >
                       <FileText className="w-4 h-4 mr-2" />
-                      Émettre un BL
+                      Créer Mission + BL
                     </Button>
                   </CardContent>
                 </Card>
@@ -229,8 +279,8 @@ export const TransitaireInterface = () => {
                 <Clock className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">-</p>
-                <p className="text-sm text-gray-600">BL en attente</p>
+                <p className="text-2xl font-bold">Rapide</p>
+                <p className="text-sm text-gray-600">Création Mission+BL</p>
               </div>
             </div>
           </CardContent>

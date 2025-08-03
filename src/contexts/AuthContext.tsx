@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -55,7 +56,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('dashboard');
         break;
       case 'transitaire':
-        // Transitaire a accès aux Missions
+        // Transitaire a accès aux Missions avec permissions complètes
         modulePermissions.add('missions');
         modulePermissions.add('dashboard');
         break;
@@ -238,6 +239,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authUser.permissions = ['read', 'write', 'delete', 'validate', 'export', 'admin'];
     }
 
+    // Donner les permissions d'écriture aux transitaires pour les missions
+    if (authUser.roles?.includes('transitaire')) {
+      authUser.permissions = ['read', 'write', 'missions_write', 'missions_read'];
+    }
+
     return authUser;
   };
 
@@ -258,6 +264,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // L'admin a toutes les permissions
     if (user.roles?.includes('admin')) return true;
+    
+    // Permissions spéciales pour les transitaires
+    if (user.roles?.includes('transitaire')) {
+      if (permission === 'missions_read' || permission === 'missions_write') {
+        return true;
+      }
+    }
     
     // Vérifier les permissions spécifiques
     const userPermissions = user.permissions || [];

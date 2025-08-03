@@ -189,6 +189,12 @@ export const ModuleHub: React.FC = () => {
       console.log(`✅ Utilisateur admin - accès complet au module ${module.id}`);
       return true;
     }
+
+    // Permissions spéciales pour les transitaires
+    if (user.roles?.includes('transitaire') && module.id === 'missions') {
+      console.log(`✅ Utilisateur transitaire - accès au module missions`);
+      return true;
+    }
     
     const modulePermissions = user.module_permissions || [];
     const hasAccess = modulePermissions.includes(module.id);

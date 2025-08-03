@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
 
 const Missions = () => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [selectedMission, setSelectedMission] = useState(null);
@@ -71,7 +71,11 @@ const Missions = () => {
     setSelectedMission(null);
   };
 
-  if (!hasPermission('missions_read')) {
+  // Vérifier les permissions pour les missions - inclut maintenant les transitaires
+  const canReadMissions = hasPermission('missions_read') || hasRole('transitaire');
+  const canWriteMissions = hasPermission('missions_write') || hasRole('transitaire');
+
+  if (!canReadMissions) {
     return (
       <div className="p-6">
         <div className="text-center">
@@ -131,7 +135,7 @@ const Missions = () => {
             Gestion et planification des missions de transport
           </p>
         </div>
-        {hasPermission('missions_write') && (
+        {canWriteMissions && (
           <Button 
             onClick={handleCreateMission}
             className="bg-orange-500 hover:bg-orange-600"
@@ -166,7 +170,7 @@ const Missions = () => {
           <MissionsTable
             missions={missionsEnCours}
             onEdit={handleEditMission}
-            hasWritePermission={hasPermission('missions_write')}
+            hasWritePermission={canWriteMissions}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
           />
         </TabsContent>
@@ -175,7 +179,7 @@ const Missions = () => {
           <MissionsTable
             missions={missionsTerminees}
             onEdit={handleEditMission}
-            hasWritePermission={hasPermission('missions_write')}
+            hasWritePermission={canWriteMissions}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
           />
         </TabsContent>

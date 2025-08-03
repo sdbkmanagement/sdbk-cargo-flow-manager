@@ -28,6 +28,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     return <LoginForm />;
   }
 
-  // Si utilisateur connecté, afficher le contenu protégé
+  // Tous les utilisateurs connectés (admin, transport, transitaire, etc.) 
+  // accèdent directement au contenu protégé (Hub des modules)
   return <>{children}</>;
 };
