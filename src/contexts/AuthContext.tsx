@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -200,27 +199,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const buildUserData = (dbUser: any): AuthUser => {
     const userRoles = dbUser.roles || ['transport'];
     
-    // Utiliser les permissions de modules définies en base de données
-    // Ne calculer automatiquement que pour les admins ou si aucune permission n'est définie
+    // Pour les transitaires, s'assurer qu'ils ont bien les permissions
     let modulePermissions: string[] = [];
     
     if (dbUser.module_permissions && dbUser.module_permissions.length > 0) {
       // Utiliser les permissions explicites de la base de données
       modulePermissions = dbUser.module_permissions;
       console.log('📋 Utilisation des permissions explicites de la DB:', modulePermissions);
-    } else if (userRoles.includes('admin')) {
-      // Pour les admins, donner accès à tout
-      modulePermissions = getModulePermissionsByRoles(['admin']);
-      console.log('👑 Permissions admin automatiques:', modulePermissions);
     } else {
-      // Pour les autres, utiliser les permissions par défaut du rôle
+      // Calculer les permissions selon les rôles
       modulePermissions = getModulePermissionsByRoles(userRoles);
-      console.log('🎯 Permissions par défaut du rôle:', modulePermissions);
+      console.log('🎯 Permissions calculées selon les rôles:', modulePermissions);
     }
     
     // Toujours ajouter le dashboard pour tous les utilisateurs connectés
     if (!modulePermissions.includes('dashboard')) {
       modulePermissions.push('dashboard');
+    }
+    
+    // S'assurer que les transitaires ont accès aux missions
+    if (userRoles.includes('transitaire') && !modulePermissions.includes('missions')) {
+      modulePermissions.push('missions');
+      console.log('✅ Permission missions ajoutée pour le transitaire');
     }
     
     const authUser: AuthUser = {
@@ -242,6 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Donner les permissions d'écriture aux transitaires pour les missions
     if (authUser.roles?.includes('transitaire')) {
       authUser.permissions = ['read', 'write', 'missions_write', 'missions_read'];
+      console.log('✅ Permissions missions accordées au transitaire');
     }
 
     return authUser;

@@ -173,33 +173,40 @@ export const ModuleHub: React.FC = () => {
   const modules = allModules.filter(module => {
     if (!user) return false;
     
-    if (module.id === 'dashboard') {
-      const isAdmin = user.roles?.includes('admin') || user.role === 'admin';
-      console.log(`🔍 Vérification accès dashboard - Admin: ${isAdmin}`);
-      return isAdmin;
-    }
-    
-    console.log(`🔍 Vérification utilisateur:`, {
+    console.log(`🔍 Vérification accès module ${module.id} pour utilisateur:`, {
       email: user.email,
       roles: user.roles,
+      role: user.role,
       modulePermissions: user.module_permissions
     });
     
+    // L'admin a accès à tout
     if (user.roles?.includes('admin')) {
       console.log(`✅ Utilisateur admin - accès complet au module ${module.id}`);
       return true;
     }
 
-    // Permissions spéciales pour les transitaires
-    if (user.roles?.includes('transitaire') && module.id === 'missions') {
-      console.log(`✅ Utilisateur transitaire - accès au module missions`);
-      return true;
+    // Dashboard spécial pour les admins seulement
+    if (module.id === 'dashboard') {
+      const isAdmin = user.roles?.includes('admin') || user.role === 'admin';
+      console.log(`🔍 Vérification accès dashboard - Admin: ${isAdmin}`);
+      return isAdmin;
+    }
+
+    // Vérification spéciale pour les transitaires et le module missions
+    if (module.id === 'missions') {
+      const isTransitaire = user.roles?.includes('transitaire') || user.role === 'transitaire';
+      if (isTransitaire) {
+        console.log(`✅ Utilisateur transitaire - accès accordé au module missions`);
+        return true;
+      }
     }
     
+    // Vérification générale des permissions de modules
     const modulePermissions = user.module_permissions || [];
     const hasAccess = modulePermissions.includes(module.id);
     
-    console.log(`🔍 Vérification accès module ${module.id}:`, {
+    console.log(`🔍 Vérification permissions module ${module.id}:`, {
       userEmail: user.email,
       userPermissions: modulePermissions,
       hasAccess: hasAccess
@@ -208,7 +215,10 @@ export const ModuleHub: React.FC = () => {
     return hasAccess;
   });
 
+  console.log('📋 Modules filtrés pour l\'utilisateur:', modules.map(m => m.id));
+
   const handleModuleClick = (route: string) => {
+    console.log('🎯 Navigation vers:', route);
     navigate(route);
   };
 
