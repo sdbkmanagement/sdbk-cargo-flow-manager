@@ -4,16 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Plus, RefreshCw } from 'lucide-react';
 import { ExportButton } from '@/components/common/ExportButton';
 import { exportFleetService } from '@/services/exportFleetService';
-import { useVehicles } from '@/hooks/useVehicles';
 
 interface FleetHeaderProps {
   onNewVehicle: () => void;
   onRefresh: () => void;
+  vehicles?: any[];
 }
 
-export const FleetHeader = ({ onNewVehicle, onRefresh }: FleetHeaderProps) => {
-  const { data: vehicles = [] } = useVehicles();
-
+export const FleetHeader = ({ onNewVehicle, onRefresh, vehicles = [] }: FleetHeaderProps) => {
   const handleExportExcel = () => {
     exportFleetService.exportToExcel(vehicles, 'flotte_vehicules');
   };

@@ -56,6 +56,7 @@ const Fleet = () => {
       <FleetHeader 
         onNewVehicle={() => setIsFormOpen(true)}
         onRefresh={refetch}
+        vehicles={vehicles}
       />
       
       {isLoading && <p>Chargement des véhicules...</p>}
