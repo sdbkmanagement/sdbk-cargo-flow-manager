@@ -45,11 +45,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     if (vehicule.type_vehicule === 'tracteur_remorque') {
       // Pour tracteur-remorque, privilégier l'immatriculation de la remorque (citerne)
       const immatriculation = vehicule.remorque_immatriculation || vehicule.tracteur_immatriculation || '';
-      return `${vehicule.numero} - ${vehicule.marque} ${vehicule.modele}${immatriculation ? ` (${immatriculation})` : ''}`;
+      return `${vehicule.numero}${immatriculation ? ` - ${immatriculation}` : ''}`;
     }
     // Pour porteur, afficher l'immatriculation du porteur
     const immatriculation = vehicule.immatriculation || '';
-    return `${vehicule.numero} - ${vehicule.marque} ${vehicule.modele}${immatriculation ? ` (${immatriculation})` : ''}`;
+    return `${vehicule.numero}${immatriculation ? ` - ${immatriculation}` : ''}`;
   };
 
   // Récupérer les véhicules disponibles
