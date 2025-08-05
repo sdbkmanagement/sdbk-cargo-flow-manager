@@ -28,7 +28,7 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
     return <LoginForm />;
   }
 
-  // Tous les utilisateurs connectés (admin, transport, transitaire, etc.) 
-  // accèdent directement au contenu protégé (Hub des modules)
+  // Tous les utilisateurs connectés accèdent au contenu protégé
+  // (Hub des modules ou module spécifique selon la route)
   return <>{children}</>;
 };
