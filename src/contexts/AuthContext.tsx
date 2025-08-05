@@ -78,9 +78,10 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('dashboard');
         break;
       case 'administratif':
-        // Administratif a accès aux validations
+        // Administratif a accès aux validations et au dashboard
         modulePermissions.add('validations');
         modulePermissions.add('dashboard');
+        console.log('✅ Permissions accordées au rôle administratif:', ['validations', 'dashboard']);
         break;
       case 'hsecq':
         // HSECQ a accès aux validations
@@ -199,6 +200,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const buildUserData = (dbUser: any): AuthUser => {
     const userRoles = dbUser.roles || ['transport'];
     
+    console.log('🔧 Construction données utilisateur pour rôles:', userRoles);
+    
     // Pour les transitaires, s'assurer qu'ils ont bien les permissions
     let modulePermissions: string[] = [];
     
@@ -222,6 +225,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       modulePermissions.push('missions');
       console.log('✅ Permission missions ajoutée pour le transitaire');
     }
+
+    // S'assurer que les rôles de validation ont accès aux validations
+    const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
+    if (userRoles.some(role => validationRoles.includes(role)) && !modulePermissions.includes('validations')) {
+      modulePermissions.push('validations');
+      console.log('✅ Permission validations ajoutée pour le rôle de validation:', userRoles);
+    }
     
     const authUser: AuthUser = {
       id: dbUser.id,
@@ -244,6 +254,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authUser.permissions = ['read', 'write', 'missions_write', 'missions_read'];
       console.log('✅ Permissions missions accordées au transitaire');
     }
+
+    // Donner les permissions de validation aux rôles appropriés
+    if (authUser.roles?.some(role => validationRoles.includes(role))) {
+      authUser.permissions = [...(authUser.permissions || []), 'validate', 'validations_write', 'validations_read'];
+      console.log('✅ Permissions validation accordées au rôle:', userRoles);
+    }
+
+    console.log('📊 Utilisateur final construit:', {
+      email: authUser.email,
+      roles: authUser.roles,
+      modulePermissions: authUser.module_permissions,
+      permissions: authUser.permissions
+    });
 
     return authUser;
   };

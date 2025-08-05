@@ -1,4 +1,3 @@
-
 import { useAuth } from '@/contexts/AuthContext';
 
 export const useValidationPermissions = () => {
@@ -33,15 +32,19 @@ export const useValidationPermissions = () => {
     switch (etape) {
       case 'maintenance':
         hasPermission = userRoles.includes('maintenance');
+        console.log(`🔧 Vérification rôle maintenance: ${hasPermission}`);
         break;
       case 'administratif':
         hasPermission = userRoles.includes('administratif');
+        console.log(`📋 Vérification rôle administratif: ${hasPermission}`);
         break;
       case 'hsecq':
         hasPermission = userRoles.includes('hsecq');
+        console.log(`🛡️ Vérification rôle hsecq: ${hasPermission}`);
         break;
       case 'obc':
         hasPermission = userRoles.includes('obc');
+        console.log(`🚛 Vérification rôle obc: ${hasPermission}`);
         break;
       default:
         hasPermission = false;
@@ -64,20 +67,38 @@ export const useValidationPermissions = () => {
     
     // Vérifier les permissions de module
     const modulePermissions = user.module_permissions || [];
-    return modulePermissions.includes(module);
+    const hasAccess = modulePermissions.includes(module);
+    
+    console.log(`🔍 Vérification permission module ${module}:`, {
+      modulePermissions,
+      hasAccess
+    });
+    
+    return hasAccess;
   };
 
   const hasValidationAccess = (): boolean => {
     if (!user) return false;
     
     // L'admin a accès à tout
-    if (user.role === 'admin' || hasRole('admin')) return true;
+    if (user.role === 'admin' || hasRole('admin')) {
+      console.log('✅ Accès validation accordé - Admin');
+      return true;
+    }
     
     // Vérifier si l'utilisateur a au moins un rôle de validation
     const userRoles = user.roles || [user.role];
     
     const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
-    return validationRoles.some(role => userRoles.includes(role));
+    const hasAccess = validationRoles.some(role => userRoles.includes(role));
+    
+    console.log('🔍 Vérification accès validation:', {
+      userRoles,
+      validationRoles,
+      hasAccess
+    });
+    
+    return hasAccess;
   };
 
   const getUserRole = (): string => {
