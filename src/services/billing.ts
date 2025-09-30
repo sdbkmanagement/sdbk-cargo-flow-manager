@@ -407,6 +407,21 @@ export const billingService = {
         chiffreAffaireMois: 0
       };
     }
+  },
+
+  // Marquer un bon de livraison comme facturé
+  async markBLAsFactured(blId: string) {
+    try {
+      const { error } = await supabase
+        .from('bons_livraison')
+        .update({ facture: true })
+        .eq('id', blId);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Erreur lors du marquage du BL:', error);
+      throw error;
+    }
   }
 };
 

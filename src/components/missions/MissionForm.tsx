@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BLMultiplesForm } from './BLMultiplesForm';
 import { BLSuiviForm } from './BLSuiviForm';
 import { BonLivraison } from '@/types/bl';
+import { Search } from 'lucide-react';
 
 interface MissionFormProps {
   mission?: any;
@@ -35,6 +36,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
   const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
+  const [vehiculeSearch, setVehiculeSearch] = useState('');
   const [vehiculeAvailability, setVehiculeAvailability] = useState<{
     available: boolean;
     message: string;
@@ -57,6 +59,29 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     queryKey: ['available-vehicules'],
     queryFn: missionsService.getAvailableVehicules,
     refetchInterval: 30000 // Actualiser toutes les 30 secondes
+  });
+  
+  // Filtrer les véhicules selon la recherche (priorité au numéro de citerne)
+  const filteredVehicules = vehicules.filter((v: any) => {
+    if (!vehiculeSearch) return true;
+    const search = vehiculeSearch.toLowerCase();
+    
+    // Priorité 1: Numéro de citerne (remorque_immatriculation pour tracteur-remorque)
+    if (v.type_vehicule === 'tracteur_remorque' && v.remorque_immatriculation) {
+      if (v.remorque_immatriculation.toLowerCase().includes(search)) return true;
+    }
+    
+    // Priorité 2: Immatriculation du porteur
+    if (v.immatriculation && v.immatriculation.toLowerCase().includes(search)) return true;
+    
+    // Priorité 3: Numéro du véhicule
+    if (v.numero.toLowerCase().includes(search)) return true;
+    
+    // Priorité 4: Marque/modèle
+    if (v.marque && v.marque.toLowerCase().includes(search)) return true;
+    if (v.modele && v.modele.toLowerCase().includes(search)) return true;
+    
+    return false;
   });
 
   // Récupérer les chauffeurs assignés au véhicule sélectionné
@@ -524,25 +549,35 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label htmlFor="vehicule_id">Véhicule *</Label>
-                <Select value={formData.vehicule_id} onValueChange={(value) => updateFormData('vehicule_id', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un véhicule" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vehiculesLoading ? (
-                      <SelectItem value="loading" disabled>Chargement...</SelectItem>
-                    ) : vehicules.length === 0 ? (
-                      <SelectItem value="no_vehicle" disabled>Aucun véhicule disponible</SelectItem>
-                    ) : (
-                      vehicules.map(vehicule => (
-                        <SelectItem key={vehicule.id} value={vehicule.id}>
-                          {getVehiculeDisplayText(vehicule)}
+                <Label htmlFor="vehicule_id">Véhicule * (Recherche par n° citerne prioritaire)</Label>
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Rechercher par n° citerne, immatriculation, numéro..."
+                    value={vehiculeSearch}
+                    onChange={(e) => setVehiculeSearch(e.target.value)}
+                    className="mb-2"
+                  />
+                  <Select value={formData.vehicule_id} onValueChange={(value) => updateFormData('vehicule_id', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un véhicule" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {vehiculesLoading ? (
+                        <SelectItem value="loading" disabled>Chargement...</SelectItem>
+                      ) : filteredVehicules.length === 0 ? (
+                        <SelectItem value="none" disabled>
+                          {vehiculeSearch ? 'Aucun résultat' : 'Aucun véhicule disponible'}
                         </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
+                      ) : (
+                        filteredVehicules.map((vehicule: any) => (
+                          <SelectItem key={vehicule.id} value={vehicule.id}>
+                            {getVehiculeDisplayText(vehicule)}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
                 
                 {/* Affichage de l'état de disponibilité du véhicule */}
                 {vehiculeAvailability && (

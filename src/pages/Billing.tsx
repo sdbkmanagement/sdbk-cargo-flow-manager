@@ -9,6 +9,7 @@ import { PaymentTracking } from '@/components/billing/PaymentTracking';
 import { ExportFactures } from '@/components/billing/ExportFactures';
 import { InvoiceForm } from '@/components/billing/InvoiceForm';
 import { QuoteForm } from '@/components/billing/QuoteForm';
+import { MonthlyInvoiceGenerator } from '@/components/billing/MonthlyInvoiceGenerator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Calculator } from 'lucide-react';
 
@@ -34,6 +35,8 @@ const Billing = () => {
           <p className="text-muted-foreground">Gestion complète de la facturation et des devis</p>
         </div>
         <div className="flex gap-2">
+          <MonthlyInvoiceGenerator />
+          
           <Dialog open={showQuoteForm} onOpenChange={setShowQuoteForm}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">

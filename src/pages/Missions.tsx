@@ -6,9 +6,12 @@ import { Plus, AlertTriangle } from 'lucide-react';
 import { MissionsStats } from '@/components/missions/MissionsStats';
 import { MissionsTable } from '@/components/missions/MissionsTable';
 import { MissionForm } from '@/components/missions/MissionForm';
+import { MissionsHistoryExport } from '@/components/missions/MissionsHistoryExport';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { missionsService } from '@/services/missions';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const Missions = () => {
   const { hasPermission, hasRole } = useAuth();
@@ -16,6 +19,8 @@ const Missions = () => {
   const [showForm, setShowForm] = useState(false);
   const [selectedMission, setSelectedMission] = useState(null);
   const [activeTab, setActiveTab] = useState('en-cours');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   // Actualisation automatique toutes les 30 secondes
   const { data: missions = [], isLoading, error, isError } = useQuery({
@@ -39,13 +44,31 @@ const Missions = () => {
     refetchIntervalInBackground: true,
   });
 
-  // Filtrer les missions selon l'onglet actif
-  const missionsEnCours = missions.filter(mission => 
-    mission.statut === 'en_attente' || mission.statut === 'en_cours'
+  // Filtrer les missions selon l'onglet actif et les filtres
+  const filterMissions = (missionsToFilter: any[]) => {
+    return missionsToFilter.filter(mission => {
+      const matchesSearch = !searchTerm || 
+        mission.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mission.vehicule?.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mission.chauffeur?.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mission.chauffeur?.prenom?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = statusFilter === 'all' || mission.statut === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  };
+  
+  const missionsEnCours = filterMissions(
+    missions.filter(mission => 
+      mission.statut === 'en_attente' || mission.statut === 'en_cours'
+    )
   );
   
-  const missionsTerminees = missions.filter(mission => 
-    mission.statut === 'terminee'
+  const missionsTerminees = filterMissions(
+    missions.filter(mission => 
+      mission.statut === 'terminee'
+    )
   );
 
   const handleCreateMission = () => {
@@ -155,6 +178,30 @@ const Missions = () => {
           annulees={stats.annulees}
         />
       )}
+
+      {/* Filtres de recherche */}
+      <div className="flex gap-4 items-center">
+        <div className="flex-1">
+          <Input
+            placeholder="Rechercher par n° mission, véhicule, chauffeur..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="en_attente">En attente</SelectItem>
+            <SelectItem value="en_cours">En cours</SelectItem>
+            <SelectItem value="terminee">Terminée</SelectItem>
+            <SelectItem value="annulee">Annulée</SelectItem>
+          </SelectContent>
+        </Select>
+        <MissionsHistoryExport missions={missions} />
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">

@@ -50,17 +50,20 @@ const Validations = () => {
       // Récupérer tous les véhicules une seule fois
       const allVehicles = await vehiculesService.getAll();
       
-      // Filtrage côté client pour commencer
+      // Filtrage côté client - Ne montrer que les véhicules nécessitant validation
       const filtered = allVehicles.filter((vehicle: Vehicule) => {
+        // Exclure les véhicules complètement validés (disponibles sans validation requise)
+        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
+        
         const matchesSearch = !searchTerm || 
           vehicle.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (vehicle.immatriculation && vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (vehicle.tracteur_immatriculation && vehicle.tracteur_immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (vehicle.marque && vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        const matchesStatus = statusFilter === 'all' || 
+        const matchesStatus = statusFilter === 'all' ? needsValidation : 
           (statusFilter === 'en_validation' && vehicle.statut === 'validation_requise') ||
-          (statusFilter === 'valide' && vehicle.statut === 'disponible') ||
+          (statusFilter === 'valide' && vehicle.statut === 'disponible' && !vehicle.validation_requise) ||
           (statusFilter === 'rejete' && vehicle.statut === 'validation_requise');
         
         return matchesSearch && matchesStatus;
