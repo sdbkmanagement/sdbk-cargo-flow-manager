@@ -190,7 +190,7 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Numéro</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Type</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Trajet</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Véhicule</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">N° Tournée / Citerne</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Chauffeur</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Date départ</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Statut</th>
@@ -232,9 +232,20 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh 
                     <td className="py-4 px-6">
                       <div className="flex items-center text-sm">
                         <Truck className="w-4 h-4 mr-2 text-gray-400" />
-                        <span className="font-medium">
-                          {mission.vehicule?.numero || 'Non assigné'}
-                        </span>
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-500 text-xs">
+                            {mission.bons_livraison?.[0]?.numero_tournee ? 
+                              `Tournée: ${mission.bons_livraison[0].numero_tournee}` : 
+                              'Tournée: Non définie'
+                            }
+                          </span>
+                          <span className="font-semibold text-sdbk-blue">
+                            {mission.vehicule?.remorque_immatriculation || 
+                             mission.vehicule?.immatriculation || 
+                             mission.vehicule?.numero || 
+                             'Non assigné'}
+                          </span>
+                        </div>
                       </div>
                     </td>
                     <td className="py-4 px-6">

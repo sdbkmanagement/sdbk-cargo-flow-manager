@@ -50,20 +50,31 @@ const Validations = () => {
       // Récupérer tous les véhicules une seule fois
       const allVehicles = await vehiculesService.getAll();
       
+      // MODIFICATION POINT 3: Corriger l'incohérence de statut de validation
       // Filtrage côté client - Ne montrer que les véhicules nécessitant validation
       const filtered = allVehicles.filter((vehicle: Vehicule) => {
-        // Exclure les véhicules complètement validés (disponibles sans validation requise)
-        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
-        
+        // MODIFICATION POINT 4: Améliorer la recherche avec plus de champs
         const matchesSearch = !searchTerm || 
           vehicle.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (vehicle.immatriculation && vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (vehicle.tracteur_immatriculation && vehicle.tracteur_immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
-          (vehicle.marque && vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase()));
+          (vehicle.remorque_immatriculation && vehicle.remorque_immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (vehicle.marque && vehicle.marque.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (vehicle.tracteur_marque && vehicle.tracteur_marque.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (vehicle.modele && vehicle.modele.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (vehicle.tracteur_modele && vehicle.tracteur_modele.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (vehicle.base && vehicle.base.toLowerCase().includes(searchTerm.toLowerCase()));
+        
+        // MODIFICATION POINT 3: Utiliser une logique cohérente pour la validation
+        // Un véhicule nécessite validation si validation_requise = true OU statut = 'validation_requise'
+        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
+        
+        // Mais si les deux disent "validé", alors il est vraiment validé
+        const isFullyValidated = vehicle.validation_requise === false && vehicle.statut === 'disponible';
         
         const matchesStatus = statusFilter === 'all' ? needsValidation : 
-          (statusFilter === 'en_validation' && vehicle.statut === 'validation_requise') ||
-          (statusFilter === 'valide' && vehicle.statut === 'disponible' && !vehicle.validation_requise) ||
+          (statusFilter === 'en_validation' && needsValidation && !isFullyValidated) ||
+          (statusFilter === 'valide' && isFullyValidated) ||
           (statusFilter === 'rejete' && vehicle.statut === 'validation_requise');
         
         return matchesSearch && matchesStatus;

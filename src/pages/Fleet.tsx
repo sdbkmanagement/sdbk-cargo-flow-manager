@@ -16,6 +16,7 @@ const Fleet = () => {
   const { data: vehicles = [], isLoading, error, refetch } = useVehicles();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState<Vehicule | null>(null);
+  const [filteredVehiclesForExport, setFilteredVehiclesForExport] = useState<Vehicule[]>(vehicles);
 
   const handleEditVehicle = useCallback((id: string) => {
     setSelectedVehicleId(id);
@@ -56,7 +57,7 @@ const Fleet = () => {
       <FleetHeader 
         onNewVehicle={() => setIsFormOpen(true)}
         onRefresh={refetch}
-        vehicles={vehicles}
+        vehicles={filteredVehiclesForExport}
       />
       
       {isLoading && <p>Chargement des véhicules...</p>}
@@ -80,6 +81,7 @@ const Fleet = () => {
               await refetch(); // Refresh vehicle list after deletion
             }}
             onViewDocuments={handleViewDocuments}
+            onFilteredVehiclesChange={setFilteredVehiclesForExport}
           />
         </TabsContent>
 

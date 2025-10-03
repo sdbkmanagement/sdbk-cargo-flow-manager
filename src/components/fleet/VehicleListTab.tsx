@@ -11,9 +11,10 @@ interface VehicleListTabProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onViewDocuments: (vehicle: Vehicule) => void;
+  onFilteredVehiclesChange?: (vehicles: Vehicule[]) => void;
 }
 
-export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: VehicleListTabProps) => {
+export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments, onFilteredVehiclesChange }: VehicleListTabProps) => {
   const {
     filters,
     updateFilter,
@@ -22,6 +23,11 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments }: 
     filterStats,
     availableBases
   } = useVehicleFilters(vehicles);
+
+  // MODIFICATION POINT 2: Notifier le parent des véhicules filtrés pour l'export
+  React.useEffect(() => {
+    onFilteredVehiclesChange?.(filteredVehicles);
+  }, [filteredVehicles, onFilteredVehiclesChange]);
 
   return (
     <div className="space-y-6">

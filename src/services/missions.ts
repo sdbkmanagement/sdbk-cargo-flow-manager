@@ -31,8 +31,9 @@ export const missionsService = {
           .from('missions')
           .select(`
             *,
-            vehicule:vehicules(numero, marque, modele, immatriculation),
-            chauffeur:chauffeurs(nom, prenom, telephone)
+            vehicule:vehicules(numero, marque, modele, immatriculation, remorque_immatriculation, tracteur_immatriculation),
+            chauffeur:chauffeurs(nom, prenom, telephone),
+            bons_livraison:bons_livraison(numero_tournee)
           `)
           .order('created_at', { ascending: false }),
         new Promise((_, reject) => 

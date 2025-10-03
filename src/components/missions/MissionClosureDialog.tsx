@@ -74,6 +74,21 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
       await missionsService.update(mission.id, {
         statut: 'terminee'
       });
+
+      // MODIFICATION POINT 1: Déclencher la validation du véhicule immédiatement après clôture
+      if (mission.vehicule_id) {
+        const { supabase } = await import('@/integrations/supabase/client');
+        await supabase
+          .from('vehicules')
+          .update({
+            validation_requise: true,
+            statut: 'validation_requise',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', mission.vehicule_id);
+        
+        console.log('Véhicule marqué pour validation après clôture de mission');
+      }
     },
     onSuccess: () => {
       toast({
