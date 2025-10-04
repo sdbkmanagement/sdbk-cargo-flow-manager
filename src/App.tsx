@@ -17,7 +17,6 @@ import Administration from '@/pages/Administration';
 import Validations from '@/pages/Validations';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
-import Maintenance from '@/pages/Maintenance';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,9 +28,6 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  // 🔧 MODE MAINTENANCE: Décommentez la ligne ci-dessous pour activer la page de maintenance
-  // return <Maintenance />;
-
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

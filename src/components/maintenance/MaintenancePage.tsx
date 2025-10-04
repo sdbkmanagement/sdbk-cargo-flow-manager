@@ -1,7 +1,7 @@
 import React from 'react';
 import { Wrench, Clock, AlertCircle } from 'lucide-react';
 
-const Maintenance: React.FC = () => {
+export const MaintenancePage: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-secondary/30 to-background p-4">
       <div className="max-w-2xl w-full text-center space-y-8 animate-fade-in">
@@ -60,5 +60,3 @@ const Maintenance: React.FC = () => {
     </div>
   );
 };
-
-export default Maintenance;

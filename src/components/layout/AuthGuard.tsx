@@ -2,7 +2,11 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { MaintenancePage } from '@/components/maintenance/MaintenancePage';
 import { Loader2 } from 'lucide-react';
+
+// 🔧 MODE MAINTENANCE: Changez cette valeur à true pour activer la page de maintenance
+const MAINTENANCE_MODE = false;
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -21,6 +25,11 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
         </div>
       </div>
     );
+  }
+
+  // Si mode maintenance activé, afficher la page de maintenance
+  if (MAINTENANCE_MODE) {
+    return <MaintenancePage />;
   }
 
   // Si pas d'utilisateur connecté, afficher la page de login
