@@ -6,7 +6,7 @@ import { MaintenancePage } from '@/components/maintenance/MaintenancePage';
 import { Loader2 } from 'lucide-react';
 
 // 🔧 MODE MAINTENANCE: Changez cette valeur à true pour activer la page de maintenance
-const MAINTENANCE_MODE = false;
+const MAINTENANCE_MODE = true;
 
 interface AuthGuardProps {
   children: React.ReactNode;
