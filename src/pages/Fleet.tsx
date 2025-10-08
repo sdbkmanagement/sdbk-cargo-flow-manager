@@ -16,7 +16,12 @@ const Fleet = () => {
   const { data: vehicles = [], isLoading, error, refetch } = useVehicles();
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState<Vehicule | null>(null);
-  const [filteredVehiclesForExport, setFilteredVehiclesForExport] = useState<Vehicule[]>(vehicles);
+  const [filteredVehiclesForExport, setFilteredVehiclesForExport] = useState<Vehicule[]>([]);
+
+  // Synchroniser les véhicules filtrés avec les véhicules initiaux
+  useEffect(() => {
+    setFilteredVehiclesForExport(vehicles);
+  }, [vehicles]);
 
   const handleEditVehicle = useCallback((id: string) => {
     setSelectedVehicleId(id);

@@ -65,14 +65,15 @@ const Validations = () => {
           (vehicle.tracteur_modele && vehicle.tracteur_modele.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (vehicle.base && vehicle.base.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        // MODIFICATION POINT 3: Utiliser une logique cohérente pour la validation
+        // MODIFICATION: Les véhicules validés ne doivent pas apparaître par défaut
         // Un véhicule nécessite validation si validation_requise = true OU statut = 'validation_requise'
         const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
         
-        // Mais si les deux disent "validé", alors il est vraiment validé
+        // Un véhicule est complètement validé quand il est disponible et ne requiert plus de validation
         const isFullyValidated = vehicle.validation_requise === false && vehicle.statut === 'disponible';
         
-        const matchesStatus = statusFilter === 'all' ? needsValidation : 
+        // Pour le filtre 'all', on exclut les véhicules validés (ils ont terminé le processus)
+        const matchesStatus = statusFilter === 'all' ? (needsValidation && !isFullyValidated) : 
           (statusFilter === 'en_validation' && needsValidation && !isFullyValidated) ||
           (statusFilter === 'valide' && isFullyValidated) ||
           (statusFilter === 'rejete' && vehicle.statut === 'validation_requise');
