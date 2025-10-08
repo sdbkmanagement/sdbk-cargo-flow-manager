@@ -9,9 +9,9 @@ import { ValidationWorkflowCard } from '@/components/fleet/validation/Validation
 import { ValidationStats } from '@/components/fleet/validation/ValidationStats';
 import vehiculesService, { type Vehicule } from '@/services/vehicules';
 import { validationService } from '@/services/validation';
+import { supabase } from '@/integrations/supabase/client';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
-
 const Validations = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -49,11 +49,20 @@ const Validations = () => {
       
       // Récupérer tous les véhicules une seule fois
       const allVehicles = await vehiculesService.getAll();
+
+      // Récupérer les workflows validés pour ces véhicules (source de vérité)
+      const vehiculeIds = allVehicles.map((v: Vehicule) => v.id);
+      const { data: workflowsValides } = await supabase
+        .from('validation_workflows')
+        .select('vehicule_id, statut_global')
+        .in('vehicule_id', vehiculeIds)
+        .eq('statut_global', 'valide');
+
+      const validatedSet = new Set((workflowsValides || []).map(w => w.vehicule_id));
       
-      // MODIFICATION POINT 3: Corriger l'incohérence de statut de validation
-      // Filtrage côté client - Ne montrer que les véhicules nécessitant validation
+      // Filtrage côté client - Ne montrer que les véhicules nécessitant validation par défaut
       const filtered = allVehicles.filter((vehicle: Vehicule) => {
-        // MODIFICATION POINT 4: Améliorer la recherche avec plus de champs
+        // Recherche étendue
         const matchesSearch = !searchTerm || 
           vehicle.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (vehicle.immatriculation && vehicle.immatriculation.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -65,18 +74,16 @@ const Validations = () => {
           (vehicle.tracteur_modele && vehicle.tracteur_modele.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (vehicle.base && vehicle.base.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        // MODIFICATION: Les véhicules validés ne doivent pas apparaître par défaut
-        // Un véhicule nécessite validation si validation_requise = true OU statut = 'validation_requise'
-        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
+        // Véhicule pleinement validé si présent dans le Set ou basé sur colonnes du véhicule (fallback)
+        const isFullyValidated = validatedSet.has(vehicle.id) || (vehicle.validation_requise === false && vehicle.statut === 'disponible');
+        const isRejectedOrNeedsValidation = vehicle.statut === 'validation_requise' || vehicle.validation_requise === true;
         
-        // Un véhicule est complètement validé quand il est disponible et ne requiert plus de validation
-        const isFullyValidated = vehicle.validation_requise === false && vehicle.statut === 'disponible';
-        
-        // Pour le filtre 'all', on exclut les véhicules validés (ils ont terminé le processus)
-        const matchesStatus = statusFilter === 'all' ? (needsValidation && !isFullyValidated) : 
-          (statusFilter === 'en_validation' && needsValidation && !isFullyValidated) ||
-          (statusFilter === 'valide' && isFullyValidated) ||
-          (statusFilter === 'rejete' && vehicle.statut === 'validation_requise');
+        const matchesStatus = 
+          statusFilter === 'all' ? (!isFullyValidated && isRejectedOrNeedsValidation) :
+          statusFilter === 'en_validation' ? (!isFullyValidated) :
+          statusFilter === 'valide' ? (isFullyValidated) :
+          statusFilter === 'rejete' ? (!isFullyValidated && vehicle.statut === 'validation_requise') :
+          true;
         
         return matchesSearch && matchesStatus;
       });
