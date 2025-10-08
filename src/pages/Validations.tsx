@@ -50,15 +50,25 @@ const Validations = () => {
       // Récupérer tous les véhicules une seule fois
       const allVehicles = await vehiculesService.getAll();
 
-      // Récupérer les workflows validés pour ces véhicules (source de vérité)
+      // Préparer la liste des IDs
       const vehiculeIds = allVehicles.map((v: Vehicule) => v.id);
-      const { data: workflowsValides } = await supabase
-        .from('validation_workflows')
-        .select('vehicule_id, statut_global')
-        .in('vehicule_id', vehiculeIds)
-        .eq('statut_global', 'valide');
+
+      // Récupérer les workflows validés et rejetés (en deux requêtes pour éviter des résultats trop volumineux)
+      const [{ data: workflowsValides }, { data: workflowsRejetes }] = await Promise.all([
+        supabase
+          .from('validation_workflows')
+          .select('vehicule_id')
+          .in('vehicule_id', vehiculeIds)
+          .eq('statut_global', 'valide'),
+        supabase
+          .from('validation_workflows')
+          .select('vehicule_id')
+          .in('vehicule_id', vehiculeIds)
+          .eq('statut_global', 'rejete')
+      ]);
 
       const validatedSet = new Set((workflowsValides || []).map(w => w.vehicule_id));
+      const rejectedSet = new Set((workflowsRejetes || []).map(w => w.vehicule_id));
       
       // Filtrage côté client - Ne montrer que les véhicules nécessitant validation par défaut
       const filtered = allVehicles.filter((vehicle: Vehicule) => {
@@ -74,15 +84,16 @@ const Validations = () => {
           (vehicle.tracteur_modele && vehicle.tracteur_modele.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (vehicle.base && vehicle.base.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        // Véhicule pleinement validé si présent dans le Set ou basé sur colonnes du véhicule (fallback)
+        // Déterminations
         const isFullyValidated = validatedSet.has(vehicle.id) || (vehicle.validation_requise === false && vehicle.statut === 'disponible');
-        const isRejectedOrNeedsValidation = vehicle.statut === 'validation_requise' || vehicle.validation_requise === true;
+        const isRejected = rejectedSet.has(vehicle.id);
+        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
         
         const matchesStatus = 
-          statusFilter === 'all' ? (!isFullyValidated && isRejectedOrNeedsValidation) :
-          statusFilter === 'en_validation' ? (!isFullyValidated) :
+          statusFilter === 'all' ? (!isFullyValidated && (isRejected || needsValidation)) :
+          statusFilter === 'en_validation' ? (!isFullyValidated && !isRejected && needsValidation) :
           statusFilter === 'valide' ? (isFullyValidated) :
-          statusFilter === 'rejete' ? (!isFullyValidated && vehicle.statut === 'validation_requise') :
+          statusFilter === 'rejete' ? (isRejected) :
           true;
         
         return matchesSearch && matchesStatus;
