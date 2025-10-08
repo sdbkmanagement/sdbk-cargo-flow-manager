@@ -517,60 +517,59 @@ export const validationService = {
     return data || [];
   },
 
-  // Statistiques basées sur les workflows de validation (source de vérité)
+  // Statistiques globales: combine véhicules et workflows pour des chiffres fiables
   async getStatistiquesGlobales() {
     console.log('🔄 Chargement des statistiques globales de validation...');
 
     try {
-      // Récupérer TOUS les workflows de validation
+      // 1) Récupérer tous les véhicules (base de calcul du total)
+      const { data: vehicules, error: vehiculesError } = await supabase
+        .from('vehicules')
+        .select('id, statut, validation_requise');
+
+      if (vehiculesError) {
+        console.error('❌ Erreur lors de la récupération des véhicules:', vehiculesError);
+        throw vehiculesError;
+      }
+
+      // 2) Récupérer les workflows (source de vérité du statut global)
       const { data: workflows, error: workflowsError } = await supabase
         .from('validation_workflows')
-        .select('id, vehicule_id, statut_global');
+        .select('vehicule_id, statut_global');
 
       if (workflowsError) {
         console.error('❌ Erreur lors de la récupération des workflows:', workflowsError);
         throw workflowsError;
       }
 
-      console.log(`📊 ${workflows?.length || 0} workflows trouvés au total`);
-      
-      // Compter les véhicules par statut de workflow (source de vérité)
+      const validSet = new Set((workflows || []).filter(w => w.statut_global === 'valide').map(w => w.vehicule_id));
+      const enValSet = new Set((workflows || []).filter(w => w.statut_global === 'en_validation').map(w => w.vehicule_id));
+      const rejeteSet = new Set((workflows || []).filter(w => w.statut_global === 'rejete').map(w => w.vehicule_id));
+
       let enValidation = 0;
       let valides = 0;
       let rejetes = 0;
 
-      workflows?.forEach(workflow => {
-        console.log(`📋 Workflow ${workflow.id}: statut_global=${workflow.statut_global}`);
-        
-        if (workflow.statut_global === 'en_validation') {
-          enValidation++;
-        } else if (workflow.statut_global === 'valide') {
-          valides++;
-        } else if (workflow.statut_global === 'rejete') {
-          rejetes++;
-        }
+      (vehicules || []).forEach(v => {
+        const isValid = validSet.has(v.id) || (v.statut === 'disponible' && v.validation_requise === false);
+        const isRejete = rejeteSet.has(v.id); // rejet explicite par workflow
+        const isEnValidation = enValSet.has(v.id) || v.statut === 'validation_requise' || v.validation_requise === true;
+
+        if (isValid) valides++;
+        else if (isRejete) rejetes++;
+        else if (isEnValidation) enValidation++;
       });
 
-      // Le total comprend tous les workflows
-      const total = workflows?.length || 0;
+      const total = (vehicules || []).length;
 
-      const stats = {
-        total: total,
-        en_validation: enValidation,
-        valides: valides,
-        rejetes: rejetes
-      };
-
+      const stats = { total, en_validation: enValidation, valides, rejetes };
       console.log('✅ Statistiques finales calculées:', stats);
-      console.log(`🔍 Détail final: Total=${stats.total}, En validation=${stats.en_validation}, Validés=${stats.valides}, Rejetés=${stats.rejetes}`);
-      
+
       this._setCache('stats_globales', stats);
       return stats;
 
     } catch (error) {
       console.error('💥 Erreur lors du calcul des statistiques:', error);
-      
-      // Retourner des statistiques par défaut en cas d'erreur
       return { total: 0, en_validation: 0, valides: 0, rejetes: 0 };
     }
   },

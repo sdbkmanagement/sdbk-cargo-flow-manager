@@ -1,12 +1,12 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle, Clock, BarChart3, RefreshCw } from 'lucide-react';
 import { validationService } from '@/services/validation';
-
+import { supabase } from '@/integrations/supabase/client';
 export const ValidationStats = () => {
   const { data: stats, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['validation-stats'],
@@ -18,9 +18,22 @@ export const ValidationStats = () => {
     refetchOnMount: true,
   });
 
+  // Realtime updates: refetch when workflows/etapes/vehicules change
+  useEffect(() => {
+    const channel = supabase
+      .channel('validation-stats')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'validation_workflows' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'validation_etapes' }, () => refetch())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'vehicules' }, () => refetch())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
+
   const handleRefresh = async () => {
     console.log('🔄 Actualisation manuelle des statistiques de validation');
-    validationService.clearCache('stats');
+    validationService.clearCache('stats_globales');
     await refetch();
   };
 
