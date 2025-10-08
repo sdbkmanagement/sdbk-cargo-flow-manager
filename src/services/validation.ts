@@ -517,43 +517,42 @@ export const validationService = {
     return data || [];
   },
 
-  // Statistiques corrigées pour compter correctement les véhicules en attente de validation
+  // Statistiques basées sur les workflows de validation (source de vérité)
   async getStatistiquesGlobales() {
     console.log('🔄 Chargement des statistiques globales de validation...');
 
     try {
-      // Récupérer TOUS les véhicules
-      const { data: allVehicles, error: vehiculesError } = await supabase
-        .from('vehicules')
-        .select('id, statut, validation_requise');
+      // Récupérer TOUS les workflows de validation
+      const { data: workflows, error: workflowsError } = await supabase
+        .from('validation_workflows')
+        .select('id, vehicule_id, statut_global');
 
-      if (vehiculesError) {
-        console.error('❌ Erreur lors de la récupération des véhicules:', vehiculesError);
-        throw vehiculesError;
+      if (workflowsError) {
+        console.error('❌ Erreur lors de la récupération des workflows:', workflowsError);
+        throw workflowsError;
       }
 
-      console.log(`📊 ${allVehicles?.length || 0} véhicules trouvés au total`);
+      console.log(`📊 ${workflows?.length || 0} workflows trouvés au total`);
       
-      // Compter les véhicules par statut
+      // Compter les véhicules par statut de workflow (source de vérité)
       let enValidation = 0;
       let valides = 0;
       let rejetes = 0;
 
-      allVehicles?.forEach(vehicule => {
-        console.log(`🚗 Véhicule ${vehicule.id}: statut=${vehicule.statut}, validation_requise=${vehicule.validation_requise}`);
+      workflows?.forEach(workflow => {
+        console.log(`📋 Workflow ${workflow.id}: statut_global=${workflow.statut_global}`);
         
-        if (vehicule.statut === 'validation_requise' || vehicule.validation_requise === true) {
+        if (workflow.statut_global === 'en_validation') {
           enValidation++;
-          console.log(`✅ Véhicule ${vehicule.id} compté comme en validation`);
-        } else if (vehicule.statut === 'disponible' && vehicule.validation_requise === false) {
+        } else if (workflow.statut_global === 'valide') {
           valides++;
-        } else if (vehicule.statut === 'indisponible') {
+        } else if (workflow.statut_global === 'rejete') {
           rejetes++;
         }
       });
 
-      // Le total comprend tous les véhicules qui ont besoin de validation ou qui sont dans le processus
-      const total = enValidation + valides + rejetes;
+      // Le total comprend tous les workflows
+      const total = workflows?.length || 0;
 
       const stats = {
         total: total,
