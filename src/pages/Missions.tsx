@@ -21,6 +21,8 @@ const Missions = () => {
   const [activeTab, setActiveTab] = useState('en-cours');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [dateDebut, setDateDebut] = useState<Date>();
+  const [dateFin, setDateFin] = useState<Date>();
 
   // Actualisation automatique toutes les 30 secondes
   const { data: missions = [], isLoading, error, isError } = useQuery({
@@ -51,11 +53,21 @@ const Missions = () => {
         mission.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         mission.vehicule?.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         mission.chauffeur?.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mission.chauffeur?.prenom?.toLowerCase().includes(searchTerm.toLowerCase());
+        mission.chauffeur?.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mission.site_depart?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        mission.site_arrivee?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || mission.statut === statusFilter;
       
-      return matchesSearch && matchesStatus;
+      // Filtre par date
+      let matchesDate = true;
+      if (dateDebut || dateFin) {
+        const missionDate = new Date(mission.created_at);
+        if (dateDebut && missionDate < dateDebut) matchesDate = false;
+        if (dateFin && missionDate > dateFin) matchesDate = false;
+      }
+      
+      return matchesSearch && matchesStatus && matchesDate;
     });
   };
   
@@ -68,6 +80,12 @@ const Missions = () => {
   const missionsTerminees = filterMissions(
     missions.filter(mission => 
       mission.statut === 'terminee'
+    )
+  );
+
+  const missionsHistorique = filterMissions(
+    missions.filter(mission => 
+      mission.statut === 'terminee' || mission.statut === 'annulee'
     )
   );
 
@@ -179,17 +197,17 @@ const Missions = () => {
         />
       )}
 
-      {/* Filtres de recherche */}
-      <div className="flex gap-4 items-center">
-        <div className="flex-1">
+      {/* Filtres de recherche avancés */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+        <div className="md:col-span-2">
           <Input
-            placeholder="Rechercher par n° mission, véhicule, chauffeur..."
+            placeholder="Rechercher par n° mission, véhicule, chauffeur, lieu..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-48">
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
           <SelectContent>
@@ -204,12 +222,15 @@ const Missions = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="en-cours" className="flex items-center gap-2">
-            Missions en cours ({missionsEnCours.length})
+            En cours ({missionsEnCours.length})
           </TabsTrigger>
           <TabsTrigger value="terminees" className="flex items-center gap-2">
-            Missions terminées ({missionsTerminees.length})
+            Terminées ({missionsTerminees.length})
+          </TabsTrigger>
+          <TabsTrigger value="historique" className="flex items-center gap-2">
+            Historique complet ({missionsHistorique.length})
           </TabsTrigger>
         </TabsList>
         
@@ -228,6 +249,16 @@ const Missions = () => {
             onEdit={handleEditMission}
             hasWritePermission={canWriteMissions}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
+          />
+        </TabsContent>
+
+        <TabsContent value="historique" className="mt-6">
+          <MissionsTable
+            missions={missionsHistorique}
+            onEdit={handleEditMission}
+            hasWritePermission={canWriteMissions}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
+            showHistoryFilters={true}
           />
         </TabsContent>
       </Tabs>

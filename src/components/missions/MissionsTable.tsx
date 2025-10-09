@@ -33,9 +33,10 @@ interface MissionsTableProps {
   onEdit: (mission: any) => void;
   hasWritePermission: boolean;
   onRefresh: () => void;
+  showHistoryFilters?: boolean;
 }
 
-export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh }: MissionsTableProps) => {
+export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh, showHistoryFilters = false }: MissionsTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');

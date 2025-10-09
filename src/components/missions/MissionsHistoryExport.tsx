@@ -34,16 +34,17 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
 
     setIsExporting(true);
     try {
-      // Filtrer les missions selon la période
+      // Filtrer les missions selon la période (terminées ET annulées)
       const missionsFiltrees = missions.filter(m => {
         const missionDate = new Date(m.created_at);
-        return missionDate >= dateDebut && missionDate <= dateFin && m.statut === 'terminee';
+        return missionDate >= dateDebut && missionDate <= dateFin && 
+               (m.statut === 'terminee' || m.statut === 'annulee');
       });
 
       if (missionsFiltrees.length === 0) {
         toast({
           title: 'Aucune mission',
-          description: 'Aucune mission terminée trouvée pour cette période',
+          description: 'Aucune mission clôturée trouvée pour cette période',
           variant: 'destructive'
         });
         return;
@@ -59,26 +60,53 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
 
           return {
             'N° Mission': mission.numero,
-            'Date': format(new Date(mission.created_at), 'dd/MM/yyyy'),
-            'Type Transport': mission.type_transport,
+            'Date Création': format(new Date(mission.created_at), 'dd/MM/yyyy HH:mm'),
+            'Type Transport': mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
             'Véhicule': mission.vehicule?.numero || '',
             'Immatriculation': mission.vehicule?.immatriculation || mission.vehicule?.tracteur_immatriculation || '',
+            'Remorque': mission.vehicule?.remorque_immatriculation || '',
             'Chauffeur': `${mission.chauffeur?.prenom || ''} ${mission.chauffeur?.nom || ''}`,
-            'Départ': mission.site_depart,
-            'Arrivée': mission.site_arrivee,
+            'Téléphone Chauffeur': mission.chauffeur?.telephone || '',
+            'Site Départ': mission.site_depart || '',
+            'Site Arrivée': mission.site_arrivee || '',
             'Volume/Poids': mission.volume_poids || '',
             'Unité': mission.unite_mesure || '',
             'Nombre BL': bls?.length || 0,
-            'Statut': mission.statut,
+            'N° Tournée': bls?.[0]?.numero_tournee || '',
+            'Statut': mission.statut === 'terminee' ? 'Terminée' : 'Annulée',
+            'Date Clôture': mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy HH:mm') : '',
             'Observations': mission.observations || ''
           };
         })
       );
 
-      // Créer le fichier Excel
+      // Créer le fichier Excel avec mise en forme
       const ws = XLSX.utils.json_to_sheet(missionsDetails);
+      
+      // Ajuster la largeur des colonnes
+      const colWidths = [
+        { wch: 15 }, // N° Mission
+        { wch: 18 }, // Date Création
+        { wch: 15 }, // Type Transport
+        { wch: 12 }, // Véhicule
+        { wch: 15 }, // Immatriculation
+        { wch: 15 }, // Remorque
+        { wch: 20 }, // Chauffeur
+        { wch: 15 }, // Téléphone
+        { wch: 20 }, // Site Départ
+        { wch: 20 }, // Site Arrivée
+        { wch: 12 }, // Volume/Poids
+        { wch: 10 }, // Unité
+        { wch: 10 }, // Nombre BL
+        { wch: 15 }, // N° Tournée
+        { wch: 12 }, // Statut
+        { wch: 18 }, // Date Clôture
+        { wch: 30 }  // Observations
+      ];
+      ws['!cols'] = colWidths;
+      
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Missions');
+      XLSX.utils.book_append_sheet(wb, ws, 'Missions Clôturées');
 
       // Télécharger le fichier
       const filename = `missions_${format(dateDebut, 'dd-MM-yyyy')}_au_${format(dateFin, 'dd-MM-yyyy')}.xlsx`;
@@ -86,7 +114,7 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
 
       toast({
         title: 'Export réussi',
-        description: `${missionsFiltrees.length} missions exportées`
+        description: `${missionsFiltrees.length} mission(s) clôturée(s) exportée(s) avec succès`
       });
 
       setOpen(false);
@@ -114,7 +142,7 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
         <DialogHeader>
           <DialogTitle>Exporter l'historique des missions</DialogTitle>
           <DialogDescription>
-            Sélectionnez la période pour générer le rapport
+            Sélectionnez la période pour générer le rapport journalier des missions clôturées (terminées et annulées)
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
