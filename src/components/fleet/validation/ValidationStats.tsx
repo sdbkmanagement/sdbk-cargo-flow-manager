@@ -10,7 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 export const ValidationStats = () => {
   const { data: stats, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['validation-stats'],
-    queryFn: validationService.getStatistiquesGlobales,
+    queryFn: () => validationService.getStatistiquesGlobales(),
     staleTime: 0, // Données toujours fraîches
     gcTime: 10000, // Keep in cache for 10 seconds only
     refetchInterval: 15000, // Actualisation automatique toutes les 15 secondes
