@@ -218,7 +218,7 @@ const Missions = () => {
             <SelectItem value="annulee">Annulée</SelectItem>
           </SelectContent>
         </Select>
-        <MissionsHistoryExport missions={missions} />
+        <MissionsHistoryExport missions={missions} statusFilter={statusFilter} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

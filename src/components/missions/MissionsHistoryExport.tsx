@@ -14,9 +14,10 @@ import * as XLSX from 'xlsx';
 
 interface MissionsHistoryExportProps {
   missions: any[];
+  statusFilter: string;
 }
 
-export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) => {
+export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistoryExportProps) => {
   const [open, setOpen] = useState(false);
   const [dateDebut, setDateDebut] = useState<Date>();
   const [dateFin, setDateFin] = useState<Date>();
@@ -34,17 +35,29 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
 
     setIsExporting(true);
     try {
-      // Filtrer les missions selon la période (terminées ET annulées)
+      // Filtrer les missions selon la période et le filtre de statut actuel
       const missionsFiltrees = missions.filter(m => {
         const missionDate = new Date(m.created_at);
-        return missionDate >= dateDebut && missionDate <= dateFin && 
-               (m.statut === 'terminee' || m.statut === 'annulee');
+        const dateMatch = missionDate >= dateDebut && missionDate <= dateFin;
+        
+        // Si un filtre de statut spécifique est sélectionné, l'appliquer
+        if (statusFilter !== 'all') {
+          return dateMatch && m.statut === statusFilter;
+        }
+        
+        // Sinon, exporter toutes les missions de la période
+        return dateMatch;
       });
 
       if (missionsFiltrees.length === 0) {
+        const statusLabel = statusFilter === 'all' ? 'missions' : 
+                           statusFilter === 'en_attente' ? 'missions en attente' :
+                           statusFilter === 'en_cours' ? 'missions en cours' :
+                           statusFilter === 'terminee' ? 'missions terminées' :
+                           'missions annulées';
         toast({
           title: 'Aucune mission',
-          description: 'Aucune mission clôturée trouvée pour cette période',
+          description: `Aucune ${statusLabel} trouvée pour cette période`,
           variant: 'destructive'
         });
         return;
@@ -73,7 +86,9 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
             'Unité': mission.unite_mesure || '',
             'Nombre BL': bls?.length || 0,
             'N° Tournée': bls?.[0]?.numero_tournee || '',
-            'Statut': mission.statut === 'terminee' ? 'Terminée' : 'Annulée',
+            'Statut': mission.statut === 'terminee' ? 'Terminée' : 
+                     mission.statut === 'en_cours' ? 'En cours' :
+                     mission.statut === 'en_attente' ? 'En attente' : 'Annulée',
             'Date Clôture': mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy HH:mm') : '',
             'Observations': mission.observations || ''
           };
@@ -106,15 +121,26 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
       ws['!cols'] = colWidths;
       
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Missions Clôturées');
+      const sheetName = statusFilter === 'all' ? 'Toutes Missions' :
+                       statusFilter === 'en_attente' ? 'Missions En Attente' :
+                       statusFilter === 'en_cours' ? 'Missions En Cours' :
+                       statusFilter === 'terminee' ? 'Missions Terminées' :
+                       'Missions Annulées';
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
       // Télécharger le fichier
       const filename = `missions_${format(dateDebut, 'dd-MM-yyyy')}_au_${format(dateFin, 'dd-MM-yyyy')}.xlsx`;
       XLSX.writeFile(wb, filename);
 
+      const statusLabel = statusFilter === 'all' ? 'mission(s)' : 
+                         statusFilter === 'en_attente' ? 'mission(s) en attente' :
+                         statusFilter === 'en_cours' ? 'mission(s) en cours' :
+                         statusFilter === 'terminee' ? 'mission(s) terminée(s)' :
+                         'mission(s) annulée(s)';
+      
       toast({
         title: 'Export réussi',
-        description: `${missionsFiltrees.length} mission(s) clôturée(s) exportée(s) avec succès`
+        description: `${missionsFiltrees.length} ${statusLabel} exportée(s) avec succès`
       });
 
       setOpen(false);
@@ -135,14 +161,26 @@ export const MissionsHistoryExport = ({ missions }: MissionsHistoryExportProps) 
       <DialogTrigger asChild>
         <Button variant="outline">
           <Download className="w-4 h-4 mr-2" />
-          Exporter l'historique
+          {statusFilter === 'all' ? 'Exporter' : 
+           statusFilter === 'en_attente' ? 'Exporter (En attente)' :
+           statusFilter === 'en_cours' ? 'Exporter (En cours)' :
+           statusFilter === 'terminee' ? 'Exporter (Terminées)' :
+           'Exporter (Annulées)'}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Exporter l'historique des missions</DialogTitle>
+          <DialogTitle>Exporter les missions</DialogTitle>
           <DialogDescription>
-            Sélectionnez la période pour générer le rapport journalier des missions clôturées (terminées et annulées)
+            {statusFilter === 'all' 
+              ? 'Sélectionnez la période pour exporter toutes les missions'
+              : statusFilter === 'en_attente'
+              ? 'Sélectionnez la période pour exporter les missions en attente'
+              : statusFilter === 'en_cours'
+              ? 'Sélectionnez la période pour exporter les missions en cours'
+              : statusFilter === 'terminee'
+              ? 'Sélectionnez la période pour exporter les missions terminées'
+              : 'Sélectionnez la période pour exporter les missions annulées'}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
