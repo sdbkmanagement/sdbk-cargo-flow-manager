@@ -517,37 +517,46 @@ export const validationService = {
     return data || [];
   },
 
-  // Statistiques basées uniquement sur la table vehicules (évite les erreurs RLS)
+  // Statistiques basées sur les workflows (source de vérité du module Validation)
   async getStatistiquesGlobales() {
     console.log('🔄 Chargement des statistiques globales de validation...');
 
     try {
-      // Récupérer TOUS les véhicules
-      const { data: vehicules, error } = await supabase
-        .from('vehicules')
-        .select('id, statut, validation_requise');
+      // Récupérer tous les workflows avec leur statut_global
+      const { data: workflows, error } = await supabase
+        .from('validation_workflows')
+        .select('id, vehicule_id, statut_global, updated_at');
 
       if (error) {
-        console.error('❌ Erreur lors de la récupération des véhicules:', error);
+        console.error('❌ Erreur lors de la récupération des workflows:', error);
         throw error;
       }
 
-      const total = vehicules?.length || 0;
+      // Ne garder que le workflow le plus récent par véhicule
+      const latestByVehicule = new Map<string, any>();
+      (workflows || []).forEach((wf: any) => {
+        const current = latestByVehicule.get(wf.vehicule_id);
+        if (!current || new Date(wf.updated_at) > new Date(current.updated_at)) {
+          latestByVehicule.set(wf.vehicule_id, wf);
+        }
+      });
+
+      const workflowsUniques = Array.from(latestByVehicule.values());
+
+      const total = workflowsUniques.length || 0;
       let en_validation = 0;
       let valides = 0;
       let rejetes = 0;
 
-      (vehicules || []).forEach(v => {
-        const isValid = v.statut === 'disponible' && v.validation_requise === false;
-        const isEnValidation = v.statut === 'validation_requise' || v.validation_requise === true;
-        // Par défaut, sans workflow explicite, on ne classe pas en "rejeté"
-
-        if (isValid) valides++;
-        else if (isEnValidation) en_validation++;
+      (workflowsUniques || []).forEach((wf: any) => {
+        const statut = (wf.statut_global || '').toLowerCase();
+        if (statut === 'valide') valides++;
+        else if (statut === 'rejete') rejetes++;
+        else en_validation++;
       });
 
       const stats = { total, en_validation, valides, rejetes };
-      console.log('✅ Statistiques finales calculées (vehicules):', stats);
+      console.log('✅ Statistiques finales calculées (workflows):', stats);
 
       this._setCache('stats_globales', stats);
       return stats;
