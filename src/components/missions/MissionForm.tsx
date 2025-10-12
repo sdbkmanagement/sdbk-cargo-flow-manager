@@ -180,23 +180,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       };
       chargerBLs();
     } else {
-      // Pour une nouvelle mission d'hydrocarbures, créer un BL par défaut avec tous les champs requis
-      if (formData.type_transport === 'hydrocarbures') {
-        const defaultBL: BonLivraison = {
-          numero: `BL-${Date.now()}`,
-          destination: '',
-          lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
-          lieu_arrivee: '',
-          vehicule_id: formData.vehicule_id,
-          chauffeur_id: formData.chauffeur_id,
-          date_emission: new Date().toISOString().split('T')[0],
-          produit: 'essence',
-          quantite_prevue: 0,
-          unite_mesure: 'litres',
-          statut: 'emis'
-        };
-        setBls([defaultBL]);
-      }
+      // Pour une nouvelle mission d'hydrocarbures, ne pas créer de BL par défaut
+      // L'utilisateur doit saisir un numéro pour créer un BL
+      setBls([]);
     }
   }, [mission?.id, formData.type_transport, formData.vehicule_id, formData.chauffeur_id]);
 

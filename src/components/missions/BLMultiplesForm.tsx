@@ -19,16 +19,29 @@ interface BLMultiplesFormProps {
 
 export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: BLMultiplesFormProps) => {
   const [numeroBlInput, setNumeroBlInput] = React.useState('');
+  const [error, setError] = React.useState('');
 
   const ajouterBL = () => {
-    if (!numeroBlInput.trim()) {
-      return; // Ne rien faire si le numéro est vide
+    const numericValue = numeroBlInput.trim();
+    
+    // Valider que c'est uniquement des chiffres
+    if (!numericValue) {
+      setError('Le numéro de BL est obligatoire');
+      return;
+    }
+    
+    if (!/^\d+$/.test(numericValue)) {
+      setError('Le numéro de BL doit contenir uniquement des chiffres');
+      return;
     }
 
+    // Formater le numéro comme "BL-[chiffres]"
+    const numeroFormate = `BL-${numericValue}`;
+
     const nouveauBL: BonLivraison = {
-      numero: numeroBlInput.trim(),
+      numero: numeroFormate,
       destination: '',
-      lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
+      lieu_depart: 'Conakry',
       lieu_arrivee: '',
       vehicule_id: vehiculeId,
       chauffeur_id: chauffeurId,
@@ -40,7 +53,8 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     };
     
     onBLsChange([...bls, nouveauBL]);
-    setNumeroBlInput(''); // Réinitialiser l'input après ajout
+    setNumeroBlInput('');
+    setError('');
   };
 
   const supprimerBL = (index: number) => {
@@ -114,30 +128,51 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
             Numéros de BL *
           </Label>
           <p className="text-sm text-muted-foreground mb-3">
-            Saisissez les numéros de BL manuels associés à cette mission
+            Saisissez uniquement les chiffres du numéro de BL (Ex: 2025001)
           </p>
-          <div className="flex gap-2">
-            <Input
-              id="numero_bl"
-              value={numeroBlInput}
-              onChange={(e) => setNumeroBlInput(e.target.value)}
-              placeholder="Ex: BL-2025-001"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  ajouterBL();
-                }
-              }}
-            />
-            <Button
-              type="button"
-              onClick={ajouterBL}
-              disabled={!numeroBlInput.trim()}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Ajouter
-            </Button>
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Input
+                  id="numero_bl"
+                  type="text"
+                  value={numeroBlInput}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Permettre seulement les chiffres
+                    if (/^\d*$/.test(value)) {
+                      setNumeroBlInput(value);
+                      setError('');
+                    }
+                  }}
+                  placeholder="2025001"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      ajouterBL();
+                    }
+                  }}
+                  className={error ? 'border-red-500' : ''}
+                />
+                {numeroBlInput && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Sera créé comme: <span className="font-medium">BL-{numeroBlInput}</span>
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                onClick={ajouterBL}
+                disabled={!numeroBlInput.trim()}
+                className="bg-orange-500 hover:bg-orange-600"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Ajouter
+              </Button>
+            </div>
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
           </div>
         </div>
         {/* Alerte si des BL sont incomplets */}
