@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
+import { generateMonthlyInvoicePDF } from '@/utils/pdfGenerator';
 
 export const MonthlyInvoiceGenerator = () => {
   const [open, setOpen] = useState(false);
@@ -250,95 +251,23 @@ export const MonthlyInvoiceGenerator = () => {
         totalHT += quantite * prixUnitaire;
       });
 
-      const tva = totalHT * 0.18;
-      const totalTTC = totalHT + tva;
+      const totalTVA = totalHT * 0.18;
+      const totalTTC = totalHT + totalTVA;
 
-      // Créer le workbook
-      const wb = XLSX.utils.book_new();
-      const wsData: any[][] = [];
-
-      // Obtenir le nom du mois en français
-      const monthNames = ['', 'JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 
-                         'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
-      const monthName = monthNames[monthNumber];
-
-      // En-tête de la facture
-      wsData.push([`FACTURE TRANSPORT DU MOIS DE ${monthName} ${yearNumber} PRODUIT BLANC`]);
-      wsData.push([]);
-      wsData.push([]);
-      wsData.push(['DEPOT DE CONAKRY']);
-      wsData.push([]);
-      wsData.push([`FACTURE SDBK ${selectedMonth.padStart(2, '0')}/${yearNumber}-989 PB`]);
-      wsData.push([]);
-      wsData.push(['', '', '', '', '', '', 'A l\'intention de :']);
-      wsData.push(['', '', '', '', '', '', clientNom || 'TOTALEnergies GUINEE SA']);
-      wsData.push(['', '', '', '', '', '', 'Adresse: Guinée, Conakry, Coleah']);
-      wsData.push([]);
-      wsData.push([]);
-      
-      // Totaux
-      wsData.push(['', 'TOTAL ( HT )', '', '', '', `${totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
-      wsData.push(['', 'T V A (18 % )', '', '', '', `${tva.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
-      wsData.push(['', 'TOTAL DE LA FACTURE ( TTC )', '', '', '', `${totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
-      wsData.push([]);
-      wsData.push([]);
-      
-      // Informations client
-      wsData.push(['Code transport à Total', '', 'G6']);
-      wsData.push(['Code client à Total', '', '315']);
-      wsData.push(['Doit: TOTAL GUINEE SA NIF : 852622687/3Z']);
-      
-      // Tableau principal
-      wsData.push(['DESIGNATION', '', '', '', '', '', 'PERIODE', 'MONTANT']);
-      wsData.push(['TRANSPORT PRODUIT BLANC', '', '', '', '', '', `${monthName.substring(0, 3)}-${yearNumber.toString().substring(2)}`, `${totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
-      wsData.push([]);
-      
-      // Texte de conversion en lettres (simplifié)
-      wsData.push([`Suivant relevé de bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens`]);
-      wsData.push([]);
-      wsData.push([]);
-      wsData.push([]);
-      wsData.push([]);
-      
-      // Pied de page
-      wsData.push([`${totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`, '', 'Virement bancaire SGBG N° 01515080003-65']);
-      wsData.push(['', '', '', '', '', '', format(new Date(), 'dd/MM/yy')]);
-      wsData.push(['', '', '', '', '', '', 'Le Directeur Général']);
-
-      // Créer la feuille
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-      // Définir la largeur des colonnes
-      const colWidths = [
-        { wch: 30 },
-        { wch: 20 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 10 },
-        { wch: 15 },
-        { wch: 20 }
-      ];
-      ws['!cols'] = colWidths;
-
-      // Fusionner les cellules pour l'en-tête
-      ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // Titre principal
-        { s: { r: 3, c: 0 }, e: { r: 3, c: 7 } }, // DEPOT
-        { s: { r: 5, c: 0 }, e: { r: 5, c: 7 } }, // Numéro facture
-        { s: { r: 18, c: 0 }, e: { r: 18, c: 7 } }, // Doit
-        { s: { r: 21, c: 0 }, e: { r: 21, c: 7 } }, // Texte conversion
-      ];
-
-      XLSX.utils.book_append_sheet(wb, ws, 'Facture');
-
-      // Télécharger le fichier
-      const filename = `Facture_${selectedMonth.padStart(2, '0')}_${yearNumber}.xlsx`;
-      XLSX.writeFile(wb, filename);
+      // Générer le PDF
+      generateMonthlyInvoicePDF({
+        month: selectedMonth,
+        year: selectedYear,
+        clientNom: clientNom || 'TOTALEnergies GUINEE SA',
+        totalHT,
+        totalTVA,
+        totalTTC,
+        blCount: blsData.length
+      });
 
       toast({
         title: 'Facture générée',
-        description: `Facture générée avec succès pour ${blsData.length} bons de livraison`
+        description: `Facture PDF générée avec succès pour ${blsData.length} bons de livraison`
       });
 
       setOpen(false);
