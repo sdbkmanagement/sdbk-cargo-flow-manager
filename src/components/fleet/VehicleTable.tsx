@@ -77,8 +77,8 @@ export const VehicleTable = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Type</TableHead>
             <TableHead>Immatriculation</TableHead>
+            <TableHead>Type</TableHead>
             <TableHead>Transport</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Base</TableHead>
@@ -95,10 +95,10 @@ export const VehicleTable = ({
           ) : (
             vehicles.map((vehicle) => (
               <TableRow key={vehicle.id}>
-                <TableCell>{vehicle.type_vehicule}</TableCell>
                 <TableCell className="font-medium">
                   {getMainImmatriculation(vehicle)}
                 </TableCell>
+                <TableCell>{vehicle.type_vehicule}</TableCell>
                 <TableCell>
                   <Badge variant="outline">
                     {vehicle.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
