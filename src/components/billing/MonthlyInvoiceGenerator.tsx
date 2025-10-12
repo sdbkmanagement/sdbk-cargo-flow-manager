@@ -39,6 +39,7 @@ export const MonthlyInvoiceGenerator = () => {
 
     setIsGenerating(true);
     try {
+      console.log('Début de génération de facture');
       const monthNumber = parseInt(selectedMonth);
       const yearNumber = parseInt(selectedYear);
 
@@ -47,6 +48,8 @@ export const MonthlyInvoiceGenerator = () => {
       const endDate = monthNumber === 12 
         ? `${yearNumber + 1}-01-01` 
         : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`;
+
+      console.log('Recherche missions entre:', startDate, 'et', endDate);
 
       const { data: missionsData, error } = await supabase
         .from('missions')
@@ -59,7 +62,12 @@ export const MonthlyInvoiceGenerator = () => {
         .lt('date_heure_arrivee_reelle', endDate)
         .order('date_heure_arrivee_reelle', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erreur Supabase:', error);
+        throw error;
+      }
+
+      console.log('Missions récupérées:', missionsData?.length || 0);
 
       if (!missionsData || missionsData.length === 0) {
         toast({
@@ -67,6 +75,7 @@ export const MonthlyInvoiceGenerator = () => {
           description: 'Aucune mission terminée trouvée pour cette période',
           variant: 'destructive'
         });
+        setIsGenerating(false);
         return;
       }
 
@@ -75,15 +84,20 @@ export const MonthlyInvoiceGenerator = () => {
       let blCount = 0;
 
       missionsData.forEach((mission: any) => {
+        console.log('Mission:', mission.numero, 'BL:', mission.bons_livraison?.length || 0);
         if (mission.bons_livraison && mission.bons_livraison.length > 0) {
           mission.bons_livraison.forEach((bl: any) => {
             const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
             const prixUnitaire = bl.prix_unitaire || 0;
-            totalHT += quantite * prixUnitaire;
+            const montant = quantite * prixUnitaire;
+            console.log('BL:', bl.numero, 'Qté:', quantite, 'PU:', prixUnitaire, 'Montant:', montant);
+            totalHT += montant;
             blCount++;
           });
         }
       });
+
+      console.log('Total HT:', totalHT, 'BL Count:', blCount);
 
       if (totalHT === 0 || blCount === 0) {
         toast({
@@ -91,12 +105,15 @@ export const MonthlyInvoiceGenerator = () => {
           description: 'Aucun montant à facturer pour les missions de cette période',
           variant: 'destructive'
         });
+        setIsGenerating(false);
         return;
       }
 
       const totalTVA = totalHT * 0.18;
       const totalTTC = totalHT + totalTVA;
 
+      console.log('Génération du PDF...');
+      
       // Générer le PDF
       generateMonthlyInvoicePDF({
         month: selectedMonth,
@@ -114,11 +131,13 @@ export const MonthlyInvoiceGenerator = () => {
       });
 
       setOpen(false);
-    } catch (error) {
-      console.error('Erreur:', error);
+    } catch (error: any) {
+      console.error('Erreur complète:', error);
+      console.error('Message:', error?.message);
+      console.error('Details:', error?.details);
       toast({
         title: 'Erreur',
-        description: 'Erreur lors de la génération de la facture',
+        description: error?.message || 'Erreur lors de la génération de la facture',
         variant: 'destructive'
       });
     } finally {
