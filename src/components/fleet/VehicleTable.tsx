@@ -77,10 +77,8 @@ export const VehicleTable = ({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Numéro</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Immatriculation</TableHead>
-            <TableHead>Marque/Modèle</TableHead>
             <TableHead>Transport</TableHead>
             <TableHead>Statut</TableHead>
             <TableHead>Base</TableHead>
@@ -90,28 +88,16 @@ export const VehicleTable = ({
         <TableBody>
           {vehicles.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                 Aucun véhicule trouvé
               </TableCell>
             </TableRow>
           ) : (
             vehicles.map((vehicle) => (
               <TableRow key={vehicle.id}>
-                <TableCell className="font-medium">{vehicle.numero}</TableCell>
                 <TableCell>{vehicle.type_vehicule}</TableCell>
                 <TableCell className="font-medium">
                   {getMainImmatriculation(vehicle)}
-                  {vehicle.type_vehicule === 'tracteur_remorque' && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Tracteur: {vehicle.tracteur_immatriculation || '-'}
-                    </div>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {vehicle.type_vehicule === 'porteur' 
-                    ? `${vehicle.marque || ''} ${vehicle.modele || ''}`.trim() || '-'
-                    : `${vehicle.tracteur_marque || ''} ${vehicle.tracteur_modele || ''}`.trim() || '-'
-                  }
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline">
