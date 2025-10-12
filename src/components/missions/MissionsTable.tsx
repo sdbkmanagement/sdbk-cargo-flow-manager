@@ -188,153 +188,133 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
             <table className="w-full">
               <thead>
                 <tr className="sdbk-table-header">
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Citerne</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Prénoms et Nom du Chauffeur</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">N°BL</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">N° Tournée</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Nombre de BL</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Capacité</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Quantité / Litre</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Produits</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Provenance</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Destinations</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Numéro</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Type</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Trajet</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">N° Tournée / Citerne</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Chauffeur</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Date départ</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Statut</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredMissions.map((mission) => {
-                  const firstBL = mission.bons_livraison?.[0];
-                  const nombreBL = mission.bons_livraison?.length || 0;
-                  const citerne = mission.vehicule?.remorque_immatriculation || 
-                                 mission.vehicule?.immatriculation || 
-                                 mission.vehicule?.numero || 
-                                 '-';
-                  
-                  return (
-                    <tr key={mission.id} className="sdbk-table-row">
-                      {/* Citerne */}
-                      <td className="py-4 px-6">
-                        <span className="font-semibold text-gray-900">
-                          {citerne}
-                        </span>
-                      </td>
-                      
-                      {/* Prénoms et Nom du Chauffeur */}
-                      <td className="py-4 px-6">
-                        <span className="font-medium text-gray-900">
+                {filteredMissions.map((mission) => (
+                  <tr key={mission.id} className="sdbk-table-row">
+                    <td className="py-4 px-6">
+                      <div className="font-semibold text-sdbk-blue">
+                        {mission.numero}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <Badge 
+                        variant="outline" 
+                        className={cn(
+                          "font-medium",
+                          mission.type_transport === 'hydrocarbures' 
+                            ? 'border-red-200 text-sdbk-red bg-red-50' 
+                            : 'border-yellow-200 text-yellow-700 bg-yellow-50'
+                        )}
+                      >
+                        {mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
+                      </Badge>
+                    </td>
+                     <td className="py-4 px-6">
+                       <div className="flex items-center text-sm">
+                         <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                         <span className="truncate max-w-[150px] font-medium">
+                           {mission.site_depart && mission.site_arrivee 
+                             ? `${mission.site_depart} → ${mission.site_arrivee}`
+                             : 'Non défini → Non défini'
+                           }
+                         </span>
+                       </div>
+                     </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center text-sm">
+                        <Truck className="w-4 h-4 mr-2 text-gray-400" />
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-500 text-xs">
+                            {mission.bons_livraison?.[0]?.numero_tournee ? 
+                              `Tournée: ${mission.bons_livraison[0].numero_tournee}` : 
+                              'Tournée: Non définie'
+                            }
+                          </span>
+                          <span className="font-semibold text-sdbk-blue">
+                            {mission.vehicule?.remorque_immatriculation || 
+                             mission.vehicule?.immatriculation || 
+                             mission.vehicule?.numero || 
+                             'Non assigné'}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center text-sm">
+                        <User className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="font-medium">
                           {mission.chauffeur ? 
                             `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : 
-                            '-'
+                            'Non assigné'
                           }
                         </span>
-                      </td>
-                      
-                      {/* N°BL */}
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">
-                          {firstBL?.numero || '-'}
-                        </span>
-                      </td>
-                      
-                      {/* N° Tournée */}
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">
-                          {firstBL?.numero_tournee || '-'}
-                        </span>
-                      </td>
-                      
-                      {/* Nombre de BL */}
-                      <td className="py-4 px-6">
-                        <Badge variant="outline" className="font-medium">
-                          {nombreBL}
-                        </Badge>
-                      </td>
-                      
-                      {/* Capacité */}
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">
-                          {mission.vehicule?.capacite_citerne || '-'}
-                        </span>
-                      </td>
-                      
-                      {/* Quantité / Litre */}
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">
-                          {firstBL?.quantite_prevue ? `${firstBL.quantite_prevue}` : '-'}
-                        </span>
-                      </td>
-                      
-                      {/* Produits */}
-                      <td className="py-4 px-6">
-                        <Badge 
-                          variant="outline"
-                          className={cn(
-                            "font-medium uppercase text-xs",
-                            firstBL?.produit === 'essence' 
-                              ? 'bg-green-50 text-green-700 border-green-200' 
-                              : 'bg-orange-50 text-orange-700 border-orange-200'
-                          )}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-sm text-gray-900">
+                      {mission.created_at && format(
+                        new Date(mission.created_at), 
+                        'dd/MM/yyyy HH:mm', 
+                        { locale: fr }
+                      )}
+                    </td>
+                    <td className="py-4 px-6">
+                      <Badge className={cn("font-medium border", getStatusColor(mission.statut))}>
+                        {getStatusLabel(mission.statut)}
+                      </Badge>
+                    </td>
+                    <td className="py-4 px-6">
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onEdit(mission)}
+                          className="hover:bg-sdbk-blue/10 hover:text-sdbk-blue transition-colors duration-200"
+                          title="Modifier la mission"
                         >
-                          {firstBL?.produit || '-'}
-                        </Badge>
-                      </td>
-                      
-                      {/* Provenance */}
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">
-                          {firstBL?.lieu_depart || mission.site_depart || '-'}
-                        </span>
-                      </td>
-                      
-                      {/* Destinations */}
-                      <td className="py-4 px-6">
-                        <span className="text-sm text-gray-900">
-                          {firstBL?.destination || mission.site_arrivee || '-'}
-                        </span>
-                      </td>
-                      
-                      {/* Actions */}
-                      <td className="py-4 px-6">
-                        <div className="flex items-center space-x-2">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        
+                        {/* Bouton de suivi supprimé comme demandé */}
+                        
+                        {/* Bouton de clôture pour les missions en cours */}
+                        {canCloseMission && mission.statut === 'en_cours' && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => onEdit(mission)}
-                            className="hover:bg-sdbk-blue/10 hover:text-sdbk-blue transition-colors duration-200"
-                            title="Modifier la mission"
+                            onClick={() => handleCloseMission(mission)}
+                            className="hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
+                            title="Clôturer la mission"
                           >
-                            <Edit className="w-4 h-4" />
+                            <CheckCircle className="w-4 h-4" />
                           </Button>
-                          
-                          {canCloseMission && mission.statut === 'en_cours' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleCloseMission(mission)}
-                              className="hover:bg-green-50 hover:text-green-600 transition-colors duration-200"
-                              title="Clôturer la mission"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                            </Button>
-                          )}
-                          
-                          {hasWritePermission && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteMission(mission)}
-                              className="hover:bg-red-50 hover:text-sdbk-red transition-colors duration-200"
-                              title="Supprimer la mission"
-                              disabled={deleteMissionMutation.isPending}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        )}
+                        
+                        {hasWritePermission && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteMission(mission)}
+                            className="hover:bg-red-50 hover:text-sdbk-red transition-colors duration-200"
+                            title="Supprimer la mission"
+                            disabled={deleteMissionMutation.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
             
