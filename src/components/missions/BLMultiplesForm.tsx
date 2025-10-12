@@ -3,6 +3,8 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Plus, MapPin, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BonLivraison } from '@/types/bl';
@@ -16,9 +18,15 @@ interface BLMultiplesFormProps {
 }
 
 export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: BLMultiplesFormProps) => {
+  const [numeroBlInput, setNumeroBlInput] = React.useState('');
+
   const ajouterBL = () => {
+    if (!numeroBlInput.trim()) {
+      return; // Ne rien faire si le numéro est vide
+    }
+
     const nouveauBL: BonLivraison = {
-      numero: `BL-${Date.now()}`, // Temporary numero, will be replaced by database trigger
+      numero: numeroBlInput.trim(),
       destination: '',
       lieu_depart: 'Conakry', // Valeur par défaut pour éviter l'erreur de validation
       lieu_arrivee: '',
@@ -32,6 +40,7 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     };
     
     onBLsChange([...bls, nouveauBL]);
+    setNumeroBlInput(''); // Réinitialiser l'input après ajout
   };
 
   const supprimerBL = (index: number) => {
@@ -90,21 +99,47 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
-            <MapPin className="w-5 h-5 mr-2" />
-            Bons de Livraison (BL)
-            <span className="ml-2 text-sm font-normal text-gray-500">
-              ({bls.length} BL{bls.length > 1 ? 's' : ''})
-            </span>
-          </CardTitle>
-          <Button onClick={ajouterBL} className="bg-orange-500 hover:bg-orange-600">
-            <Plus className="w-4 h-4 mr-2" />
-            Ajouter un BL
-          </Button>
-        </div>
+        <CardTitle className="flex items-center">
+          <MapPin className="w-5 h-5 mr-2" />
+          Bons de Livraison (BL)
+          <span className="ml-2 text-sm font-normal text-gray-500">
+            ({bls.length} BL{bls.length > 1 ? 's' : ''})
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Section pour ajouter un nouveau BL */}
+        <div className="mb-6 p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+          <Label htmlFor="numero_bl" className="text-base font-semibold">
+            Numéros de BL *
+          </Label>
+          <p className="text-sm text-muted-foreground mb-3">
+            Saisissez les numéros de BL manuels associés à cette mission
+          </p>
+          <div className="flex gap-2">
+            <Input
+              id="numero_bl"
+              value={numeroBlInput}
+              onChange={(e) => setNumeroBlInput(e.target.value)}
+              placeholder="Ex: BL-2025-001"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  ajouterBL();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              onClick={ajouterBL}
+              disabled={!numeroBlInput.trim()}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Ajouter
+            </Button>
+          </div>
+        </div>
         {/* Alerte si des BL sont incomplets */}
         {blsIncomplets.length > 0 && (
           <Alert className="mb-6 border-amber-200 bg-amber-50">

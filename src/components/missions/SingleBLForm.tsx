@@ -57,7 +57,7 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
             <FileText className="w-5 h-5 mr-2 text-orange-500" />
-            BL #{index + 1}
+            BL #{bl.numero}
           </CardTitle>
           {canRemove && (
             <Button

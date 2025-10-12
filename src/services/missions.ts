@@ -13,7 +13,6 @@ export interface Mission {
   unite_mesure?: string;
   observations?: string;
   statut: 'en_attente' | 'en_cours' | 'terminee' | 'annulee';
-  numeros_bl_manuels?: string[];
   created_at: string;
   updated_at: string;
   created_by?: string;

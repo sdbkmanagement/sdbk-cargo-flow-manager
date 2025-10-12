@@ -50,7 +50,6 @@ export const MonthlyInvoiceGenerator = () => {
             numero,
             site_depart,
             site_arrivee,
-            numeros_bl_manuels,
             vehicule:vehicules(numero, immatriculation, remorque_immatriculation),
             chauffeur:chauffeurs(nom, prenom)
           )
@@ -109,17 +108,13 @@ export const MonthlyInvoiceGenerator = () => {
           
           if (bl.client_code) clientCodes.add(bl.client_code);
 
-          // Récupérer les numéros de BL manuels de la mission
-          const numerosBLManuels = bl.missions?.numeros_bl_manuels || [];
-          const blManuelsStr = numerosBLManuels.length > 0 ? numerosBLManuels.join(', ') : '';
-
           // Ajouter la ligne de détail
           excelData.push({
             'Date Chargement': bl.date_chargement_reelle ? format(new Date(bl.date_chargement_reelle), 'dd/MM/yyyy') : '',
             'N° Tournée': tournee,
             'Camions': bl.missions?.vehicule?.remorque_immatriculation || bl.missions?.vehicule?.immatriculation || bl.missions?.vehicule?.numero || '',
             'Dépôt': bl.lieu_depart || bl.missions?.site_depart || '',
-            'BL': blManuelsStr || bl.numero || '',
+            'BL': bl.numero || '',
             'Client': bl.lieu_arrivee || bl.missions?.site_arrivee || '',
             'Destination': bl.lieu_arrivee || bl.missions?.site_arrivee || '',
             'Prod': bl.produit === 'essence' ? 'Ess' : bl.produit === 'gasoil' ? 'Go' : bl.produit || '',

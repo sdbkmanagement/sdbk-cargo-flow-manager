@@ -70,7 +70,8 @@ export const exportService = {
         .select(`
           *,
           vehicules(numero, marque, modele, immatriculation),
-          chauffeurs(nom, prenom)
+          chauffeurs(nom, prenom),
+          bons_livraison(numero)
         `)
         .order('created_at', { ascending: false });
 
@@ -93,7 +94,7 @@ export const exportService = {
         'Site Arrivée': mission.site_arrivee || '',
         'Véhicule': mission.vehicules ? `${mission.vehicules.numero} - ${mission.vehicules.marque} ${mission.vehicules.modele}` : '',
         'Chauffeur': mission.chauffeurs ? `${mission.chauffeurs.prenom} ${mission.chauffeurs.nom}` : '',
-        'Numéros BL': mission.numeros_bl_manuels?.join(', ') || '',
+        'Numéros BL': mission.bons_livraison?.map((bl: any) => bl.numero).filter(Boolean).join(', ') || '',
         'Volume/Poids': mission.volume_poids || 0,
         'Unité Mesure': mission.unite_mesure || '',
         'Statut': mission.statut || '',
