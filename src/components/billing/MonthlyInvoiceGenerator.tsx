@@ -58,9 +58,9 @@ export const MonthlyInvoiceGenerator = () => {
           bons_livraison(*)
         `)
         .eq('statut', 'terminee')
-        .gte('date_heure_arrivee_reelle', startDate)
-        .lt('date_heure_arrivee_reelle', endDate)
-        .order('date_heure_arrivee_reelle', { ascending: true });
+        .gte('created_at', startDate)
+        .lt('created_at', endDate)
+        .order('created_at', { ascending: true });
 
       if (error) {
         console.error('Erreur Supabase:', error);
@@ -83,19 +83,35 @@ export const MonthlyInvoiceGenerator = () => {
       let totalHT = 0;
       let blCount = 0;
 
-      missionsData.forEach((mission: any) => {
+      for (const mission of missionsData as any[]) {
         console.log('Mission:', mission.numero, 'BL:', mission.bons_livraison?.length || 0);
+        const depart = mission.site_depart || '';
         if (mission.bons_livraison && mission.bons_livraison.length > 0) {
-          mission.bons_livraison.forEach((bl: any) => {
-            const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
-            const prixUnitaire = bl.prix_unitaire || 0;
-            const montant = quantite * prixUnitaire;
+          for (const bl of mission.bons_livraison) {
+            if (bl.facture) { continue; }
+            const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+            if (!quantite) { continue; }
+            let prixUnitaire = bl.prix_unitaire ?? 0;
+
+            if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
+              const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
+              try {
+                const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
+                if (tarif?.tarif_au_litre) {
+                  prixUnitaire = tarif.tarif_au_litre;
+                }
+              } catch (e) {
+                console.warn('Tarif introuvable pour', depart, '→', destination);
+              }
+            }
+
+            const montant = quantite * (prixUnitaire || 0);
             console.log('BL:', bl.numero, 'Qté:', quantite, 'PU:', prixUnitaire, 'Montant:', montant);
             totalHT += montant;
             blCount++;
-          });
+          }
         }
-      });
+      }
 
       console.log('Total HT:', totalHT, 'BL Count:', blCount);
 
