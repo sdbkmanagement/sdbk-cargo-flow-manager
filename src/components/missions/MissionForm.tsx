@@ -623,8 +623,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           </Card>
         </div>
 
-        {/* Section BL pour les hydrocarbures */}
-        {isHydrocarbures && (
+        {/* Section BL pour les hydrocarbures - Visible uniquement si véhicule et chauffeur assignés */}
+        {isHydrocarbures && formData.vehicule_id && formData.chauffeur_id && (
           <>
             {!isTerminee ? (
               <BLMultiplesForm
