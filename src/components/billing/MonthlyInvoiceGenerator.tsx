@@ -115,7 +115,7 @@ export const MonthlyInvoiceGenerator = () => {
             'Camions': bl.missions?.vehicule?.remorque_immatriculation || bl.missions?.vehicule?.immatriculation || bl.missions?.vehicule?.numero || '',
             'Dépôt': bl.lieu_depart || bl.missions?.site_depart || '',
             'BL': bl.numero || '',
-            'Client': '', // ⚠️ CHAMP MANQUANT EN DB - pas de client_nom dans bons_livraison
+            'Client': bl.lieu_arrivee || bl.missions?.site_arrivee || '',
             'Destination': bl.lieu_arrivee || bl.missions?.site_arrivee || '',
             'Prod': bl.produit === 'essence' ? 'Ess' : bl.produit === 'gasoil' ? 'Go' : bl.produit || '',
             'Qté': quantite || 0,
