@@ -200,10 +200,10 @@ export const MonthlyInvoiceGenerator = () => {
   };
 
   const handleGenerate = async () => {
-    if (!selectedMonth || !selectedYear || !clientNom) {
+    if (!selectedMonth || !selectedYear) {
       toast({
         title: 'Erreur',
-        description: 'Veuillez remplir tous les champs',
+        description: 'Veuillez sélectionner le mois et l\'année',
         variant: 'destructive'
       });
       return;
@@ -214,100 +214,131 @@ export const MonthlyInvoiceGenerator = () => {
       const monthNumber = parseInt(selectedMonth);
       const yearNumber = parseInt(selectedYear);
 
-      // Filtrer les missions du mois sélectionné
-      const missionsDuMois = missions.filter(m => {
-        const missionDate = new Date(m.created_at);
-        return missionDate.getMonth() + 1 === monthNumber && 
-               missionDate.getFullYear() === yearNumber;
+      // Récupérer tous les BL du mois
+      const { data: blsData, error } = await supabase
+        .from('bons_livraison')
+        .select(`
+          *,
+          missions!inner(
+            numero,
+            site_depart,
+            site_arrivee,
+            vehicule:vehicules(numero, immatriculation, remorque_immatriculation),
+            chauffeur:chauffeurs(nom, prenom)
+          )
+        `)
+        .gte('date_chargement_reelle', `${yearNumber}-${selectedMonth.padStart(2, '0')}-01`)
+        .lt('date_chargement_reelle', monthNumber === 12 ? `${yearNumber + 1}-01-01` : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`)
+        .order('date_chargement_reelle', { ascending: true });
+
+      if (error) throw error;
+
+      if (!blsData || blsData.length === 0) {
+        toast({
+          title: 'Aucune donnée',
+          description: 'Aucun bon de livraison trouvé pour cette période',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      // Calculer les totaux
+      let totalHT = 0;
+      blsData.forEach((bl: any) => {
+        const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+        const prixUnitaire = bl.prix_unitaire || 0;
+        totalHT += quantite * prixUnitaire;
       });
 
-      if (missionsDuMois.length === 0) {
-        toast({
-          title: 'Aucune mission',
-          description: 'Aucune mission terminée trouvée pour ce mois',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Calculer le total des missions
-      let totalHT = 0;
-      const lignesFacture = [];
-
-      for (const mission of missionsDuMois) {
-        if (mission.bons_livraison && mission.bons_livraison.length > 0) {
-          for (const bl of mission.bons_livraison) {
-            if (!bl.facture) {
-              let prixUnitaire = bl.prix_unitaire || 0;
-              
-              // Pour les hydrocarbures, récupérer le tarif automatiquement
-              if (mission.type_transport === 'hydrocarbures' && bl.lieu_arrivee) {
-                const tarif = await tarifsHydrocarburesService.getTarif(
-                  mission.site_depart, 
-                  bl.lieu_arrivee
-                );
-                if (tarif) {
-                  prixUnitaire = tarif.tarif_au_litre;
-                }
-              }
-              
-              const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
-              const total = quantite * prixUnitaire;
-              totalHT += total;
-
-              lignesFacture.push({
-                description: `${mission.numero} - ${bl.produit} - ${bl.destination} (BL: ${bl.numero})`,
-                quantite: quantite,
-                prix_unitaire: prixUnitaire,
-                total: total
-              });
-            }
-          }
-        }
-      }
-
-      if (lignesFacture.length === 0) {
-        toast({
-          title: 'Aucune facture à générer',
-          description: 'Toutes les missions ont déjà été facturées',
-          variant: 'destructive'
-        });
-        return;
-      }
-
-      // Créer la facture groupée
       const tva = totalHT * 0.18;
       const totalTTC = totalHT + tva;
 
-      const factureData = {
-        numero: `F${selectedYear}${selectedMonth.padStart(2, '0')}-GROUPE`,
-        client_nom: clientNom,
-        date_emission: new Date().toISOString().split('T')[0],
-        date_echeance: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        type_transport: 'Multiple',
-        montant_ht: totalHT,
-        montant_tva: tva,
-        montant_ttc: totalTTC,
-        statut: 'en_attente',
-        observations: `Facture groupée pour le mois ${selectedMonth}/${selectedYear} - ${missionsDuMois.length} missions`
-      };
+      // Créer le workbook
+      const wb = XLSX.utils.book_new();
+      const wsData: any[][] = [];
 
-      await billingService.createFacture(factureData, lignesFacture);
+      // Obtenir le nom du mois en français
+      const monthNames = ['', 'JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 
+                         'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
+      const monthName = monthNames[monthNumber];
 
-      // Marquer les BL comme facturés
-      for (const mission of missionsDuMois) {
-        if (mission.bons_livraison) {
-          for (const bl of mission.bons_livraison) {
-            if (!bl.facture) {
-              await billingService.markBLAsFactured(bl.id);
-            }
-          }
-        }
-      }
+      // En-tête de la facture
+      wsData.push([`FACTURE TRANSPORT DU MOIS DE ${monthName} ${yearNumber} PRODUIT BLANC`]);
+      wsData.push([]);
+      wsData.push([]);
+      wsData.push(['DEPOT DE CONAKRY']);
+      wsData.push([]);
+      wsData.push([`FACTURE SDBK ${selectedMonth.padStart(2, '0')}/${yearNumber}-989 PB`]);
+      wsData.push([]);
+      wsData.push(['', '', '', '', '', '', 'A l\'intention de :']);
+      wsData.push(['', '', '', '', '', '', clientNom || 'TOTALEnergies GUINEE SA']);
+      wsData.push(['', '', '', '', '', '', 'Adresse: Guinée, Conakry, Coleah']);
+      wsData.push([]);
+      wsData.push([]);
+      
+      // Totaux
+      wsData.push(['', 'TOTAL ( HT )', '', '', '', `${totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
+      wsData.push(['', 'T V A (18 % )', '', '', '', `${tva.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
+      wsData.push(['', 'TOTAL DE LA FACTURE ( TTC )', '', '', '', `${totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
+      wsData.push([]);
+      wsData.push([]);
+      
+      // Informations client
+      wsData.push(['Code transport à Total', '', 'G6']);
+      wsData.push(['Code client à Total', '', '315']);
+      wsData.push(['Doit: TOTAL GUINEE SA NIF : 852622687/3Z']);
+      
+      // Tableau principal
+      wsData.push(['DESIGNATION', '', '', '', '', '', 'PERIODE', 'MONTANT']);
+      wsData.push(['TRANSPORT PRODUIT BLANC', '', '', '', '', '', `${monthName.substring(0, 3)}-${yearNumber.toString().substring(2)}`, `${totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`]);
+      wsData.push([]);
+      
+      // Texte de conversion en lettres (simplifié)
+      wsData.push([`Suivant relevé de bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens`]);
+      wsData.push([]);
+      wsData.push([]);
+      wsData.push([]);
+      wsData.push([]);
+      
+      // Pied de page
+      wsData.push([`${totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} GNF`, '', 'Virement bancaire SGBG N° 01515080003-65']);
+      wsData.push(['', '', '', '', '', '', format(new Date(), 'dd/MM/yy')]);
+      wsData.push(['', '', '', '', '', '', 'Le Directeur Général']);
+
+      // Créer la feuille
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+      // Définir la largeur des colonnes
+      const colWidths = [
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 10 },
+        { wch: 15 },
+        { wch: 20 }
+      ];
+      ws['!cols'] = colWidths;
+
+      // Fusionner les cellules pour l'en-tête
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // Titre principal
+        { s: { r: 3, c: 0 }, e: { r: 3, c: 7 } }, // DEPOT
+        { s: { r: 5, c: 0 }, e: { r: 5, c: 7 } }, // Numéro facture
+        { s: { r: 18, c: 0 }, e: { r: 18, c: 7 } }, // Doit
+        { s: { r: 21, c: 0 }, e: { r: 21, c: 7 } }, // Texte conversion
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, 'Facture');
+
+      // Télécharger le fichier
+      const filename = `Facture_${selectedMonth.padStart(2, '0')}_${yearNumber}.xlsx`;
+      XLSX.writeFile(wb, filename);
 
       toast({
-        title: 'Facture créée',
-        description: `Facture groupée créée avec succès pour ${missionsDuMois.length} missions`
+        title: 'Facture générée',
+        description: `Facture générée avec succès pour ${blsData.length} bons de livraison`
       });
 
       setOpen(false);
@@ -361,11 +392,11 @@ export const MonthlyInvoiceGenerator = () => {
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Nom du client</Label>
+            <Label>Nom du client (optionnel)</Label>
             <input
               type="text"
               className="w-full px-3 py-2 border rounded-md"
-              placeholder="Nom du client (optionnel pour l'export)"
+              placeholder="Ex: TOTALEnergies GUINEE SA"
               value={clientNom}
               onChange={(e) => setClientNom(e.target.value)}
             />
@@ -413,12 +444,12 @@ export const MonthlyInvoiceGenerator = () => {
               className="w-full"
             >
               <Download className="w-4 h-4 mr-2" />
-              {isGenerating ? 'Export...' : 'Exporter Excel'}
+              {isGenerating ? 'Export...' : 'Export Mouvement'}
             </Button>
 
             <Button 
               onClick={handleGenerate} 
-              disabled={isGenerating || !selectedMonth || !selectedYear || !clientNom}
+              disabled={isGenerating || !selectedMonth || !selectedYear}
               className="w-full"
             >
               {isGenerating ? 'Génération...' : 'Générer facture'}
