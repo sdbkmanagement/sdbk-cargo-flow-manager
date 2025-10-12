@@ -42,16 +42,14 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     message: string;
   } | null>(null);
 
-  // Fonction pour formater l'affichage du véhicule avec son immatriculation
+  // Fonction pour formater l'affichage du véhicule - Afficher uniquement le numéro de citerne
   const getVehiculeDisplayText = (vehicule: any) => {
     if (vehicule.type_vehicule === 'tracteur_remorque') {
-      // Pour tracteur-remorque, privilégier l'immatriculation de la remorque (citerne)
-      const immatriculation = vehicule.remorque_immatriculation || vehicule.tracteur_immatriculation || '';
-      return `${vehicule.numero}${immatriculation ? ` - ${immatriculation}` : ''}`;
+      // Pour tracteur-remorque, afficher uniquement l'immatriculation de la remorque (citerne)
+      return vehicule.remorque_immatriculation || vehicule.tracteur_immatriculation || vehicule.numero;
     }
-    // Pour porteur, afficher l'immatriculation du porteur
-    const immatriculation = vehicule.immatriculation || '';
-    return `${vehicule.numero}${immatriculation ? ` - ${immatriculation}` : ''}`;
+    // Pour porteur, afficher uniquement l'immatriculation
+    return vehicule.immatriculation || vehicule.numero;
   };
 
   // Récupérer les véhicules disponibles
