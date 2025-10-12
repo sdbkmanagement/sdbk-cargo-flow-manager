@@ -31,8 +31,10 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     unite_mesure: mission?.unite_mesure || 'tonnes',
     vehicule_id: mission?.vehicule_id || '',
     chauffeur_id: mission?.chauffeur_id || '',
-    statut: mission?.statut || 'en_cours'
+    statut: mission?.statut || 'en_cours',
+    numeros_bl_manuels: mission?.numeros_bl_manuels || []
   });
+  const [numeroBlInput, setNumeroBlInput] = useState('');
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
   const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
@@ -536,11 +538,78 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                   </div>
+                 </>
+               )}
+
+               {/* Champ pour les numéros de BL manuels */}
+               <div className="border-t pt-4">
+                 <Label htmlFor="numeros_bl">Numéros de BL (optionnel)</Label>
+                 <p className="text-sm text-muted-foreground mb-2">
+                   Saisissez les numéros de BL manuels associés à cette mission
+                 </p>
+                 <div className="flex gap-2 mb-2">
+                   <Input
+                     id="numero_bl_input"
+                     value={numeroBlInput}
+                     onChange={(e) => setNumeroBlInput(e.target.value)}
+                     placeholder="Ex: BL-2025-001"
+                     onKeyDown={(e) => {
+                       if (e.key === 'Enter') {
+                         e.preventDefault();
+                         if (numeroBlInput.trim()) {
+                           setFormData(prev => ({
+                             ...prev,
+                             numeros_bl_manuels: [...prev.numeros_bl_manuels, numeroBlInput.trim()]
+                           }));
+                           setNumeroBlInput('');
+                         }
+                       }
+                     }}
+                   />
+                   <Button
+                     type="button"
+                     variant="outline"
+                     onClick={() => {
+                       if (numeroBlInput.trim()) {
+                         setFormData(prev => ({
+                           ...prev,
+                           numeros_bl_manuels: [...prev.numeros_bl_manuels, numeroBlInput.trim()]
+                         }));
+                         setNumeroBlInput('');
+                       }
+                     }}
+                   >
+                     Ajouter
+                   </Button>
+                 </div>
+                 {formData.numeros_bl_manuels.length > 0 && (
+                   <div className="flex flex-wrap gap-2">
+                     {formData.numeros_bl_manuels.map((numero, index) => (
+                       <div
+                         key={index}
+                         className="flex items-center gap-1 bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm"
+                       >
+                         <span>{numero}</span>
+                         <button
+                           type="button"
+                           onClick={() => {
+                             setFormData(prev => ({
+                               ...prev,
+                               numeros_bl_manuels: prev.numeros_bl_manuels.filter((_, i) => i !== index)
+                             }));
+                           }}
+                           className="ml-1 text-orange-600 hover:text-orange-900"
+                         >
+                           ×
+                         </button>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+               </div>
+             </CardContent>
+           </Card>
 
           {/* Assignation des ressources */}
           <Card>

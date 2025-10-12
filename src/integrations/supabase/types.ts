@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -1557,6 +1557,7 @@ export type Database = {
           created_by: string | null
           id: string
           numero: string
+          numeros_bl_manuels: string[] | null
           observations: string | null
           site_arrivee: string
           site_depart: string
@@ -1573,6 +1574,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           numero: string
+          numeros_bl_manuels?: string[] | null
           observations?: string | null
           site_arrivee: string
           site_depart: string
@@ -1589,6 +1591,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           numero?: string
+          numeros_bl_manuels?: string[] | null
           observations?: string | null
           site_arrivee?: string
           site_depart?: string
@@ -2246,9 +2249,9 @@ export type Database = {
       admin_create_user_with_auth: {
         Args: {
           p_email: string
-          p_password: string
           p_first_name: string
           p_last_name: string
+          p_password: string
           p_role: string
         }
         Returns: Json
@@ -2263,16 +2266,16 @@ export type Database = {
       }
       check_resource_availability: {
         Args: {
-          p_vehicule_id: string
           p_chauffeur_id: string
           p_date_debut: string
           p_date_fin: string
           p_mission_id?: string
+          p_vehicule_id: string
         }
         Returns: {
-          vehicule_disponible: boolean
           chauffeur_disponible: boolean
           message: string
+          vehicule_disponible: boolean
         }[]
       }
       create_user_with_role: {
@@ -2290,11 +2293,11 @@ export type Database = {
         Returns: boolean
       }
       has_module_permission: {
-        Args: { user_id: string; module_name: string }
+        Args: { module_name: string; user_id: string }
         Returns: boolean
       }
       has_validation_role: {
-        Args: { user_id: string; role_name: string }
+        Args: { role_name: string; user_id: string }
         Returns: boolean
       }
       is_admin: {

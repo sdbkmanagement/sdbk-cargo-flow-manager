@@ -71,9 +71,13 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
             .select('*')
             .eq('mission_id', mission.id);
 
+          // Combiner les numéros de BL manuels et automatiques
+          const blNumsAuto = bls?.map(bl => bl.numero).filter(Boolean).join(', ') || '';
+          const blNumsManuels = mission.numeros_bl_manuels?.join(', ') || '';
+          const blNums = [blNumsManuels, blNumsAuto].filter(Boolean).join(', ');
+
           // Calculer les totaux de BL si disponibles
           const totalQuantite = bls?.reduce((sum, bl) => sum + (bl.quantite_livree || bl.quantite_prevue || 0), 0) || 0;
-          const blNums = bls?.map(bl => bl.numero).filter(Boolean).join(', ') || '';
           const produits = bls?.map(bl => bl.produit).filter(Boolean);
           const produitType = produits && produits.length > 0 ? 
                              (produits[0] === 'essence' ? 'ESSENCE' : 'GASOIL') : 
