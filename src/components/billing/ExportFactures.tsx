@@ -10,6 +10,7 @@ import { fr } from 'date-fns/locale';
 import { CalendarIcon, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
+import * as XLSX from 'xlsx';
 
 export const ExportFactures = () => {
   const [dateDebut, setDateDebut] = useState<Date>();
@@ -131,13 +132,58 @@ export const ExportFactures = () => {
       
       const data = await getBonsLivraisonData(dateDebutStr, dateFinStr);
       
-      // Pour l'instant, utiliser le CSV car l'Excel nécessite une bibliothèque supplémentaire
-      const filename = `mouvement_${format(dateDebut, 'yyyy-MM')}.csv`;
-      await exportToCSV(data, filename);
+      // Préparer les données pour Excel
+      const excelData = data.map(item => ({
+        'Date Chargement': item.date_chargement_reelle ? new Date(item.date_chargement_reelle).toLocaleDateString('fr-FR') : '',
+        'N° Tournée': item.numero_tournee || '',
+        'Camions': item.vehicule || '',
+        'Dépôt': item.lieu_depart || '',
+        'BL': item.numero || '',
+        'Client': item.client_nom || '',
+        'Destination': item.destination || '',
+        'Prod': item.produit || '',
+        'Qté': item.quantite_livree || 0,
+        'Pu': item.prix_unitaire || 0,
+        'Montant': item.montant_total || 0,
+        'Manq$': item.manquant_total || 0,
+        'Cpteur': item.manquant_compteur || 0,
+        'Cuve': item.manquant_cuve || 0,
+        'Numéros Clients': item.client_code || ''
+      }));
+
+      // Créer le workbook
+      const ws = XLSX.utils.json_to_sheet(excelData);
+      
+      // Définir la largeur des colonnes
+      const colWidths = [
+        { wch: 15 },  // Date Chargement
+        { wch: 12 },  // N° Tournée
+        { wch: 20 },  // Camions
+        { wch: 15 },  // Dépôt
+        { wch: 20 },  // BL
+        { wch: 25 },  // Client
+        { wch: 25 },  // Destination
+        { wch: 8 },   // Prod
+        { wch: 12 },  // Qté
+        { wch: 12 },  // Pu
+        { wch: 15 },  // Montant
+        { wch: 12 },  // Manq$
+        { wch: 12 },  // Cpteur
+        { wch: 12 },  // Cuve
+        { wch: 20 }   // Numéros Clients
+      ];
+      ws['!cols'] = colWidths;
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Mouvement Hydrocarbures');
+
+      // Télécharger le fichier
+      const filename = `mouvement_${format(dateDebut, 'yyyy-MM')}.xlsx`;
+      XLSX.writeFile(wb, filename);
       
       toast({
         title: 'Export réussi',
-        description: `Fichier généré pour la période du ${format(dateDebut, 'dd/MM/yyyy')} au ${format(dateFin, 'dd/MM/yyyy')} (${data.length} entrées)`,
+        description: `Fichier Excel généré pour la période du ${format(dateDebut, 'dd/MM/yyyy')} au ${format(dateFin, 'dd/MM/yyyy')} (${data.length} entrées)`,
       });
     } catch (error) {
       console.error('Erreur export:', error);
@@ -300,7 +346,7 @@ export const ExportFactures = () => {
                   <FileSpreadsheet className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-medium">Export Mouvement (.csv)</h3>
+                  <h3 className="font-medium">Export Mouvement (.xlsx)</h3>
                   <p className="text-sm text-gray-600">Format mouvement hydrocarbures TOTAL</p>
                 </div>
               </div>
