@@ -188,12 +188,12 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
             <table className="w-full">
               <thead>
                 <tr className="sdbk-table-header">
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Numéro</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Type</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Numéro mission</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">N° Citerne</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">N° Tournée</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Trajet</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">N° Tournée / Citerne</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Chauffeur</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Date départ</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-900">Date création</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Statut</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Actions</th>
                 </tr>
@@ -201,58 +201,53 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
               <tbody>
                 {filteredMissions.map((mission) => (
                   <tr key={mission.id} className="sdbk-table-row">
+                    {/* Numéro mission */}
                     <td className="py-4 px-6">
                       <div className="font-semibold text-sdbk-blue">
                         {mission.numero}
                       </div>
                     </td>
-                    <td className="py-4 px-6">
-                      <Badge 
-                        variant="outline" 
-                        className={cn(
-                          "font-medium",
-                          mission.type_transport === 'hydrocarbures' 
-                            ? 'border-red-200 text-sdbk-red bg-red-50' 
-                            : 'border-yellow-200 text-yellow-700 bg-yellow-50'
-                        )}
-                      >
-                        {mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
-                      </Badge>
-                    </td>
-                     <td className="py-4 px-6">
-                       <div className="flex items-center text-sm">
-                         <MapPin className="w-4 h-4 mr-2 text-gray-400" />
-                         <span className="truncate max-w-[150px] font-medium">
-                           {mission.site_depart && mission.site_arrivee 
-                             ? `${mission.site_depart} → ${mission.site_arrivee}`
-                             : 'Non défini → Non défini'
-                           }
-                         </span>
-                       </div>
-                     </td>
+                    
+                    {/* N° Citerne */}
                     <td className="py-4 px-6">
                       <div className="flex items-center text-sm">
                         <Truck className="w-4 h-4 mr-2 text-gray-400" />
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-500 text-xs">
-                            {mission.bons_livraison?.[0]?.numero_tournee ? 
-                              `Tournée: ${mission.bons_livraison[0].numero_tournee}` : 
-                              'Tournée: Non définie'
-                            }
-                          </span>
-                          <span className="font-semibold text-sdbk-blue">
-                            {mission.vehicule?.remorque_immatriculation || 
-                             mission.vehicule?.immatriculation || 
-                             mission.vehicule?.numero || 
-                             'Non assigné'}
-                          </span>
-                        </div>
+                        <span className="font-semibold text-gray-900">
+                          {mission.vehicule?.remorque_immatriculation || 
+                           mission.vehicule?.immatriculation || 
+                           mission.vehicule?.numero || 
+                           'Non assigné'}
+                        </span>
                       </div>
                     </td>
+                    
+                    {/* N° Tournée */}
+                    <td className="py-4 px-6">
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-900">
+                          {mission.bons_livraison?.[0]?.numero_tournee || 'Non définie'}
+                        </span>
+                      </div>
+                    </td>
+                    
+                    {/* Trajet */}
+                    <td className="py-4 px-6">
+                      <div className="flex items-center text-sm">
+                        <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="truncate max-w-[180px] font-medium text-gray-900">
+                          {mission.site_depart && mission.site_arrivee 
+                            ? `${mission.site_depart} → ${mission.site_arrivee}`
+                            : 'Non défini'
+                          }
+                        </span>
+                      </div>
+                    </td>
+                    
+                    {/* Chauffeur */}
                     <td className="py-4 px-6">
                       <div className="flex items-center text-sm">
                         <User className="w-4 h-4 mr-2 text-gray-400" />
-                        <span className="font-medium">
+                        <span className="font-medium text-gray-900">
                           {mission.chauffeur ? 
                             `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : 
                             'Non assigné'
@@ -260,18 +255,26 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
                         </span>
                       </div>
                     </td>
-                    <td className="py-4 px-6 text-sm text-gray-900">
-                      {mission.created_at && format(
-                        new Date(mission.created_at), 
-                        'dd/MM/yyyy HH:mm', 
-                        { locale: fr }
-                      )}
+                    
+                    {/* Date création */}
+                    <td className="py-4 px-6">
+                      <div className="text-sm text-gray-900">
+                        {mission.created_at && format(
+                          new Date(mission.created_at), 
+                          'dd/MM/yyyy HH:mm', 
+                          { locale: fr }
+                        )}
+                      </div>
                     </td>
+                    
+                    {/* Statut */}
                     <td className="py-4 px-6">
                       <Badge className={cn("font-medium border", getStatusColor(mission.statut))}>
                         {getStatusLabel(mission.statut)}
                       </Badge>
                     </td>
+                    
+                    {/* Actions */}
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-2">
                         <Button
@@ -283,8 +286,6 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
-                        
-                        {/* Bouton de suivi supprimé comme demandé */}
                         
                         {/* Bouton de clôture pour les missions en cours */}
                         {canCloseMission && mission.statut === 'en_cours' && (
