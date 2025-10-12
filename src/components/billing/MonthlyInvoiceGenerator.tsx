@@ -48,7 +48,7 @@ export const MonthlyInvoiceGenerator = () => {
           *,
           missions(
             numero,
-            vehicule:vehicules(numero, immatriculation, remorque_immatriculation, capacite_citerne),
+            vehicule:vehicules(numero, immatriculation, remorque_immatriculation),
             chauffeur:chauffeurs(nom, prenom)
           )
         `)
@@ -115,14 +115,14 @@ export const MonthlyInvoiceGenerator = () => {
             'Client': bl.client_nom || '',
             'Destination': bl.destination || '',
             'Prod': bl.produit === 'essence' ? 'Ess' : bl.produit === 'gasoil' ? 'Go' : bl.produit || '',
-            'Qté': quantite,
-            'Pu': prixUnitaire,
-            'Montant': montant,
+            'Qté': quantite || 0,
+            'Pu': prixUnitaire || 0,
+            'Montant': montant || 0,
             'Manq$': bl.manquant_total || 0,
             'Cpteur': bl.manquant_compteur || 0,
             'Cuve': bl.manquant_cuve || 0,
             'Numéros Clients': bl.client_code || '',
-            'Montant ': montant
+            'Montant ': montant || 0
           });
         });
 
