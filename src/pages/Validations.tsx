@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,10 +13,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
 import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
 const Validations = () => {
+  const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  // Debounce pour la recherche
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchInput);
+      setCurrentPage(1);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const { hasValidationAccess, getUserRole, getUserRoles } = useValidationPermissions();
 
@@ -141,11 +152,6 @@ const Validations = () => {
     }
   };
 
-  const handleSearch = (value: string) => {
-    setSearchTerm(value);
-    setCurrentPage(1); // Reset to first page when searching
-  };
-
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
     setCurrentPage(1); // Reset to first page when filtering
@@ -216,9 +222,9 @@ const Validations = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <Input
-                  placeholder="Rechercher un véhicule..."
-                  value={searchTerm}
-                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Rechercher par numéro, immatriculation, marque..."
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                 />
               </div>
               <div className="w-full sm:w-48">
@@ -277,6 +283,7 @@ const Validations = () => {
               <div className="text-center py-8">
                 <p className="text-gray-500">Aucun véhicule trouvé pour les critères sélectionnés.</p>
                 <Button onClick={() => {
+                  setSearchInput('');
                   setSearchTerm('');
                   setStatusFilter('all');
                   setCurrentPage(1);
