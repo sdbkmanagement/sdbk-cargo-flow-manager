@@ -46,14 +46,17 @@ export const MonthlyInvoiceGenerator = () => {
         .from('bons_livraison')
         .select(`
           *,
-          missions(
+          missions!inner(
             numero,
+            site_depart,
+            site_arrivee,
             vehicule:vehicules(numero, immatriculation, remorque_immatriculation),
             chauffeur:chauffeurs(nom, prenom)
           )
         `)
         .gte('date_chargement_reelle', `${yearNumber}-${selectedMonth.padStart(2, '0')}-01`)
         .lt('date_chargement_reelle', monthNumber === 12 ? `${yearNumber + 1}-01-01` : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`)
+        .not('numero_tournee', 'is', null)
         .order('numero_tournee', { ascending: true })
         .order('date_chargement_reelle', { ascending: true });
 
@@ -110,10 +113,10 @@ export const MonthlyInvoiceGenerator = () => {
             'Date Chargement': bl.date_chargement_reelle ? format(new Date(bl.date_chargement_reelle), 'dd/MM/yyyy') : '',
             'N° Tournée': tournee,
             'Camions': bl.missions?.vehicule?.remorque_immatriculation || bl.missions?.vehicule?.immatriculation || bl.missions?.vehicule?.numero || '',
-            'Dépôt': bl.lieu_depart || '',
+            'Dépôt': bl.lieu_depart || bl.missions?.site_depart || '',
             'BL': bl.numero || '',
-            'Client': bl.client_nom || '',
-            'Destination': bl.destination || '',
+            'Client': '', // ⚠️ CHAMP MANQUANT EN DB - pas de client_nom dans bons_livraison
+            'Destination': bl.lieu_arrivee || bl.missions?.site_arrivee || '',
             'Prod': bl.produit === 'essence' ? 'Ess' : bl.produit === 'gasoil' ? 'Go' : bl.produit || '',
             'Qté': quantite || 0,
             'Pu': prixUnitaire || 0,
@@ -121,7 +124,7 @@ export const MonthlyInvoiceGenerator = () => {
             'Manq$': bl.manquant_total || 0,
             'Cpteur': bl.manquant_compteur || 0,
             'Cuve': bl.manquant_cuve || 0,
-            'Numéros Clients': bl.client_code || '',
+            'Numéros Clients': bl.client_code_total || bl.client_code || '',
             'Montant ': montant || 0
           });
         });
