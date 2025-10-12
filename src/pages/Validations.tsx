@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -11,23 +11,13 @@ import vehiculesService, { type Vehicule } from '@/services/vehicules';
 import { validationService } from '@/services/validation';
 import { supabase } from '@/integrations/supabase/client';
 import { useValidationPermissions } from '@/hooks/useValidationPermissions';
-import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Search } from 'lucide-react';
 const Validations = () => {
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
-  // Debounce pour la recherche
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setSearchTerm(searchInput);
-      setCurrentPage(1);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [searchInput]);
 
   const { hasValidationAccess, getUserRole, getUserRoles } = useValidationPermissions();
 
@@ -152,6 +142,17 @@ const Validations = () => {
     }
   };
 
+  const handleSearch = () => {
+    setSearchTerm(searchInput);
+    setCurrentPage(1);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
     setCurrentPage(1); // Reset to first page when filtering
@@ -220,12 +221,17 @@ const Validations = () => {
           {/* Filtres */}
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
+              <div className="flex-1 flex gap-2">
                 <Input
                   placeholder="Rechercher par numéro, immatriculation, marque..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
                 />
+                <Button onClick={handleSearch} variant="default">
+                  <Search className="w-4 h-4 mr-2" />
+                  Rechercher
+                </Button>
               </div>
               <div className="w-full sm:w-48">
                 <Select value={statusFilter} onValueChange={handleStatusChange}>
