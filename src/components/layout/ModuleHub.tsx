@@ -71,7 +71,7 @@ export const ModuleHub: React.FC = () => {
           vehicules: hubStats.vehicules,
           chauffeurs: hubStats.chauffeurs,
           missionsEnCours: hubStats.missionsEnCours,
-          factures: financialStats.totalFactures,
+          factures: financialStats.facturesMensuelles,
           employes: hubStats.employes,
           missionsEnAttente: hubStats.validationsEnAttente
         });
