@@ -10,7 +10,6 @@ import { ExportFactures } from '@/components/billing/ExportFactures';
 import { InvoiceForm } from '@/components/billing/InvoiceForm';
 import { QuoteForm } from '@/components/billing/QuoteForm';
 import { MonthlyInvoiceGenerator } from '@/components/billing/MonthlyInvoiceGenerator';
-import { CorrectMonthlyInvoices } from '@/components/billing/CorrectMonthlyInvoices';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Calculator } from 'lucide-react';
 
@@ -95,7 +94,6 @@ const Billing = () => {
         </TabsContent>
 
         <TabsContent value="monthly-invoices" className="space-y-6">
-          <CorrectMonthlyInvoices onCorrectionComplete={handleInvoiceCreated} />
           <InvoiceList key={refreshKey} type="monthly" />
         </TabsContent>
 
