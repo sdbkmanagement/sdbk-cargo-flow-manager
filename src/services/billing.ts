@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { tarifsHydrocarburesService } from '@/services/tarifsHydrocarburesService';
 
 export interface Devis {
   id: string;

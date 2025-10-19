@@ -5,6 +5,7 @@ import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import { exportInvoicesToCSV } from '@/utils/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { tarifsHydrocarburesService } from '@/services/tarifsHydrocarburesService';
 
 export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') => {
   const [invoices, setInvoices] = useState<Facture[]>([]);
@@ -13,6 +14,7 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
+  const hasAutoFixed = React.useRef(false);
 
   useEffect(() => {
     loadInvoices();
@@ -35,6 +37,43 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
       });
       
       setInvoices(filteredData);
+
+      // Auto-correction: aligner HT avec la somme des lignes (évite l'écart avec l'export)
+      if (type === 'monthly' && !hasAutoFixed.current && filteredData.length > 0) {
+        hasAutoFixed.current = true;
+        try {
+          const toFix = [] as { id: string; numero: string; current: number; sum: number }[];
+          for (const inv of filteredData) {
+            const { data: lignes, error } = await supabase
+              .from('facture_lignes')
+              .select('total')
+              .eq('facture_id', inv.id);
+            if (error) continue;
+            const sum = (lignes || []).reduce((s: number, l: any) => s + Number(l.total || 0), 0);
+            if (Math.round(sum) !== Math.round(Number(inv.montant_ht || 0))) {
+              await billingService.updateFacture(inv.id, {
+                montant_ht: sum,
+                montant_tva: sum * 0.18,
+                montant_ttc: sum * 1.18,
+              } as any);
+              toFix.push({ id: inv.id, numero: inv.numero, current: Number(inv.montant_ht || 0), sum });
+            }
+          }
+          if (toFix.length > 0) {
+            // Recharger pour refléter les montants corrigés
+            const refreshed = await billingService.getFactures();
+            setAllInvoices(refreshed);
+            const refreshedFiltered = refreshed.filter(invoice => (!invoice.mission_numero || invoice.numero.includes('-GROUPE')));
+            setInvoices(refreshedFiltered);
+            toast({
+              title: 'Factures corrigées',
+              description: `${toFix.length} facture(s) mensuelle(s) recalculée(s) pour correspondre à l'export.`,
+            });
+          }
+        } catch (e) {
+          console.warn('Auto-fix factures mensuelles échoué:', e);
+        }
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des factures:', error);
       toast({

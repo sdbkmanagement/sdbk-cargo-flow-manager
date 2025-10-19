@@ -49,31 +49,31 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         ? `${yearNumber + 1}-01-01` 
         : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`;
 
-      console.log('Recherche missions entre:', startDate, 'et', endDate);
+      console.log('Recherche BL entre:', startDate, 'et', endDate);
 
-      const { data: missionsData, error } = await supabase
-        .from('missions')
+      // Récupérer tous les BL du mois (statut livre/termine) avec leurs missions
+      const { data: blData, error } = await supabase
+        .from('bons_livraison')
         .select(`
           *,
-          bons_livraison(*)
+          missions!inner(id, numero, type_transport, site_depart, site_arrivee)
         `)
-        .eq('statut', 'terminee')
-        .or('facturation_statut.eq.en_attente,facturation_statut.is.null')
-        .gte('created_at', startDate)
-        .lt('created_at', endDate)
-        .order('created_at', { ascending: true });
+        .in('statut', ['livre', 'termine'])
+        .gte('date_chargement_reelle', startDate)
+        .lt('date_chargement_reelle', endDate)
+        .order('date_chargement_reelle', { ascending: true });
 
       if (error) {
         console.error('Erreur Supabase:', error);
         throw error;
       }
 
-      console.log('Missions récupérées:', missionsData?.length || 0);
+      console.log('BL récupérés:', blData?.length || 0);
 
-      if (!missionsData || missionsData.length === 0) {
+      if (!blData || blData.length === 0) {
         toast({
-          title: 'Aucune mission',
-          description: 'Aucune mission terminée trouvée pour cette période',
+          title: 'Aucun BL',
+          description: 'Aucun bon de livraison trouvé pour cette période',
           variant: 'destructive'
         });
         setIsGenerating(false);
@@ -84,33 +84,29 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       let totalHT = 0;
       let blCount = 0;
 
-      for (const mission of missionsData as any[]) {
-        console.log('Mission:', mission.numero, 'BL:', mission.bons_livraison?.length || 0);
+      for (const bl of blData as any[]) {
+        const mission = bl.missions || {};
         const depart = mission.site_depart || '';
-        if (mission.bons_livraison && mission.bons_livraison.length > 0) {
-          for (const bl of mission.bons_livraison) {
-            const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
-            if (!quantite) { continue; }
-            let prixUnitaire = bl.prix_unitaire ?? 0;
+        const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
+        const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+        if (!quantite) { continue; }
+        let prixUnitaire = bl.prix_unitaire ?? 0;
 
-            if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-              const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
-              try {
-                const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
-                if (tarif?.tarif_au_litre) {
-                  prixUnitaire = tarif.tarif_au_litre;
-                }
-              } catch (e) {
-                console.warn('Tarif introuvable pour', depart, '→', destination);
-              }
+        if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
+          try {
+            const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
+            if (tarif?.tarif_au_litre) {
+              prixUnitaire = tarif.tarif_au_litre;
             }
-
-            const montant = quantite * (prixUnitaire || 0);
-            console.log('BL:', bl.numero, 'Qté:', quantite, 'PU:', prixUnitaire, 'Montant:', montant);
-            totalHT += montant;
-            blCount++;
+          } catch (e) {
+            console.warn('Tarif introuvable pour', depart, '→', destination);
           }
         }
+
+        const montant = quantite * (prixUnitaire || 0);
+        console.log('BL:', bl.numero, 'Qté:', quantite, 'PU:', prixUnitaire, 'Montant:', montant);
+        totalHT += montant;
+        blCount++;
       }
 
       console.log('Total HT:', totalHT, 'BL Count:', blCount);
@@ -133,29 +129,26 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       const blIds: string[] = [];
       const missionIds = new Set<string>();
 
-      for (const mission of missionsData as any[]) {
+      for (const bl of blData as any[]) {
+        const mission = bl.missions || {};
         const depart = mission.site_depart || '';
-        if (mission.bons_livraison && mission.bons_livraison.length > 0) {
-          for (const bl of mission.bons_livraison) {
-            const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
-            if (!quantite) continue;
-            let prixUnitaire = bl.prix_unitaire ?? 0;
+        const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
+        const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+        if (!quantite) continue;
+        let prixUnitaire = bl.prix_unitaire ?? 0;
 
-            if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-              const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
-              try {
-                const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
-                if (tarif?.tarif_au_litre) prixUnitaire = tarif.tarif_au_litre;
-              } catch {}
-            }
-
-            const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${depart} → ${(bl.lieu_arrivee || bl.destination || mission.site_arrivee || '')} (BL: ${bl.numero})`;
-            const total = quantite * (prixUnitaire || 0);
-            lignes.push({ description, quantite, prix_unitaire: prixUnitaire || 0, total });
-            blIds.push(bl.id);
-            missionIds.add(mission.id);
-          }
+        if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
+          try {
+            const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
+            if (tarif?.tarif_au_litre) prixUnitaire = tarif.tarif_au_litre;
+          } catch {}
         }
+
+        const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${depart} → ${destination} (BL: ${bl.numero})`;
+        const total = quantite * (prixUnitaire || 0);
+        lignes.push({ description, quantite, prix_unitaire: prixUnitaire || 0, total });
+        blIds.push(bl.id);
+        if (mission.id) missionIds.add(mission.id);
       }
 
       // Créer la facture en base
