@@ -69,7 +69,7 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
         .from('bons_livraison')
         .select(`
           *,
-          vehicules!inner(numero, immatriculation),
+          vehicules!inner(numero, immatriculation, remorque_immatriculation, type_vehicule),
           chauffeurs!inner(nom, prenom),
           missions!inner(numero, site_depart, site_arrivee)
         `)
@@ -81,7 +81,7 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
       const exportData = bonsLivraison?.map(bl => ({
         date_chargement_reelle: bl.date_chargement_reelle,
         numero_tournee: bl.numero_tournee,
-        vehicule: `${bl.vehicules?.numero} - ${bl.vehicules?.immatriculation}`,
+        vehicule: bl.vehicules?.remorque_immatriculation || bl.vehicules?.immatriculation || bl.vehicules?.numero || '',
         lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
         numero: bl.numero,
         client_nom: bl.destination, // Le client est stocké dans destination pour les BL
@@ -121,7 +121,7 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
         .from('bons_livraison')
         .select(`
           *,
-          vehicules!inner(numero, immatriculation),
+          vehicules!inner(numero, immatriculation, remorque_immatriculation, type_vehicule),
           chauffeurs!inner(nom, prenom),
           missions!inner(numero, site_depart, site_arrivee)
         `)
@@ -135,7 +135,7 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
       const exportData = bonsLivraison?.map(bl => ({
         date_chargement_reelle: bl.date_chargement_reelle,
         numero_tournee: bl.numero_tournee,
-        vehicule: `${bl.vehicules?.numero} - ${bl.vehicules?.immatriculation}`,
+        vehicule: bl.vehicules?.remorque_immatriculation || bl.vehicules?.immatriculation || bl.vehicules?.numero || '',
         lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
         numero: bl.numero,
         client_nom: bl.destination,

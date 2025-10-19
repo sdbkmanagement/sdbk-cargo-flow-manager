@@ -76,7 +76,7 @@ export const ExportFactures = () => {
       .from('bons_livraison')
       .select(`
         *,
-        vehicules!inner(numero, immatriculation),
+        vehicules!inner(numero, immatriculation, remorque_immatriculation, type_vehicule),
         chauffeurs!inner(nom, prenom),
         missions!inner(numero, site_depart, site_arrivee, type_transport)
       `)
@@ -90,7 +90,7 @@ export const ExportFactures = () => {
     return bonsLivraison?.map(bl => ({
       date_chargement_reelle: bl.date_chargement_reelle,
       numero_tournee: bl.numero_tournee,
-      vehicule: `${bl.vehicules?.numero} - ${bl.vehicules?.immatriculation}`,
+      vehicule: bl.vehicules?.remorque_immatriculation || bl.vehicules?.immatriculation || bl.vehicules?.numero || '',
       lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
       numero: bl.numero,
       client_nom: bl.destination,
