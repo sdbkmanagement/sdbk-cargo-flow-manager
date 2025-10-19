@@ -36,42 +36,6 @@ const Billing = () => {
         </div>
         <div className="flex gap-2">
           <MonthlyInvoiceGenerator onInvoiceCreated={handleInvoiceCreated} />
-          
-          <Dialog open={showQuoteForm} onOpenChange={setShowQuoteForm}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Calculator className="h-4 w-4" />
-                Nouveau devis
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Créer un nouveau devis</DialogTitle>
-              </DialogHeader>
-              <QuoteForm 
-                onClose={() => setShowQuoteForm(false)} 
-                onQuoteCreated={handleQuoteCreated}
-              />
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={showInvoiceForm} onOpenChange={setShowInvoiceForm}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 bg-orange-500 hover:bg-orange-600 text-white">
-                <Plus className="h-4 w-4" />
-                Nouvelle facture
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Créer une nouvelle facture</DialogTitle>
-              </DialogHeader>
-              <InvoiceForm 
-                onClose={() => setShowInvoiceForm(false)} 
-                onInvoiceCreated={handleInvoiceCreated}
-              />
-            </DialogContent>
-          </Dialog>
         </div>
       </div>
 
