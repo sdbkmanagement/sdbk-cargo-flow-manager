@@ -11,6 +11,7 @@ import { CalendarIcon, Download, FileSpreadsheet, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import * as XLSX from 'xlsx';
+import { tarifsHydrocarburesService } from '@/services/tarifsHydrocarburesService';
 
 export const ExportFactures = () => {
   const [dateDebut, setDateDebut] = useState<Date>();
@@ -77,9 +78,9 @@ export const ExportFactures = () => {
         *,
         vehicules!inner(numero, immatriculation),
         chauffeurs!inner(nom, prenom),
-        missions!inner(numero, site_depart, site_arrivee)
+        missions!inner(numero, site_depart, site_arrivee, type_transport)
       `)
-      .eq('statut', 'livre')
+      .in('statut', ['livre', 'termine'])
       .gte('date_chargement_reelle', dateDebutStr)
       .lte('date_chargement_reelle', dateFinStr)
       .order('date_chargement_reelle', { ascending: false });
@@ -101,7 +102,8 @@ export const ExportFactures = () => {
       manquant_total: bl.manquant_total,
       manquant_compteur: bl.manquant_compteur,
       manquant_cuve: bl.manquant_cuve,
-      client_code: bl.client_code
+      client_code: bl.client_code,
+      type_transport: bl.missions?.type_transport || null
     })) || [];
   };
 
@@ -132,8 +134,23 @@ export const ExportFactures = () => {
       
       const data = await getBonsLivraisonData(dateDebutStr, dateFinStr);
       
+      // Compléter les prix manquants et recalculer les montants si nécessaire
+      const processedData = await Promise.all(
+        data.map(async (item) => {
+          let prix = item.prix_unitaire || 0;
+          if ((!prix || prix === 0) && item.type_transport === 'hydrocarbures' && item.lieu_depart && item.destination) {
+            try {
+              const tarif = await tarifsHydrocarburesService.getTarif(item.lieu_depart, item.destination);
+              if (tarif?.tarif_au_litre) prix = tarif.tarif_au_litre;
+            } catch {}
+          }
+          const montant = item.montant_total || ((item.quantite_livree || 0) * prix);
+          return { ...item, prix_unitaire: prix, montant_total: montant };
+        })
+      );
+      
       // Préparer les données pour Excel
-      const excelData = data.map(item => ({
+      const excelData = processedData.map(item => ({
         'Date Chargement': item.date_chargement_reelle ? new Date(item.date_chargement_reelle).toLocaleDateString('fr-FR') : '',
         'N° Tournée': item.numero_tournee || '',
         'Camions': item.vehicule || '',

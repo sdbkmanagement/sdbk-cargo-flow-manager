@@ -1555,6 +1555,8 @@ export type Database = {
           chauffeur_id: string
           created_at: string
           created_by: string | null
+          facturation_date: string | null
+          facturation_statut: string
           id: string
           numero: string
           numeros_bl_manuels: string[] | null
@@ -1572,6 +1574,8 @@ export type Database = {
           chauffeur_id: string
           created_at?: string
           created_by?: string | null
+          facturation_date?: string | null
+          facturation_statut?: string
           id?: string
           numero: string
           numeros_bl_manuels?: string[] | null
@@ -1589,6 +1593,8 @@ export type Database = {
           chauffeur_id?: string
           created_at?: string
           created_by?: string | null
+          facturation_date?: string | null
+          facturation_statut?: string
           id?: string
           numero?: string
           numeros_bl_manuels?: string[] | null

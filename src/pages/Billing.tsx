@@ -35,7 +35,7 @@ const Billing = () => {
           <p className="text-muted-foreground">Gestion complète de la facturation et des devis</p>
         </div>
         <div className="flex gap-2">
-          <MonthlyInvoiceGenerator />
+          <MonthlyInvoiceGenerator onInvoiceCreated={handleInvoiceCreated} />
           
           <Dialog open={showQuoteForm} onOpenChange={setShowQuoteForm}>
             <DialogTrigger asChild>

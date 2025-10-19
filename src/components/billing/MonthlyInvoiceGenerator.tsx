@@ -13,7 +13,7 @@ import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 import { generateMonthlyInvoicePDF } from '@/utils/pdfGenerator';
 
-export const MonthlyInvoiceGenerator = () => {
+export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated?: () => void }) => {
   const [open, setOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
@@ -128,9 +128,70 @@ export const MonthlyInvoiceGenerator = () => {
       const totalTVA = totalHT * 0.18;
       const totalTTC = totalHT + totalTVA;
 
-      console.log('Génération du PDF...');
-      
-      // Générer le PDF
+      // Préparer les lignes et les éléments à mettre à jour
+      const lignes: { description: string; quantite: number; prix_unitaire: number; total: number }[] = [];
+      const blIds: string[] = [];
+      const missionIds = new Set<string>();
+
+      for (const mission of missionsData as any[]) {
+        const depart = mission.site_depart || '';
+        if (mission.bons_livraison && mission.bons_livraison.length > 0) {
+          for (const bl of mission.bons_livraison) {
+            if (bl.facture) continue;
+            const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+            if (!quantite) continue;
+            let prixUnitaire = bl.prix_unitaire ?? 0;
+
+            if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
+              const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
+              try {
+                const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
+                if (tarif?.tarif_au_litre) prixUnitaire = tarif.tarif_au_litre;
+              } catch {}
+            }
+
+            const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${depart} → ${(bl.lieu_arrivee || bl.destination || mission.site_arrivee || '')} (BL: ${bl.numero})`;
+            const total = quantite * (prixUnitaire || 0);
+            lignes.push({ description, quantite, prix_unitaire: prixUnitaire || 0, total });
+            blIds.push(bl.id);
+            missionIds.add(mission.id);
+          }
+        }
+      }
+
+      // Créer la facture en base
+      const padMonth = selectedMonth.padStart(2, '0');
+      const numero = `FM${selectedYear}${padMonth}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      const today = new Date();
+      const date_emission = today.toISOString().split('T')[0];
+      const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+      const facture = await billingService.createFacture({
+        numero,
+        client_nom: clientNom || 'TOTALEnergies GUINEE SA',
+        date_emission,
+        date_echeance,
+        montant_ht: totalHT,
+        montant_tva: totalTVA,
+        montant_ttc: totalTTC,
+        statut: 'en_attente'
+      } as any, lignes);
+
+      // Marquer les BL comme facturés (en lot)
+      if (blIds.length > 0) {
+        await supabase.from('bons_livraison').update({ facture: true }).in('id', blIds);
+      }
+
+      // Marquer les missions comme facturées via le nouveau statut
+      const missionsToUpdate = Array.from(missionIds);
+      if (missionsToUpdate.length > 0) {
+        await supabase
+          .from('missions')
+          .update({ facturation_statut: 'facturee', facturation_date: new Date().toISOString() })
+          .in('id', missionsToUpdate);
+      }
+
+      // Générer le PDF récapitulatif
       generateMonthlyInvoicePDF({
         month: selectedMonth,
         year: selectedYear,
@@ -142,10 +203,11 @@ export const MonthlyInvoiceGenerator = () => {
       });
 
       toast({
-        title: 'Facture générée',
-        description: `Facture PDF générée avec succès - ${missionsData.length} missions, ${blCount} BL - Total: ${totalTTC.toLocaleString('fr-FR')} GNF`
+        title: 'Facture groupée créée',
+        description: `Facture ${facture.numero} créée (${blIds.length} BL) – Total: ${totalTTC.toLocaleString('fr-FR')} GNF`
       });
 
+      onInvoiceCreated?.();
       setOpen(false);
     } catch (error: any) {
       console.error('Erreur complète:', error);
