@@ -136,18 +136,18 @@ export const statsService = {
     
     try {
       const [facturesResult, chiffreAffairesResult] = await Promise.all([
-        supabase.from('factures').select('id, montant_ttc, statut', { count: 'exact' }),
+        supabase.from('factures').select('id, montant_ttc, statut, numero', { count: 'exact' }),
         supabase.from('missions').select('id').eq('statut', 'terminee')
       ]);
 
       const factures = facturesResult.data || [];
       const facturesPayees = factures.filter(f => f.statut === 'payee').length;
-      const facturesEnAttente = factures.filter(f => f.statut === 'en_attente').length;
+      const facturesEnAttente = factures.filter(f => f.statut === 'en_attente' && f.numero?.startsWith('FM')).length;
       const chiffreAffaires = factures
         .filter(f => f.statut === 'payee')
         .reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
       const caEnAttente = factures
-        .filter(f => f.statut === 'en_attente')
+        .filter(f => f.statut === 'en_attente' && f.numero?.startsWith('FM'))
         .reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
 
       const stats = {
