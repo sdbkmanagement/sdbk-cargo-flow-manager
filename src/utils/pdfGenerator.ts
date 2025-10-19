@@ -7,6 +7,20 @@ export const generateInvoicePDF = (invoice: any) => {
     return;
   }
 
+  // Extraire le mois/année du numéro de facture si c'est une facture mensuelle
+  const isMonthly = invoice.numero?.startsWith('FM');
+  let monthYear = '';
+  if (isMonthly) {
+    const match = invoice.numero.match(/FM(\d{4})(\d{2})/);
+    if (match) {
+      const year = match[1];
+      const monthNum = match[2];
+      const monthNames = ['', 'JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 
+                         'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
+      monthYear = `${monthNames[parseInt(monthNum)]} ${year}`;
+    }
+  }
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
@@ -14,96 +28,245 @@ export const generateInvoicePDF = (invoice: any) => {
         <meta charset="utf-8">
         <title>Facture ${invoice.numero}</title>
         <style>
-            body { font-family: Arial, sans-serif; margin: 40px; color: #333; }
-            .header { display: flex; justify-content: space-between; margin-bottom: 40px; border-bottom: 2px solid #333; padding-bottom: 20px; }
-            .company-info { flex: 1; }
-            .company-name { font-size: 24px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
-            .invoice-info { text-align: right; }
-            .invoice-number { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
-            .client-info { margin: 30px 0; padding: 20px; background-color: #f8f9fa; border-radius: 8px; }
-            .details-table { width: 100%; border-collapse: collapse; margin: 30px 0; }
-            .details-table th, .details-table td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-            .details-table th { background-color: #f8f9fa; font-weight: bold; }
-            .totals { margin-top: 30px; text-align: right; }
-            .totals table { margin-left: auto; }
-            .totals td { padding: 8px 15px; }
-            .total-final { font-size: 18px; font-weight: bold; background-color: #2563eb; color: white; }
-            .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
-            @media print { body { margin: 0; } }
+            @page { size: A4; margin: 15mm; }
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 15px; 
+              color: #000;
+              font-size: 11pt;
+              line-height: 1.4;
+            }
+            .main-title {
+              text-align: center;
+              font-size: 14pt;
+              font-weight: bold;
+              margin-bottom: 20px;
+              padding: 8px;
+              border: 2px solid #000;
+            }
+            .depot {
+              text-align: center;
+              font-size: 13pt;
+              font-weight: bold;
+              margin: 15px 0;
+            }
+            .facture-number {
+              text-align: center;
+              font-size: 18pt;
+              font-weight: bold;
+              margin: 25px 0;
+              text-decoration: underline;
+            }
+            .client-section {
+              margin: 25px 0;
+            }
+            .client-section .title {
+              font-size: 14pt;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            .client-section .name {
+              font-size: 13pt;
+              font-weight: bold;
+              margin: 5px 0;
+            }
+            .totals-box {
+              float: right;
+              width: 45%;
+              margin: 20px 0;
+              border: 2px solid #000;
+              padding: 15px;
+            }
+            .totals-box table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .totals-box td {
+              padding: 8px 5px;
+              font-size: 11pt;
+            }
+            .totals-box .label {
+              text-align: left;
+              font-weight: bold;
+            }
+            .totals-box .amount {
+              text-align: right;
+              font-weight: bold;
+            }
+            .totals-box .total-row {
+              background-color: #e0e0e0;
+              font-size: 12pt;
+            }
+            .info-section {
+              clear: both;
+              margin: 30px 0;
+            }
+            .info-section table {
+              border-collapse: collapse;
+              margin: 10px 0;
+            }
+            .info-section td {
+              padding: 6px 12px;
+              border: 1px solid #000;
+            }
+            .doit-section {
+              margin: 15px 0;
+              font-size: 12pt;
+              font-weight: bold;
+            }
+            .designation-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 20px 0;
+            }
+            .designation-table th,
+            .designation-table td {
+              border: 2px solid #000;
+              padding: 12px;
+              text-align: center;
+              font-size: 11pt;
+            }
+            .designation-table th {
+              background-color: #f0f0f0;
+              font-weight: bold;
+            }
+            .designation-table td.text-left {
+              text-align: left;
+            }
+            .text-section {
+              margin: 25px 0;
+              text-align: justify;
+              line-height: 1.6;
+            }
+            .amount-letters {
+              margin: 20px 0;
+              font-size: 11pt;
+              font-style: italic;
+            }
+            .footer-info {
+              margin-top: 30px;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+            }
+            .bank-info {
+              font-size: 11pt;
+            }
+            .signature-section {
+              text-align: center;
+              margin-top: 50px;
+            }
+            .signature-date {
+              margin-bottom: 10px;
+            }
+            .signature-title {
+              font-weight: bold;
+              margin-top: 40px;
+            }
+            @media print { 
+              body { margin: 0; padding: 10mm; }
+              .no-print { display: none; }
+            }
         </style>
     </head>
     <body>
-        <div class="header">
-            <div class="company-info">
-                <div class="company-name">SDBK CARGO</div>
-                <div>Transport et Logistique</div>
-                <div>Conakry, Guinée</div>
-                <div>Tél: +224 XXX XXX XXX</div>
-                <div>Email: contact@sdbkcargo.com</div>
-            </div>
-            <div class="invoice-info">
-                <div class="invoice-number">FACTURE ${invoice.numero}</div>
-                <div>Date: ${new Date(invoice.date_emission).toLocaleDateString('fr-FR')}</div>
-                <div>Échéance: ${new Date(invoice.date_echeance).toLocaleDateString('fr-FR')}</div>
-            </div>
+        ${isMonthly ? `
+        <div class="main-title">
+          FACTURE TRANSPORT DU MOIS DE ${monthYear} PRODUIT BLANC
         </div>
-
-        <div class="client-info">
-            <h3>Facturé à:</h3>
-            <div><strong>${invoice.client_nom}</strong></div>
-            ${invoice.client_societe ? `<div>${invoice.client_societe}</div>` : ''}
-            ${invoice.client_contact ? `<div>Contact: ${invoice.client_contact}</div>` : ''}
-            ${invoice.client_email ? `<div>Email: ${invoice.client_email}</div>` : ''}
-        </div>
-
-        <table class="details-table">
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th>Mission</th>
-                    <th>Chauffeur</th>
-                    <th>Véhicule</th>
-                    <th>Montant</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>${invoice.type_transport || 'Transport de marchandises'}</td>
-                    <td>${invoice.mission_numero || '-'}</td>
-                    <td>${invoice.chauffeur || '-'}</td>
-                    <td>${invoice.vehicule || '-'}</td>
-                    <td>${invoice.montant_ht.toLocaleString('fr-FR')} GNF</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <div class="totals">
-            <table>
-                <tr>
-                    <td>Sous-total HT:</td>
-                    <td>${invoice.montant_ht.toLocaleString('fr-FR')} GNF</td>
-                </tr>
-                <tr>
-                    <td>TVA (18%):</td>
-                    <td>${invoice.montant_tva.toLocaleString('fr-FR')} GNF</td>
-                </tr>
-                <tr class="total-final">
-                    <td><strong>Total TTC:</strong></td>
-                    <td><strong>${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</strong></td>
-                </tr>
-            </table>
-        </div>
-
-        ${invoice.observations ? `
-        <div style="margin-top: 30px;">
-            <h4>Observations:</h4>
-            <p>${invoice.observations}</p>
+        <div class="depot">
+          DEPOT DE CONAKRY
         </div>
         ` : ''}
 
-        <div class="footer">
-            <p>Conditions de paiement: Paiement à réception de facture</p>
-            <p>SDBK CARGO - RC: XXXXX - NIF: XXXXX</p>
+        <div class="facture-number">
+          ${isMonthly ? `FACTURE SDBK ${invoice.numero.replace('FM', '')} PB` : `FACTURE ${invoice.numero}`}
+        </div>
+
+        <div class="client-section">
+          <div class="title">A l'intention de :</div>
+          <div class="name">${invoice.client_nom || 'TOTALEnergies GUINEE SA'}</div>
+          <div>Adresse: Guinée, Conakry${invoice.client_adresse ? ', ' + invoice.client_adresse : ', Coleah'}</div>
+        </div>
+
+        <div class="totals-box">
+          <table>
+            <tr>
+              <td class="label">TOTAL ( HT )</td>
+              <td class="amount">${invoice.montant_ht.toLocaleString('fr-FR')} GNF</td>
+            </tr>
+            <tr>
+              <td class="label">T V A (18 % )</td>
+              <td class="amount">${invoice.montant_tva.toLocaleString('fr-FR')} GNF</td>
+            </tr>
+            <tr class="total-row">
+              <td class="label">TOTAL DE LA FACTURE ( TTC )</td>
+              <td class="amount">${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="info-section">
+          <table>
+            <tr>
+              <td style="width: 250px; font-weight: bold;">Code transport à Total</td>
+              <td>G6</td>
+            </tr>
+            <tr>
+              <td style="font-weight: bold;">Code client à Total</td>
+              <td>315</td>
+            </tr>
+          </table>
+        </div>
+
+        <div class="doit-section">
+          Doit: ${invoice.client_nom || 'TOTAL GUINEE SA'} ${invoice.client_nif ? 'NIF : ' + invoice.client_nif : 'NIF : 852622687/3Z'}
+        </div>
+
+        <table class="designation-table">
+          <thead>
+            <tr>
+              <th>DESIGNATION</th>
+              <th>PERIODE</th>
+              <th>MONTANT</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="text-left">${invoice.designation || 'TRANSPORT PRODUIT BLANC'}</td>
+              <td>${invoice.periode || monthYear || new Date(invoice.date_emission).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })}</td>
+              <td>${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="text-section">
+          <p>Suivant relevé de bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens :</p>
+        </div>
+
+        <div class="amount-letters">
+          <strong>${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</strong>
+        </div>
+
+        <div class="footer-info">
+          <div class="bank-info">
+            Virement bancaire SGBG N° 01515080003-65
+          </div>
+        </div>
+
+        <div class="signature-section">
+          <div class="signature-date">${new Date(invoice.date_emission).toLocaleDateString('fr-FR')}</div>
+          <div class="signature-title">Le Directeur Général</div>
+        </div>
+
+        <div class="no-print" style="margin-top: 40px; text-align: center; padding: 20px;">
+          <button onclick="window.print()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; background: #000; color: white; border: none; border-radius: 4px; margin-right: 10px;">
+            Imprimer / Enregistrer en PDF
+          </button>
+          <button onclick="window.close()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; border: 1px solid #000; background: white; border-radius: 4px;">
+            Fermer
+          </button>
         </div>
     </body>
     </html>
@@ -112,10 +275,9 @@ export const generateInvoicePDF = (invoice: any) => {
   printWindow.document.write(htmlContent);
   printWindow.document.close();
   
-  // Attendre que le contenu soit chargé avant d'imprimer
-  printWindow.onload = () => {
+  setTimeout(() => {
     printWindow.print();
-  };
+  }, 250);
 };
 
 export const generateQuotePDF = (quote: any) => {
@@ -237,7 +399,9 @@ export const generateMonthlyInvoicePDF = (data: {
   const monthNames = ['', 'JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 
                      'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
   const monthName = monthNames[parseInt(data.month)];
-  const shortMonthName = monthName.substring(0, 3);
+  const shortMonthNames = ['', 'JAN', 'FÉV', 'MARS', 'AVR', 'MAI', 'JUIN', 
+                          'JUIL', 'AOÛT', 'SEPT', 'OCT', 'NOV', 'DÉC'];
+  const shortMonthName = shortMonthNames[parseInt(data.month)];
   const shortYear = data.year.substring(2);
 
   const htmlContent = `
@@ -247,72 +411,92 @@ export const generateMonthlyInvoicePDF = (data: {
         <meta charset="utf-8">
         <title>Facture ${data.month}/${data.year}</title>
         <style>
-            @page { size: A4; margin: 20mm; }
+            @page { size: A4; margin: 15mm; }
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
-              padding: 20px; 
+              padding: 15px; 
               color: #000;
-              font-size: 12pt;
+              font-size: 11pt;
+              line-height: 1.4;
             }
             .main-title {
               text-align: center;
-              font-size: 16pt;
+              font-size: 14pt;
               font-weight: bold;
-              margin-bottom: 30px;
+              margin-bottom: 20px;
+              padding: 8px;
               border: 2px solid #000;
-              padding: 10px;
             }
             .depot {
               text-align: center;
-              font-size: 14pt;
+              font-size: 13pt;
               font-weight: bold;
-              margin: 20px 0;
+              margin: 15px 0;
             }
             .facture-number {
               text-align: center;
-              font-size: 13pt;
+              font-size: 18pt;
               font-weight: bold;
-              margin: 20px 0;
+              margin: 25px 0;
+              text-decoration: underline;
             }
             .client-section {
-              margin: 30px 0;
-              text-align: right;
+              margin: 25px 0;
             }
-            .client-section div {
+            .client-section .title {
+              font-size: 14pt;
+              font-weight: bold;
+              margin-bottom: 10px;
+            }
+            .client-section .name {
+              font-size: 13pt;
+              font-weight: bold;
               margin: 5px 0;
             }
-            .totals-section {
-              margin: 30px 0;
-            }
-            .totals-table {
-              width: 100%;
+            .totals-box {
+              float: right;
+              width: 45%;
               margin: 20px 0;
+              border: 2px solid #000;
+              padding: 15px;
             }
-            .totals-table td {
-              padding: 8px;
-              font-size: 12pt;
+            .totals-box table {
+              width: 100%;
+              border-collapse: collapse;
             }
-            .totals-table .label {
-              width: 70%;
+            .totals-box td {
+              padding: 8px 5px;
+              font-size: 11pt;
+            }
+            .totals-box .label {
               text-align: left;
               font-weight: bold;
             }
-            .totals-table .amount {
-              width: 30%;
+            .totals-box .amount {
               text-align: right;
               font-weight: bold;
             }
+            .totals-box .total-row {
+              background-color: #e0e0e0;
+              font-size: 12pt;
+            }
             .info-section {
-              margin: 20px 0;
+              clear: both;
+              margin: 30px 0;
             }
             .info-section table {
               border-collapse: collapse;
               margin: 10px 0;
             }
             .info-section td {
-              padding: 5px 10px;
+              padding: 6px 12px;
               border: 1px solid #000;
+            }
+            .doit-section {
+              margin: 15px 0;
+              font-size: 12pt;
+              font-weight: bold;
             }
             .designation-table {
               width: 100%;
@@ -321,27 +505,50 @@ export const generateMonthlyInvoicePDF = (data: {
             }
             .designation-table th,
             .designation-table td {
-              border: 1px solid #000;
-              padding: 10px;
+              border: 2px solid #000;
+              padding: 12px;
               text-align: center;
+              font-size: 11pt;
             }
             .designation-table th {
               background-color: #f0f0f0;
               font-weight: bold;
             }
-            .text-section {
-              margin: 20px 0;
-              text-align: justify;
+            .designation-table td.text-left {
+              text-align: left;
             }
-            .footer-section {
-              margin-top: 40px;
+            .text-section {
+              margin: 25px 0;
+              text-align: justify;
+              line-height: 1.6;
+            }
+            .amount-letters {
+              margin: 20px 0;
+              font-size: 12pt;
+              font-weight: bold;
+            }
+            .footer-info {
+              margin-top: 30px;
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+            }
+            .bank-info {
+              font-size: 11pt;
             }
             .signature-section {
-              margin-top: 30px;
-              text-align: right;
+              text-align: center;
+              margin-top: 50px;
+            }
+            .signature-date {
+              margin-bottom: 10px;
+            }
+            .signature-title {
+              font-weight: bold;
+              margin-top: 40px;
             }
             @media print { 
-              body { margin: 0; padding: 15px; }
+              body { margin: 0; padding: 10mm; }
               .no-print { display: none; }
             }
         </style>
@@ -360,24 +567,24 @@ export const generateMonthlyInvoicePDF = (data: {
         </div>
 
         <div class="client-section">
-          <div><strong>A l'intention de :</strong></div>
-          <div><strong>${data.clientNom || 'TOTALEnergies GUINEE SA'}</strong></div>
+          <div class="title">A l'intention de :</div>
+          <div class="name">${data.clientNom || 'TOTALEnergies GUINEE SA'}</div>
           <div>Adresse: Guinée, Conakry, Coleah</div>
         </div>
 
-        <div class="totals-section">
-          <table class="totals-table">
+        <div class="totals-box">
+          <table>
             <tr>
               <td class="label">TOTAL ( HT )</td>
-              <td class="amount">${data.totalHT.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GNF</td>
+              <td class="amount">${data.totalHT.toLocaleString('fr-FR')} GNF</td>
             </tr>
             <tr>
               <td class="label">T V A (18 % )</td>
-              <td class="amount">${data.totalTVA.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GNF</td>
+              <td class="amount">${data.totalTVA.toLocaleString('fr-FR')} GNF</td>
             </tr>
-            <tr style="background-color: #f0f0f0;">
+            <tr class="total-row">
               <td class="label">TOTAL DE LA FACTURE ( TTC )</td>
-              <td class="amount">${data.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GNF</td>
+              <td class="amount">${data.totalTTC.toLocaleString('fr-FR')} GNF</td>
             </tr>
           </table>
         </div>
@@ -385,15 +592,18 @@ export const generateMonthlyInvoicePDF = (data: {
         <div class="info-section">
           <table>
             <tr>
-              <td style="width: 200px;"><strong>Code transport à Total</strong></td>
+              <td style="width: 250px; font-weight: bold;">Code transport à Total</td>
               <td>G6</td>
             </tr>
             <tr>
-              <td><strong>Code client à Total</strong></td>
+              <td style="font-weight: bold;">Code client à Total</td>
               <td>315</td>
             </tr>
           </table>
-          <div style="margin: 10px 0;"><strong>Doit: TOTAL GUINEE SA NIF : 852622687/3Z</strong></div>
+        </div>
+
+        <div class="doit-section">
+          Doit: TOTAL GUINEE SA NIF : 852622687/3Z
         </div>
 
         <table class="designation-table">
@@ -406,36 +616,37 @@ export const generateMonthlyInvoicePDF = (data: {
           </thead>
           <tbody>
             <tr>
-              <td style="text-align: left;">TRANSPORT PRODUIT BLANC</td>
+              <td class="text-left">TRANSPORT PRODUIT BLANC</td>
               <td>${shortMonthName}-${shortYear}</td>
-              <td>${data.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GNF</td>
+              <td>${data.totalTTC.toLocaleString('fr-FR')} GNF</td>
             </tr>
           </tbody>
         </table>
 
         <div class="text-section">
-          <p>Suivant relevé de <strong>${data.blCount}</strong> bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens</p>
+          <p>Suivant relevé de <strong>${data.blCount}</strong> bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens :</p>
         </div>
 
-        <div class="footer-section">
-          <table style="width: 100%;">
-            <tr>
-              <td style="width: 50%;"><strong>${data.totalTTC.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} GNF</strong></td>
-              <td style="text-align: right;">Virement bancaire SGBG N° 01515080003-65</td>
-            </tr>
-          </table>
+        <div class="amount-letters">
+          ${data.totalTTC.toLocaleString('fr-FR')} GNF
+        </div>
+
+        <div class="footer-info">
+          <div class="bank-info">
+            Virement bancaire SGBG N° 01515080003-65
+          </div>
         </div>
 
         <div class="signature-section">
-          <div>${new Date().toLocaleDateString('fr-FR')}</div>
-          <div style="margin-top: 10px;"><strong>Le Directeur Général</strong></div>
+          <div class="signature-date">${new Date().toLocaleDateString('fr-FR')}</div>
+          <div class="signature-title">Le Directeur Général</div>
         </div>
 
-        <div class="no-print" style="margin-top: 30px; text-align: center;">
-          <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px; cursor: pointer; background: #2563eb; color: white; border: none; border-radius: 4px;">
+        <div class="no-print" style="margin-top: 40px; text-align: center; padding: 20px;">
+          <button onclick="window.print()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; background: #000; color: white; border: none; border-radius: 4px; margin-right: 10px;">
             Imprimer / Enregistrer en PDF
           </button>
-          <button onclick="window.close()" style="padding: 10px 20px; font-size: 14px; cursor: pointer; margin-left: 10px;">
+          <button onclick="window.close()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; border: 1px solid #000; background: white; border-radius: 4px;">
             Fermer
           </button>
         </div>
