@@ -40,11 +40,9 @@ const Billing = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
-          <TabsTrigger value="invoices">Factures</TabsTrigger>
           <TabsTrigger value="monthly-invoices">Factures mensuelles</TabsTrigger>
-          <TabsTrigger value="quotes">Devis</TabsTrigger>
           <TabsTrigger value="payments">Suivi paiements</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
         </TabsList>
@@ -53,16 +51,8 @@ const Billing = () => {
           <BillingDashboard key={refreshKey} />
         </TabsContent>
 
-        <TabsContent value="invoices" className="space-y-6">
-          <InvoiceList key={refreshKey} type="individual" />
-        </TabsContent>
-
         <TabsContent value="monthly-invoices" className="space-y-6">
           <InvoiceList key={refreshKey} type="monthly" />
-        </TabsContent>
-
-        <TabsContent value="quotes" className="space-y-6">
-          <QuoteList key={refreshKey} />
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-6">
