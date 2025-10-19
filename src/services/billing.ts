@@ -410,6 +410,71 @@ export const billingService = {
     }
   },
 
+  // Recalculer une facture mensuelle à partir des BL du mois (aligne avec l'export)
+  async recalcMonthlyInvoiceFromBL(invoice: Facture) {
+    try {
+      // Déterminer mois/année depuis le numéro (FMYYYYMM-XXX) sinon date_emission
+      let year: number, month: number;
+      const m = invoice.numero.match(/^FM(\d{4})(\d{2})-/);
+      if (m) {
+        year = Number(m[1]);
+        month = Number(m[2]);
+      } else {
+        const d = new Date(invoice.date_emission);
+        year = d.getFullYear();
+        month = d.getMonth() + 1;
+      }
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
+      const endDate = month === 12 ? `${year + 1}-01-01` : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
+      // Récupérer les BL de la période comme dans l'export
+      const { data: bls, error } = await supabase
+        .from('bons_livraison')
+        .select(`*, missions!inner(id, type_transport, site_depart, site_arrivee)`)
+        .in('statut', ['livre', 'termine'])
+        .gte('date_chargement_reelle', startDate)
+        .lt('date_chargement_reelle', endDate);
+      if (error) throw error;
+
+      const lignes: { description: string; quantite: number; prix_unitaire: number; total: number }[] = [];
+      let totalHT = 0;
+      for (const bl of (bls || [])) {
+        const mission: any = (bl as any).missions || {};
+        const depart = mission.site_depart || '';
+        const destination = (bl as any).lieu_arrivee || (bl as any).destination || mission.site_arrivee || '';
+        const quantite = (bl as any).quantite_livree ?? (bl as any).quantite_prevue ?? 0;
+        if (!quantite) continue;
+        let prix = (bl as any).prix_unitaire ?? 0;
+        if ((!prix || prix === 0) && mission.type_transport === 'hydrocarbures') {
+          try {
+            const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
+            if (tarif?.tarif_au_litre) prix = tarif.tarif_au_litre;
+          } catch {}
+        }
+        const total = quantite * (prix || 0);
+        totalHT += total;
+        const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${depart} → ${destination} (BL: ${(bl as any).numero})`;
+        lignes.push({ description, quantite, prix_unitaire: prix || 0, total });
+      }
+
+      // Remplacer les lignes et mettre à jour les montants
+      await supabase.from('facture_lignes').delete().eq('facture_id', invoice.id);
+      if (lignes.length > 0) {
+        await supabase.from('facture_lignes').insert(lignes.map(l => ({ ...l, facture_id: invoice.id })));
+      }
+      await this.updateFacture(invoice.id, {
+        montant_ht: totalHT,
+        montant_tva: totalHT * 0.18,
+        montant_ttc: totalHT * 1.18,
+      } as any);
+
+      return { totalHT, lignes: lignes.length };
+    } catch (e) {
+      console.error('recalcMonthlyInvoiceFromBL error:', e);
+      throw e;
+    }
+  },
+
   // Marquer un bon de livraison comme facturé
   async markBLAsFactured(blId: string) {
     try {

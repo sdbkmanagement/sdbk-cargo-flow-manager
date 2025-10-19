@@ -38,40 +38,29 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
       
       setInvoices(filteredData);
 
-      // Auto-correction: aligner HT avec la somme des lignes (évite l'écart avec l'export)
+      // Auto-correction: recalculer à partir des BL du mois pour aligner avec l'export
       if (type === 'monthly' && !hasAutoFixed.current && filteredData.length > 0) {
         hasAutoFixed.current = true;
         try {
-          const toFix = [] as { id: string; numero: string; current: number; sum: number }[];
+          let fixedCount = 0;
           for (const inv of filteredData) {
-            const { data: lignes, error } = await supabase
-              .from('facture_lignes')
-              .select('total')
-              .eq('facture_id', inv.id);
-            if (error) continue;
-            const sum = (lignes || []).reduce((s: number, l: any) => s + Number(l.total || 0), 0);
-            if (Math.round(sum) !== Math.round(Number(inv.montant_ht || 0))) {
-              await billingService.updateFacture(inv.id, {
-                montant_ht: sum,
-                montant_tva: sum * 0.18,
-                montant_ttc: sum * 1.18,
-              } as any);
-              toFix.push({ id: inv.id, numero: inv.numero, current: Number(inv.montant_ht || 0), sum });
-            }
+            try {
+              const res = await billingService.recalcMonthlyInvoiceFromBL(inv as Facture);
+              if (res && res.totalHT != null) fixedCount++;
+            } catch {}
           }
-          if (toFix.length > 0) {
-            // Recharger pour refléter les montants corrigés
+          if (fixedCount > 0) {
             const refreshed = await billingService.getFactures();
             setAllInvoices(refreshed);
             const refreshedFiltered = refreshed.filter(invoice => (!invoice.mission_numero || invoice.numero.includes('-GROUPE')));
             setInvoices(refreshedFiltered);
             toast({
-              title: 'Factures corrigées',
-              description: `${toFix.length} facture(s) mensuelle(s) recalculée(s) pour correspondre à l'export.`,
+              title: 'Factures mensuelles recalculées',
+              description: `${fixedCount} facture(s) alignée(s) sur l'export.`,
             });
           }
         } catch (e) {
-          console.warn('Auto-fix factures mensuelles échoué:', e);
+          console.warn('Recalcul factures mensuelles échoué:', e);
         }
       }
     } catch (error) {
