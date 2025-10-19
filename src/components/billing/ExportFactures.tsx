@@ -98,7 +98,7 @@ export const ExportFactures = () => {
       produit: bl.produit,
       quantite_livree: (bl.quantite_livree ?? bl.quantite_prevue) || 0,
       prix_unitaire: bl.prix_unitaire || 0,
-      montant_total: bl.montant_total || (((bl.quantite_livree ?? bl.quantite_prevue) || 0) * (bl.prix_unitaire || 0)),
+      montant_total: ((bl.quantite_livree ?? bl.quantite_prevue) || 0) * (bl.prix_unitaire || 0),
       manquant_total: bl.manquant_total,
       manquant_compteur: bl.manquant_compteur,
       manquant_cuve: bl.manquant_cuve,
