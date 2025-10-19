@@ -16,6 +16,7 @@ export interface FinancialStats {
   chiffreAffaires: number;
   facturesPayees: number;
   facturesEnAttente: number;
+  caEnAttente: number;
 }
 
 export interface UserStats {
@@ -145,12 +146,16 @@ export const statsService = {
       const chiffreAffaires = factures
         .filter(f => f.statut === 'payee')
         .reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
+      const caEnAttente = factures
+        .filter(f => f.statut === 'en_attente')
+        .reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
 
       const stats = {
         totalFactures: facturesResult.count || 0,
         chiffreAffaires,
         facturesPayees,
-        facturesEnAttente
+        facturesEnAttente,
+        caEnAttente
       };
 
       console.log('✅ Statistiques financières chargées:', stats);
@@ -163,7 +168,8 @@ export const statsService = {
         totalFactures: 0,
         chiffreAffaires: 0,
         facturesPayees: 0,
-        facturesEnAttente: 0
+        facturesEnAttente: 0,
+        caEnAttente: 0
       };
     }
   }
