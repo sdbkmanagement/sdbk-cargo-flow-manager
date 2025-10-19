@@ -11,6 +11,7 @@ interface InvoiceTableProps {
   onEdit: () => void;
   onDownloadPDF: (invoice: Facture) => void;
   onDeleteClick: (invoiceId: string) => void;
+  isMonthly?: boolean;
 }
 
 export const InvoiceTable = ({ 
@@ -18,7 +19,8 @@ export const InvoiceTable = ({
   onViewDetails, 
   onEdit, 
   onDownloadPDF, 
-  onDeleteClick 
+  onDeleteClick,
+  isMonthly = false
 }: InvoiceTableProps) => {
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -38,6 +40,21 @@ export const InvoiceTable = ({
     }
   };
 
+  // Extraire le mois du numéro de facture (ex: FM202510 = Octobre 2025)
+  const getMonthFromInvoiceNumber = (numero: string): string => {
+    const match = numero.match(/FM(\d{4})(\d{2})/);
+    if (match) {
+      const year = match[1];
+      const month = parseInt(match[2]);
+      const monthNames = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      ];
+      return `${monthNames[month - 1]} ${year}`;
+    }
+    return '-';
+  };
+
   if (invoices.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -52,7 +69,7 @@ export const InvoiceTable = ({
         <TableRow>
           <TableHead>N° Facture</TableHead>
           <TableHead>Client</TableHead>
-          <TableHead>Mission</TableHead>
+          <TableHead>{isMonthly ? 'Mois' : 'Mission'}</TableHead>
           <TableHead>Date émission</TableHead>
           <TableHead>Échéance</TableHead>
           <TableHead>Montant HT</TableHead>
@@ -66,7 +83,12 @@ export const InvoiceTable = ({
           <TableRow key={invoice.id}>
             <TableCell className="font-medium">{invoice.numero}</TableCell>
             <TableCell>{invoice.client_nom}</TableCell>
-            <TableCell>{invoice.mission_numero || '-'}</TableCell>
+            <TableCell>
+              {isMonthly 
+                ? getMonthFromInvoiceNumber(invoice.numero)
+                : (invoice.mission_numero || '-')
+              }
+            </TableCell>
             <TableCell>{new Date(invoice.date_emission).toLocaleDateString('fr-FR')}</TableCell>
             <TableCell>{new Date(invoice.date_echeance).toLocaleDateString('fr-FR')}</TableCell>
             <TableCell>{invoice.montant_ht.toLocaleString('fr-FR')} GNF</TableCell>

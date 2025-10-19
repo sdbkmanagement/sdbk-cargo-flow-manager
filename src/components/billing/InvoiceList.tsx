@@ -104,6 +104,7 @@ export const InvoiceList = ({ type = 'individual' }: InvoiceListProps) => {
               onEdit={handleEdit}
               onDownloadPDF={handleDownloadPDF}
               onDeleteClick={handleDeleteClick}
+              isMonthly={type === 'monthly'}
             />
           )}
         </CardContent>
