@@ -96,7 +96,7 @@ const Dashboard = () => {
         vehiculesDisponibles: dashboardStats.vehicules, // Pour l'instant on assume tous disponibles
         missionsEnCours: dashboardStats.missionsEnCours,
         alertesDocuments: toutesAlertes.length,
-        facturesEnAttente: dashboardStats.missionsEnAttente, // Missions en attente comme proxy
+        facturesEnAttente: financialStats.facturesEnAttente,
         chargementsAujourdhui: chargements.length,
         chiffreAffaires: financialStats.chiffreAffaires,
         facturesPayees: financialStats.facturesPayees,
@@ -247,7 +247,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">{stats.alertesDocuments}</div>
             <p className="text-xs text-muted-foreground">
-              0 factures en attente
+              {stats.facturesEnAttente} factures en attente
             </p>
           </CardContent>
         </Card>
