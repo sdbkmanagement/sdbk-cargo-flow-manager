@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText } from 'lucide-react';
 import { InvoiceDetail } from './InvoiceDetail';
@@ -8,6 +8,7 @@ import { InvoiceTable } from './invoice-list/InvoiceTable';
 import { DeleteConfirmDialog } from './invoice-list/DeleteConfirmDialog';
 import { useInvoiceList } from './invoice-list/useInvoiceList';
 import { toast } from '@/hooks/use-toast';
+import { billingService } from '@/services/billing';
 
 export const InvoiceList = () => {
   const {
@@ -15,6 +16,10 @@ export const InvoiceList = () => {
     loading,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    monthFilter,
+    setMonthFilter,
     handleDownloadPDF,
     handleExportAll,
     handleExportByDates,
@@ -25,6 +30,31 @@ export const InvoiceList = () => {
   const [showDetail, setShowDetail] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
+
+  // Calculer les mois disponibles à partir de toutes les factures
+  const [allInvoices, setAllInvoices] = useState<any[]>([]);
+  
+  React.useEffect(() => {
+    const loadAllInvoices = async () => {
+      try {
+        const data = await billingService.getFactures();
+        setAllInvoices(data);
+      } catch (error) {
+        console.error('Erreur lors du chargement des factures:', error);
+      }
+    };
+    loadAllInvoices();
+  }, []);
+
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    allInvoices.forEach(invoice => {
+      const date = new Date(invoice.date_emission);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months.add(monthKey);
+    });
+    return Array.from(months).sort((a, b) => b.localeCompare(a)); // Trier du plus récent au plus ancien
+  }, [allInvoices]);
 
   const handleViewDetails = (invoiceId: string) => {
     setSelectedInvoice(invoiceId);
@@ -64,6 +94,11 @@ export const InvoiceList = () => {
         onSearchChange={setSearchTerm}
         onExportAll={handleExportAll}
         onExportByDates={handleExportByDates}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        monthFilter={monthFilter}
+        onMonthFilterChange={setMonthFilter}
+        availableMonths={availableMonths}
       />
 
       <Card>

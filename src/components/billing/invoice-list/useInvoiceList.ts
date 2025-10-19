@@ -10,6 +10,8 @@ export const useInvoiceList = () => {
   const [invoices, setInvoices] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [monthFilter, setMonthFilter] = useState<string>('all');
 
   useEffect(() => {
     loadInvoices();
@@ -156,17 +158,35 @@ export const useInvoiceList = () => {
     }
   };
 
-  const filteredInvoices = invoices.filter(invoice =>
-    invoice.client_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    invoice.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (invoice.mission_numero && invoice.mission_numero.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const filteredInvoices = invoices.filter(invoice => {
+    // Filtre de recherche
+    const matchesSearch = invoice.client_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice.mission_numero && invoice.mission_numero.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Filtre de statut
+    const matchesStatus = statusFilter === 'all' || invoice.statut === statusFilter;
+    
+    // Filtre de mois
+    let matchesMonth = true;
+    if (monthFilter !== 'all') {
+      const invoiceDate = new Date(invoice.date_emission);
+      const invoiceMonth = `${invoiceDate.getFullYear()}-${String(invoiceDate.getMonth() + 1).padStart(2, '0')}`;
+      matchesMonth = invoiceMonth === monthFilter;
+    }
+    
+    return matchesSearch && matchesStatus && matchesMonth;
+  });
 
   return {
     invoices: filteredInvoices,
     loading,
     searchTerm,
     setSearchTerm,
+    statusFilter,
+    setStatusFilter,
+    monthFilter,
+    setMonthFilter,
     loadInvoices,
     handleDownloadPDF,
     handleExportAll,

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Search, Filter, Download, Mail, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
@@ -16,9 +17,24 @@ interface InvoiceListHeaderProps {
   onSearchChange: (value: string) => void;
   onExportAll: () => void;
   onExportByDates: (dateDebut: Date, dateFin: Date) => void;
+  statusFilter: string;
+  onStatusFilterChange: (value: string) => void;
+  monthFilter: string;
+  onMonthFilterChange: (value: string) => void;
+  availableMonths: string[];
 }
 
-export const InvoiceListHeader = ({ searchTerm, onSearchChange, onExportAll, onExportByDates }: InvoiceListHeaderProps) => {
+export const InvoiceListHeader = ({
+  searchTerm,
+  onSearchChange,
+  onExportAll,
+  onExportByDates,
+  statusFilter,
+  onStatusFilterChange,
+  monthFilter,
+  onMonthFilterChange,
+  availableMonths
+}: InvoiceListHeaderProps) => {
   const [dateDebut, setDateDebut] = useState<Date>();
   const [dateFin, setDateFin] = useState<Date>();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -50,11 +66,36 @@ export const InvoiceListHeader = ({ searchTerm, onSearchChange, onExportAll, onE
             className="pl-10 w-64"
           />
         </div>
-        <Button variant="outline" size="sm">
-          <Filter className="h-4 w-4 mr-2" />
-          Filtrer
-        </Button>
       </div>
+
+      <div className="flex gap-2">
+        <Select value={statusFilter} onValueChange={onStatusFilterChange}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            <SelectItem value="en_attente">En attente</SelectItem>
+            <SelectItem value="paye">Payée</SelectItem>
+            <SelectItem value="en_retard">En retard</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={monthFilter} onValueChange={onMonthFilterChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Période" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Toutes les périodes</SelectItem>
+            {availableMonths.map((month) => (
+              <SelectItem key={month} value={month}>
+                {new Date(month + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="flex gap-2">
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
