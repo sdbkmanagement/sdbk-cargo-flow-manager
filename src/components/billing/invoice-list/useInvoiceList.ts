@@ -1,13 +1,14 @@
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { billingService, type Facture } from '@/services/billing';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import { exportInvoicesToCSV } from '@/utils/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useInvoiceList = () => {
+export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') => {
   const [invoices, setInvoices] = useState<Facture[]>([]);
+  const [allInvoices, setAllInvoices] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -15,12 +16,25 @@ export const useInvoiceList = () => {
 
   useEffect(() => {
     loadInvoices();
-  }, []);
+  }, [type]);
 
   const loadInvoices = async () => {
     try {
       const data = await billingService.getFactures();
-      setInvoices(data);
+      setAllInvoices(data);
+      
+      // Filtrer selon le type
+      const filteredData = data.filter(invoice => {
+        if (type === 'monthly') {
+          // Factures mensuelles : celles sans mission_numero ou avec "-GROUPE" dans le numéro
+          return !invoice.mission_numero || invoice.numero.includes('-GROUPE');
+        } else {
+          // Factures individuelles : celles avec un mission_numero
+          return invoice.mission_numero && !invoice.numero.includes('-GROUPE');
+        }
+      });
+      
+      setInvoices(filteredData);
     } catch (error) {
       console.error('Erreur lors du chargement des factures:', error);
       toast({
@@ -32,6 +46,17 @@ export const useInvoiceList = () => {
       setLoading(false);
     }
   };
+
+  // Calculer tous les mois disponibles à partir de toutes les factures
+  const availableMonths = React.useMemo(() => {
+    const months = new Set<string>();
+    allInvoices.forEach(invoice => {
+      const date = new Date(invoice.date_emission);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      months.add(monthKey);
+    });
+    return Array.from(months).sort((a, b) => b.localeCompare(a));
+  }, [allInvoices]);
 
   const handleDownloadPDF = (invoice: Facture) => {
     generateInvoicePDF(invoice);
@@ -191,6 +216,7 @@ export const useInvoiceList = () => {
     handleDownloadPDF,
     handleExportAll,
     handleExportByDates,
-    handleDeleteConfirm
+    handleDeleteConfirm,
+    availableMonths
   };
 };

@@ -10,7 +10,11 @@ import { useInvoiceList } from './invoice-list/useInvoiceList';
 import { toast } from '@/hooks/use-toast';
 import { billingService } from '@/services/billing';
 
-export const InvoiceList = () => {
+interface InvoiceListProps {
+  type?: 'individual' | 'monthly';
+}
+
+export const InvoiceList = ({ type = 'individual' }: InvoiceListProps) => {
   const {
     invoices,
     loading,
@@ -23,38 +27,15 @@ export const InvoiceList = () => {
     handleDownloadPDF,
     handleExportAll,
     handleExportByDates,
-    handleDeleteConfirm
-  } = useInvoiceList();
+    handleDeleteConfirm,
+    availableMonths
+  } = useInvoiceList(type);
 
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [invoiceToDelete, setInvoiceToDelete] = useState<string | null>(null);
 
-  // Calculer les mois disponibles à partir de toutes les factures
-  const [allInvoices, setAllInvoices] = useState<any[]>([]);
-  
-  React.useEffect(() => {
-    const loadAllInvoices = async () => {
-      try {
-        const data = await billingService.getFactures();
-        setAllInvoices(data);
-      } catch (error) {
-        console.error('Erreur lors du chargement des factures:', error);
-      }
-    };
-    loadAllInvoices();
-  }, []);
-
-  const availableMonths = useMemo(() => {
-    const months = new Set<string>();
-    allInvoices.forEach(invoice => {
-      const date = new Date(invoice.date_emission);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      months.add(monthKey);
-    });
-    return Array.from(months).sort((a, b) => b.localeCompare(a)); // Trier du plus récent au plus ancien
-  }, [allInvoices]);
 
   const handleViewDetails = (invoiceId: string) => {
     setSelectedInvoice(invoiceId);
@@ -105,10 +86,10 @@ export const InvoiceList = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
-            Liste des factures
+            {type === 'monthly' ? 'Liste des factures mensuelles groupées' : 'Liste des factures individuelles'}
           </CardTitle>
           <CardDescription>
-            Gestion de toutes vos factures émises
+            {type === 'monthly' ? 'Factures groupées par mois' : 'Factures pour missions individuelles'}
           </CardDescription>
         </CardHeader>
         <CardContent>
