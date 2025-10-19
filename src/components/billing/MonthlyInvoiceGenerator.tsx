@@ -58,6 +58,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
           bons_livraison(*)
         `)
         .eq('statut', 'terminee')
+        .or('facturation_statut.eq.en_attente,facturation_statut.is.null')
         .gte('created_at', startDate)
         .lt('created_at', endDate)
         .order('created_at', { ascending: true });
@@ -88,7 +89,6 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         const depart = mission.site_depart || '';
         if (mission.bons_livraison && mission.bons_livraison.length > 0) {
           for (const bl of mission.bons_livraison) {
-            if (bl.facture) { continue; }
             const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
             if (!quantite) { continue; }
             let prixUnitaire = bl.prix_unitaire ?? 0;
@@ -137,7 +137,6 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         const depart = mission.site_depart || '';
         if (mission.bons_livraison && mission.bons_livraison.length > 0) {
           for (const bl of mission.bons_livraison) {
-            if (bl.facture) continue;
             const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
             if (!quantite) continue;
             let prixUnitaire = bl.prix_unitaire ?? 0;
