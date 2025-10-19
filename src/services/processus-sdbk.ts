@@ -437,7 +437,8 @@ export const processusSDBKService = {
 
     const quantiteLivree = bl.quantite_livree || bl.quantite_prevue;
     const montantTotal = quantiteLivree * prixUnitaire;
-    const montantFacture = montantTotal - ((bl.manquant_total || 0) * prixUnitaire);
+    // Les manquants sont informatifs uniquement, ils ne doivent pas être soustraits du montant facturé
+    const montantFacture = montantTotal;
 
     // Mettre à jour le BL avec la facturation
     await supabase
