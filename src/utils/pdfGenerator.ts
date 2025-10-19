@@ -1,3 +1,80 @@
+const numberToFrenchWords = (num: number): string => {
+  if (num === 0) return 'zéro';
+  
+  const units = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf'];
+  const teens = ['dix', 'onze', 'douze', 'treize', 'quatorze', 'quinze', 'seize', 'dix-sept', 'dix-huit', 'dix-neuf'];
+  const tens = ['', '', 'vingt', 'trente', 'quarante', 'cinquante', 'soixante', 'soixante', 'quatre-vingt', 'quatre-vingt'];
+  
+  const convert = (n: number): string => {
+    if (n < 10) return units[n];
+    if (n >= 10 && n < 20) return teens[n - 10];
+    if (n >= 20 && n < 100) {
+      const ten = Math.floor(n / 10);
+      const unit = n % 10;
+      
+      if (ten === 7 || ten === 9) {
+        if (unit === 0) return tens[ten];
+        return tens[ten] + '-' + (unit === 1 && ten === 7 ? 'et-onze' : (unit === 1 ? teens[1] : teens[unit]));
+      }
+      
+      if (unit === 0) return tens[ten] + (ten === 8 ? 's' : '');
+      if (unit === 1 && ten !== 8) return tens[ten] + ' et un';
+      return tens[ten] + (ten === 8 ? '-' : '-') + units[unit];
+    }
+    return '';
+  };
+  
+  const convertBlock = (n: number): string => {
+    if (n === 0) return '';
+    if (n < 100) return convert(n);
+    
+    const hundred = Math.floor(n / 100);
+    const rest = n % 100;
+    
+    let result = '';
+    if (hundred === 1) {
+      result = 'cent';
+    } else {
+      result = units[hundred] + ' cent';
+    }
+    if (rest === 0 && hundred > 1) result += 's';
+    if (rest > 0) result += ' ' + convert(rest);
+    
+    return result;
+  };
+  
+  const billions = Math.floor(num / 1000000000);
+  const millions = Math.floor((num % 1000000000) / 1000000);
+  const thousands = Math.floor((num % 1000000) / 1000);
+  const remainder = num % 1000;
+  
+  let words = '';
+  
+  if (billions > 0) {
+    words += (billions === 1 ? 'un milliard' : convertBlock(billions) + ' milliards');
+  }
+  
+  if (millions > 0) {
+    if (words) words += ' ';
+    words += (millions === 1 ? 'un million' : convertBlock(millions) + ' millions');
+  }
+  
+  if (thousands > 0) {
+    if (words) words += ' ';
+    if (thousands === 1) {
+      words += 'mille';
+    } else {
+      words += convertBlock(thousands) + ' mille';
+    }
+  }
+  
+  if (remainder > 0) {
+    if (words) words += ' ';
+    words += convertBlock(remainder);
+  }
+  
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
 
 export const generateInvoicePDF = (invoice: any) => {
   const printWindow = window.open('', '_blank');
@@ -246,7 +323,7 @@ export const generateInvoicePDF = (invoice: any) => {
         </div>
 
         <div class="amount-letters">
-          <strong>${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</strong>
+          <em>${numberToFrenchWords(invoice.montant_ttc)}</em>
         </div>
 
         <div class="footer-info">
@@ -628,7 +705,7 @@ export const generateMonthlyInvoicePDF = (data: {
         </div>
 
         <div class="amount-letters">
-          ${data.totalTTC.toLocaleString('fr-FR')} GNF
+          <em>${numberToFrenchWords(data.totalTTC)}</em>
         </div>
 
         <div class="footer-info">
