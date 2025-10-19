@@ -181,7 +181,7 @@ export const exportService = {
           'Dépôt': bl.lieu_depart || '',
           'BL': bl.numero || '',
           'Client': bl.destination || bl.lieu_arrivee || '',
-          'Destination': bl.lieu_arrivee || '',
+          'Destination': bl.lieu_arrivee || (bl.destination ? bl.destination.split(/\s+/)[0] : ''),
           'Produit': bl.produit || '',
           'Quantité': quantite,
           'Prix Unitaire': prixUnitaire,
