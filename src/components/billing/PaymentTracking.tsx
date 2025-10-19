@@ -32,7 +32,9 @@ export const PaymentTracking = () => {
   const loadInvoices = async () => {
     try {
       const data = await billingService.getFactures();
-      setInvoices(data);
+      // Ne garder que les factures mensuelles (FM)
+      const facturesMensuelles = data.filter(f => f.numero.startsWith('FM'));
+      setInvoices(facturesMensuelles);
     } catch (error) {
       console.error('Erreur lors du chargement des factures:', error);
       toast({
