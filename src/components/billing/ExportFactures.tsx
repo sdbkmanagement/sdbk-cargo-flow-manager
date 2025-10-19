@@ -161,7 +161,7 @@ export const ExportFactures = () => {
         'Prod': item.produit || '',
         'Qté': item.quantite_livree || 0,
         'Pu': item.prix_unitaire || 0,
-        'Montant': ((item.quantite_livree || 0) * (item.prix_unitaire || 0)) || item.montant_total || 0,
+        'Montant': item.montant_total || 0,
         'Manq$': item.manquant_total || 0,
         'Cpteur': item.manquant_compteur || 0,
         'Cuve': item.manquant_cuve || 0,
