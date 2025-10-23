@@ -17,6 +17,12 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -231,8 +237,9 @@ export const ModuleHub: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
-      <header className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
+    <TooltipProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
+        <header className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -292,13 +299,14 @@ export const ModuleHub: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-6xl mx-auto">
           {modules.map((module, index) => (
-            <div
-              key={module.id}
-              className="group cursor-pointer animate-fade-in hover:scale-105 transition-all duration-300"
-              style={{ animationDelay: `${index * 0.1}s` }}
-              onClick={() => handleModuleClick(module.route)}
-            >
-              <div className="relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+            <Tooltip key={module.id}>
+              <TooltipTrigger asChild>
+                <div
+                  className="group cursor-pointer animate-fade-in hover:scale-105 transition-all duration-300"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  onClick={() => handleModuleClick(module.route)}
+                >
+                  <div className="relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className={`h-32 bg-gradient-to-br ${module.gradient} relative`}>
                   <div className="absolute inset-0 bg-black/10"></div>
                   
@@ -335,9 +343,19 @@ export const ModuleHub: React.FC = () => {
                 </div>
               </div>
             </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="font-semibold">{module.title}</p>
+            <p className="text-sm text-muted-foreground">{module.description}</p>
+            {module.stats && (
+              <p className="text-xs mt-1 text-primary">{module.stats}</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
           ))}
         </div>
       </main>
     </div>
+    </TooltipProvider>
   );
 };
