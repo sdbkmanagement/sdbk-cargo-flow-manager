@@ -135,14 +135,19 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
   };
 
   const handleUpload = async () => {
-    // Vérifier qu'au moins un champ significatif est rempli
-    if (!newDocument.file && !newDocument.nom.trim() && !newDocument.dateExpiration) {
+    // Vérifier qu'au moins un nom ou un fichier est fourni
+    if (!newDocument.nom.trim() && !newDocument.file) {
       toast({
         title: "Erreur",
-        description: "Veuillez remplir au moins un champ (nom, date ou fichier)",
+        description: "Veuillez fournir au minimum un nom de document ou un fichier",
         variant: "destructive"
       });
       return;
+    }
+
+    // Si pas de type sélectionné, utiliser "autre" par défaut
+    if (!newDocument.type) {
+      setNewDocument(prev => ({ ...prev, type: 'autre' }));
     }
 
     setUploading(true);
@@ -177,9 +182,9 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
       const documentData = {
         entity_type: 'vehicule',
         entity_id: vehiculeId,
-        nom: newDocument.nom.trim() || 'Document sans nom',
+        nom: newDocument.nom.trim() || (newDocument.file ? newDocument.file.name : 'Document sans nom'),
         type: newDocument.type || 'autre',
-        url: url,
+        ...(url && { url }), // N'inclure url que si elle existe
         date_expiration: newDocument.dateExpiration || null,
         commentaire: newDocument.commentaire?.trim() || null,
         taille: newDocument.file?.size || 0
@@ -193,7 +198,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
 
       toast({
         title: "Succès",
-        description: url ? "Document téléchargé avec succès" : "Informations sauvegardées avec succès",
+        description: url ? "Document téléchargé et enregistré avec succès" : "Informations du document enregistrées avec succès",
       });
 
       // Reset form
@@ -378,8 +383,14 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
               />
             </div>
             
-            <div className="text-sm text-gray-500 bg-gray-50 p-2 rounded">
-              Tous les champs sont optionnels. Vous pouvez ajouter seulement une date d'expiration si nécessaire.
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md border">
+              <p className="font-medium mb-1">📝 Information</p>
+              <p>Vous devez fournir au minimum :</p>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                <li>Un <strong>nom de document</strong>, ou</li>
+                <li>Un <strong>fichier</strong> à uploader</li>
+              </ul>
+              <p className="mt-2 text-xs">Les autres champs (type, date d'expiration, commentaire) sont optionnels.</p>
             </div>
             
             <div className="flex justify-end space-x-2">
