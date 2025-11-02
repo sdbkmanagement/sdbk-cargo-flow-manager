@@ -109,10 +109,36 @@ export const generateInvoicePDF = (invoice: any) => {
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
-              padding: 15px; 
+              padding: 10px; 
               color: #000;
               font-size: 11pt;
               line-height: 1.4;
+            }
+            .header-logo {
+              text-align: center;
+              margin-bottom: 15px;
+              padding: 10px;
+              border-bottom: 2px solid #000;
+            }
+            .header-logo img {
+              max-width: 120px;
+              height: auto;
+            }
+            .company-info {
+              text-align: center;
+              font-size: 9pt;
+              line-height: 1.3;
+              margin-bottom: 15px;
+            }
+            .company-name {
+              font-size: 16pt;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .company-details {
+              font-size: 8pt;
+              line-height: 1.2;
+              margin-top: 5px;
             }
             .main-title {
               text-align: center;
@@ -248,6 +274,19 @@ export const generateInvoicePDF = (invoice: any) => {
         </style>
     </head>
     <body>
+        <div class="header-logo">
+          <div class="company-name">SDBK</div>
+        </div>
+        
+        <div class="company-info">
+          <div style="font-weight: bold; font-size: 11pt;">SOCIETE DIALLO-BAH-KANE</div>
+          <div class="company-details">
+            Société Diallo-Bah-Kane : BP 1822 Conakry / Siège social : Maboyah/Commune Dubreka<br/>
+            Capital social : 240.000.000 Fg - Compte SGBG : 01515080003-65/NIF : 453714578-TVA 9T/<br/>
+            e-mail : sdbktransport@yahoo.fr / RCCM GA-KAL/07407A/2005/Tél : 622 21 07 41/ 624 08 06 00/ 622 45 70 54
+          </div>
+        </div>
+
         ${isMonthly ? `
         <div class="main-title">
           FACTURE TRANSPORT DU MOIS DE ${monthYear} PRODUIT BLANC
@@ -492,10 +531,36 @@ export const generateMonthlyInvoicePDF = (data: {
             body { 
               font-family: Arial, sans-serif; 
               margin: 0; 
-              padding: 15px; 
+              padding: 10px; 
               color: #000;
               font-size: 11pt;
               line-height: 1.4;
+            }
+            .header-logo {
+              text-align: center;
+              margin-bottom: 15px;
+              padding: 10px;
+              border-bottom: 2px solid #000;
+            }
+            .header-logo img {
+              max-width: 120px;
+              height: auto;
+            }
+            .company-info {
+              text-align: center;
+              font-size: 9pt;
+              line-height: 1.3;
+              margin-bottom: 15px;
+            }
+            .company-name {
+              font-size: 16pt;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .company-details {
+              font-size: 8pt;
+              line-height: 1.2;
+              margin-top: 5px;
             }
             .main-title {
               text-align: center;
@@ -631,6 +696,19 @@ export const generateMonthlyInvoicePDF = (data: {
         </style>
     </head>
     <body>
+        <div class="header-logo">
+          <div class="company-name">SDBK</div>
+        </div>
+        
+        <div class="company-info">
+          <div style="font-weight: bold; font-size: 11pt;">SOCIETE DIALLO-BAH-KANE</div>
+          <div class="company-details">
+            Société Diallo-Bah-Kane : BP 1822 Conakry / Siège social : Maboyah/Commune Dubreka<br/>
+            Capital social : 240.000.000 Fg - Compte SGBG : 01515080003-65/NIF : 453714578-TVA 9T/<br/>
+            e-mail : sdbktransport@yahoo.fr / RCCM GA-KAL/07407A/2005/Tél : 622 21 07 41/ 624 08 06 00/ 622 45 70 54
+          </div>
+        </div>
+
         <div class="main-title">
           FACTURE TRANSPORT DU MOIS DE ${monthName} ${data.year} PRODUIT BLANC
         </div>
