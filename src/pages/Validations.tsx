@@ -46,10 +46,11 @@ const Validations = () => {
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError, refetch: refetchVehicles } = useQuery({
     queryKey: ['vehicles-validation', currentPage, searchTerm, statusFilter],
     queryFn: async () => {
-      console.log('Chargement optimisé des véhicules pour validation');
+      console.log('🚗 [VALIDATIONS] Début du chargement des véhicules...');
       
       // Récupérer tous les véhicules une seule fois
       const allVehicles = await vehiculesService.getAll();
+      console.log(`🚗 [VALIDATIONS] ${allVehicles.length} véhicules récupérés:`, allVehicles.slice(0, 3));
 
       // Préparer la liste des IDs
       const vehiculeIds = allVehicles.map((v: Vehicule) => v.id);
@@ -82,15 +83,15 @@ const Validations = () => {
         // 🔍 DIAGNOSTIC: Véhicule nécessite validation si les champs du véhicule l'indiquent
         const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
         
-        // 🔍 DIAGNOSTIC: Logs de débogage pour comprendre la logique
-        if (needsValidation) {
-          console.log(`🚗 DIAGNOSTIC Véhicule ${vehicle.numero}:`, {
-            validation_requise: vehicle.validation_requise,
-            statut: vehicle.statut,
-            workflowStatus,
-            needsValidation
-          });
-        }
+        // 🔍 DIAGNOSTIC: Logs de débogage pour TOUS les véhicules
+        console.log(`🚗 [DIAGNOSTIC] Véhicule ${vehicle.numero}:`, {
+          validation_requise: vehicle.validation_requise,
+          statut: vehicle.statut,
+          workflowStatus,
+          needsValidation,
+          matchesSearch,
+          statusFilter
+        });
         
         // Un véhicule est considéré comme entièrement validé SEULEMENT si:
         // 1. Son workflow est 'valide' ET
@@ -112,13 +113,19 @@ const Validations = () => {
           statusFilter === 'rejete' ? isRejected :
           true;
         
-        return matchesSearch && matchesStatus;
+        const finalMatch = matchesSearch && matchesStatus;
+        console.log(`🚗 [FINAL] ${vehicle.numero} - Final match: ${finalMatch}`);
+        return finalMatch;
       });
+
+      console.log(`🚗 [FILTERED] ${filtered.length} véhicules après filtrage`);
 
       // Pagination côté client
       const start = (currentPage - 1) * itemsPerPage;
       const end = start + itemsPerPage;
       const paginatedVehicles = filtered.slice(start, end);
+      
+      console.log(`🚗 [PAGINATION] Page ${currentPage}, showing ${paginatedVehicles.length} véhicules`);
       
       return {
         vehicles: paginatedVehicles,
