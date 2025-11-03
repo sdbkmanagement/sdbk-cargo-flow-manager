@@ -79,18 +79,21 @@ const Validations = () => {
         // Déterminer le statut du workflow (si existe)
         const workflowStatus = workflowMap.get(vehicle.id);
         
-        // Un véhicule nécessite une validation si :
-        // 1. Il a validation_requise = true OU statut = 'validation_requise'
-        // 2. ET il n'a pas de workflow validé
-        const needsValidation = (vehicle.validation_requise === true || vehicle.statut === 'validation_requise') 
-          && workflowStatus !== 'valide';
+        // Un véhicule nécessite une validation si le champ validation_requise ou statut l'indique
+        // C'est la source de vérité (le véhicule) qui prime sur le workflow
+        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
         
-        const isFullyValidated = workflowStatus === 'valide' && vehicle.validation_requise === false && vehicle.statut === 'disponible';
+        // Uniquement considérer comme validé si TOUTES les conditions sont remplies
+        const isFullyValidated = workflowStatus === 'valide' 
+          && vehicle.validation_requise === false 
+          && vehicle.statut !== 'validation_requise' 
+          && vehicle.statut === 'disponible';
+        
         const isRejected = workflowStatus === 'rejete';
-        const isInValidation = needsValidation && !isRejected;
+        const isInValidation = needsValidation && !isRejected && !isFullyValidated;
         
         const matchesStatus = 
-          statusFilter === 'all' ? needsValidation :
+          statusFilter === 'all' ? (needsValidation || isRejected) :
           statusFilter === 'en_validation' ? isInValidation :
           statusFilter === 'valide' ? isFullyValidated :
           statusFilter === 'rejete' ? isRejected :
