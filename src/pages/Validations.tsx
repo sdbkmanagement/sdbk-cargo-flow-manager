@@ -106,7 +106,7 @@ const Validations = () => {
         const isInValidation = needsValidation && !isRejected && !isFullyValidated;
         
         const matchesStatus = 
-          statusFilter === 'all' ? needsValidation :  // 🔧 FIX: Afficher tous les véhicules nécessitant validation
+          statusFilter === 'all' ? true : // Afficher tous les véhicules quand "Tous les statuts" est sélectionné
           statusFilter === 'en_validation' ? isInValidation :
           statusFilter === 'valide' ? isFullyValidated :
           statusFilter === 'rejete' ? isRejected :
