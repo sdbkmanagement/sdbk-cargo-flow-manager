@@ -54,22 +54,13 @@ const Validations = () => {
       // Préparer la liste des IDs
       const vehiculeIds = allVehicles.map((v: Vehicule) => v.id);
 
-      // Récupérer les workflows validés et rejetés (en deux requêtes pour éviter des résultats trop volumineux)
-      const [{ data: workflowsValides }, { data: workflowsRejetes }] = await Promise.all([
-        supabase
-          .from('validation_workflows')
-          .select('vehicule_id')
-          .in('vehicule_id', vehiculeIds)
-          .eq('statut_global', 'valide'),
-        supabase
-          .from('validation_workflows')
-          .select('vehicule_id')
-          .in('vehicule_id', vehiculeIds)
-          .eq('statut_global', 'rejete')
-      ]);
+      // Récupérer tous les workflows existants
+      const { data: allWorkflows } = await supabase
+        .from('validation_workflows')
+        .select('vehicule_id, statut_global')
+        .in('vehicule_id', vehiculeIds);
 
-      const validatedSet = new Set((workflowsValides || []).map(w => w.vehicule_id));
-      const rejectedSet = new Set((workflowsRejetes || []).map(w => w.vehicule_id));
+      const workflowMap = new Map((allWorkflows || []).map(w => [w.vehicule_id, w.statut_global]));
       
       // Filtrage côté client - Ne montrer que les véhicules nécessitant validation par défaut
       const filtered = allVehicles.filter((vehicle: Vehicule) => {
@@ -85,16 +76,24 @@ const Validations = () => {
           (vehicle.tracteur_modele && vehicle.tracteur_modele.toLowerCase().includes(searchTerm.toLowerCase())) ||
           (vehicle.base && vehicle.base.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        // Déterminations
-        const isFullyValidated = validatedSet.has(vehicle.id) || (vehicle.validation_requise === false && vehicle.statut === 'disponible');
-        const isRejected = rejectedSet.has(vehicle.id);
-        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
+        // Déterminer le statut du workflow (si existe)
+        const workflowStatus = workflowMap.get(vehicle.id);
+        
+        // Un véhicule nécessite une validation si :
+        // 1. Il a validation_requise = true OU statut = 'validation_requise'
+        // 2. ET il n'a pas de workflow validé
+        const needsValidation = (vehicle.validation_requise === true || vehicle.statut === 'validation_requise') 
+          && workflowStatus !== 'valide';
+        
+        const isFullyValidated = workflowStatus === 'valide' && vehicle.validation_requise === false && vehicle.statut === 'disponible';
+        const isRejected = workflowStatus === 'rejete';
+        const isInValidation = needsValidation && !isRejected;
         
         const matchesStatus = 
-          statusFilter === 'all' ? (!isFullyValidated && (isRejected || needsValidation)) :
-          statusFilter === 'en_validation' ? (!isFullyValidated && !isRejected && needsValidation) :
-          statusFilter === 'valide' ? (isFullyValidated) :
-          statusFilter === 'rejete' ? (isRejected) :
+          statusFilter === 'all' ? needsValidation :
+          statusFilter === 'en_validation' ? isInValidation :
+          statusFilter === 'valide' ? isFullyValidated :
+          statusFilter === 'rejete' ? isRejected :
           true;
         
         return matchesSearch && matchesStatus;
