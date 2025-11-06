@@ -43,6 +43,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('missions');
         modulePermissions.add('drivers');
         modulePermissions.add('billing');
+        modulePermissions.add('clients');
         modulePermissions.add('validations');
         modulePermissions.add('rh');
         modulePermissions.add('admin');
@@ -52,11 +53,13 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         // Transport a accès à Flotte et Missions
         modulePermissions.add('fleet');
         modulePermissions.add('missions');
+        modulePermissions.add('clients');
         modulePermissions.add('dashboard');
         break;
       case 'transitaire':
         // Transitaire a accès aux Missions avec permissions complètes
         modulePermissions.add('missions');
+        modulePermissions.add('clients');
         modulePermissions.add('dashboard');
         break;
       case 'rh':
@@ -69,6 +72,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         // Facturation a accès aux Missions et Facturation
         modulePermissions.add('missions');
         modulePermissions.add('billing');
+        modulePermissions.add('clients');
         modulePermissions.add('dashboard');
         break;
       case 'maintenance':
@@ -100,6 +104,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('missions');
         modulePermissions.add('drivers');
         modulePermissions.add('billing');
+        modulePermissions.add('clients');
         modulePermissions.add('validations');
         modulePermissions.add('rh');
         modulePermissions.add('dashboard');
@@ -110,6 +115,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('missions');
         modulePermissions.add('drivers');
         modulePermissions.add('billing');
+        modulePermissions.add('clients');
         modulePermissions.add('validations');
         modulePermissions.add('rh');
         modulePermissions.add('dashboard');
