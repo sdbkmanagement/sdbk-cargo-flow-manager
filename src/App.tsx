@@ -16,6 +16,7 @@ import Billing from '@/pages/Billing';
 import RH from '@/pages/RH';
 import Administration from '@/pages/Administration';
 import Validations from '@/pages/Validations';
+import Clients from '@/pages/Clients';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 
@@ -119,6 +120,16 @@ function App() {
                 <AuthGuard>
                   <ModuleLayout title="Validations" subtitle="Workflows validation véhicules">
                     <Validations />
+                  </ModuleLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/clients" 
+              element={
+                <AuthGuard>
+                  <ModuleLayout title="Clients" subtitle="Gestion des clients et contacts">
+                    <Clients />
                   </ModuleLayout>
                 </AuthGuard>
               } 

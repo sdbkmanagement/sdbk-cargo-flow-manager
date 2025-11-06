@@ -15,7 +15,8 @@ import {
   Settings,
   Book,
   LogOut,
-  X 
+  X,
+  Building2
 } from 'lucide-react';
 
 interface ModernSidebarProps {
@@ -55,6 +56,12 @@ const menuItems = [
     label: 'Facturation',
     icon: Coins,
     module: 'billing'
+  },
+  {
+    path: '/clients',
+    label: 'Clients',
+    icon: Building2,
+    module: 'clients'
   },
   {
     path: '/rh',
