@@ -13,7 +13,8 @@ import {
   BarChart3,
   Bell,
   User,
-  LogOut
+  LogOut,
+  Building2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -146,6 +147,14 @@ export const ModuleHub: React.FC = () => {
       route: '/billing',
       gradient: 'from-yellow-500 to-orange-600',
       stats: loading ? '...' : `${stats.factures} factures`
+    },
+    {
+      id: 'clients',
+      title: 'Clients',
+      description: 'Gestion des clients et contacts',
+      icon: Building2,
+      route: '/clients',
+      gradient: 'from-teal-500 to-emerald-600'
     },
     {
       id: 'rh',
