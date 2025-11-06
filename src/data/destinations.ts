@@ -17,7 +17,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boffa",
-    stations: ["Chalco Guineea", "Station Boffa Bollonde", "Station Boffa Torodoya"]
+    stations: ["Chalco Guineea", "Rouge Minig", "Station Boffa Bollonde", "Station Boffa Torodoya"]
   },
   {
     ville: "Boke",
@@ -30,7 +30,7 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Conakry",
     stations: [
-      "CBK Simbaya", "Conakry Terminal", "Huillerie de Guinee", "Station Madina Koumi",
+      "CBK Simbaya", "Conakry Terminal", "Domino", "Huillerie de Guinee", "Sobragui", "Station Madina Koumi",
       "Station Belle Vue", "Station Camayenne", "Station Carriere", "Station Cimenterie",
       "Station Cosa2", "Station Coyah Somayah", "Station Coyah Wonkifong", "Station Dabondi",
       "Station Dabondy", "Station Dixinn Ecole", "Station Gare Routiere", "Station Hamdallaye Deflendre",
@@ -54,6 +54,10 @@ export const DESTINATIONS: Destination[] = [
     stations: ["Station Dalaba"]
   },
   {
+    ville: "Dinguiraye",
+    stations: ["Dinguiraye"]
+  },
+  {
     ville: "Debele",
     stations: ["Cbk Debele"]
   },
@@ -67,7 +71,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Fria",
-    stations: ["Station Fria Economat"]
+    stations: ["Rouge Minig", "Station Fria Economat"]
   },
   {
     ville: "Gbantama",
@@ -100,7 +104,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kissidougou",
-    stations: ["Station Kissidougou Centre", "Station Kissidougou Ymc1"]
+    stations: ["Kissidougou Route Nzerekore", "Kissidougou YMC2", "Station Kissidougou Centre", "Station Kissidougou Ymc1"]
   },
   {
     ville: "Kolaboui",
@@ -125,6 +129,10 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Lola",
     stations: ["Station Lola"]
+  },
+  {
+    ville: "Maferinya",
+    stations: ["Client Divers au comptant"]
   },
   {
     ville: "Mamou",
