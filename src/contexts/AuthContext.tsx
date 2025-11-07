@@ -189,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // 4. Construire les données utilisateur
-      const userData = buildUserData(existingUser);
+      const userData = await buildUserData(existingUser);
       console.log('✅ Données utilisateur construites:', userData);
       
       setUser(userData);
@@ -203,10 +203,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const buildUserData = (dbUser: any): AuthUser => {
-    const userRoles = dbUser.roles || ['transport'];
+  const buildUserData = async (dbUser: any): Promise<AuthUser> => {
+    // Récupérer les rôles depuis la table user_roles (sécurisée)
+    const { data: userRolesData, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', dbUser.id);
+
+    if (rolesError) {
+      console.error('❌ Erreur lors de la récupération des rôles:', rolesError);
+    }
+
+    let userRoles = userRolesData?.map((r: any) => r.role) || [];
     
-    console.log('🔧 Construction données utilisateur pour rôles:', userRoles);
+    // Si pas de rôles dans user_roles, créer le rôle par défaut
+    if (userRoles.length === 0) {
+      console.warn('⚠️ Aucun rôle défini, attribution du rôle transport par défaut');
+      
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: dbUser.id, role: 'transport' });
+      
+      if (!insertError) {
+        userRoles = ['transport'];
+      }
+    }
+    
+    console.log('🔧 Construction données utilisateur pour rôles depuis user_roles:', userRoles);
     
     // Pour les transitaires, s'assurer qu'ils ont bien les permissions
     let modulePermissions: string[] = [];

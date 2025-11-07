@@ -56,7 +56,6 @@ export const createAdminUser = async () => {
           id: authUserId,
           first_name: 'Admin',
           last_name: 'SDBK',
-          roles: ['admin'],
           status: 'active'
         })
         .eq('email', adminEmail);
@@ -75,7 +74,6 @@ export const createAdminUser = async () => {
           email: adminEmail,
           first_name: 'Admin',
           last_name: 'SDBK',
-          roles: ['admin'],
           status: 'active'
         });
 
@@ -85,6 +83,17 @@ export const createAdminUser = async () => {
       }
       console.log('✅ Utilisateur créé dans la table users');
     }
+
+    // Ajouter le rôle admin dans la table user_roles
+    const { error: roleError } = await supabase
+      .from('user_roles')
+      .upsert({ user_id: authUserId, role: 'admin' }, { onConflict: 'user_id,role' });
+
+    if (roleError) {
+      console.error('❌ Erreur ajout rôle admin:', roleError);
+      throw roleError;
+    }
+    console.log('✅ Rôle admin ajouté dans user_roles');
 
     console.log('✅ Compte admin configuré');
     console.log('📧 Email:', adminEmail);
