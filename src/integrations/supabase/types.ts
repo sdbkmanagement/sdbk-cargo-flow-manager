@@ -2338,6 +2338,29 @@ export type Database = {
         Returns: boolean
       }
       current_user_is_admin: { Args: never; Returns: boolean }
+      get_or_sync_user_by_auth: {
+        Args: never
+        Returns: {
+          created_at: string | null
+          created_by: string | null
+          email: string
+          first_name: string
+          id: string
+          last_login: string | null
+          last_name: string
+          module_permissions: string[] | null
+          password_hash: string
+          roles: Database["public"]["Enums"]["user_role"][]
+          status: string
+          updated_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "users"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_module_permission: {
         Args: { module_name: string; user_id: string }
         Returns: boolean

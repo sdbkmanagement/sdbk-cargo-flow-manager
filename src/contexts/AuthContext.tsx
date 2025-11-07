@@ -139,25 +139,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     try {
       const cleanEmail = email.trim();
-      
-      // 1. Vérifier si l'utilisateur existe dans la table users
-      console.log('🔍 Recherche utilisateur dans la table users...');
-      const { data: existingUser, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', cleanEmail)
-        .eq('status', 'active')
-        .single();
 
-      if (userError) {
-        console.error('❌ Erreur lors de la vérification utilisateur:', userError);
-        setLoading(false);
-        return { success: false, error: 'Utilisateur non trouvé dans la base de données' };
-      }
-
-      console.log('✅ Utilisateur trouvé:', existingUser);
-
-      // 2. Tenter la connexion avec Supabase Auth
+      // 1. Authentification Supabase Auth
       console.log('🔐 Tentative de connexion Auth...');
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email: cleanEmail,
@@ -172,24 +155,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       console.log('✅ Connexion Auth réussie:', authData.user?.id);
 
-      // 3. Synchroniser l'ID Auth avec la table users si nécessaire
-      if (authData.user && existingUser.id !== authData.user.id) {
-        console.log('🔄 Synchronisation des IDs...');
-        const { error: syncError } = await supabase
-          .from('users')
-          .update({ id: authData.user.id })
-          .eq('email', cleanEmail);
+      // 2. Récupérer ou synchroniser l'utilisateur via fonction sécurisée
+      console.log('🔍 Récupération/Synchronisation utilisateur...');
+      const { data: dbUser, error: userError } = await supabase
+        .rpc('get_or_sync_user_by_auth');
 
-        if (syncError) {
-          console.error('⚠️ Erreur de synchronisation:', syncError);
-        } else {
-          console.log('✅ ID synchronisé avec succès');
-          existingUser.id = authData.user.id;
-        }
+      if (userError || !dbUser) {
+        console.error('❌ Erreur lors de la récupération utilisateur:', userError);
+        setLoading(false);
+        return { success: false, error: 'Erreur de récupération des données utilisateur' };
       }
 
-      // 4. Construire les données utilisateur
-      const userData = await buildUserData(existingUser);
+      console.log('✅ Utilisateur récupéré:', dbUser);
+
+      // 3. Construire les données utilisateur
+      const userData = await buildUserData(dbUser);
       console.log('✅ Données utilisateur construites:', userData);
       
       setUser(userData);
