@@ -23,6 +23,16 @@ interface MissionFormProps {
 
 export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) => {
   const { toast } = useToast();
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  
+  // Wrapper pour capturer les erreurs
+  const handleError = (error: any, context: string) => {
+    console.error(`❌ Erreur dans MissionForm (${context}):`, error);
+    setHasError(true);
+    setErrorMessage(`Erreur lors du chargement du formulaire: ${error?.message || 'Erreur inconnue'}`);
+  };
+
   const [formData, setFormData] = useState({
     type_transport: mission?.type_transport || '',
     site_depart: mission?.site_depart || '',
@@ -53,10 +63,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   };
 
   // Récupérer les véhicules disponibles
-  const { data: vehicules = [], isLoading: vehiculesLoading } = useQuery({
+  const { data: vehicules = [], isLoading: vehiculesLoading, error: vehiculesError } = useQuery({
     queryKey: ['available-vehicules'],
     queryFn: missionsService.getAvailableVehicules,
-    refetchInterval: 30000 // Actualiser toutes les 30 secondes
+    refetchInterval: 30000, // Actualiser toutes les 30 secondes
+    retry: 2
   });
   
   // Filtrer les véhicules selon la recherche (priorité au numéro de citerne)
@@ -83,11 +94,22 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   });
 
   // Récupérer les chauffeurs assignés au véhicule sélectionné
-  const { data: chauffeursAssignesVehicule = [] } = useQuery({
+  const { data: chauffeursAssignesVehicule = [], error: chauffeursError } = useQuery({
     queryKey: ['chauffeurs-assignes-vehicule', formData.vehicule_id],
     queryFn: () => missionsService.getChauffeursAssignesVehicule(formData.vehicule_id),
-    enabled: !!formData.vehicule_id
+    enabled: !!formData.vehicule_id,
+    retry: 2
   });
+
+  // Vérifier les erreurs de chargement
+  useEffect(() => {
+    if (vehiculesError) {
+      handleError(vehiculesError, 'Chargement des véhicules');
+    }
+    if (chauffeursError) {
+      handleError(chauffeursError, 'Chargement des chauffeurs');
+    }
+  }, [vehiculesError, chauffeursError]);
 
   // Vérifier la disponibilité du véhicule sélectionné
   useEffect(() => {
@@ -409,6 +431,28 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     
     return !saveMutation.isPending;
   };
+
+  // Afficher l'erreur si le formulaire ne peut pas se charger
+  if (hasError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <Button variant="ghost" onClick={onCancel}>
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Retour
+          </Button>
+        </div>
+        <Alert className="border-red-200 bg-red-50">
+          <AlertTriangle className="h-5 w-5 text-red-600" />
+          <AlertDescription className="text-red-800">
+            <div className="font-semibold mb-2">Erreur de chargement du formulaire</div>
+            <p className="text-sm">{errorMessage}</p>
+            <p className="text-sm mt-2">Veuillez réessayer ou contacter l'administrateur si le problème persiste.</p>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
