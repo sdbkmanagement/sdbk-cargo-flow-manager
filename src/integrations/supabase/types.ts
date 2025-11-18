@@ -2323,6 +2323,10 @@ export type Database = {
           vehicule_disponible: boolean
         }[]
       }
+      create_or_reset_validation_workflow: {
+        Args: { p_vehicule_id: string }
+        Returns: string
+      }
       create_user_with_role: {
         Args: {
           p_email: string
