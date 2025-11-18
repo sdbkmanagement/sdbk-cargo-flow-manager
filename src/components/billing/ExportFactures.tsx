@@ -72,6 +72,8 @@ export const ExportFactures = () => {
   };
 
   const getBonsLivraisonData = async (dateDebutStr: string, dateFinStr: string) => {
+    console.log('🔍 Recherche des BL entre', dateDebutStr, 'et', dateFinStr);
+    
     const { data: bonsLivraison, error } = await supabase
       .from('bons_livraison')
       .select(`
@@ -87,24 +89,35 @@ export const ExportFactures = () => {
 
     if (error) throw error;
 
-    return bonsLivraison?.map(bl => ({
-      date_chargement_reelle: bl.date_chargement_reelle,
-      numero_tournee: bl.numero_tournee,
-      vehicule: bl.vehicules?.remorque_immatriculation || bl.vehicules?.immatriculation || bl.vehicules?.numero || '',
-      lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
-      numero: bl.numero,
-      client_nom: bl.missions?.site_arrivee || bl.destination,
-      destination: bl.lieu_arrivee,
-      produit: bl.produit,
-      quantite_livree: (bl.quantite_livree ?? bl.quantite_prevue) || 0,
-      prix_unitaire: bl.prix_unitaire || 0,
-      montant_total: ((bl.quantite_livree ?? bl.quantite_prevue) || 0) * (bl.prix_unitaire || 0),
-      manquant_total: bl.manquant_total,
-      manquant_compteur: bl.manquant_compteur,
-      manquant_cuve: bl.manquant_cuve,
-      client_code: bl.client_code,
-      type_transport: bl.missions?.type_transport || null
-    })) || [];
+    console.log(`📦 ${bonsLivraison?.length || 0} BL trouvés`);
+
+    if (!bonsLivraison || bonsLivraison.length === 0) {
+      console.warn('⚠️ Aucun BL avec statut "livre" ou "termine" trouvé pour cette période');
+    }
+
+    return bonsLivraison?.map(bl => {
+      // Déterminer la destination de manière intelligente
+      const destination = bl.destination || bl.lieu_arrivee || bl.missions?.site_arrivee || '';
+      
+      return {
+        date_chargement_reelle: bl.date_chargement_reelle,
+        numero_tournee: bl.numero_tournee,
+        vehicule: bl.vehicules?.remorque_immatriculation || bl.vehicules?.immatriculation || bl.vehicules?.numero || '',
+        lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
+        numero: bl.numero,
+        client_nom: bl.missions?.site_arrivee || destination,
+        destination: destination,
+        produit: bl.produit,
+        quantite_livree: (bl.quantite_livree ?? bl.quantite_prevue) || 0,
+        prix_unitaire: bl.prix_unitaire || 0,
+        montant_total: ((bl.quantite_livree ?? bl.quantite_prevue) || 0) * (bl.prix_unitaire || 0),
+        manquant_total: bl.manquant_total || 0,
+        manquant_compteur: bl.manquant_compteur || 0,
+        manquant_cuve: bl.manquant_cuve || 0,
+        client_code: bl.client_code || bl.client_code_total || '',
+        type_transport: bl.missions?.type_transport || ''
+      };
+    }) || [];
   };
 
   const handleExportExcel = async () => {
@@ -134,20 +147,54 @@ export const ExportFactures = () => {
       
       const data = await getBonsLivraisonData(dateDebutStr, dateFinStr);
       
+      if (data.length === 0) {
+        toast({
+          title: 'Aucune donnée',
+          description: 'Aucun bon de livraison avec le statut "livré" ou "terminé" n\'a été trouvé pour cette période.',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      console.log('📊 Traitement des données pour l\'export...');
+      
       // Compléter les prix manquants et recalculer les montants si nécessaire
+      let prixManquants = 0;
+      let destinationsManquantes = 0;
+      
       const processedData = await Promise.all(
         data.map(async (item) => {
           let prix = item.prix_unitaire || 0;
+          
+          if (!item.destination) destinationsManquantes++;
+          
           if ((!prix || prix === 0) && item.type_transport === 'hydrocarbures' && item.lieu_depart && item.destination) {
             try {
+              console.log(`🔍 Recherche tarif: ${item.lieu_depart} -> ${item.destination}`);
               const tarif = await tarifsHydrocarburesService.getTarif(item.lieu_depart, item.destination);
-              if (tarif?.tarif_au_litre) prix = tarif.tarif_au_litre;
-            } catch {}
+              if (tarif?.tarif_au_litre) {
+                prix = tarif.tarif_au_litre;
+                console.log(`✅ Tarif trouvé: ${prix}`);
+              } else {
+                console.warn(`⚠️ Aucun tarif trouvé pour ${item.lieu_depart} -> ${item.destination}`);
+                prixManquants++;
+              }
+            } catch (error) {
+              console.error(`❌ Erreur lors de la récupération du tarif:`, error);
+              prixManquants++;
+            }
+          } else if (!prix || prix === 0) {
+            prixManquants++;
           }
+          
           const montant = item.montant_total || ((item.quantite_livree || 0) * prix);
           return { ...item, prix_unitaire: prix, montant_total: montant };
         })
       );
+
+      if (prixManquants > 0 || destinationsManquantes > 0) {
+        console.warn(`⚠️ Données incomplètes: ${prixManquants} prix manquants, ${destinationsManquantes} destinations manquantes`);
+      }
       
       // Préparer les données pour Excel
       const excelData = processedData.map(item => ({
@@ -198,9 +245,16 @@ export const ExportFactures = () => {
       const filename = `mouvement_${format(dateDebut, 'yyyy-MM')}.xlsx`;
       XLSX.writeFile(wb, filename);
       
+      console.log(`✅ Export réussi: ${processedData.length} lignes exportées`);
+      
+      let description = `${processedData.length} bon(s) de livraison exporté(s)`;
+      if (prixManquants > 0 || destinationsManquantes > 0) {
+        description += `\n⚠️ ${prixManquants} prix manquant(s), ${destinationsManquantes} destination(s) manquante(s)`;
+      }
+      
       toast({
         title: 'Export réussi',
-        description: `Fichier Excel généré pour la période du ${format(dateDebut, 'dd/MM/yyyy')} au ${format(dateFin, 'dd/MM/yyyy')} (${data.length} entrées)`,
+        description: description,
       });
     } catch (error) {
       console.error('Erreur export:', error);
