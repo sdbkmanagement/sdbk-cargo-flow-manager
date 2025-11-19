@@ -94,9 +94,9 @@ export const ExportFactures = () => {
       .from('bons_livraison')
       .select(`
         *,
-        vehicules!inner(numero, immatriculation, remorque_immatriculation, type_vehicule),
-        chauffeurs!inner(nom, prenom),
-        missions!inner(numero, site_depart, site_arrivee, type_transport)
+        vehicules(numero, immatriculation, remorque_immatriculation, type_vehicule),
+        chauffeurs(nom, prenom),
+        missions(numero, site_depart, site_arrivee, type_transport)
       `)
       .in('statut', ['livre', 'termine'])
       .gte('date_chargement_reelle', dateDebutStr)
