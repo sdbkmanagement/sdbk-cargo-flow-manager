@@ -71,6 +71,22 @@ export const ExportFactures = () => {
     document.body.removeChild(link);
   };
 
+  // Fonction pour extraire le nom de ville d'une destination complète
+  const extraireNomVille = (destination: string): string => {
+    if (!destination) return '';
+    
+    // Si la destination contient "Station", extraire le nom avant
+    // Ex: "Siguiri Station Siguiri YMC" -> "Siguiri"
+    const avantStation = destination.split(' Station ')[0];
+    if (avantStation) {
+      return avantStation.trim();
+    }
+    
+    // Sinon, prendre le premier mot
+    const premierMot = destination.split(' ')[0];
+    return premierMot.trim();
+  };
+
   const getBonsLivraisonData = async (dateDebutStr: string, dateFinStr: string) => {
     console.log('🔍 Recherche des BL entre', dateDebutStr, 'et', dateFinStr);
     
@@ -97,7 +113,8 @@ export const ExportFactures = () => {
 
     return bonsLivraison?.map(bl => {
       // Déterminer la destination de manière intelligente
-      const destination = bl.destination || bl.lieu_arrivee || bl.missions?.site_arrivee || '';
+      const destinationComplete = bl.destination || bl.lieu_arrivee || bl.missions?.site_arrivee || '';
+      const destinationVille = extraireNomVille(destinationComplete);
       
       return {
         date_chargement_reelle: bl.date_chargement_reelle,
@@ -105,8 +122,9 @@ export const ExportFactures = () => {
         vehicule: bl.vehicules?.remorque_immatriculation || bl.vehicules?.immatriculation || bl.vehicules?.numero || '',
         lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
         numero: bl.numero,
-        client_nom: bl.missions?.site_arrivee || destination,
-        destination: destination,
+        client_nom: bl.missions?.site_arrivee || destinationComplete,
+        destination: destinationVille, // Utiliser le nom de ville simplifié
+        destination_complete: destinationComplete, // Garder l'original pour affichage
         produit: bl.produit,
         quantite_livree: (bl.quantite_livree ?? bl.quantite_prevue) || 0,
         prix_unitaire: bl.prix_unitaire || 0,
@@ -161,40 +179,51 @@ export const ExportFactures = () => {
       // Compléter les prix manquants et recalculer les montants si nécessaire
       let prixManquants = 0;
       let destinationsManquantes = 0;
+      let prixTrouves = 0;
+      
+      console.log('📊 Début du traitement des tarifs...');
       
       const processedData = await Promise.all(
         data.map(async (item) => {
           let prix = item.prix_unitaire || 0;
           
-          if (!item.destination) destinationsManquantes++;
+          if (!item.destination) {
+            destinationsManquantes++;
+            console.warn(`⚠️ Destination manquante pour BL ${item.numero}`);
+          }
           
+          // Si pas de prix et que c'est du transport hydrocarbures avec destination
           if ((!prix || prix === 0) && item.type_transport === 'hydrocarbures' && item.lieu_depart && item.destination) {
             try {
-              console.log(`🔍 Recherche tarif: ${item.lieu_depart} -> ${item.destination}`);
+              console.log(`🔍 BL ${item.numero}: Recherche tarif ${item.lieu_depart} -> ${item.destination}`);
               const tarif = await tarifsHydrocarburesService.getTarif(item.lieu_depart, item.destination);
               if (tarif?.tarif_au_litre) {
                 prix = tarif.tarif_au_litre;
-                console.log(`✅ Tarif trouvé: ${prix}`);
+                prixTrouves++;
+                console.log(`✅ BL ${item.numero}: Tarif trouvé = ${prix} FCFA/L`);
               } else {
-                console.warn(`⚠️ Aucun tarif trouvé pour ${item.lieu_depart} -> ${item.destination}`);
+                console.warn(`⚠️ BL ${item.numero}: Aucun tarif trouvé pour ${item.lieu_depart} -> ${item.destination}`);
                 prixManquants++;
               }
             } catch (error) {
-              console.error(`❌ Erreur lors de la récupération du tarif:`, error);
+              console.error(`❌ BL ${item.numero}: Erreur lors de la récupération du tarif:`, error);
               prixManquants++;
             }
           } else if (!prix || prix === 0) {
+            console.warn(`⚠️ BL ${item.numero}: Prix manquant (type: ${item.type_transport})`);
             prixManquants++;
           }
           
-          const montant = item.montant_total || ((item.quantite_livree || 0) * prix);
-          return { ...item, prix_unitaire: prix, montant_total: montant };
+          const montant = ((item.quantite_livree || 0) * prix);
+          return { ...item, prix_unitaire: prix, montant_total: montant, destination: item.destination_complete || item.destination };
         })
       );
+      
+      console.log(`📊 Résultat du traitement:
+        - ${prixTrouves} prix trouvés automatiquement
+        - ${prixManquants} prix manquants
+        - ${destinationsManquantes} destinations manquantes`);
 
-      if (prixManquants > 0 || destinationsManquantes > 0) {
-        console.warn(`⚠️ Données incomplètes: ${prixManquants} prix manquants, ${destinationsManquantes} destinations manquantes`);
-      }
       
       // Préparer les données pour Excel
       const excelData = processedData.map(item => ({
