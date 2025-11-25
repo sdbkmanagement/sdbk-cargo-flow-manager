@@ -45,7 +45,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   });
 
   const [bls, setBls] = useState<BonLivraison[]>([]);
-  const [chauffeursAssignes, setChauffeursAssignes] = useState([]);
   const [vehiculeSearch, setVehiculeSearch] = useState('');
   const [vehiculeAvailability, setVehiculeAvailability] = useState<{
     available: boolean;
@@ -168,11 +167,8 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           description: message
         });
       }
-      
-      setChauffeursAssignes(chauffeursAssignesVehicule);
     } else {
       console.warn('⚠️ Aucun chauffeur assigné trouvé pour ce véhicule');
-      setChauffeursAssignes([]);
       
       if (!mission?.id && formData.vehicule_id) {
         console.log('🔄 Réinitialisation du chauffeur_id');
@@ -277,16 +273,16 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       type_transport: formData.type_transport,
       vehicule_id: formData.vehicule_id,
       chauffeur_id: formData.chauffeur_id,
-      chauffeursDisponibles: chauffeursAssignes.length
+      chauffeursDisponibles: chauffeursAssignesVehicule.length
     });
     
     if (!formData.chauffeur_id) {
-      console.error('❌ Aucun chauffeur assigné. Chauffeurs disponibles:', chauffeursAssignes);
+      console.error('❌ Aucun chauffeur assigné. Chauffeurs disponibles:', chauffeursAssignesVehicule);
       
       toast({
         title: 'Erreur',
-        description: chauffeursAssignes.length > 0 
-          ? `Veuillez sélectionner un chauffeur parmi les ${chauffeursAssignes.length} disponible(s).`
+        description: chauffeursAssignesVehicule.length > 0 
+          ? `Veuillez sélectionner un chauffeur parmi les ${chauffeursAssignesVehicule.length} disponible(s).`
           : 'Aucun chauffeur n\'est assigné à ce véhicule. Veuillez d\'abord assigner un chauffeur dans le module Flotte.',
         variant: 'destructive'
       });
@@ -404,7 +400,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   // Obtenir le nom du chauffeur assigné pour l'affichage
   const getChauffeurAssigneNom = () => {
-    const chauffeur = chauffeursAssignes.find(c => c.id === formData.chauffeur_id);
+    const chauffeur = chauffeursAssignesVehicule.find(c => c.id === formData.chauffeur_id);
     return chauffeur ? `${chauffeur.prenom} ${chauffeur.nom}` : '';
   };
 
@@ -641,7 +637,7 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                 <Label htmlFor="chauffeur_display">Chauffeur assigné</Label>
                 <div className="mt-2">
                   {formData.vehicule_id ? (
-                    chauffeursAssignes.length > 0 ? (
+                    chauffeursAssignesVehicule.length > 0 ? (
                       <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                         <div className="flex items-center space-x-2">
                           <span className="text-green-600 font-semibold">
@@ -651,9 +647,9 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
                         <p className="text-sm text-green-600 mt-1">
                           Chauffeur automatiquement assigné selon le véhicule
                         </p>
-                        {chauffeursAssignes.length > 1 && (
+                        {chauffeursAssignesVehicule.length > 1 && (
                           <p className="text-xs text-green-500 mt-1">
-                            ({chauffeursAssignes.length} chauffeurs assignés à ce véhicule)
+                            ({chauffeursAssignesVehicule.length} chauffeurs assignés à ce véhicule)
                           </p>
                         )}
                       </div>
