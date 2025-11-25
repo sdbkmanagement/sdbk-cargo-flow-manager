@@ -295,6 +295,8 @@ export const missionsService = {
   // Récupérer les chauffeurs assignés à un véhicule
   async getChauffeursAssignesVehicule(vehiculeId: string) {
     try {
+      console.log('🔍 Recherche des chauffeurs assignés au véhicule:', vehiculeId);
+      
       const { data, error } = await supabase
         .from('affectations_chauffeurs')
         .select(`
@@ -310,13 +312,26 @@ export const missionsService = {
         .eq('statut', 'active');
 
       if (error) {
-        console.error('Erreur lors du chargement des chauffeurs assignés:', error);
+        console.error('❌ Erreur lors du chargement des chauffeurs assignés:', error);
         return [];
       }
 
-      return data?.map(item => item.chauffeur).filter(Boolean) || [];
+      console.log('📋 Affectations brutes trouvées:', data);
+      
+      // Filtrer les chauffeurs actifs après récupération
+      const chauffeurs = data
+        ?.map(item => item.chauffeur)
+        .filter(chauffeur => chauffeur && chauffeur.statut === 'actif') || [];
+      
+      if (chauffeurs.length > 0) {
+        console.log('✅ Chauffeurs assignés actifs trouvés:', chauffeurs.map(c => `${c.prenom} ${c.nom} (statut: ${c.statut})`).join(', '));
+      } else {
+        console.warn('⚠️ Aucun chauffeur actif assigné trouvé pour ce véhicule');
+      }
+      
+      return chauffeurs;
     } catch (error) {
-      console.error('Erreur générale chauffeurs assignés:', error);
+      console.error('❌ Erreur générale chauffeurs assignés:', error);
       return [];
     }
   },
