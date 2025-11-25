@@ -299,17 +299,10 @@ export const missionsService = {
       
       const { data, error } = await supabase
         .from('affectations_chauffeurs')
-        .select(`
-          chauffeur:chauffeurs(
-            id,
-            nom,
-            prenom,
-            telephone,
-            statut
-          )
-        `)
+        .select('*, chauffeurs!inner(*)')
         .eq('vehicule_id', vehiculeId)
-        .eq('statut', 'active');
+        .eq('statut', 'active')
+        .eq('chauffeurs.statut', 'actif');
 
       if (error) {
         console.error('❌ Erreur lors du chargement des chauffeurs assignés:', error);
@@ -318,10 +311,14 @@ export const missionsService = {
 
       console.log('📋 Affectations brutes trouvées:', data);
       
-      // Filtrer les chauffeurs actifs après récupération
-      const chauffeurs = data
-        ?.map(item => item.chauffeur)
-        .filter(chauffeur => chauffeur && chauffeur.statut === 'actif') || [];
+      // Extraire les chauffeurs de la structure retournée
+      const chauffeurs = data?.map(item => ({
+        id: item.chauffeurs.id,
+        nom: item.chauffeurs.nom,
+        prenom: item.chauffeurs.prenom,
+        telephone: item.chauffeurs.telephone,
+        statut: item.chauffeurs.statut
+      })) || [];
       
       if (chauffeurs.length > 0) {
         console.log('✅ Chauffeurs assignés actifs trouvés:', chauffeurs.map(c => `${c.prenom} ${c.nom} (statut: ${c.statut})`).join(', '));
