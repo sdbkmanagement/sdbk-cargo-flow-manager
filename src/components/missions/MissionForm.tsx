@@ -141,40 +141,41 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
 
   // Logique d'auto-assignation du/des chauffeur(s)
   useEffect(() => {
+    console.log('🔄 Vérification des chauffeurs assignés...', {
+      vehiculeId: formData.vehicule_id,
+      nombreChauffeurs: chauffeursAssignesVehicule.length,
+      chauffeurs: chauffeursAssignesVehicule
+    });
+    
     if (chauffeursAssignesVehicule.length > 0 && formData.vehicule_id) {
-      console.log('Chauffeurs assignés au véhicule:', chauffeursAssignesVehicule);
+      console.log('✅ Chauffeurs trouvés pour le véhicule:', chauffeursAssignesVehicule);
       
       if (!mission?.id) {
-        if (chauffeursAssignesVehicule.length === 1) {
-          const chauffeurAssigne = chauffeursAssignesVehicule[0];
-          setFormData(prev => ({ 
-            ...prev, 
-            chauffeur_id: chauffeurAssigne.id 
-          }));
-          
-          toast({
-            title: 'Chauffeur assigné automatiquement',
-            description: `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est assigné à ce véhicule.`
-          });
-        } else {
-          const chauffeurAssigne = chauffeursAssignesVehicule[0];
-          setFormData(prev => ({ 
-            ...prev, 
-            chauffeur_id: chauffeurAssigne.id 
-          }));
-          
-          toast({
-            title: 'Premier chauffeur assigné',
-            description: `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est le premier chauffeur assigné à ce véhicule.`
-          });
-        }
+        const chauffeurAssigne = chauffeursAssignesVehicule[0];
+        console.log('📝 Auto-assignation du chauffeur:', chauffeurAssigne);
+        
+        setFormData(prev => ({ 
+          ...prev, 
+          chauffeur_id: chauffeurAssigne.id 
+        }));
+        
+        const message = chauffeursAssignesVehicule.length === 1
+          ? `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est assigné à ce véhicule.`
+          : `${chauffeurAssigne.prenom} ${chauffeurAssigne.nom} est le premier chauffeur assigné à ce véhicule.`;
+        
+        toast({
+          title: 'Chauffeur assigné automatiquement',
+          description: message
+        });
       }
       
       setChauffeursAssignes(chauffeursAssignesVehicule);
     } else {
+      console.warn('⚠️ Aucun chauffeur assigné trouvé pour ce véhicule');
       setChauffeursAssignes([]);
       
       if (!mission?.id && formData.vehicule_id) {
+        console.log('🔄 Réinitialisation du chauffeur_id');
         setFormData(prev => ({ ...prev, chauffeur_id: '' }));
       }
     }
@@ -272,10 +273,21 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('📝 Tentative de soumission du formulaire:', {
+      type_transport: formData.type_transport,
+      vehicule_id: formData.vehicule_id,
+      chauffeur_id: formData.chauffeur_id,
+      chauffeursDisponibles: chauffeursAssignes.length
+    });
+    
     if (!formData.chauffeur_id) {
+      console.error('❌ Aucun chauffeur assigné. Chauffeurs disponibles:', chauffeursAssignes);
+      
       toast({
         title: 'Erreur',
-        description: 'Aucun chauffeur n\'est assigné au véhicule sélectionné.',
+        description: chauffeursAssignes.length > 0 
+          ? `Veuillez sélectionner un chauffeur parmi les ${chauffeursAssignes.length} disponible(s).`
+          : 'Aucun chauffeur n\'est assigné à ce véhicule. Veuillez d\'abord assigner un chauffeur dans le module Flotte.',
         variant: 'destructive'
       });
       return;
