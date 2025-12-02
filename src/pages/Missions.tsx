@@ -112,9 +112,9 @@ const Missions = () => {
     setSelectedMission(null);
   };
 
-  // Vérifier les permissions pour les missions - inclut maintenant les transitaires
-  const canReadMissions = hasPermission('missions_read') || hasRole('transitaire');
-  const canWriteMissions = hasPermission('missions_write') || hasRole('transitaire');
+  // Vérifier les permissions pour les missions - inclut transitaires et transport
+  const canReadMissions = hasPermission('missions_read') || hasRole('transitaire') || hasRole('transport');
+  const canWriteMissions = hasPermission('missions_write') || hasRole('transitaire') || hasRole('transport');
 
   if (!canReadMissions) {
     return (
