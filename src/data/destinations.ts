@@ -21,7 +21,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boke",
-    stations: ["Station Boke Yomboya"]
+    stations: ["Station Boke Yomboya", "Dabis"]
   },
   {
     ville: "Cissela",
@@ -42,7 +42,7 @@ export const DESTINATIONS: Destination[] = [
       "Station T3 Cosa Le Prince", "Station T5 Kobaya", "Station T5 Wanindara", "Station T6 Yataya",
       "Station T6 Yattaya", "Station Taouyah Petit Lac", "Station Tombolia", "Station Total Belle Vue",
       "Station Total T1 Concasseur", "Station Total Taouyah Petit Lac", "Station Wassa Wassa",
-      "Station Yimbaya Rp"
+      "Station Yimbaya Rp", "Station Total Dixin Oasis", "Station Total Matoto Mosquée", "Station Total Ratoma"
     ]
   },
   {
@@ -70,12 +70,20 @@ export const DESTINATIONS: Destination[] = [
     stations: ["Station Faranah", "Station Faranah ymc"]
   },
   {
+    ville: "Forecariah",
+    stations: ["Kaleah"]
+  },
+  {
     ville: "Fria",
     stations: ["Rouge Minig", "Station Fria Economat"]
   },
   {
     ville: "Gbantama",
     stations: ["Station Gbantama"]
+  },
+  {
+    ville: "Gomboya",
+    stations: ["Beverage"]
   },
   {
     ville: "Gueckedou",
@@ -100,7 +108,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kindia",
-    stations: ["Station Friguiagbe", "Station Kindia Samoroya", "Station Total Friguiagbe"]
+    stations: ["Station Friguiagbe", "Station Kindia Samoroya", "Station Total Friguiagbe", "EIFFAGE"]
   },
   {
     ville: "Kissidougou",
@@ -116,7 +124,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Labe",
-    stations: ["Station Labe Centre", "Station Labe Donghora", "Station Labe Safatou", "Station Labe Tourisme", "Station Total Labe Safatou", "Stationt Total Labe Safatou"]
+    stations: ["Station Labe Centre", "Station Labe Donghora", "Station Labe Safatou", "Station Labe Tourisme", "Station Total Labe Safatou", "Stationt Total Labe Safatou", "EIFFAGE"]
   },
   {
     ville: "Lelouma",
@@ -131,8 +139,8 @@ export const DESTINATIONS: Destination[] = [
     stations: ["Station Lola"]
   },
   {
-    ville: "Maferinya",
-    stations: ["Client Divers au comptant"]
+    ville: "Maferenya",
+    stations: ["Beverage", "Client Divers au comptant"]
   },
   {
     ville: "Mamou",
@@ -148,7 +156,7 @@ export const DESTINATIONS: Destination[] = [
       "Foret Forte", "Sgp N'Zerekore", "Station N'Zerekore Boma Ymc",
       "Station N'zerekore Dorota", "Station N'Zerekore Gr", "Station N'zerekore Horoya",
       "Station N'zerekore Mosque", "Station N'zerekore Tawu Tama", "Station N'zerekore YMC",
-      "Station Total N'zerekore YMC"
+      "Station Total N'zerekore YMC", "SGESCO", "SOGUPAH"
     ]
   },
   {
@@ -169,7 +177,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Telemele",
-    stations: ["Station Telimele"]
+    stations: ["Station Telimele", "Rouge Mining"]
   },
   {
     ville: "Tougue",
