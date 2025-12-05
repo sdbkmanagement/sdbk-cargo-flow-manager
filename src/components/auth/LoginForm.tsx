@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 export const LoginForm = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,11 +118,14 @@ export const LoginForm = () => {
         
         toast({
           title: "Connexion réussie",
-          description: "Redirection vers l'application...",
+          description: "Bienvenue sur SDBK Transport",
         });
         
         // Reset login attempts counter
         setLoginAttempts(0);
+        
+        // Rediriger vers la page d'accueil/dashboard
+        navigate('/');
       } else {
         // Log failed login
         await logLoginAttempt(sanitizedEmail, false, result.error);
