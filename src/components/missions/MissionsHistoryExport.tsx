@@ -92,6 +92,7 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
             'DATE DEPART': mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '',
             'DATE ARRIVEE': '',
             'DATE Dechargement': mission.statut === 'terminee' && mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : '',
+            'Manquant Citerne (T)': '',
             'Manquant Cuve': '',
             'Manquant Compteur': '',
             'Manquant Total': ''
@@ -123,6 +124,7 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
             'DATE ARRIVEE': bl.date_arrivee_reelle ? format(new Date(bl.date_arrivee_reelle), 'dd/MM/yyyy') : '',
             'DATE Dechargement': bl.date_dechargement ? format(new Date(bl.date_dechargement), 'dd/MM/yyyy') : (mission.statut === 'terminee' && mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : ''),
             // Manquants individuels par BL - NON AGRÉGÉS
+            'Manquant Citerne (T)': bl.manquant_citerne !== null && bl.manquant_citerne !== undefined ? bl.manquant_citerne : '',
             'Manquant Cuve': bl.manquant_cuve !== null && bl.manquant_cuve !== undefined ? bl.manquant_cuve : '',
             'Manquant Compteur': bl.manquant_compteur !== null && bl.manquant_compteur !== undefined ? bl.manquant_compteur : '',
             'Manquant Total': bl.manquant_total !== null && bl.manquant_total !== undefined ? bl.manquant_total : ''
@@ -152,6 +154,7 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
         { wch: 14 },  // DATE DEPART
         { wch: 14 },  // DATE ARRIVEE
         { wch: 15 },  // DATE Dechargement
+        { wch: 18 },  // Manquant Citerne (T)
         { wch: 14 },  // Manquant Cuve
         { wch: 16 },  // Manquant Compteur
         { wch: 14 }   // Manquant Total

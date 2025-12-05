@@ -216,6 +216,7 @@ export type Database = {
           id: string
           lieu_arrivee: string | null
           lieu_depart: string | null
+          manquant_citerne: number | null
           manquant_compteur: number | null
           manquant_cuve: number | null
           manquant_total: number | null
@@ -255,6 +256,7 @@ export type Database = {
           id?: string
           lieu_arrivee?: string | null
           lieu_depart?: string | null
+          manquant_citerne?: number | null
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null
@@ -294,6 +296,7 @@ export type Database = {
           id?: string
           lieu_arrivee?: string | null
           lieu_depart?: string | null
+          manquant_citerne?: number | null
           manquant_compteur?: number | null
           manquant_cuve?: number | null
           manquant_total?: number | null
