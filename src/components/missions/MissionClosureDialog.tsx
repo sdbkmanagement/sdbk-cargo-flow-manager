@@ -114,7 +114,7 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
     const blsIncomplets = bls.filter(bl => {
       return !bl.numero_tournee || !bl.date_chargement_reelle || !bl.date_depart || 
              !bl.date_arrivee_reelle || !bl.date_dechargement ||
-             bl.manquant_cuve === undefined || bl.manquant_compteur === undefined;
+             (bl as any).manquant_citerne === undefined || bl.manquant_cuve === undefined || bl.manquant_compteur === undefined;
     });
 
     if (blsIncomplets.length > 0) {
@@ -273,9 +273,19 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                       </div>
 
                       {/* Quantités manquantes */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
                         <div>
-                          <Label>Manquant cuve (L) *</Label>
+                          <Label>Manquant Citerne (T) *</Label>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={(bl as any).manquant_citerne || 0}
+                            onChange={(e) => updateBL(index, 'manquant_citerne' as any, parseFloat(e.target.value) || 0)}
+                            placeholder="0.0"
+                          />
+                        </div>
+                        <div>
+                          <Label>Manquant Cuve (L) *</Label>
                           <Input
                             type="number"
                             step="0.1"
@@ -285,7 +295,7 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                           />
                         </div>
                         <div>
-                          <Label>Manquant compteur (L) *</Label>
+                          <Label>Manquant Compteur (L) *</Label>
                           <Input
                             type="number"
                             step="0.1"
@@ -298,7 +308,7 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                           <Label>Total manquant (L)</Label>
                           <Input
                             type="number"
-                            value={(bl.manquant_cuve || 0) + (bl.manquant_compteur || 0)}
+                            value={((bl as any).manquant_citerne || 0) + (bl.manquant_cuve || 0) + (bl.manquant_compteur || 0)}
                             readOnly
                             className="bg-gray-100"
                           />
