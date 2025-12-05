@@ -63,90 +63,98 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
         return;
       }
 
-      // Récupérer les détails complets des missions avec BL
-      const missionsDetails = await Promise.all(
-        missionsFiltrees.map(async (mission) => {
-          const { data: bls } = await supabase
-            .from('bons_livraison')
-            .select('*')
-            .eq('mission_id', mission.id);
+      // Récupérer les détails complets des missions avec BL - une ligne par BL pour garder les manquants distincts
+      const missionsDetails: any[] = [];
+      
+      for (const mission of missionsFiltrees) {
+        const { data: bls } = await supabase
+          .from('bons_livraison')
+          .select('*')
+          .eq('mission_id', mission.id);
 
-          // Récupérer les numéros de BL
-          const blNums = bls?.map(bl => bl.numero).filter(Boolean).join(', ') || '';
-
-          // Calculer les totaux de BL si disponibles
-          const totalQuantite = bls?.reduce((sum, bl) => sum + (bl.quantite_livree || bl.quantite_prevue || 0), 0) || 0;
-          const produits = bls?.map(bl => bl.produit).filter(Boolean);
-          const produitType = produits && produits.length > 0 ? 
-                             (produits[0] === 'essence' ? 'ESSENCE' : 'GASOIL') : 
-                             (mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite');
-          
-          // Calculer les totaux des manquants
-          const totalManquantEssence = bls?.filter(bl => bl.produit === 'essence')
-            .reduce((sum, bl) => sum + (bl.manquant_total || 0), 0) || 0;
-          const totalManquantGasoil = bls?.filter(bl => bl.produit === 'gasoil')
-            .reduce((sum, bl) => sum + (bl.manquant_total || 0), 0) || 0;
-          const totalManquantCuve = bls?.reduce((sum, bl) => sum + (bl.manquant_cuve || 0), 0) || 0;
-          const totalManquantCompteur = bls?.reduce((sum, bl) => sum + (bl.manquant_compteur || 0), 0) || 0;
-          const totalManquant = bls?.reduce((sum, bl) => sum + (bl.manquant_total || 0), 0) || 0;
-          
-          return {
+        // Si pas de BL, créer une ligne pour la mission quand même
+        if (!bls || bls.length === 0) {
+          missionsDetails.push({
             'N°': mission.numero || '',
             'Citerne': mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '',
             'Prénoms et Nom du Chauffeur': `${mission.chauffeur?.prenom || ''} ${mission.chauffeur?.nom || ''}`.trim(),
-            'N°BL': blNums,
-            'N° Tournée': bls?.[0]?.numero_tournee || '',
-            'NOMBRE DE BL': bls?.length || 0,
+            'N°BL': '',
+            'N° Tournée': '',
+            'NOMBRE DE BL': 0,
             'Capacité': mission.vehicule?.capacite_citerne || '',
-            'Quantité / Litre': totalQuantite,
-            'Produits': produitType,
+            'Quantité / Litre': '',
+            'Produits': mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
             'Provenance': mission.site_depart || '',
             'Destinations': mission.site_arrivee || '',
             'Sites': mission.sites || '',
-            'date reception DS': bls?.[0]?.date_emission ? format(new Date(bls[0].date_emission), 'dd/MM/yyyy') : '',
-            'DATE chargements': bls?.[0]?.date_chargement_reelle ? format(new Date(bls[0].date_chargement_reelle), 'dd/MM/yyyy') : '',
-            'DATE DEPART': bls?.[0]?.date_depart ? format(new Date(bls[0].date_depart), 'dd/MM/yyyy') : 
-                          (mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : ''),
-            'DATE ARRIVEE': bls?.[0]?.date_arrivee_reelle ? format(new Date(bls[0].date_arrivee_reelle), 'dd/MM/yyyy') : '',
-            'DATE Dechargement': bls?.[0]?.date_dechargement ? format(new Date(bls[0].date_dechargement), 'dd/MM/yyyy') : 
-                                (mission.statut === 'terminee' && mission.updated_at ? 
-                                format(new Date(mission.updated_at), 'dd/MM/yyyy') : ''),
-            'Manquant Essence': totalManquantEssence || '',
-            'Manquant Gasoil': totalManquantGasoil || '',
-            'Manquant Cuve': totalManquantCuve || '',
-            'Manquant Compteur': totalManquantCompteur || '',
-            'Total Manquant': totalManquant || ''
-          };
-        })
-      );
+            'date reception DS': '',
+            'DATE chargements': '',
+            'DATE DEPART': mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '',
+            'DATE ARRIVEE': '',
+            'DATE Dechargement': mission.statut === 'terminee' && mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : '',
+            'Manquant Cuve': '',
+            'Manquant Compteur': '',
+            'Manquant Total': ''
+          });
+          continue;
+        }
+
+        // Créer une ligne pour chaque BL avec ses propres valeurs de manquants (non agrégées)
+        for (let i = 0; i < bls.length; i++) {
+          const bl = bls[i];
+          const produitType = bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : 'Hydrocarbures';
+          
+          missionsDetails.push({
+            'N°': i === 0 ? mission.numero || '' : '', // Afficher le numéro mission uniquement sur la première ligne
+            'Citerne': i === 0 ? (mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '') : '',
+            'Prénoms et Nom du Chauffeur': i === 0 ? `${mission.chauffeur?.prenom || ''} ${mission.chauffeur?.nom || ''}`.trim() : '',
+            'N°BL': bl.numero || '',
+            'N° Tournée': bl.numero_tournee || '',
+            'NOMBRE DE BL': i === 0 ? bls.length : '',
+            'Capacité': i === 0 ? (mission.vehicule?.capacite_citerne || '') : '',
+            'Quantité / Litre': bl.quantite_livree || bl.quantite_prevue || '',
+            'Produits': produitType,
+            'Provenance': bl.lieu_depart || mission.site_depart || '',
+            'Destinations': bl.lieu_arrivee || bl.destination || mission.site_arrivee || '',
+            'Sites': mission.sites || '',
+            'date reception DS': bl.date_emission ? format(new Date(bl.date_emission), 'dd/MM/yyyy') : '',
+            'DATE chargements': bl.date_chargement_reelle ? format(new Date(bl.date_chargement_reelle), 'dd/MM/yyyy') : '',
+            'DATE DEPART': bl.date_depart ? format(new Date(bl.date_depart), 'dd/MM/yyyy') : (mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : ''),
+            'DATE ARRIVEE': bl.date_arrivee_reelle ? format(new Date(bl.date_arrivee_reelle), 'dd/MM/yyyy') : '',
+            'DATE Dechargement': bl.date_dechargement ? format(new Date(bl.date_dechargement), 'dd/MM/yyyy') : (mission.statut === 'terminee' && mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : ''),
+            // Manquants individuels par BL - NON AGRÉGÉS
+            'Manquant Cuve': bl.manquant_cuve !== null && bl.manquant_cuve !== undefined ? bl.manquant_cuve : '',
+            'Manquant Compteur': bl.manquant_compteur !== null && bl.manquant_compteur !== undefined ? bl.manquant_compteur : '',
+            'Manquant Total': bl.manquant_total !== null && bl.manquant_total !== undefined ? bl.manquant_total : ''
+          });
+        }
+      }
 
       // Créer le fichier Excel avec mise en forme
       const ws = XLSX.utils.json_to_sheet(missionsDetails);
       
       // Ajuster la largeur des colonnes selon le format du screenshot
       const colWidths = [
-        { wch: 12 },  // N°
+        { wch: 15 },  // N°
         { wch: 15 },  // Citerne
-        { wch: 25 },  // Prénoms et Nom du Chauffeur
-        { wch: 15 },  // N°BL
-        { wch: 12 },  // N° Tournée
+        { wch: 28 },  // Prénoms et Nom du Chauffeur
+        { wch: 18 },  // N°BL
+        { wch: 14 },  // N° Tournée
         { wch: 12 },  // NOMBRE DE BL
-        { wch: 10 },  // Capacité
+        { wch: 12 },  // Capacité
         { wch: 15 },  // Quantité / Litre
-        { wch: 15 },  // Produits
+        { wch: 12 },  // Produits
         { wch: 18 },  // Provenance
-        { wch: 18 },  // Destinations
-        { wch: 15 },  // Sites
+        { wch: 20 },  // Destinations
+        { wch: 12 },  // Sites
         { wch: 15 },  // date reception DS
         { wch: 15 },  // DATE chargements
-        { wch: 12 },  // DATE DEPART
-        { wch: 12 },  // DATE ARRIVEE
+        { wch: 14 },  // DATE DEPART
+        { wch: 14 },  // DATE ARRIVEE
         { wch: 15 },  // DATE Dechargement
-        { wch: 15 },  // Manquant Essence
-        { wch: 15 },  // Manquant Gasoil
-        { wch: 15 },  // Manquant Cuve
-        { wch: 15 },  // Manquant Compteur
-        { wch: 15 }   // Total Manquant
+        { wch: 14 },  // Manquant Cuve
+        { wch: 16 },  // Manquant Compteur
+        { wch: 14 }   // Manquant Total
       ];
       ws['!cols'] = colWidths;
       
