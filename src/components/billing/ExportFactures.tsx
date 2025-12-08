@@ -112,10 +112,9 @@ export const ExportFactures = () => {
     }
 
     return bonsLivraison?.map(bl => {
-      // Destination = Ville de destination du BL (champ destination)
-      const destinationVille = bl.destination || '';
-      // Client = Lieu de livraison du BL (champ lieu_arrivee)
-      const clientLieuLivraison = bl.lieu_arrivee || '';
+      // Déterminer la destination de manière intelligente
+      const destinationComplete = bl.destination || bl.lieu_arrivee || bl.missions?.site_arrivee || '';
+      const destinationVille = extraireNomVille(destinationComplete);
       
       return {
         date_chargement_reelle: bl.date_chargement_reelle,
@@ -123,8 +122,9 @@ export const ExportFactures = () => {
         vehicule: bl.vehicules?.remorque_immatriculation || bl.vehicules?.immatriculation || bl.vehicules?.numero || '',
         lieu_depart: bl.lieu_depart || bl.missions?.site_depart,
         numero: bl.numero,
-        client_nom: clientLieuLivraison, // Client = Lieu de livraison du BL
-        destination: destinationVille, // Destination = Ville de destination du BL
+        client_nom: bl.missions?.site_arrivee || destinationComplete,
+        destination: destinationVille, // Utiliser le nom de ville simplifié
+        destination_complete: destinationComplete, // Garder l'original pour affichage
         produit: bl.produit,
         quantite_livree: (bl.quantite_livree ?? bl.quantite_prevue) || 0,
         prix_unitaire: bl.prix_unitaire || 0,
@@ -215,7 +215,7 @@ export const ExportFactures = () => {
           }
           
           const montant = ((item.quantite_livree || 0) * prix);
-          return { ...item, prix_unitaire: prix, montant_total: montant };
+          return { ...item, prix_unitaire: prix, montant_total: montant, destination: item.destination_complete || item.destination };
         })
       );
       
