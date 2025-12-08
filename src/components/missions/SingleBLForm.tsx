@@ -1,13 +1,16 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, FileText } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Trash2, FileText, Check, ChevronsUpDown, MapPin } from 'lucide-react';
 import { BonLivraison } from '@/types/bl';
 import { ClientSelector } from './ClientSelector';
+import { cn } from '@/lib/utils';
 
 interface SingleBLFormProps {
   bl: BonLivraison;
@@ -17,7 +20,15 @@ interface SingleBLFormProps {
   canRemove: boolean;
 }
 
+const LIEUX_DEPART = [
+  { value: 'Conakry', label: 'Conakry' },
+  { value: 'Kankan', label: 'Kankan' },
+  { value: "N'Zerekore", label: "N'Zerekore" }
+];
+
 export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: SingleBLFormProps) => {
+  const [lieuDepartOpen, setLieuDepartOpen] = useState(false);
+
   const handleClientChange = (destinationComplete: string) => {
     console.log(`🎯 BL ${index}: handleClientChange appelé avec:`, destinationComplete);
     
@@ -39,6 +50,12 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
   const handleDestinationChange = (destination: string) => {
     console.log(`🎯 BL ${index}: handleDestinationChange appelé avec:`, destination);
     // Cette fonction reste vide car tout passe par handleClientChange
+  };
+
+  const handleLieuDepartSelect = (value: string) => {
+    console.log(`🚚 BL ${index}: Lieu de départ sélectionné:`, value);
+    onUpdate('lieu_depart', value);
+    setLieuDepartOpen(false);
   };
 
   // Log des valeurs actuelles du BL
@@ -76,22 +93,52 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
           <div>
             <Label>Lieu de départ *</Label>
-            <Select
-              value={bl.lieu_depart || ''}
-              onValueChange={(value) => {
-                console.log(`🚚 BL ${index}: Lieu de départ sélectionné:`, value);
-                onUpdate('lieu_depart', value);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner le lieu de départ" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Conakry">Conakry</SelectItem>
-                <SelectItem value="Kankan">Kankan</SelectItem>
-                <SelectItem value="N'Zerekore">N'Zerekore</SelectItem>
-              </SelectContent>
-            </Select>
+            <Popover open={lieuDepartOpen} onOpenChange={setLieuDepartOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={lieuDepartOpen}
+                  className="w-full justify-between font-normal"
+                >
+                  {bl.lieu_depart ? (
+                    <div className="flex items-center">
+                      <MapPin className="w-4 h-4 mr-2" />
+                      {bl.lieu_depart}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">Rechercher un lieu de départ...</span>
+                  )}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Rechercher..." />
+                  <CommandList>
+                    <CommandEmpty>Aucun lieu trouvé.</CommandEmpty>
+                    <CommandGroup>
+                      {LIEUX_DEPART.map((lieu) => (
+                        <CommandItem
+                          key={lieu.value}
+                          value={lieu.value}
+                          onSelect={() => handleLieuDepartSelect(lieu.value)}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              bl.lieu_depart === lieu.value ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <MapPin className="w-4 h-4 mr-2" />
+                          {lieu.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
           <div>
             <Label>Lieu d'arrivée (Client) *</Label>
