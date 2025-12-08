@@ -1,10 +1,13 @@
 
-
 import React, { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MapPin, Building } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Button } from '@/components/ui/button';
+import { MapPin, Building, Check, ChevronsUpDown } from 'lucide-react';
 import { getClientsByVille, DESTINATIONS, getAllClients } from '@/data/destinations';
+import { cn } from '@/lib/utils';
 
 interface ClientSelectorProps {
   selectedClient: string;
@@ -26,6 +29,7 @@ export const ClientSelector = ({
   // États locaux pour gérer ville et lieu séparément
   const [selectedVille, setSelectedVille] = useState('');
   const [selectedLieuNom, setSelectedLieuNom] = useState('');
+  const [lieuOpen, setLieuOpen] = useState(false);
 
   // Obtenir les lieux de livraison pour la ville sélectionnée
   const lieuxLivraisonForVille = useMemo(() => {
@@ -88,6 +92,7 @@ export const ClientSelector = ({
     console.log(`🏢 BL ${blIndex}: Lieu de livraison sélectionné:`, lieuNom);
     
     setSelectedLieuNom(lieuNom);
+    setLieuOpen(false);
     
     // Créer la destination complète pour lieu_arrivee
     const destinationComplete = `${selectedVille} ${lieuNom}`;
@@ -121,46 +126,61 @@ export const ClientSelector = ({
         </Select>
       </div>
 
-      {/* Sélection du lieu de livraison spécifique */}
+      {/* Sélection du lieu de livraison avec recherche */}
       <div>
         <Label>Lieu de livraison</Label>
-        <Select 
-          value={selectedLieuNom} 
-          onValueChange={handleLieuLivraisonSelection}
-          disabled={!selectedVille}
-        >
-          <SelectTrigger>
-            <SelectValue 
-              placeholder={selectedVille ? "Sélectionner un lieu de livraison" : "Sélectionnez d'abord une ville"}
-            />
-          </SelectTrigger>
-          <SelectContent className="max-h-60">
-            {lieuxLivraisonForVille.length > 0 ? (
-              lieuxLivraisonForVille.map((lieu, lieuIndex) => (
-                <SelectItem 
-                  key={`${lieu.nom}-${lieu.ville}-${lieuIndex}`} 
-                  value={lieu.nom}
-                >
-                  <div className="flex items-center">
-                    <Building className="w-4 h-4 mr-2" />
-                    <div className="flex flex-col">
-                      <span className="font-medium">{lieu.nom}</span>
-                      <span className="text-xs text-gray-500">{lieu.type}</span>
-                    </div>
-                  </div>
-                </SelectItem>
-              ))
-            ) : selectedVille ? (
-              <SelectItem value="no_lieu_placeholder" disabled>
-                Aucun lieu de livraison trouvé pour {selectedVille}
-              </SelectItem>
-            ) : (
-              <SelectItem value="no_ville_placeholder" disabled>
-                Veuillez d'abord sélectionner une ville
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+        <Popover open={lieuOpen} onOpenChange={setLieuOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={lieuOpen}
+              className="w-full justify-between font-normal"
+              disabled={!selectedVille}
+            >
+              {selectedLieuNom ? (
+                <div className="flex items-center">
+                  <Building className="w-4 h-4 mr-2" />
+                  {selectedLieuNom}
+                </div>
+              ) : (
+                <span className="text-muted-foreground">
+                  {selectedVille ? "Rechercher un lieu de livraison..." : "Sélectionnez d'abord une ville"}
+                </span>
+              )}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[400px] p-0" align="start">
+            <Command>
+              <CommandInput placeholder="Rechercher un lieu..." />
+              <CommandList>
+                <CommandEmpty>Aucun lieu trouvé.</CommandEmpty>
+                <CommandGroup>
+                  {lieuxLivraisonForVille.map((lieu, lieuIndex) => (
+                    <CommandItem
+                      key={`${lieu.nom}-${lieu.ville}-${lieuIndex}`}
+                      value={lieu.nom}
+                      onSelect={() => handleLieuLivraisonSelection(lieu.nom)}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          selectedLieuNom === lieu.nom ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      <Building className="w-4 h-4 mr-2" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{lieu.nom}</span>
+                        <span className="text-xs text-muted-foreground">{lieu.type}</span>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
         
         {/* Affichage de la destination complète sélectionnée */}
         {selectedVille && selectedLieuNom && (
