@@ -1,29 +1,17 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
 import { BillingDashboard } from '@/components/billing/BillingDashboard';
 import { InvoiceList } from '@/components/billing/InvoiceList';
-import { QuoteList } from '@/components/billing/QuoteList';
 import { PaymentTracking } from '@/components/billing/PaymentTracking';
 import { ExportFactures } from '@/components/billing/ExportFactures';
-import { InvoiceForm } from '@/components/billing/InvoiceForm';
-import { QuoteForm } from '@/components/billing/QuoteForm';
 import { MonthlyInvoiceGenerator } from '@/components/billing/MonthlyInvoiceGenerator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Calculator } from 'lucide-react';
+import { ClosedMissionsHistory } from '@/components/billing/ClosedMissionsHistory';
 
 const Billing = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [showInvoiceForm, setShowInvoiceForm] = useState(false);
-  const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleInvoiceCreated = () => {
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const handleQuoteCreated = () => {
     setRefreshKey(prev => prev + 1);
   };
 
@@ -40,8 +28,9 @@ const Billing = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">Tableau de bord</TabsTrigger>
+          <TabsTrigger value="missions-history">Historique Missions</TabsTrigger>
           <TabsTrigger value="monthly-invoices">Factures mensuelles</TabsTrigger>
           <TabsTrigger value="payments">Suivi paiements</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
@@ -49,6 +38,10 @@ const Billing = () => {
 
         <TabsContent value="dashboard" className="space-y-6">
           <BillingDashboard key={refreshKey} />
+        </TabsContent>
+
+        <TabsContent value="missions-history" className="space-y-6">
+          <ClosedMissionsHistory />
         </TabsContent>
 
         <TabsContent value="monthly-invoices" className="space-y-6">
