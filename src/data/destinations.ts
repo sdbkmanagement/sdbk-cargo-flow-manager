@@ -183,7 +183,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Tanene",
-    stations: ["Ashapura", "Station Tanene"]
+    stations: ["Ashapura", "Station Tanene", "Tanene Continental groupe"]
   },
   {
     ville: "Taressa",
