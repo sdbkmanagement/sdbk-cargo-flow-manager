@@ -17,7 +17,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boffa",
-    stations: ["Chalco Guineea", "Rouge Minig", "Station Boffa Bollonde", "Station Boffa Torodoya"]
+    stations: ["Chalco Guineea", "Chec Boffa", "Rouge Minig", "Station Boffa Bollonde", "Station Boffa Torodoya"]
   },
   {
     ville: "Boke",
@@ -30,19 +30,21 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Conakry",
     stations: [
-      "CBK Simbaya", "Conakry Terminal", "Domino", "Huillerie de Guinee", "Sobragui", "Station Madina Koumi",
-      "Station Belle Vue", "Station Camayenne", "Station Carriere", "Station Cimenterie",
-      "Station Cosa2", "Station Coyah Somayah", "Station Coyah Wonkifong", "Station Dabondi",
-      "Station Dabondy", "Station Dixinn Ecole", "Station Gare Routiere", "Station Hamdallaye Deflendre",
-      "Station Hamdallaye Marcket", "Station Kagbeling Village", "Station Kissosso", "Station Koloma",
-      "Station Lambanyi", "Station Lansanayah", "Station Le Prince Nana", "Station Lycee Français",
-      "Station Maneah", "Station Maneyah", "Station Matam", "Station Matam Corniche", 
-      "Station Miniere", "Station Sangoyah", "Station Sans Fil", "Station Sig Madina",
-      "Station Sonfonia", "Station Symbaya", "Station T2 Kipe", "Station T3 Cosa",
+      "ACCG", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
+      "Sobragui", "Sogeac", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne", 
+      "Station Carriere", "Station Cimenterie", "Station Cosa2", "Station Coyah Somayah", 
+      "Station Coyah Wonkifong", "Station Dabondi", "Station Dabondy", "Station Dixinn Ecole", 
+      "Station Gare Routiere", "Station Hamdallaye Deflendre", "Station Hamdallaye Marcket", 
+      "Station Kagbeling Village", "Station Kissosso", "Station Koloma", "Station Lambanyi", 
+      "Station Lansanayah", "Station Le Prince Nana", "Station Lycee Français", "Station Maneah", 
+      "Station Maneyah", "Station Matam", "Station Matam Corniche", "Station Miniere", 
+      "Station Sangoyah", "Station Sans Fil", "Station Sig Madina", "Station Sonfonia", 
+      "Station Symbaya", "Station T10 Keitaya", "Station T2 Kipe", "Station T3 Cosa",
       "Station T3 Cosa Le Prince", "Station T5 Kobaya", "Station T5 Wanindara", "Station T6 Yataya",
-      "Station T6 Yattaya", "Station Taouyah Petit Lac", "Station Tombolia", "Station Total Belle Vue",
-      "Station Total T1 Concasseur", "Station Total Taouyah Petit Lac", "Station Wassa Wassa",
-      "Station Yimbaya Rp", "Station Total Dixin Oasis", "Station Total Matoto Mosquée", "Station Total Ratoma"
+      "Station T6 Yattaya", "Station Tanneri", "Station Taouyah Petit Lac", "Station Tombolia", 
+      "Station Total Belle Vue", "Station Total T1 Concasseur", "Station Total Taouyah Petit Lac", 
+      "Station Wassa Wassa", "Station Yimbaya Rp", "Station Total Dixin Oasis", 
+      "Station Total Matoto Mosquée", "Station Total Ratoma"
     ]
   },
   {
@@ -60,6 +62,10 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Debele",
     stations: ["Cbk Debele"]
+  },
+  {
+    ville: "Diecke",
+    stations: ["Soguipa"]
   },
   {
     ville: "Dian Dian",
@@ -116,11 +122,15 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kolaboui",
-    stations: ["Station Kolaboui", "Station Kolaboui Mansalaya", "Station Kolaboui Mansalayah", "Station Kolaboui Niankalia"]
+    stations: ["Kolaboui Mansalaya", "Station Kolaboui", "Station Kolaboui Mansalaya", "Station Kolaboui Mansalayah", "Station Kolaboui Niankalia"]
   },
   {
     ville: "Koundara",
     stations: ["Station Koundara", "Station Koundara Donzo"]
+  },
+  {
+    ville: "Kouroussa",
+    stations: ["Station Kouroussa", "Videri Entreprises SARL"]
   },
   {
     ville: "Labe",
@@ -136,7 +146,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Lola",
-    stations: ["Station Lola"]
+    stations: ["Gajah Investiment Guinea", "Station Lola"]
   },
   {
     ville: "Maferenya",
@@ -174,6 +184,10 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Tanene",
     stations: ["Ashapura", "Station Tanene"]
+  },
+  {
+    ville: "Taressa",
+    stations: ["Cobad Taressa"]
   },
   {
     ville: "Telemele",
