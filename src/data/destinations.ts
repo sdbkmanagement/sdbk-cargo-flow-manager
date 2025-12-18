@@ -17,7 +17,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boffa",
-    stations: ["Chalco Guineea", "Chec Boffa", "Rouge Minig", "Station Boffa Bollonde", "Station Boffa Torodoya"]
+    stations: ["Ashapura Boffa", "Chalco Guineea", "Chec Boffa", "Rouge Minig", "Station Boffa Bollonde", "Station Boffa Torodoya"]
   },
   {
     ville: "Boke",
@@ -77,7 +77,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Forecariah",
-    stations: ["Kaleah"]
+    stations: ["Kaleah", "Setc Forecariah"]
   },
   {
     ville: "Fria",
@@ -130,7 +130,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kouroussa",
-    stations: ["Station Kouroussa", "Videri Entreprises SARL"]
+    stations: ["Station Kouroussa", "Station Kouroussa G", "Videri Entreprises SARL"]
   },
   {
     ville: "Labe",
