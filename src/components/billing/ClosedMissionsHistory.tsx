@@ -61,7 +61,7 @@ export const ClosedMissionsHistory = () => {
           vehicule:vehicules(immatriculation),
           chauffeur:chauffeurs(nom, prenom)
         `)
-        .eq('statut', 'cloture')
+        .in('statut', ['cloture', 'terminee'])
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
