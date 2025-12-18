@@ -31,7 +31,7 @@ export const DESTINATIONS: Destination[] = [
     ville: "Conakry",
     stations: [
       "ACCG", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
-      "Sobragui", "Sogeac", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne", 
+      "Sobragui", "Sogeac", "Station Mafanco", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne",
       "Station Carriere", "Station Cimenterie", "Station Cosa2", "Station Coyah Somayah", 
       "Station Coyah Wonkifong", "Station Dabondi", "Station Dabondy", "Station Dixinn Ecole", 
       "Station Gare Routiere", "Station Hamdallaye Deflendre", "Station Hamdallaye Marcket", 
@@ -122,7 +122,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kolaboui",
-    stations: ["Kolaboui Mansalaya", "Station Kolaboui", "Station Kolaboui Mansalaya", "Station Kolaboui Mansalayah", "Station Kolaboui Niankalia"]
+    stations: ["Kolaboui Mansalaya", "Kolaboui Minex", "Station Kolaboui", "Station Kolaboui Mansalaya", "Station Kolaboui Mansalayah", "Station Kolaboui Niankalia"]
   },
   {
     ville: "Koundara",
@@ -155,6 +155,10 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Mamou",
     stations: ["Station Mamou B", "Station Mamou C", "Station Mamou Carrefour", "Station Mamou Contournante", "Station Mamou D", "Station Mamou Holo", "Station Total Mamou D"]
+  },
+  {
+    ville: "Mandiana",
+    stations: ["Station Mandiana 2"]
   },
   {
     ville: "Niagassola",
