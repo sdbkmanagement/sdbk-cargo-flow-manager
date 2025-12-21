@@ -1,11 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { billingService, type Facture } from '@/services/billing';
 import { generateInvoicePDF } from '@/utils/pdfGenerator';
 import { exportInvoicesToCSV } from '@/utils/exportUtils';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { tarifsHydrocarburesService } from '@/services/tarifsHydrocarburesService';
 
 export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') => {
   const [invoices, setInvoices] = useState<Facture[]>([]);
@@ -14,7 +13,6 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [monthFilter, setMonthFilter] = useState<string>('all');
-  const hasAutoFixed = React.useRef(false);
 
   useEffect(() => {
     loadInvoices();
@@ -37,32 +35,6 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
       });
       
       setInvoices(filteredData);
-
-      // Auto-correction: recalculer à partir des BL du mois pour aligner avec l'export
-      if (type === 'monthly' && !hasAutoFixed.current && filteredData.length > 0) {
-        hasAutoFixed.current = true;
-        try {
-          let fixedCount = 0;
-          for (const inv of filteredData) {
-            try {
-              const res = await billingService.recalcMonthlyInvoiceFromBL(inv as Facture);
-              if (res && res.totalHT != null) fixedCount++;
-            } catch {}
-          }
-          if (fixedCount > 0) {
-            const refreshed = await billingService.getFactures();
-            setAllInvoices(refreshed);
-            const refreshedFiltered = refreshed.filter(invoice => (!invoice.mission_numero || invoice.numero.includes('-GROUPE')));
-            setInvoices(refreshedFiltered);
-            toast({
-              title: 'Factures mensuelles recalculées',
-              description: `${fixedCount} facture(s) alignée(s) sur l'export.`,
-            });
-          }
-        } catch (e) {
-          console.warn('Recalcul factures mensuelles échoué:', e);
-        }
-      }
     } catch (error) {
       console.error('Erreur lors du chargement des factures:', error);
       toast({
@@ -76,7 +48,7 @@ export const useInvoiceList = (type: 'individual' | 'monthly' = 'individual') =>
   };
 
   // Calculer tous les mois disponibles à partir de toutes les factures
-  const availableMonths = React.useMemo(() => {
+  const availableMonths = useMemo(() => {
     const months = new Set<string>();
     allInvoices.forEach(invoice => {
       const date = new Date(invoice.date_emission);
