@@ -7,6 +7,7 @@ import { AuthGuard } from '@/components/layout/AuthGuard';
 import { ModuleLayout } from '@/components/layout/ModuleLayout';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import ChatWidget from '@/components/chat/ChatWidget';
 import Home from '@/pages/Home';
 import Dashboard from '@/pages/Dashboard';
 import Fleet from '@/pages/Fleet';
@@ -147,6 +148,7 @@ function App() {
             />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <ChatWidget />
         </Router>
         <Toaster />
         <SonnerToaster />
