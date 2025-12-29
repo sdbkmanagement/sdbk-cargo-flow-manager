@@ -13,10 +13,10 @@ import {
   UserCog, 
   CheckCircle, 
   Settings,
-  Book,
   LogOut,
   X,
-  Building2
+  Building2,
+  Briefcase
 } from 'lucide-react';
 
 interface ModernSidebarProps {
@@ -68,6 +68,12 @@ const menuItems = [
     label: 'RH',
     icon: UserCog,
     module: 'rh'
+  },
+  {
+    path: '/societe',
+    label: 'Société',
+    icon: Briefcase,
+    module: 'societe'
   },
   {
     path: '/validations',

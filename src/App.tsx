@@ -17,6 +17,7 @@ import RH from '@/pages/RH';
 import Administration from '@/pages/Administration';
 import Validations from '@/pages/Validations';
 import Clients from '@/pages/Clients';
+import Societe from '@/pages/Societe';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 
@@ -130,6 +131,16 @@ function App() {
                 <AuthGuard>
                   <ModuleLayout title="Clients" subtitle="Gestion des clients et contacts">
                     <Clients />
+                  </ModuleLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/societe" 
+              element={
+                <AuthGuard>
+                  <ModuleLayout title="Société" subtitle="Documents juridiques et administratifs">
+                    <Societe />
                   </ModuleLayout>
                 </AuthGuard>
               } 
