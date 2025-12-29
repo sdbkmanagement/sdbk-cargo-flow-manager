@@ -1,8 +1,8 @@
 export type UserRole = 
   | 'maintenance' 
   | 'administratif' 
-  | 'hsecq' 
-  | 'obc' 
+  | 'hseq' 
+  | 'obc'
   | 'transport' 
   | 'facturation' 
   | 'rh' 

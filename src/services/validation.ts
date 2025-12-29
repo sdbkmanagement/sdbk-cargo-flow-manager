@@ -1,6 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-export type EtapeType = 'maintenance' | 'administratif' | 'hsecq' | 'obc';
+export type EtapeType = 'maintenance' | 'administratif' | 'hseq' | 'obc';
 export type StatutEtape = 'en_attente' | 'valide' | 'rejete';
 
 export interface ValidationEtape {
@@ -63,7 +63,7 @@ export const validationService = {
 
       if (error || !userData) return false;
 
-      const validRoles = ['admin', 'maintenance', 'hsecq', 'obc', 'administratif'];
+      const validRoles = ['admin', 'maintenance', 'hseq', 'obc', 'administratif'];
       return userData.status === 'active' && 
              userData.roles.some((role: string) => validRoles.includes(role));
     } catch (error) {
@@ -245,7 +245,7 @@ export const validationService = {
       const etapes = [
         { workflow_id: workflow.id, etape: 'maintenance', statut: 'en_attente' },
         { workflow_id: workflow.id, etape: 'administratif', statut: 'en_attente' },
-        { workflow_id: workflow.id, etape: 'hsecq', statut: 'en_attente' },
+        { workflow_id: workflow.id, etape: 'hseq', statut: 'en_attente' },
         { workflow_id: workflow.id, etape: 'obc', statut: 'en_attente' }
       ];
 

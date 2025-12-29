@@ -54,7 +54,7 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     }
   };
 
-  const services = ['Transport', 'Maintenance', 'HSECQ', 'Administration', 'Direction'];
+  const services = ['Transport', 'Maintenance', 'HSEQ', 'Administration', 'Direction'];
   const typesContrat = ['CDI', 'CDD', 'Stage', 'Interim'];
   const statuts = ['actif', 'inactif', 'en_arret'];
 

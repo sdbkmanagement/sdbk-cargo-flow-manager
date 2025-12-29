@@ -97,7 +97,7 @@ const RH = () => {
     }
   });
 
-  const services = ['tous', 'Transport', 'Maintenance', 'HSECQ', 'Administration', 'Direction'];
+  const services = ['tous', 'Transport', 'Maintenance', 'HSEQ', 'Administration', 'Direction'];
 
   const exportToExcel = () => {
     // Logique d'export Excel (à implémenter)

@@ -38,9 +38,9 @@ export const useValidationPermissions = () => {
         hasPermission = userRoles.includes('administratif');
         console.log(`📋 Vérification rôle administratif: ${hasPermission}`);
         break;
-      case 'hsecq':
-        hasPermission = userRoles.includes('hsecq');
-        console.log(`🛡️ Vérification rôle hsecq: ${hasPermission}`);
+      case 'hseq':
+        hasPermission = userRoles.includes('hseq');
+        console.log(`🛡️ Vérification rôle hseq: ${hasPermission}`);
         break;
       case 'obc':
         hasPermission = userRoles.includes('obc');
@@ -89,7 +89,7 @@ export const useValidationPermissions = () => {
     // Vérifier si l'utilisateur a au moins un rôle de validation
     const userRoles = user.roles || [user.role];
     
-    const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
+    const validationRoles = ['maintenance', 'administratif', 'hseq', 'obc'];
     const hasAccess = validationRoles.some(role => userRoles.includes(role));
     
     console.log('🔍 Vérification accès validation:', {
