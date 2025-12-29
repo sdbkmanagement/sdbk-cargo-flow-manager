@@ -127,7 +127,7 @@ Châssis : WDB9634123L123456
 2. Passer les étapes successivement :
    - Maintenance ✅
    - Administratif ✅
-   - HSECQ ✅
+   - HSEQ ✅
    - OBC ✅
 3. Vérifier le statut final
 

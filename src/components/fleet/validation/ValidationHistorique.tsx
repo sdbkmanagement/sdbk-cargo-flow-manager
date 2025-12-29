@@ -17,7 +17,7 @@ interface ValidationHistoriqueProps {
 const ETAPE_LABELS = {
   maintenance: 'Maintenance',
   administratif: 'Administratif', 
-  hsecq: 'HSECQ',
+  hseq: 'HSEQ',
   obc: 'OBC (Opérations)'
 };
 

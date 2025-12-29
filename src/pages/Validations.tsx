@@ -32,7 +32,7 @@ const Validations = () => {
             Vous n'avez pas les permissions nécessaires pour accéder aux validations.
           </p>
           <p className="text-sm text-gray-500">
-            Rôles requis : maintenance, administratif, hsecq, obc
+            Rôles requis : maintenance, administratif, hseq, obc
           </p>
           <p className="text-sm text-gray-500">
             Vos rôles : {getUserRoles().join(', ')}

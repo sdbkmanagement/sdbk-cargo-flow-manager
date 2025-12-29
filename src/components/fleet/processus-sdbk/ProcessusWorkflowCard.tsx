@@ -47,7 +47,7 @@ const PERMISSIONS_ETAPES = {
   'disponible_maintenance': ['maintenance', 'admin', 'direction'],
   'verification_admin': ['administratif', 'admin', 'direction'],
   'controle_obc': ['obc', 'admin', 'direction'],
-  'controle_hsse': ['hsecq', 'admin', 'direction'],
+  'controle_hsse': ['hseq', 'admin', 'direction'],
   'disponible': ['transport', 'admin', 'direction'],
   'en_mission': ['transport', 'admin', 'direction']
 };

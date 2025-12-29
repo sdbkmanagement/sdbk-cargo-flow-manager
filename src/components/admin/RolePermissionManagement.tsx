@@ -80,7 +80,7 @@ export const RolePermissionManagement = () => {
       maintenance: 'bg-green-100 text-green-700 border-green-200',
       rh: 'bg-orange-100 text-orange-700 border-orange-200',
       facturation: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-      hsecq: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+      hseq: 'bg-indigo-100 text-indigo-700 border-indigo-200',
       obc: 'bg-cyan-100 text-cyan-700 border-cyan-200',
       administratif: 'bg-gray-100 text-gray-700 border-gray-200'
     };
