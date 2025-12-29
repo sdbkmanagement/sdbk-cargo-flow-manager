@@ -234,8 +234,8 @@ const Validations = () => {
             Gestion des processus de validation des véhicules (Page {currentPage} - {totalCount} véhicule(s))
           </p>
           <div className="mt-2 text-sm text-blue-600">
-            <p>Connecté en tant que : <strong>{getUserRole()}</strong></p>
-            <p>Rôles : {getUserRoles().join(', ')}</p>
+            <p>Connecté en tant que : <strong>{getUserRole() === 'hsecq' ? 'HSEQ' : getUserRole()}</strong></p>
+            <p>Rôles : {getUserRoles().map(r => r === 'hsecq' ? 'HSEQ' : r).join(', ')}</p>
           </div>
         </div>
         <Button onClick={handleRefresh} variant="outline">
