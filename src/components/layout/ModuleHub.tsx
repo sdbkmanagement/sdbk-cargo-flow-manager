@@ -15,7 +15,8 @@ import {
   User,
   LogOut,
   Building2,
-  Briefcase
+  Briefcase,
+  ShieldCheck
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -183,6 +184,15 @@ export const ModuleHub: React.FC = () => {
       route: '/validations',
       gradient: 'from-indigo-500 to-blue-600',
       stats: loading ? '...' : `${stats.missionsEnAttente} en attente`
+    },
+    {
+      id: 'hseq',
+      title: 'HSEQ',
+      description: 'Hygiène, Sécurité, Environnement & Qualité',
+      icon: ShieldCheck,
+      route: '/hseq',
+      gradient: 'from-green-500 to-emerald-600',
+      isNew: true
     },
     {
       id: 'admin',
