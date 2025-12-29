@@ -42,7 +42,7 @@ export const DESTINATIONS: Destination[] = [
       "Station Symbaya", "Station T10 Keitaya", "Station T2 Kipe", "Station T3 Cosa",
       "Station T3 Cosa Le Prince", "Station T5 Kobaya", "Station T5 Wanindara", "Station T6 Yataya",
       "Station T6 Yattaya", "Station Tanneri", "Station Taouyah Petit Lac", "Station Tombolia", 
-      "Station Total Belle Vue", "Station Total T1 Concasseur", "Station Total Taouyah Petit Lac", 
+      "Station Total Belle Vue", "Station Total Sanoyah", "Station Total T1 Concasseur", "Station Total Taouyah Petit Lac", 
       "Station Wassa Wassa", "Station Yimbaya Rp", "Station Total Dixin Oasis", 
       "Station Total Matoto Mosquée", "Station Total Ratoma"
     ]
