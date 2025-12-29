@@ -23,7 +23,7 @@ interface ValidationWorkflowCardProps {
 const ETAPE_LABELS = {
   maintenance: 'Maintenance',
   administratif: 'Administratif', 
-  hsecq: 'HSECQ',
+  hsecq: 'HSEQ',
   obc: 'OBC (Opérations)'
 };
 
