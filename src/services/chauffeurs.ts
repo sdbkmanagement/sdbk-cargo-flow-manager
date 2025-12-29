@@ -11,41 +11,52 @@ export const chauffeursService = {
     try {
       console.log('Chargement des chauffeurs...')
       
-      const { data, error } = await Promise.race([
+      // D'abord récupérer tous les chauffeurs
+      const { data: chauffeurs, error: chauffeursError } = await Promise.race([
         supabase
           .from('chauffeurs')
-          .select(`
-            *,
-            affectations_chauffeurs(
-              vehicule_id,
-              vehicules(numero)
-            )
-          `)
-          .eq('affectations_chauffeurs.statut', 'active')
+          .select('*')
           .order('created_at', { ascending: false }),
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Timeout')), 10000)
         )
       ]) as any
 
-      if (error) {
-        console.error('Erreur lors du chargement des chauffeurs:', error)
-        // Fallback vers la requête simple
-        return await this.getAllSimple()
+      if (chauffeursError) {
+        console.error('Erreur lors du chargement des chauffeurs:', chauffeursError)
+        return []
       }
 
-      console.log('Chauffeurs avec assignations chargés:', data?.length || 0)
+      // Ensuite récupérer les affectations actives séparément
+      const { data: affectations, error: affectationsError } = await supabase
+        .from('affectations_chauffeurs')
+        .select(`
+          chauffeur_id,
+          vehicule_id,
+          vehicules(numero)
+        `)
+        .eq('statut', 'active')
+
+      if (affectationsError) {
+        console.error('Erreur lors du chargement des affectations:', affectationsError)
+      }
+
+      console.log('Chauffeurs chargés:', chauffeurs?.length || 0)
       
-      // Traiter les données pour ajouter le véhicule assigné
-      const chauffeursWithVehicles = data?.map(chauffeur => ({
+      // Associer les affectations aux chauffeurs
+      const affectationsMap = new Map()
+      affectations?.forEach((aff: any) => {
+        affectationsMap.set(aff.chauffeur_id, aff.vehicules?.numero || null)
+      })
+
+      const chauffeursWithVehicles = chauffeurs?.map((chauffeur: Chauffeur) => ({
         ...chauffeur,
-        vehicule_assigne: chauffeur.affectations_chauffeurs?.[0]?.vehicules?.numero || null
+        vehicule_assigne: affectationsMap.get(chauffeur.id) || null
       })) || []
 
       return chauffeursWithVehicles
     } catch (error) {
       console.error('Erreur générale chauffeurs:', error)
-      // Fallback vers la requête simple
       return await this.getAllSimple()
     }
   },
