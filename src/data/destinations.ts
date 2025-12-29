@@ -21,7 +21,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boke",
-    stations: ["Station Boke Yomboya", "Dabis"]
+    stations: ["Henanchine", "Station Boke Yomboya", "Dabis"]
   },
   {
     ville: "Cissela",
