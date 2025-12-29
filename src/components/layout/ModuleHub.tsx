@@ -14,7 +14,8 @@ import {
   Bell,
   User,
   LogOut,
-  Building2
+  Building2,
+  Briefcase
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -55,7 +56,7 @@ interface HubStats {
 
 export const ModuleHub: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const [stats, setStats] = useState<HubStats>({
     vehicules: 0,
     chauffeurs: 0,
@@ -157,6 +158,15 @@ export const ModuleHub: React.FC = () => {
       gradient: 'from-teal-500 to-emerald-600'
     },
     {
+      id: 'societe',
+      title: 'Société',
+      description: 'Documents juridiques, administratifs et contractuels',
+      icon: Briefcase,
+      route: '/societe',
+      gradient: 'from-slate-600 to-slate-800',
+      isNew: true
+    },
+    {
       id: 'rh',
       title: 'RH',
       description: 'Ressources humaines et formations',
@@ -196,16 +206,15 @@ export const ModuleHub: React.FC = () => {
     });
     
     // L'admin a accès à tout
-    if (user.roles?.includes('admin')) {
+    if (hasRole('admin')) {
       console.log(`✅ Utilisateur admin - accès complet au module ${module.id}`);
       return true;
     }
 
-    // Dashboard spécial pour les admins seulement
+    // Dashboard visible uniquement pour les admins
     if (module.id === 'dashboard') {
-      const isAdmin = user.roles?.includes('admin') || user.role === 'admin';
-      console.log(`🔍 Vérification accès dashboard - Admin: ${isAdmin}`);
-      return isAdmin;
+      console.log(`🔍 Vérification accès dashboard - Admin: false`);
+      return false;
     }
 
     // Vérification spéciale pour les transitaires et le module missions

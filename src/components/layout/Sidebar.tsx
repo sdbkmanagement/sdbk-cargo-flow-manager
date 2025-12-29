@@ -11,6 +11,7 @@ import {
   Calculator, 
   UserCog, 
   Shield,
+  Briefcase,
   Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -51,6 +52,12 @@ const navigationItems = [
     icon: UserCog,
     href: '/rh',
     permissions: ['rh', 'all']
+  },
+  {
+    title: 'Société',
+    icon: Briefcase,
+    href: '/societe',
+    permissions: ['societe', 'all']
   },
   {
     title: 'Validations',
