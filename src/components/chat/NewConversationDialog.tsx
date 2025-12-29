@@ -119,9 +119,13 @@ const NewConversationDialog: React.FC<NewConversationDialogProps> = ({
       );
       onConversationCreated(conv);
       toast.success('Conversation créée');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating conversation:', error);
-      toast.error('Erreur lors de la création');
+      const message =
+        typeof error?.message === 'string' && error.message.trim().length > 0
+          ? error.message
+          : 'Erreur lors de la création';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

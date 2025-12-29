@@ -2834,6 +2834,7 @@ export type Database = {
         Returns: boolean
       }
       current_user_is_admin: { Args: never; Returns: boolean }
+      get_my_conversation_ids: { Args: never; Returns: string[] }
       get_or_sync_user_by_auth: {
         Args: never
         Returns: {
@@ -2867,6 +2868,10 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_admin_user: { Args: { user_id: string }; Returns: boolean }
+      is_conversation_member: {
+        Args: { _conversation_id: string; _user_id: string }
+        Returns: boolean
+      }
       user_has_role: {
         Args: {
           _role: Database["public"]["Enums"]["user_role"]
