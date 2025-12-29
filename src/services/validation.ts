@@ -444,9 +444,11 @@ export const validationService = {
       let nouveauStatutVehicule = 'validation_requise';
 
       // Déterminer le nouveau statut
+      // Note: Les valeurs autorisées pour le statut véhicule sont:
+      // 'disponible', 'en_mission', 'maintenance', 'validation_requise', 'hors_service', 'en_validation'
       if (etapesRejetees.length > 0) {
         nouveauStatutGlobal = 'rejete';
-        nouveauStatutVehicule = 'indisponible';
+        nouveauStatutVehicule = 'hors_service'; // Utiliser 'hors_service' au lieu de 'indisponible'
       } else if (etapesValidees.length === workflow.etapes.length) {
         nouveauStatutGlobal = 'valide';
         nouveauStatutVehicule = 'disponible';
