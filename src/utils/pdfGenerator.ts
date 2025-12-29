@@ -116,12 +116,22 @@ export const generateInvoicePDF = (invoice: any) => {
               color: #000;
               font-size: 11pt;
               line-height: 1.4;
+              min-height: 297mm;
+              position: relative;
+            }
+            body::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
               background-image: url('/templates/facture-template.jpg');
               background-size: cover;
               background-position: center top;
               background-repeat: no-repeat;
-              min-height: 297mm;
-              position: relative;
+              transform: rotate(180deg);
+              z-index: -1;
             }
             .content-wrapper {
               padding: 70mm 15mm 15mm 15mm;
