@@ -80,20 +80,35 @@ const HSEQ: React.FC = () => {
     enabled: canManageControls,
   });
 
-  // Charger les chauffeurs disponibles
-  const { data: chauffeurs } = useQuery({
-    queryKey: ['chauffeurs-hseq'],
+  // Charger le chauffeur assigné au véhicule sélectionné
+  const { data: chauffeurAssigne } = useQuery({
+    queryKey: ['chauffeur-assigne', selectedVehicule],
     queryFn: async () => {
+      // Chercher l'affectation active pour ce véhicule
       const { data, error } = await supabase
-        .from('chauffeurs')
-        .select('id, nom, prenom')
-        .eq('statut', 'actif')
-        .order('nom');
+        .from('affectations_chauffeurs')
+        .select('chauffeur_id, chauffeurs(id, nom, prenom)')
+        .eq('vehicule_id', selectedVehicule)
+        .eq('statut', 'active')
+        .maybeSingle();
       if (error) throw error;
-      return data;
+      const chauffeurData = data?.chauffeurs;
+      if (chauffeurData && typeof chauffeurData === 'object' && !Array.isArray(chauffeurData)) {
+        return chauffeurData as { id: string; nom: string; prenom: string };
+      }
+      return null;
     },
-    enabled: canManageControls,
+    enabled: !!selectedVehicule && canManageControls,
   });
+
+  // Auto-sélectionner le chauffeur quand le véhicule change
+  React.useEffect(() => {
+    if (chauffeurAssigne) {
+      setSelectedChauffeur(chauffeurAssigne.id);
+    } else {
+      setSelectedChauffeur('');
+    }
+  }, [chauffeurAssigne]);
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['hseq-stats'],
@@ -165,7 +180,6 @@ const HSEQ: React.FC = () => {
   // Afficher le formulaire de contrôle en plein écran
   if (showControlForm) {
     const vehiculeInfo = vehicules?.find(v => v.id === selectedVehicule);
-    const chauffeurInfo = chauffeurs?.find(c => c.id === selectedChauffeur);
     
     return (
       <div className="fixed inset-0 z-50 bg-background overflow-auto">
@@ -177,9 +191,9 @@ const HSEQ: React.FC = () => {
               numero: vehiculeInfo.numero || '', 
               immatriculation: vehiculeInfo.immatriculation || '' 
             } : undefined}
-            chauffeurInfo={chauffeurInfo ? { 
-              nom: chauffeurInfo.nom, 
-              prenom: chauffeurInfo.prenom 
+            chauffeurInfo={chauffeurAssigne ? { 
+              nom: chauffeurAssigne.nom, 
+              prenom: chauffeurAssigne.prenom 
             } : undefined}
             onComplete={handleControlComplete}
             onCancel={handleControlCancel}
@@ -526,20 +540,23 @@ const HSEQ: React.FC = () => {
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <User className="h-4 w-4" />
-                Chauffeur
+                Chauffeur assigné
               </Label>
-              <Select value={selectedChauffeur} onValueChange={setSelectedChauffeur}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un chauffeur" />
-                </SelectTrigger>
-                <SelectContent>
-                  {chauffeurs?.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.prenom} {c.nom}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
+                {chauffeurAssigne ? (
+                  <span className="text-foreground font-medium">
+                    {chauffeurAssigne.prenom} {chauffeurAssigne.nom}
+                  </span>
+                ) : selectedVehicule ? (
+                  <span className="text-muted-foreground italic">
+                    Aucun chauffeur assigné à ce véhicule
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground italic">
+                    Sélectionnez d'abord un véhicule
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-2">
