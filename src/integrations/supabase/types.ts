@@ -1801,6 +1801,56 @@ export type Database = {
           },
         ]
       }
+      hseq_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          entity_id: string
+          entity_type: string
+          id: string
+          ip_address: unknown
+          user_agent: string | null
+          user_id: string | null
+          user_nom: string | null
+          user_role: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+          user_nom?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          ip_address?: unknown
+          user_agent?: string | null
+          user_id?: string | null
+          user_nom?: string | null
+          user_role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hseq_audit_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_attempts: {
         Row: {
           created_at: string
@@ -2113,6 +2163,168 @@ export type Database = {
           },
         ]
       }
+      non_conformites: {
+        Row: {
+          action_corrective: string | null
+          action_preventive: string | null
+          categorie: string | null
+          chauffeur_id: string | null
+          created_at: string
+          created_by: string | null
+          date_detection: string
+          date_echeance: string | null
+          date_resolution: string | null
+          description: string
+          documents: Json | null
+          id: string
+          numero: string
+          photos: Json | null
+          responsable_id: string | null
+          safe_to_load_id: string | null
+          service_responsable: string | null
+          statut: string
+          type_nc: string
+          updated_at: string
+          vehicule_id: string | null
+          verification: string | null
+        }
+        Insert: {
+          action_corrective?: string | null
+          action_preventive?: string | null
+          categorie?: string | null
+          chauffeur_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_detection?: string
+          date_echeance?: string | null
+          date_resolution?: string | null
+          description: string
+          documents?: Json | null
+          id?: string
+          numero: string
+          photos?: Json | null
+          responsable_id?: string | null
+          safe_to_load_id?: string | null
+          service_responsable?: string | null
+          statut?: string
+          type_nc: string
+          updated_at?: string
+          vehicule_id?: string | null
+          verification?: string | null
+        }
+        Update: {
+          action_corrective?: string | null
+          action_preventive?: string | null
+          categorie?: string | null
+          chauffeur_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_detection?: string
+          date_echeance?: string | null
+          date_resolution?: string | null
+          description?: string
+          documents?: Json | null
+          id?: string
+          numero?: string
+          photos?: Json | null
+          responsable_id?: string | null
+          safe_to_load_id?: string | null
+          service_responsable?: string | null
+          statut?: string
+          type_nc?: string
+          updated_at?: string
+          vehicule_id?: string | null
+          verification?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "non_conformites_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformites_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformites_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformites_safe_to_load_id_fkey"
+            columns: ["safe_to_load_id"]
+            isOneToOne: false
+            referencedRelation: "safe_to_load_controls"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformites_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      non_conformites_historique: {
+        Row: {
+          action: string
+          ancien_statut: string | null
+          commentaire: string | null
+          created_at: string
+          id: string
+          non_conformite_id: string
+          nouveau_statut: string | null
+          utilisateur_id: string | null
+          utilisateur_nom: string | null
+        }
+        Insert: {
+          action: string
+          ancien_statut?: string | null
+          commentaire?: string | null
+          created_at?: string
+          id?: string
+          non_conformite_id: string
+          nouveau_statut?: string | null
+          utilisateur_id?: string | null
+          utilisateur_nom?: string | null
+        }
+        Update: {
+          action?: string
+          ancien_statut?: string | null
+          commentaire?: string | null
+          created_at?: string
+          id?: string
+          non_conformite_id?: string
+          nouveau_statut?: string | null
+          utilisateur_id?: string | null
+          utilisateur_nom?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "non_conformites_historique_non_conformite_id_fkey"
+            columns: ["non_conformite_id"]
+            isOneToOne: false
+            referencedRelation: "non_conformites"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "non_conformites_historique_utilisateur_id_fkey"
+            columns: ["utilisateur_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rapports_services: {
         Row: {
           cout: number | null
@@ -2186,6 +2398,150 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      safe_to_load_controls: {
+        Row: {
+          chauffeur_id: string
+          confirmation_chauffeur: boolean | null
+          confirmation_controleur: boolean | null
+          controleur_id: string | null
+          created_at: string
+          date_controle: string
+          id: string
+          is_blocking: boolean
+          latitude: number | null
+          lieu_controle: string | null
+          local_id: string | null
+          longitude: number | null
+          observations: string | null
+          signature_chauffeur_date: string | null
+          signature_chauffeur_url: string | null
+          signature_controleur_date: string | null
+          signature_controleur_url: string | null
+          statut: string
+          sync_status: string | null
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          chauffeur_id: string
+          confirmation_chauffeur?: boolean | null
+          confirmation_controleur?: boolean | null
+          controleur_id?: string | null
+          created_at?: string
+          date_controle?: string
+          id?: string
+          is_blocking?: boolean
+          latitude?: number | null
+          lieu_controle?: string | null
+          local_id?: string | null
+          longitude?: number | null
+          observations?: string | null
+          signature_chauffeur_date?: string | null
+          signature_chauffeur_url?: string | null
+          signature_controleur_date?: string | null
+          signature_controleur_url?: string | null
+          statut?: string
+          sync_status?: string | null
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          chauffeur_id?: string
+          confirmation_chauffeur?: boolean | null
+          confirmation_controleur?: boolean | null
+          controleur_id?: string | null
+          created_at?: string
+          date_controle?: string
+          id?: string
+          is_blocking?: boolean
+          latitude?: number | null
+          lieu_controle?: string | null
+          local_id?: string | null
+          longitude?: number | null
+          observations?: string | null
+          signature_chauffeur_date?: string | null
+          signature_chauffeur_url?: string | null
+          signature_controleur_date?: string | null
+          signature_controleur_url?: string | null
+          statut?: string
+          sync_status?: string | null
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safe_to_load_controls_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safe_to_load_controls_controleur_id_fkey"
+            columns: ["controleur_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "safe_to_load_controls_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      safe_to_load_items: {
+        Row: {
+          categorie: string
+          code_point: string
+          commentaire: string | null
+          control_id: string
+          created_at: string
+          id: string
+          is_conforme: boolean | null
+          is_critical: boolean
+          libelle: string
+          photos: Json | null
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          code_point: string
+          commentaire?: string | null
+          control_id: string
+          created_at?: string
+          id?: string
+          is_conforme?: boolean | null
+          is_critical?: boolean
+          libelle: string
+          photos?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          code_point?: string
+          commentaire?: string | null
+          control_id?: string
+          created_at?: string
+          id?: string
+          is_conforme?: boolean | null
+          is_critical?: boolean
+          libelle?: string
+          photos?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safe_to_load_items_control_id_fkey"
+            columns: ["control_id"]
+            isOneToOne: false
+            referencedRelation: "safe_to_load_controls"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_audit_log: {
         Row: {
@@ -2860,6 +3216,10 @@ export type Database = {
       }
       has_module_permission: {
         Args: { module_name: string; user_id: string }
+        Returns: boolean
+      }
+      has_valid_safe_to_load: {
+        Args: { p_vehicule_id: string }
         Returns: boolean
       }
       has_validation_role: {
