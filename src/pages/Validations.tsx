@@ -63,20 +63,26 @@ const Validations = () => {
 
       const workflowMap = new Map((allWorkflows || []).map(w => [w.vehicule_id, w.statut_global]));
       
-      // Récupérer les véhicules avec missions actives (à exclure)
+      // Récupérer les véhicules avec missions actives (info contextuelle, mais ne pas exclure les véhicules en validation)
       const { data: missionsActives } = await supabase
         .from('missions')
         .select('vehicule_id')
         .in('statut', ['en_attente', 'en_cours']);
       
       const vehiculesAvecMissionsActives = new Set(missionsActives?.map(m => m.vehicule_id) || []);
-      console.log(`🚗 [MISSIONS] ${vehiculesAvecMissionsActives.size} véhicules avec missions actives exclus`);
+      console.log(`🚗 [MISSIONS] ${vehiculesAvecMissionsActives.size} véhicules avec missions actives`);
       
       // Filtrage côté client
       const filtered = allVehicles.filter((vehicle: Vehicule) => {
-        // ❌ EXCLUSION: Véhicules avec missions actives
-        if (vehiculesAvecMissionsActives.has(vehicle.id)) {
-          console.log(`🚗 [EXCLUSION] ${vehicle.numero} - Mission active en cours`);
+        // 🔍 Déterminer si le véhicule nécessite validation
+        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
+        const workflowStatusForExclusion = workflowMap.get(vehicle.id);
+        const isInValidationProcess = needsValidation || workflowStatusForExclusion === 'en_validation';
+        
+        // ❌ EXCLUSION: Véhicules avec missions actives SAUF ceux en validation
+        // Les véhicules en validation doivent toujours apparaître pour permettre leur traitement
+        if (vehiculesAvecMissionsActives.has(vehicle.id) && !isInValidationProcess) {
+          console.log(`🚗 [EXCLUSION] ${vehicle.numero} - Mission active en cours (pas en validation)`);
           return false;
         }
         
@@ -95,15 +101,13 @@ const Validations = () => {
         // Déterminer le statut du workflow (si existe)
         const workflowStatus = workflowMap.get(vehicle.id);
         
-        // 🔍 DIAGNOSTIC: Véhicule nécessite validation si les champs du véhicule l'indiquent
-        const needsValidation = vehicle.validation_requise === true || vehicle.statut === 'validation_requise';
-        
         // 🔍 DIAGNOSTIC: Logs de débogage pour TOUS les véhicules
         console.log(`🚗 [DIAGNOSTIC] Véhicule ${vehicle.numero}:`, {
           validation_requise: vehicle.validation_requise,
           statut: vehicle.statut,
           workflowStatus,
           needsValidation,
+          isInValidationProcess,
           matchesSearch,
           statusFilter
         });
