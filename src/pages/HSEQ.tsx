@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +12,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Shield, 
   FileCheck, 
@@ -23,10 +38,13 @@ import {
   Download,
   FileSpreadsheet,
   FileText,
-  RefreshCw
+  RefreshCw,
+  User
 } from 'lucide-react';
 import { hseqService } from '@/services/hseqService';
 import { useHSEQPermissions } from '@/hooks/useHSEQPermissions';
+import { SafeToLoadForm } from '@/components/hseq/SafeToLoadForm';
+import { supabase } from '@/lib/supabase';
 import { 
   exportSTLControlsToExcel, 
   exportNCToExcel, 
@@ -42,6 +60,40 @@ import { toast } from 'sonner';
 const HSEQ: React.FC = () => {
   const { canViewHSEQ, canManageControls, canExport } = useHSEQPermissions();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [showNewControlDialog, setShowNewControlDialog] = useState(false);
+  const [showControlForm, setShowControlForm] = useState(false);
+  const [selectedVehicule, setSelectedVehicule] = useState<string>('');
+  const [selectedChauffeur, setSelectedChauffeur] = useState<string>('');
+
+  // Charger les véhicules disponibles
+  const { data: vehicules } = useQuery({
+    queryKey: ['vehicules-hseq'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('vehicules')
+        .select('id, numero, immatriculation')
+        .eq('statut', 'actif')
+        .order('numero');
+      if (error) throw error;
+      return data;
+    },
+    enabled: canManageControls,
+  });
+
+  // Charger les chauffeurs disponibles
+  const { data: chauffeurs } = useQuery({
+    queryKey: ['chauffeurs-hseq'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chauffeurs')
+        .select('id, nom, prenom')
+        .eq('statut', 'actif')
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+    enabled: canManageControls,
+  });
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['hseq-stats'],
@@ -85,6 +137,57 @@ const HSEQ: React.FC = () => {
       toast.error('Erreur lors de l\'export');
     }
   };
+
+  const handleStartControl = () => {
+    if (!selectedVehicule || !selectedChauffeur) {
+      toast.error('Veuillez sélectionner un véhicule et un chauffeur');
+      return;
+    }
+    setShowNewControlDialog(false);
+    setShowControlForm(true);
+  };
+
+  const handleControlComplete = () => {
+    setShowControlForm(false);
+    setSelectedVehicule('');
+    setSelectedChauffeur('');
+    refetchControls();
+    refetchStats();
+    refetchNC();
+  };
+
+  const handleControlCancel = () => {
+    setShowControlForm(false);
+    setSelectedVehicule('');
+    setSelectedChauffeur('');
+  };
+
+  // Afficher le formulaire de contrôle en plein écran
+  if (showControlForm) {
+    const vehiculeInfo = vehicules?.find(v => v.id === selectedVehicule);
+    const chauffeurInfo = chauffeurs?.find(c => c.id === selectedChauffeur);
+    
+    return (
+      <div className="fixed inset-0 z-50 bg-background overflow-auto">
+        <div className="max-w-2xl mx-auto p-4">
+          <SafeToLoadForm
+            vehiculeId={selectedVehicule}
+            chauffeurId={selectedChauffeur}
+            vehiculeInfo={vehiculeInfo ? { 
+              numero: vehiculeInfo.numero || '', 
+              immatriculation: vehiculeInfo.immatriculation || '' 
+            } : undefined}
+            chauffeurInfo={chauffeurInfo ? { 
+              nom: chauffeurInfo.nom, 
+              prenom: chauffeurInfo.prenom 
+            } : undefined}
+            onComplete={handleControlComplete}
+            onCancel={handleControlCancel}
+          />
+        </div>
+      </div>
+    );
+  }
 
   if (!canViewHSEQ) {
     return (
@@ -171,7 +274,7 @@ const HSEQ: React.FC = () => {
           )}
           
           {canManageControls && (
-            <Button>
+            <Button onClick={() => setShowNewControlDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Nouveau contrôle
             </Button>
@@ -387,6 +490,70 @@ const HSEQ: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog pour nouveau contrôle */}
+      <Dialog open={showNewControlDialog} onOpenChange={setShowNewControlDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileCheck className="h-5 w-5 text-primary" />
+              Nouveau contrôle SAFE TO LOAD
+            </DialogTitle>
+            <DialogDescription>
+              Sélectionnez le véhicule et le chauffeur pour démarrer le contrôle.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Truck className="h-4 w-4" />
+                Véhicule
+              </Label>
+              <Select value={selectedVehicule} onValueChange={setSelectedVehicule}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un véhicule" />
+                </SelectTrigger>
+                <SelectContent>
+                  {vehicules?.map((v) => (
+                    <SelectItem key={v.id} value={v.id}>
+                      {v.numero} - {v.immatriculation}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Chauffeur
+              </Label>
+              <Select value={selectedChauffeur} onValueChange={setSelectedChauffeur}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner un chauffeur" />
+                </SelectTrigger>
+                <SelectContent>
+                  {chauffeurs?.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.prenom} {c.nom}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowNewControlDialog(false)}>
+              Annuler
+            </Button>
+            <Button 
+              onClick={handleStartControl}
+              disabled={!selectedVehicule || !selectedChauffeur}
+            >
+              Démarrer le contrôle
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
