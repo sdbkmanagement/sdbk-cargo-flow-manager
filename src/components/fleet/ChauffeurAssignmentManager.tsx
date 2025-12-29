@@ -45,17 +45,24 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
     !affectations.some(aff => aff.chauffeur_id === chauffeur.id && aff.statut === 'active')
   );
 
-  // Filtrer par recherche
-  const chauffeursFiltres = chauffeursDisponibles.filter(chauffeur => {
-    if (!searchTerm.trim()) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      chauffeur.nom.toLowerCase().includes(search) ||
-      chauffeur.prenom.toLowerCase().includes(search) ||
-      (chauffeur.matricule && chauffeur.matricule.toLowerCase().includes(search)) ||
-      (chauffeur.telephone && chauffeur.telephone.includes(search))
-    );
-  });
+  // Filtrer par recherche et trier par ordre alphabétique
+  const chauffeursFiltres = chauffeursDisponibles
+    .filter(chauffeur => {
+      if (!searchTerm.trim()) return true;
+      const search = searchTerm.toLowerCase();
+      return (
+        chauffeur.nom.toLowerCase().includes(search) ||
+        chauffeur.prenom.toLowerCase().includes(search) ||
+        (chauffeur.matricule && chauffeur.matricule.toLowerCase().includes(search)) ||
+        (chauffeur.telephone && chauffeur.telephone.includes(search))
+      );
+    })
+    .sort((a, b) => {
+      // Trier par nom puis prénom
+      const nomCompare = a.nom.localeCompare(b.nom, 'fr');
+      if (nomCompare !== 0) return nomCompare;
+      return a.prenom.localeCompare(b.prenom, 'fr');
+    });
 
   const getInitials = (nom: string, prenom: string) => {
     return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
