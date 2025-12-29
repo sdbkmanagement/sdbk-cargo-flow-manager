@@ -5,6 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
   Shield, 
   FileCheck, 
   AlertTriangle, 
@@ -12,36 +19,72 @@ import {
   Plus,
   CheckCircle2,
   XCircle,
-  Clock,
-  Truck
+  Truck,
+  Download,
+  FileSpreadsheet,
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 import { hseqService } from '@/services/hseqService';
 import { useHSEQPermissions } from '@/hooks/useHSEQPermissions';
+import { 
+  exportSTLControlsToExcel, 
+  exportNCToExcel, 
+  exportHSEQStatsToExcel,
+  generateSTLReportPDF,
+  generateNCReportPDF
+} from '@/utils/hseqExportUtils';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const HSEQ: React.FC = () => {
-  const { canViewHSEQ, canManageControls } = useHSEQPermissions();
+  const { canViewHSEQ, canManageControls, canExport } = useHSEQPermissions();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['hseq-stats'],
     queryFn: () => hseqService.getStats(),
     enabled: canViewHSEQ,
   });
 
-  const { data: controls, isLoading: controlsLoading } = useQuery({
+  const { data: controls, isLoading: controlsLoading, refetch: refetchControls } = useQuery({
     queryKey: ['stl-controls'],
     queryFn: () => hseqService.getControls(),
     enabled: canViewHSEQ,
   });
 
-  const { data: nonConformites } = useQuery({
+  const { data: nonConformites, refetch: refetchNC } = useQuery({
     queryKey: ['non-conformites'],
     queryFn: () => hseqService.getNonConformites(),
     enabled: canViewHSEQ,
   });
+
+  const handleRefresh = () => {
+    refetchStats();
+    refetchControls();
+    refetchNC();
+    toast.success('Données actualisées');
+  };
+
+  const handleExportExcel = (type: 'stl' | 'nc' | 'full') => {
+    try {
+      if (type === 'stl' && controls) {
+        exportSTLControlsToExcel(controls);
+        toast.success('Export Excel des contrôles STL généré');
+      } else if (type === 'nc' && nonConformites) {
+        exportNCToExcel(nonConformites);
+        toast.success('Export Excel des NC généré');
+      } else if (type === 'full' && stats && controls && nonConformites) {
+        exportHSEQStatsToExcel(stats, controls, nonConformites);
+        toast.success('Rapport HSEQ complet exporté');
+      }
+    } catch (error) {
+      console.error('Erreur export:', error);
+      toast.error('Erreur lors de l\'export');
+    }
+  };
 
   if (!canViewHSEQ) {
     return (
@@ -85,7 +128,7 @@ const HSEQ: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-primary/10">
             <Shield className="h-6 w-6 text-primary" />
@@ -95,12 +138,45 @@ const HSEQ: React.FC = () => {
             <p className="text-muted-foreground">Hygiène, Sécurité, Environnement & Qualité</p>
           </div>
         </div>
-        {canManageControls && (
-          <Button>
-            <Plus className="h-4 w-4 mr-2" />
-            Nouveau contrôle
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualiser
           </Button>
-        )}
+          
+          {canExport && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exporter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExportExcel('full')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Rapport complet (Excel)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleExportExcel('stl')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Contrôles STL (Excel)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportExcel('nc')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Non-conformités (Excel)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
+          {canManageControls && (
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Nouveau contrôle
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -201,13 +277,19 @@ const HSEQ: React.FC = () => {
 
         <TabsContent value="controls">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Historique des contrôles SAFE TO LOAD</CardTitle>
+              {canExport && controls && controls.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => handleExportExcel('stl')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Excel
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {controls?.map((control) => (
-                  <div key={control.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div key={control.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-4">
                       <div>
                         <p className="font-medium">{control.vehicule?.numero}</p>
@@ -231,9 +313,22 @@ const HSEQ: React.FC = () => {
                       } className={control.statut === 'conforme' ? 'bg-green-600' : ''}>
                         {control.statut}
                       </Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => generateSTLReportPDF(control)}
+                        title="Générer PDF"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
                 ))}
+                {(!controls || controls.length === 0) && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Aucun contrôle SAFE TO LOAD enregistré
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -241,14 +336,20 @@ const HSEQ: React.FC = () => {
 
         <TabsContent value="nc">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Non-conformités</CardTitle>
+              {canExport && nonConformites && nonConformites.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => handleExportExcel('nc')}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Excel
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {nonConformites?.map((nc) => (
                   <div key={nc.id} className={cn(
-                    'flex items-center justify-between p-3 border rounded-lg',
+                    'flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors',
                     nc.type_nc === 'critique' && 'border-red-200 bg-red-50/30'
                   )}>
                     <div>
@@ -261,11 +362,26 @@ const HSEQ: React.FC = () => {
                           {nc.type_nc}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">{nc.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{nc.description}</p>
                     </div>
-                    <Badge variant="outline">{nc.statut}</Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline">{nc.statut}</Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={() => generateNCReportPDF(nc)}
+                        title="Générer PDF"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
+                {(!nonConformites || nonConformites.length === 0) && (
+                  <p className="text-center text-muted-foreground py-8">
+                    Aucune non-conformité enregistrée
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>
