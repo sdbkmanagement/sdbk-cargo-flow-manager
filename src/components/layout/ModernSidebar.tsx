@@ -73,7 +73,8 @@ const menuItems = [
     path: '/societe',
     label: 'Société',
     icon: Briefcase,
-    module: 'societe'
+    module: 'societe',
+    allowedRoles: ['admin', 'direction', 'administratif']
   },
   {
     path: '/validations',
@@ -104,35 +105,25 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const filteredMenuItems = menuItems.filter(item => {
     if (!user) return false;
 
-    console.log('🔍 Checking access for module:', item.module, {
-      userRoles: user.roles,
-      modulePermissions: user.module_permissions,
-      itemModule: item.module
-    });
-
     // L'admin a accès à tout
     if (hasRole('admin')) {
-      console.log('✅ Admin access granted for:', item.module);
       return true;
     }
 
     // Vérifier l'accès spécial pour les validations
     if (item.requiresValidationRole) {
-      const hasAccess = hasValidationAccess();
-      console.log(`${hasAccess ? '✅' : '❌'} Validation access:`, hasAccess);
-      return hasAccess;
+      return hasValidationAccess();
+    }
+
+    // Vérifier si le module a des rôles autorisés spécifiques
+    if ('allowedRoles' in item && item.allowedRoles) {
+      const hasAllowedRole = (item.allowedRoles as string[]).some(role => hasRole(role as any));
+      if (hasAllowedRole) return true;
     }
 
     // Vérifier les permissions de module
     const modulePermissions = user.module_permissions || [];
-    const hasAccess = modulePermissions.includes(item.module);
-    
-    console.log(`${hasAccess ? '✅' : '❌'} Module access for ${item.module}:`, {
-      hasAccess,
-      modulePermissions
-    });
-
-    return hasAccess;
+    return modulePermissions.includes(item.module);
   });
 
   const handleLogout = async () => {
