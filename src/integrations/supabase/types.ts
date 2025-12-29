@@ -1104,6 +1104,265 @@ export type Database = {
           },
         ]
       }
+      documents_societe: {
+        Row: {
+          alerte_15j_envoyee: boolean | null
+          alerte_30j_envoyee: boolean | null
+          alerte_7j_envoyee: boolean | null
+          autorite_emettrice: string | null
+          categorie_id: string | null
+          commentaires: string | null
+          created_at: string
+          created_by: string | null
+          date_creation: string | null
+          date_delivrance: string | null
+          date_expiration: string | null
+          description: string | null
+          id: string
+          nom: string
+          numero_reference: string | null
+          societe_id: string | null
+          statut: Database["public"]["Enums"]["document_societe_statut"] | null
+          type_document: string
+          updated_at: string
+          updated_by: string | null
+          version_actuelle: number | null
+        }
+        Insert: {
+          alerte_15j_envoyee?: boolean | null
+          alerte_30j_envoyee?: boolean | null
+          alerte_7j_envoyee?: boolean | null
+          autorite_emettrice?: string | null
+          categorie_id?: string | null
+          commentaires?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_creation?: string | null
+          date_delivrance?: string | null
+          date_expiration?: string | null
+          description?: string | null
+          id?: string
+          nom: string
+          numero_reference?: string | null
+          societe_id?: string | null
+          statut?: Database["public"]["Enums"]["document_societe_statut"] | null
+          type_document: string
+          updated_at?: string
+          updated_by?: string | null
+          version_actuelle?: number | null
+        }
+        Update: {
+          alerte_15j_envoyee?: boolean | null
+          alerte_30j_envoyee?: boolean | null
+          alerte_7j_envoyee?: boolean | null
+          autorite_emettrice?: string | null
+          categorie_id?: string | null
+          commentaires?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_creation?: string | null
+          date_delivrance?: string | null
+          date_expiration?: string | null
+          description?: string | null
+          id?: string
+          nom?: string
+          numero_reference?: string | null
+          societe_id?: string | null
+          statut?: Database["public"]["Enums"]["document_societe_statut"] | null
+          type_document?: string
+          updated_at?: string
+          updated_by?: string | null
+          version_actuelle?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_societe_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "documents_societe_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_societe_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents_societe_audit: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          document_id: string | null
+          id: string
+          ip_address: unknown
+          societe_id: string | null
+          utilisateur_id: string | null
+          utilisateur_nom: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          document_id?: string | null
+          id?: string
+          ip_address?: unknown
+          societe_id?: string | null
+          utilisateur_id?: string | null
+          utilisateur_nom?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          document_id?: string | null
+          id?: string
+          ip_address?: unknown
+          societe_id?: string | null
+          utilisateur_id?: string | null
+          utilisateur_nom?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_societe_audit_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents_societe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_societe_audit_societe_id_fkey"
+            columns: ["societe_id"]
+            isOneToOne: false
+            referencedRelation: "societes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents_societe_categories: {
+        Row: {
+          couleur: string | null
+          created_at: string
+          description: string | null
+          icone: string | null
+          id: string
+          nom: string
+          ordre: number | null
+        }
+        Insert: {
+          couleur?: string | null
+          created_at?: string
+          description?: string | null
+          icone?: string | null
+          id?: string
+          nom: string
+          ordre?: number | null
+        }
+        Update: {
+          couleur?: string | null
+          created_at?: string
+          description?: string | null
+          icone?: string | null
+          id?: string
+          nom?: string
+          ordre?: number | null
+        }
+        Relationships: []
+      }
+      documents_societe_fichiers: {
+        Row: {
+          created_at: string
+          document_id: string
+          id: string
+          nom_fichier: string
+          nom_original: string | null
+          ordre: number | null
+          taille: number | null
+          type_mime: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          id?: string
+          nom_fichier: string
+          nom_original?: string | null
+          ordre?: number | null
+          taille?: number | null
+          type_mime?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          id?: string
+          nom_fichier?: string
+          nom_original?: string | null
+          ordre?: number | null
+          taille?: number | null
+          type_mime?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_societe_fichiers_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents_societe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents_societe_versions: {
+        Row: {
+          date_modification: string
+          description: string | null
+          document_id: string
+          fichiers: Json | null
+          id: string
+          modifie_par: string | null
+          modifie_par_nom: string | null
+          motif_modification: string | null
+          nom: string | null
+          numero_version: number
+        }
+        Insert: {
+          date_modification?: string
+          description?: string | null
+          document_id: string
+          fichiers?: Json | null
+          id?: string
+          modifie_par?: string | null
+          modifie_par_nom?: string | null
+          motif_modification?: string | null
+          nom?: string | null
+          numero_version: number
+        }
+        Update: {
+          date_modification?: string
+          description?: string | null
+          document_id?: string
+          fichiers?: Json | null
+          id?: string
+          modifie_par?: string | null
+          modifie_par_nom?: string | null
+          motif_modification?: string | null
+          nom?: string | null
+          numero_version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_societe_versions_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents_societe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents_vehicules: {
         Row: {
           commentaire: string | null
@@ -1776,6 +2035,54 @@ export type Database = {
         }
         Relationships: []
       }
+      societes: {
+        Row: {
+          adresse: string | null
+          code_postal: string | null
+          created_at: string
+          email: string | null
+          id: string
+          logo_url: string | null
+          nom: string
+          pays: string | null
+          siret: string | null
+          statut: string | null
+          telephone: string | null
+          updated_at: string
+          ville: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          nom: string
+          pays?: string | null
+          siret?: string | null
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          code_postal?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          nom?: string
+          pays?: string | null
+          siret?: string | null
+          statut?: string | null
+          telephone?: string | null
+          updated_at?: string
+          ville?: string | null
+        }
+        Relationships: []
+      }
       tarifs_destinations: {
         Row: {
           created_at: string
@@ -2387,6 +2694,11 @@ export type Database = {
       }
     }
     Enums: {
+      document_societe_statut:
+        | "valide"
+        | "expire"
+        | "en_renouvellement"
+        | "archive"
       module_permission:
         | "fleet"
         | "drivers"
@@ -2534,6 +2846,12 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      document_societe_statut: [
+        "valide",
+        "expire",
+        "en_renouvellement",
+        "archive",
+      ],
       module_permission: [
         "fleet",
         "drivers",
