@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText } from 'lucide-react';
+import { FileText, RefreshCw } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { billingService } from '@/services/billing';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,11 +30,23 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     try {
       const monthNumber = parseInt(selectedMonth);
       const yearNumber = parseInt(selectedYear);
+      const padMonth = selectedMonth.padStart(2, '0');
 
-      const startDate = `${yearNumber}-${selectedMonth.padStart(2, '0')}-01`;
+      const startDate = `${yearNumber}-${padMonth}-01`;
       const endDate = monthNumber === 12 
         ? `${yearNumber + 1}-01-01` 
         : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`;
+
+      // Vérifier si une facture existe déjà pour ce mois/année
+      const facturePrefix = `FM${selectedYear}${padMonth}`;
+      const { data: existingFactures } = await supabase
+        .from('factures')
+        .select('id, numero')
+        .like('numero', `${facturePrefix}%`)
+        .limit(1);
+
+      const existingFacture = existingFactures && existingFactures.length > 0 ? existingFactures[0] : null;
+      const isUpdate = !!existingFacture;
 
       // Charger BL et tarifs en parallèle
       const [blResult, tarifsResult] = await Promise.all([
@@ -79,7 +91,6 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         const key = `${depart.toLowerCase()}|${dest.toLowerCase()}`;
         if (tarifMap.has(key)) return tarifMap.get(key)!;
         
-        // Recherche flexible
         for (const [k, v] of tarifMap) {
           const [d, dst] = k.split('|');
           if (depart.toLowerCase().includes(d) || d.includes(depart.toLowerCase())) {
@@ -132,23 +143,66 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       const totalTVA = totalHT * 0.18;
       const totalTTC = totalHT + totalTVA;
 
-      // Créer la facture
-      const padMonth = selectedMonth.padStart(2, '0');
-      const numero = `FM${selectedYear}${padMonth}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-      const today = new Date();
-      const date_emission = today.toISOString().split('T')[0];
-      const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      let facture: any;
 
-      const facture = await billingService.createFacture({
-        numero,
-        client_nom: clientNom || 'TOTALEnergies GUINEE SA',
-        date_emission,
-        date_echeance,
-        montant_ht: totalHT,
-        montant_tva: totalTVA,
-        montant_ttc: totalTTC,
-        statut: 'en_attente'
-      } as any, lignes);
+      if (isUpdate && existingFacture) {
+        // MISE À JOUR de la facture existante
+        const today = new Date();
+        const date_emission = today.toISOString().split('T')[0];
+        const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        // Mettre à jour la facture
+        await supabase
+          .from('factures')
+          .update({
+            client_nom: clientNom || 'TOTALEnergies GUINEE SA',
+            date_emission,
+            date_echeance,
+            montant_ht: totalHT,
+            montant_tva: totalTVA,
+            montant_ttc: totalTTC,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingFacture.id);
+
+        // Supprimer les anciennes lignes
+        await supabase
+          .from('facture_lignes')
+          .delete()
+          .eq('facture_id', existingFacture.id);
+
+        // Insérer les nouvelles lignes
+        if (lignes.length > 0) {
+          await supabase
+            .from('facture_lignes')
+            .insert(lignes.map(l => ({
+              facture_id: existingFacture.id,
+              description: l.description,
+              quantite: l.quantite,
+              prix_unitaire: l.prix_unitaire,
+              total: l.total
+            })));
+        }
+
+        facture = { numero: existingFacture.numero };
+      } else {
+        // CRÉATION d'une nouvelle facture
+        const numero = `FM${selectedYear}${padMonth}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+        const today = new Date();
+        const date_emission = today.toISOString().split('T')[0];
+        const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        facture = await billingService.createFacture({
+          numero,
+          client_nom: clientNom || 'TOTALEnergies GUINEE SA',
+          date_emission,
+          date_echeance,
+          montant_ht: totalHT,
+          montant_tva: totalTVA,
+          montant_ttc: totalTTC,
+          statut: 'en_attente'
+        } as any, lignes);
+      }
 
       // Marquer BL et missions en parallèle
       const missionsToUpdate = Array.from(missionIds);
@@ -173,8 +227,8 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       });
 
       toast({
-        title: 'Facture groupée créée',
-        description: `Facture ${facture.numero} créée (${blIds.length} BL) – Total: ${totalTTC.toLocaleString('fr-FR')} GNF`
+        title: isUpdate ? 'Facture mise à jour' : 'Facture groupée créée',
+        description: `Facture ${facture.numero} ${isUpdate ? 'mise à jour' : 'créée'} (${blIds.length} BL) – Total: ${totalTTC.toLocaleString('fr-FR')} GNF`
       });
 
       onInvoiceCreated?.();
@@ -224,7 +278,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         <DialogHeader>
           <DialogTitle>Générer une facture groupée mensuelle</DialogTitle>
           <DialogDescription>
-            Créer une facture unique pour toutes les missions du mois
+            Créer ou mettre à jour la facture unique pour toutes les missions du mois
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -273,13 +327,18 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
             </div>
           </div>
 
+          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+            <RefreshCw className="w-3 h-3 inline mr-1" />
+            Si une facture existe déjà pour ce mois, elle sera mise à jour automatiquement.
+          </div>
+
           <Button 
             onClick={handleGenerate} 
             disabled={isGenerating || !selectedMonth || !selectedYear}
             className="w-full"
           >
             <FileText className="w-4 h-4 mr-2" />
-            {isGenerating ? 'Génération...' : 'Générer facture PDF'}
+            {isGenerating ? 'Génération...' : 'Générer / Mettre à jour'}
           </Button>
         </div>
       </DialogContent>
