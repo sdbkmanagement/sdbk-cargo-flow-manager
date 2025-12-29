@@ -18,6 +18,7 @@ import Administration from '@/pages/Administration';
 import Validations from '@/pages/Validations';
 import Clients from '@/pages/Clients';
 import Societe from '@/pages/Societe';
+import HSEQ from '@/pages/HSEQ';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 
@@ -141,6 +142,16 @@ function App() {
                 <AuthGuard>
                   <ModuleLayout title="Société" subtitle="Documents juridiques et administratifs">
                     <Societe />
+                  </ModuleLayout>
+                </AuthGuard>
+              } 
+            />
+            <Route 
+              path="/hseq" 
+              element={
+                <AuthGuard>
+                  <ModuleLayout title="HSEQ" subtitle="Hygiène, Sécurité, Environnement & Qualité">
+                    <HSEQ />
                   </ModuleLayout>
                 </AuthGuard>
               } 
