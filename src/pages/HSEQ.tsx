@@ -71,7 +71,7 @@ const HSEQ: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('vehicules')
-        .select('id, numero, immatriculation')
+        .select('id, numero, immatriculation, remorque_immatriculation')
         .in('statut', ['disponible', 'validation_requise', 'en_mission'])
         .order('numero');
       if (error) throw error;
@@ -517,6 +517,7 @@ const HSEQ: React.FC = () => {
                   {vehicules?.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
                       {v.numero} - {v.immatriculation}
+                      {v.remorque_immatriculation ? ` - Citerne ${v.remorque_immatriculation}` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
