@@ -238,15 +238,6 @@ export const MissionTrackingButton = ({ mission, onSuccess }: MissionTrackingBut
                         placeholder="0.0"
                       />
                     </div>
-                    <div>
-                      <Label>Total manquant (L)</Label>
-                      <Input
-                        type="number"
-                        value={(bl.manquant_cuve || 0) + (bl.manquant_compteur || 0)}
-                        readOnly
-                        className="bg-gray-100"
-                      />
-                    </div>
                   </div>
 
                   {/* Observations */}
