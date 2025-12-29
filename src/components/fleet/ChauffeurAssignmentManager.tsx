@@ -8,7 +8,8 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { X, Plus, UserCheck, Calendar } from 'lucide-react';
+import { X, Plus, UserCheck, Calendar, Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
@@ -23,6 +24,7 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [selectedChauffeurId, setSelectedChauffeurId] = useState('');
   const [motifChangement, setMotifChangement] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
 
@@ -42,6 +44,18 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
     chauffeur.statut === 'actif' && 
     !affectations.some(aff => aff.chauffeur_id === chauffeur.id && aff.statut === 'active')
   );
+
+  // Filtrer par recherche
+  const chauffeursFiltres = chauffeursDisponibles.filter(chauffeur => {
+    if (!searchTerm.trim()) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      chauffeur.nom.toLowerCase().includes(search) ||
+      chauffeur.prenom.toLowerCase().includes(search) ||
+      (chauffeur.matricule && chauffeur.matricule.toLowerCase().includes(search)) ||
+      (chauffeur.telephone && chauffeur.telephone.includes(search))
+    );
+  });
 
   const getInitials = (nom: string, prenom: string) => {
     return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase();
@@ -151,18 +165,32 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
             </DialogHeader>
             <div className="space-y-4">
               <div>
+                <Label htmlFor="chauffeur-search">Rechercher un chauffeur</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="chauffeur-search"
+                    placeholder="Nom, prénom, matricule..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
+              <div>
                 <Label htmlFor="chauffeur-select">Sélectionner un chauffeur</Label>
                 <Select value={selectedChauffeurId} onValueChange={setSelectedChauffeurId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Choisir un chauffeur disponible" />
                   </SelectTrigger>
                   <SelectContent>
-                    {chauffeursDisponibles.length === 0 ? (
-                      <div className="p-2 text-sm text-gray-500">
-                        Aucun chauffeur disponible
+                    {chauffeursFiltres.length === 0 ? (
+                      <div className="p-2 text-sm text-muted-foreground">
+                        {searchTerm ? 'Aucun chauffeur trouvé' : 'Aucun chauffeur disponible'}
                       </div>
                     ) : (
-                      chauffeursDisponibles.map((chauffeur) => (
+                      chauffeursFiltres.map((chauffeur) => (
                         <SelectItem key={chauffeur.id} value={chauffeur.id}>
                           <div className="flex items-center gap-2">
                             <Avatar className="w-6 h-6">
@@ -173,7 +201,7 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
                             </Avatar>
                             {chauffeur.prenom} {chauffeur.nom}
                             {chauffeur.matricule && (
-                              <span className="text-xs text-gray-500">({chauffeur.matricule})</span>
+                              <span className="text-xs text-muted-foreground">({chauffeur.matricule})</span>
                             )}
                           </div>
                         </SelectItem>
@@ -181,6 +209,9 @@ export const ChauffeurAssignmentManager = ({ vehicule }: ChauffeurAssignmentMana
                     )}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {chauffeursFiltres.length} chauffeur(s) disponible(s)
+                </p>
               </div>
               
               <div>
