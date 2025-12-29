@@ -44,6 +44,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('drivers');
         modulePermissions.add('billing');
         modulePermissions.add('clients');
+        modulePermissions.add('societe');
         modulePermissions.add('validations');
         modulePermissions.add('rh');
         modulePermissions.add('admin');
@@ -82,10 +83,11 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('dashboard');
         break;
       case 'administratif':
-        // Administratif a accès aux validations et au dashboard
+        // Administratif a accès aux validations, société et au dashboard
         modulePermissions.add('validations');
+        modulePermissions.add('societe');
         modulePermissions.add('dashboard');
-        console.log('✅ Permissions accordées au rôle administratif:', ['validations', 'dashboard']);
+        console.log('✅ Permissions accordées au rôle administratif:', ['validations', 'societe', 'dashboard']);
         break;
       case 'hsecq':
         // HSECQ a accès aux validations
@@ -105,6 +107,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('drivers');
         modulePermissions.add('billing');
         modulePermissions.add('clients');
+        modulePermissions.add('societe');
         modulePermissions.add('validations');
         modulePermissions.add('rh');
         modulePermissions.add('dashboard');
@@ -116,6 +119,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('drivers');
         modulePermissions.add('billing');
         modulePermissions.add('clients');
+        modulePermissions.add('societe');
         modulePermissions.add('validations');
         modulePermissions.add('rh');
         modulePermissions.add('dashboard');
