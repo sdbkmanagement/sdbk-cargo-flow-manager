@@ -89,7 +89,7 @@ const getModulePermissionsByRoles = (roles: string[]): string[] => {
         modulePermissions.add('dashboard');
         console.log('✅ Permissions accordées au rôle administratif:', ['validations', 'societe', 'dashboard']);
         break;
-      case 'hseq':
+      case 'hsecq':
         // HSEQ a accès aux validations
         modulePermissions.add('validations');
         modulePermissions.add('dashboard');
@@ -240,7 +240,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // S'assurer que les rôles de validation ont accès aux validations
-    const validationRoles = ['maintenance', 'administratif', 'hseq', 'obc'];
+    const validationRoles = ['maintenance', 'administratif', 'hsecq', 'obc'];
     if (userRoles.some(role => validationRoles.includes(role)) && !modulePermissions.includes('validations')) {
       modulePermissions.push('validations');
       console.log('✅ Permission validations ajoutée pour le rôle de validation:', userRoles);

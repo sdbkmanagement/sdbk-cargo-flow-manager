@@ -43,7 +43,7 @@ const sanitizeInput = (input: string): string => {
 };
 
 const validateRoles = (roles: string[]): boolean => {
-  const validRoles = ['admin', 'transport', 'maintenance', 'administratif', 'hseq', 'obc', 'rh', 'facturation', 'direction', 'transitaire', 'directeur_exploitation'];
+  const validRoles = ['admin', 'transport', 'maintenance', 'administratif', 'hsecq', 'obc', 'rh', 'facturation', 'direction', 'transitaire', 'directeur_exploitation'];
   return roles.every(role => validRoles.includes(role));
 };
 

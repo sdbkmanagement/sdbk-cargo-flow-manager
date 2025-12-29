@@ -1,7 +1,7 @@
 
 import { Database } from '@/integrations/supabase/types';
 
-export type AppRole = 'maintenance' | 'administratif' | 'hseq' | 'obc' | 'transport' | 'rh' | 'facturation' | 'direction' | 'admin' | 'transitaire' | 'directeur_exploitation';
+export type AppRole = 'maintenance' | 'administratif' | 'hsecq' | 'obc' | 'transport' | 'rh' | 'facturation' | 'direction' | 'admin' | 'transitaire' | 'directeur_exploitation';
 export type AppPermission = 'read' | 'write' | 'delete' | 'validate' | 'export' | 'admin';
 export type ModulePermission = 'fleet' | 'drivers' | 'rh' | 'missions' | 'billing' | 'dashboard';
 
@@ -61,7 +61,7 @@ export const MODULES = [
 export const ROLES: string[] = [
   'maintenance',
   'administratif',
-  'hseq', 
+  'hsecq', 
   'obc',
   'transport',
   'rh',
