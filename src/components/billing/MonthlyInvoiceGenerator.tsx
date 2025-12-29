@@ -3,14 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { billingService } from '@/services/billing';
-import { tarifsHydrocarburesService } from '@/services/tarifsHydrocarburesService';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import * as XLSX from 'xlsx';
-import { format } from 'date-fns';
 import { generateMonthlyInvoicePDF } from '@/utils/pdfGenerator';
 
 export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated?: () => void }) => {
@@ -19,13 +15,6 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [clientNom, setClientNom] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-
-  // Récupérer les missions terminées
-  const { data: missions = [] } = useQuery({
-    queryKey: ['missions-terminees'],
-    queryFn: billingService.getMissionsTerminees,
-    enabled: open
-  });
 
   const handleGenerate = async () => {
     if (!selectedMonth || !selectedYear) {
@@ -39,38 +28,37 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
 
     setIsGenerating(true);
     try {
-      console.log('Début de génération de facture');
       const monthNumber = parseInt(selectedMonth);
       const yearNumber = parseInt(selectedYear);
 
-      // Récupérer toutes les missions terminées du mois avec leurs BL
       const startDate = `${yearNumber}-${selectedMonth.padStart(2, '0')}-01`;
       const endDate = monthNumber === 12 
         ? `${yearNumber + 1}-01-01` 
         : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`;
 
-      console.log('Recherche BL entre:', startDate, 'et', endDate);
+      // Charger BL et tarifs en parallèle
+      const [blResult, tarifsResult] = await Promise.all([
+        supabase
+          .from('bons_livraison')
+          .select(`
+            id, numero, destination, lieu_arrivee, quantite_livree, quantite_prevue, prix_unitaire,
+            missions!inner(id, numero, type_transport, site_depart, site_arrivee)
+          `)
+          .in('statut', ['livre', 'termine'])
+          .gte('date_chargement_reelle', startDate)
+          .lt('date_chargement_reelle', endDate)
+          .order('date_chargement_reelle', { ascending: true }),
+        supabase
+          .from('tarifs_hydrocarbures')
+          .select('lieu_depart, destination, tarif_au_litre')
+      ]);
 
-      // Récupérer tous les BL du mois (statut livre/termine) avec leurs missions
-      const { data: blData, error } = await supabase
-        .from('bons_livraison')
-        .select(`
-          *,
-          missions!inner(id, numero, type_transport, site_depart, site_arrivee)
-        `)
-        .in('statut', ['livre', 'termine'])
-        .gte('date_chargement_reelle', startDate)
-        .lt('date_chargement_reelle', endDate)
-        .order('date_chargement_reelle', { ascending: true });
+      if (blResult.error) throw blResult.error;
+      
+      const blData = blResult.data || [];
+      const tarifs = tarifsResult.data || [];
 
-      if (error) {
-        console.error('Erreur Supabase:', error);
-        throw error;
-      }
-
-      console.log('BL récupérés:', blData?.length || 0);
-
-      if (!blData || blData.length === 0) {
+      if (blData.length === 0) {
         toast({
           title: 'Aucun BL',
           description: 'Aucun bon de livraison trouvé pour cette période',
@@ -80,51 +68,31 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         return;
       }
 
-      // Calculer les totaux à partir des missions et leurs BL
-      let totalHT = 0;
-      let blCount = 0;
+      // Créer un map des tarifs pour recherche rapide
+      const tarifMap = new Map<string, number>();
+      tarifs.forEach(t => {
+        tarifMap.set(`${t.lieu_depart.toLowerCase()}|${t.destination.toLowerCase()}`, t.tarif_au_litre);
+      });
 
-      for (const bl of blData as any[]) {
-        const mission = bl.missions || {};
-        const depart = mission.site_depart || '';
-        const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
-        const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
-        if (!quantite) { continue; }
-        let prixUnitaire = bl.prix_unitaire ?? 0;
-
-        if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-          try {
-            const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
-            if (tarif?.tarif_au_litre) {
-              prixUnitaire = tarif.tarif_au_litre;
+      // Fonction pour trouver un tarif (avec recherche flexible)
+      const findTarif = (depart: string, dest: string): number => {
+        const key = `${depart.toLowerCase()}|${dest.toLowerCase()}`;
+        if (tarifMap.has(key)) return tarifMap.get(key)!;
+        
+        // Recherche flexible
+        for (const [k, v] of tarifMap) {
+          const [d, dst] = k.split('|');
+          if (depart.toLowerCase().includes(d) || d.includes(depart.toLowerCase())) {
+            if (dest.toLowerCase().includes(dst) || dst.includes(dest.toLowerCase())) {
+              return v;
             }
-          } catch (e) {
-            console.warn('Tarif introuvable pour', depart, '→', destination);
           }
         }
+        return 0;
+      };
 
-        const montant = quantite * (prixUnitaire || 0);
-        console.log('BL:', bl.numero, 'Qté:', quantite, 'PU:', prixUnitaire, 'Montant:', montant);
-        totalHT += montant;
-        blCount++;
-      }
-
-      console.log('Total HT:', totalHT, 'BL Count:', blCount);
-
-      if (totalHT === 0 || blCount === 0) {
-        toast({
-          title: 'Aucun montant',
-          description: 'Aucun montant à facturer pour les missions de cette période',
-          variant: 'destructive'
-        });
-        setIsGenerating(false);
-        return;
-      }
-
-      const totalTVA = totalHT * 0.18;
-      const totalTTC = totalHT + totalTVA;
-
-      // Préparer les lignes et les éléments à mettre à jour
+      // Une seule boucle pour tout calculer
+      let totalHT = 0;
       const lignes: { description: string; quantite: number; prix_unitaire: number; total: number }[] = [];
       const blIds: string[] = [];
       const missionIds = new Set<string>();
@@ -134,24 +102,37 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         const depart = mission.site_depart || '';
         const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
         const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+        
         if (!quantite) continue;
+        
         let prixUnitaire = bl.prix_unitaire ?? 0;
-
         if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-          try {
-            const tarif = await tarifsHydrocarburesService.getTarif(depart, destination);
-            if (tarif?.tarif_au_litre) prixUnitaire = tarif.tarif_au_litre;
-          } catch {}
+          prixUnitaire = findTarif(depart, destination);
         }
 
+        const total = quantite * prixUnitaire;
+        totalHT += total;
+
         const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${depart} → ${destination} (BL: ${bl.numero})`;
-        const total = quantite * (prixUnitaire || 0);
-        lignes.push({ description, quantite, prix_unitaire: prixUnitaire || 0, total });
+        lignes.push({ description, quantite, prix_unitaire: prixUnitaire, total });
         blIds.push(bl.id);
         if (mission.id) missionIds.add(mission.id);
       }
 
-      // Créer la facture en base
+      if (totalHT === 0 || blIds.length === 0) {
+        toast({
+          title: 'Aucun montant',
+          description: 'Aucun montant à facturer pour cette période',
+          variant: 'destructive'
+        });
+        setIsGenerating(false);
+        return;
+      }
+
+      const totalTVA = totalHT * 0.18;
+      const totalTTC = totalHT + totalTVA;
+
+      // Créer la facture
       const padMonth = selectedMonth.padStart(2, '0');
       const numero = `FM${selectedYear}${padMonth}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
       const today = new Date();
@@ -169,21 +150,18 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         statut: 'en_attente'
       } as any, lignes);
 
-      // Marquer les BL comme facturés (en lot)
-      if (blIds.length > 0) {
-        await supabase.from('bons_livraison').update({ facture: true }).in('id', blIds);
-      }
-
-      // Marquer les missions comme facturées via le nouveau statut
+      // Marquer BL et missions en parallèle
       const missionsToUpdate = Array.from(missionIds);
-      if (missionsToUpdate.length > 0) {
-        await supabase
-          .from('missions')
-          .update({ facturation_statut: 'facturee', facturation_date: new Date().toISOString() })
-          .in('id', missionsToUpdate);
-      }
+      await Promise.all([
+        blIds.length > 0 
+          ? supabase.from('bons_livraison').update({ facture: true }).in('id', blIds)
+          : Promise.resolve(),
+        missionsToUpdate.length > 0
+          ? supabase.from('missions').update({ facturation_statut: 'facturee', facturation_date: new Date().toISOString() }).in('id', missionsToUpdate)
+          : Promise.resolve()
+      ]);
 
-      // Générer le PDF récapitulatif
+      // Générer le PDF
       generateMonthlyInvoicePDF({
         month: selectedMonth,
         year: selectedYear,
@@ -191,7 +169,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         totalHT,
         totalTVA,
         totalTTC,
-        blCount
+        blCount: blIds.length
       });
 
       toast({
@@ -202,12 +180,10 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       onInvoiceCreated?.();
       setOpen(false);
     } catch (error: any) {
-      console.error('Erreur complète:', error);
-      console.error('Message:', error?.message);
-      console.error('Details:', error?.details);
+      console.error('Erreur:', error);
       toast({
         title: 'Erreur',
-        description: error?.message || 'Erreur lors de la génération de la facture',
+        description: error?.message || 'Erreur lors de la génération',
         variant: 'destructive'
       });
     } finally {
