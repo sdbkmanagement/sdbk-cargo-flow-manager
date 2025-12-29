@@ -72,7 +72,7 @@ const HSEQ: React.FC = () => {
       const { data, error } = await supabase
         .from('vehicules')
         .select('id, numero, immatriculation')
-        .eq('statut', 'actif')
+        .in('statut', ['disponible', 'validation_requise', 'en_mission'])
         .order('numero');
       if (error) throw error;
       return data;
