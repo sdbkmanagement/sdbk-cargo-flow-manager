@@ -749,7 +749,7 @@ const HSEQ: React.FC = () => {
                 <SelectContent>
                   {vehicules?.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
-                      {v.numero} - {v.remorque_immatriculation || v.immatriculation}
+                      {v.numero?.replace(/^V/i, '')} - {v.remorque_immatriculation || v.immatriculation}
                     </SelectItem>
                   ))}
                 </SelectContent>
