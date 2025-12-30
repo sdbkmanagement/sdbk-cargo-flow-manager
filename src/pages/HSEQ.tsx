@@ -39,11 +39,15 @@ import {
   FileSpreadsheet,
   FileText,
   RefreshCw,
-  User
+  User,
+  Eye,
+  AlertCircle
 } from 'lucide-react';
 import { hseqService } from '@/services/hseqService';
+import { inopineService } from '@/services/inopineService';
 import { useHSEQPermissions } from '@/hooks/useHSEQPermissions';
 import { SafeToLoadForm } from '@/components/hseq/SafeToLoadForm';
+import { InopineControlForm } from '@/components/hseq/InopineControlForm';
 import { supabase } from '@/lib/supabase';
 import { 
   exportSTLControlsToExcel, 
@@ -62,6 +66,7 @@ const HSEQ: React.FC = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [showNewControlDialog, setShowNewControlDialog] = useState(false);
   const [showControlForm, setShowControlForm] = useState(false);
+  const [controlType, setControlType] = useState<'stl' | 'inopine'>('stl');
   const [selectedVehicule, setSelectedVehicule] = useState<string>('');
   const [selectedChauffeur, setSelectedChauffeur] = useState<string>('');
 
@@ -80,11 +85,25 @@ const HSEQ: React.FC = () => {
     enabled: canManageControls,
   });
 
-  // Charger le chauffeur assigné au véhicule sélectionné
+  // Charger tous les chauffeurs actifs pour le contrôle inopiné
+  const { data: chauffeurs } = useQuery({
+    queryKey: ['chauffeurs-hseq'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('chauffeurs')
+        .select('id, nom, prenom')
+        .eq('statut', 'actif')
+        .order('nom');
+      if (error) throw error;
+      return data;
+    },
+    enabled: canManageControls,
+  });
+
+  // Charger le chauffeur assigné au véhicule sélectionné (pour STL)
   const { data: chauffeurAssigne } = useQuery({
     queryKey: ['chauffeur-assigne', selectedVehicule],
     queryFn: async () => {
-      // Chercher l'affectation active pour ce véhicule
       const { data, error } = await supabase
         .from('affectations_chauffeurs')
         .select('chauffeur_id, chauffeurs(id, nom, prenom)')
@@ -98,17 +117,17 @@ const HSEQ: React.FC = () => {
       }
       return null;
     },
-    enabled: !!selectedVehicule && canManageControls,
+    enabled: !!selectedVehicule && canManageControls && controlType === 'stl',
   });
 
-  // Auto-sélectionner le chauffeur quand le véhicule change
+  // Auto-sélectionner le chauffeur quand le véhicule change (STL)
   React.useEffect(() => {
-    if (chauffeurAssigne) {
+    if (controlType === 'stl' && chauffeurAssigne) {
       setSelectedChauffeur(chauffeurAssigne.id);
-    } else {
+    } else if (controlType === 'stl') {
       setSelectedChauffeur('');
     }
-  }, [chauffeurAssigne]);
+  }, [chauffeurAssigne, controlType]);
 
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['hseq-stats'],
@@ -122,6 +141,18 @@ const HSEQ: React.FC = () => {
     enabled: canViewHSEQ,
   });
 
+  const { data: inopineControls, refetch: refetchInopine } = useQuery({
+    queryKey: ['inopine-controls'],
+    queryFn: () => inopineService.getControls(),
+    enabled: canViewHSEQ,
+  });
+
+  const { data: inopineStats } = useQuery({
+    queryKey: ['inopine-stats'],
+    queryFn: () => inopineService.getStats(),
+    enabled: canViewHSEQ,
+  });
+
   const { data: nonConformites, refetch: refetchNC } = useQuery({
     queryKey: ['non-conformites'],
     queryFn: () => hseqService.getNonConformites(),
@@ -131,6 +162,7 @@ const HSEQ: React.FC = () => {
   const handleRefresh = () => {
     refetchStats();
     refetchControls();
+    refetchInopine();
     refetchNC();
     toast.success('Données actualisées');
   };
@@ -153,6 +185,13 @@ const HSEQ: React.FC = () => {
     }
   };
 
+  const openNewControlDialog = (type: 'stl' | 'inopine') => {
+    setControlType(type);
+    setSelectedVehicule('');
+    setSelectedChauffeur('');
+    setShowNewControlDialog(true);
+  };
+
   const handleStartControl = () => {
     if (!selectedVehicule || !selectedChauffeur) {
       toast.error('Veuillez sélectionner un véhicule et un chauffeur');
@@ -167,6 +206,7 @@ const HSEQ: React.FC = () => {
     setSelectedVehicule('');
     setSelectedChauffeur('');
     refetchControls();
+    refetchInopine();
     refetchStats();
     refetchNC();
   };
@@ -177,27 +217,53 @@ const HSEQ: React.FC = () => {
     setSelectedChauffeur('');
   };
 
+  // Trouver les infos du chauffeur sélectionné
+  const getSelectedChauffeurInfo = () => {
+    if (controlType === 'stl' && chauffeurAssigne) {
+      return chauffeurAssigne;
+    }
+    return chauffeurs?.find(c => c.id === selectedChauffeur);
+  };
+
   // Afficher le formulaire de contrôle en plein écran
   if (showControlForm) {
     const vehiculeInfo = vehicules?.find(v => v.id === selectedVehicule);
+    const chauffeurInfo = getSelectedChauffeurInfo();
     
     return (
       <div className="fixed inset-0 z-50 bg-background overflow-auto">
         <div className="max-w-2xl mx-auto p-4">
-          <SafeToLoadForm
-            vehiculeId={selectedVehicule}
-            chauffeurId={selectedChauffeur}
-            vehiculeInfo={vehiculeInfo ? { 
-              numero: vehiculeInfo.numero || '', 
-              immatriculation: vehiculeInfo.immatriculation || '' 
-            } : undefined}
-            chauffeurInfo={chauffeurAssigne ? { 
-              nom: chauffeurAssigne.nom, 
-              prenom: chauffeurAssigne.prenom 
-            } : undefined}
-            onComplete={handleControlComplete}
-            onCancel={handleControlCancel}
-          />
+          {controlType === 'stl' ? (
+            <SafeToLoadForm
+              vehiculeId={selectedVehicule}
+              chauffeurId={selectedChauffeur}
+              vehiculeInfo={vehiculeInfo ? { 
+                numero: vehiculeInfo.numero || '', 
+                immatriculation: vehiculeInfo.immatriculation || '' 
+              } : undefined}
+              chauffeurInfo={chauffeurInfo ? { 
+                nom: chauffeurInfo.nom, 
+                prenom: chauffeurInfo.prenom 
+              } : undefined}
+              onComplete={handleControlComplete}
+              onCancel={handleControlCancel}
+            />
+          ) : (
+            <InopineControlForm
+              vehiculeId={selectedVehicule}
+              chauffeurId={selectedChauffeur}
+              vehiculeInfo={vehiculeInfo ? { 
+                numero: vehiculeInfo.numero || '', 
+                immatriculation: vehiculeInfo.immatriculation || '' 
+              } : undefined}
+              chauffeurInfo={chauffeurInfo ? { 
+                nom: chauffeurInfo.nom, 
+                prenom: chauffeurInfo.prenom 
+              } : undefined}
+              onComplete={handleControlComplete}
+              onCancel={handleControlCancel}
+            />
+          )}
         </div>
       </div>
     );
@@ -213,32 +279,32 @@ const HSEQ: React.FC = () => {
 
   const statCards = [
     {
-      title: 'Taux de conformité',
+      title: 'Taux de conformité STL',
       value: `${stats?.tauxConformite.toFixed(1) || 0}%`,
       icon: CheckCircle2,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
     {
-      title: 'Contrôles effectués',
+      title: 'Contrôles STL',
       value: stats?.totalControles || 0,
       icon: FileCheck,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
     },
     {
-      title: 'Véhicules refusés',
-      value: stats?.refuses || 0,
-      icon: XCircle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
+      title: 'Contrôles inopinés',
+      value: inopineStats?.totalControles || 0,
+      icon: Eye,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100',
     },
     {
       title: 'NC ouvertes',
       value: stats?.ncOuvertes || 0,
       icon: AlertTriangle,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: 'text-red-600',
+      bgColor: 'bg-red-100',
     },
   ];
 
@@ -288,10 +354,24 @@ const HSEQ: React.FC = () => {
           )}
           
           {canManageControls && (
-            <Button onClick={() => setShowNewControlDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nouveau contrôle
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nouveau contrôle
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openNewControlDialog('stl')}>
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  SAFE TO LOAD
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openNewControlDialog('inopine')}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Contrôle INOPINÉ
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
       </div>
@@ -326,6 +406,10 @@ const HSEQ: React.FC = () => {
             <FileCheck className="h-4 w-4 mr-2" />
             SAFE TO LOAD
           </TabsTrigger>
+          <TabsTrigger value="inopine">
+            <Eye className="h-4 w-4 mr-2" />
+            Inopinés
+          </TabsTrigger>
           <TabsTrigger value="nc">
             <AlertTriangle className="h-4 w-4 mr-2" />
             Non-conformités
@@ -336,7 +420,7 @@ const HSEQ: React.FC = () => {
           <div className="grid md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Derniers contrôles</CardTitle>
+                <CardTitle className="text-base">Derniers contrôles STL</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {controls?.slice(0, 5).map((control) => (
@@ -368,28 +452,65 @@ const HSEQ: React.FC = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">NC critiques</CardTitle>
+                <CardTitle className="text-base">Derniers contrôles inopinés</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                {nonConformites?.filter(nc => nc.type_nc === 'critique').slice(0, 5).map((nc) => (
-                  <div key={nc.id} className="flex items-center justify-between p-2 border rounded border-red-200 bg-red-50/50">
-                    <div>
-                      <p className="font-medium text-sm">{nc.numero}</p>
-                      <p className="text-xs text-muted-foreground truncate max-w-[200px]">
-                        {nc.description}
-                      </p>
+                {inopineControls?.slice(0, 5).map((control) => (
+                  <div key={control.id} className="flex items-center justify-between p-2 border rounded border-orange-200">
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">
+                        {control.chauffeur?.prenom} {control.chauffeur?.nom}
+                      </span>
                     </div>
-                    <Badge variant="destructive">{nc.statut}</Badge>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(control.date_controle), 'dd/MM HH:mm')}
+                      </span>
+                      <Badge variant={
+                        control.statut === 'conforme' ? 'default' :
+                        control.statut === 'non_conforme' ? 'destructive' : 'secondary'
+                      } className={cn(
+                        control.statut === 'conforme' && 'bg-green-600',
+                        control.statut === 'conforme_avec_reserve' && 'bg-orange-500'
+                      )}>
+                        {control.statut.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
                   </div>
                 ))}
-                {(!nonConformites || nonConformites.filter(nc => nc.type_nc === 'critique').length === 0) && (
+                {(!inopineControls || inopineControls.length === 0) && (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Aucune NC critique
+                    Aucun contrôle inopiné effectué
                   </p>
                 )}
               </CardContent>
             </Card>
           </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">NC critiques</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {nonConformites?.filter(nc => nc.type_nc === 'critique').slice(0, 5).map((nc) => (
+                <div key={nc.id} className="flex items-center justify-between p-2 border rounded border-red-200 bg-red-50/50">
+                  <div>
+                    <p className="font-medium text-sm">{nc.numero}</p>
+                    <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                      {nc.description}
+                    </p>
+                  </div>
+                  <Badge variant="destructive">{nc.statut}</Badge>
+                </div>
+              ))}
+              {(!nonConformites || nonConformites.filter(nc => nc.type_nc === 'critique').length === 0) && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Aucune NC critique
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="controls">
@@ -451,6 +572,89 @@ const HSEQ: React.FC = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="inopine">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Historique des contrôles INOPINÉS</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Taux de conformité: {inopineStats?.tauxConformite.toFixed(1) || 0}%
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-green-600 border-green-300">
+                  {inopineStats?.conformes || 0} conformes
+                </Badge>
+                <Badge variant="outline" className="text-orange-600 border-orange-300">
+                  {inopineStats?.conformesAvecReserve || 0} avec réserve
+                </Badge>
+                <Badge variant="outline" className="text-red-600 border-red-300">
+                  {inopineStats?.nonConformes || 0} non conformes
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {inopineControls?.map((control) => (
+                  <div key={control.id} className={cn(
+                    'flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors',
+                    control.statut === 'non_conforme' && 'border-red-200 bg-red-50/30'
+                  )}>
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 rounded-lg bg-orange-100">
+                        <Eye className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{control.vehicule?.numero}</p>
+                          <Badge variant="outline" className="text-xs">INOPINÉ</Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {control.chauffeur?.prenom} {control.chauffeur?.nom}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="text-sm">
+                          {format(new Date(control.date_controle), 'PPp', { locale: fr })}
+                        </p>
+                        {control.lieu_controle && (
+                          <p className="text-xs text-muted-foreground">{control.lieu_controle}</p>
+                        )}
+                      </div>
+                      <Badge variant={
+                        control.statut === 'conforme' ? 'default' :
+                        control.statut === 'non_conforme' ? 'destructive' : 'secondary'
+                      } className={cn(
+                        control.statut === 'conforme' && 'bg-green-600',
+                        control.statut === 'conforme_avec_reserve' && 'bg-orange-500'
+                      )}>
+                        {control.statut.replace(/_/g, ' ')}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+                {(!inopineControls || inopineControls.length === 0) && (
+                  <div className="text-center py-8">
+                    <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">Aucun contrôle inopiné enregistré</p>
+                    {canManageControls && (
+                      <Button 
+                        className="mt-4"
+                        onClick={() => openNewControlDialog('inopine')}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Lancer un contrôle inopiné
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="nc">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -478,6 +682,12 @@ const HSEQ: React.FC = () => {
                         }>
                           {nc.type_nc}
                         </Badge>
+                        {nc.categorie?.includes('inopiné') && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Inopiné
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{nc.description}</p>
                     </div>
@@ -510,11 +720,23 @@ const HSEQ: React.FC = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <FileCheck className="h-5 w-5 text-primary" />
-              Nouveau contrôle SAFE TO LOAD
+              {controlType === 'stl' ? (
+                <>
+                  <FileCheck className="h-5 w-5 text-primary" />
+                  Nouveau contrôle SAFE TO LOAD
+                </>
+              ) : (
+                <>
+                  <Eye className="h-5 w-5 text-orange-600" />
+                  Nouveau contrôle INOPINÉ
+                </>
+              )}
             </DialogTitle>
             <DialogDescription>
-              Sélectionnez le véhicule et le chauffeur pour démarrer le contrôle.
+              {controlType === 'stl' 
+                ? 'Sélectionnez le véhicule - le chauffeur assigné sera automatiquement récupéré.'
+                : 'Sélectionnez le véhicule et le chauffeur à contrôler.'
+              }
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -530,33 +752,70 @@ const HSEQ: React.FC = () => {
                 <SelectContent>
                   {vehicules?.map((v) => (
                     <SelectItem key={v.id} value={v.id}>
-                      {v.remorque_immatriculation || v.immatriculation}
+                      {v.numero} - {v.remorque_immatriculation || v.immatriculation}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Chauffeur assigné
-              </Label>
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
-                {chauffeurAssigne ? (
-                  <span className="text-foreground font-medium">
-                    {chauffeurAssigne.prenom} {chauffeurAssigne.nom}
-                  </span>
-                ) : selectedVehicule ? (
-                  <span className="text-muted-foreground italic">
-                    Aucun chauffeur assigné à ce véhicule
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground italic">
-                    Sélectionnez d'abord un véhicule
-                  </span>
-                )}
+            
+            {controlType === 'stl' ? (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Chauffeur assigné
+                </Label>
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-md border">
+                  {chauffeurAssigne ? (
+                    <span className="text-foreground font-medium">
+                      {chauffeurAssigne.prenom} {chauffeurAssigne.nom}
+                    </span>
+                  ) : selectedVehicule ? (
+                    <span className="text-muted-foreground italic">
+                      Aucun chauffeur assigné à ce véhicule
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground italic">
+                      Sélectionnez d'abord un véhicule
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Chauffeur à contrôler
+                </Label>
+                <Select value={selectedChauffeur} onValueChange={setSelectedChauffeur}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un chauffeur" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chauffeurs?.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.prenom} {c.nom}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {controlType === 'inopine' && (
+              <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5" />
+                  <div className="text-orange-800">
+                    <p className="font-medium">Contrôle inopiné</p>
+                    <p className="text-xs mt-1">
+                      Ce contrôle sera horodaté et géolocalisé automatiquement. 
+                      Les non-conformités détectées déclencheront des actions correctives.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setShowNewControlDialog(false)}>
@@ -565,6 +824,7 @@ const HSEQ: React.FC = () => {
             <Button 
               onClick={handleStartControl}
               disabled={!selectedVehicule || !selectedChauffeur}
+              className={controlType === 'inopine' ? 'bg-orange-600 hover:bg-orange-700' : ''}
             >
               Démarrer le contrôle
             </Button>
