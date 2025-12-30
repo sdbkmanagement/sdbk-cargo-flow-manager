@@ -821,6 +821,150 @@ export type Database = {
           },
         ]
       }
+      controles_inopines: {
+        Row: {
+          chauffeur_id: string
+          confirmation_chauffeur: boolean | null
+          confirmation_controleur: boolean | null
+          controleur_id: string | null
+          created_at: string
+          date_controle: string
+          id: string
+          latitude: number | null
+          lieu_controle: string | null
+          local_id: string | null
+          longitude: number | null
+          observations: string | null
+          signature_chauffeur_date: string | null
+          signature_chauffeur_url: string | null
+          signature_controleur_date: string | null
+          signature_controleur_url: string | null
+          statut: string
+          sync_status: string | null
+          type_controle: string
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          chauffeur_id: string
+          confirmation_chauffeur?: boolean | null
+          confirmation_controleur?: boolean | null
+          controleur_id?: string | null
+          created_at?: string
+          date_controle?: string
+          id?: string
+          latitude?: number | null
+          lieu_controle?: string | null
+          local_id?: string | null
+          longitude?: number | null
+          observations?: string | null
+          signature_chauffeur_date?: string | null
+          signature_chauffeur_url?: string | null
+          signature_controleur_date?: string | null
+          signature_controleur_url?: string | null
+          statut?: string
+          sync_status?: string | null
+          type_controle?: string
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          chauffeur_id?: string
+          confirmation_chauffeur?: boolean | null
+          confirmation_controleur?: boolean | null
+          controleur_id?: string | null
+          created_at?: string
+          date_controle?: string
+          id?: string
+          latitude?: number | null
+          lieu_controle?: string | null
+          local_id?: string | null
+          longitude?: number | null
+          observations?: string | null
+          signature_chauffeur_date?: string | null
+          signature_chauffeur_url?: string | null
+          signature_controleur_date?: string | null
+          signature_controleur_url?: string | null
+          statut?: string
+          sync_status?: string | null
+          type_controle?: string
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_inopines_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controles_inopines_controleur_id_fkey"
+            columns: ["controleur_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controles_inopines_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      controles_inopines_items: {
+        Row: {
+          categorie: string
+          code_point: string
+          commentaire: string | null
+          control_id: string
+          created_at: string
+          id: string
+          is_conforme: boolean | null
+          is_critical: boolean
+          libelle: string
+          medias: Json | null
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          code_point: string
+          commentaire?: string | null
+          control_id: string
+          created_at?: string
+          id?: string
+          is_conforme?: boolean | null
+          is_critical?: boolean
+          libelle: string
+          medias?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          code_point?: string
+          commentaire?: string | null
+          control_id?: string
+          created_at?: string
+          id?: string
+          is_conforme?: boolean | null
+          is_critical?: boolean
+          libelle?: string
+          medias?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_inopines_items_control_id_fkey"
+            columns: ["control_id"]
+            isOneToOne: false
+            referencedRelation: "controles_inopines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       controles_obc: {
         Row: {
           acceleration_excessive: number | null
