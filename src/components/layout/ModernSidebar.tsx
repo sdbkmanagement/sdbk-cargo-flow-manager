@@ -16,7 +16,8 @@ import {
   LogOut,
   X,
   Building2,
-  Briefcase
+  Briefcase,
+  ShieldCheck
 } from 'lucide-react';
 
 interface ModernSidebarProps {
@@ -75,6 +76,13 @@ const menuItems = [
     icon: Briefcase,
     module: 'societe',
     allowedRoles: ['admin', 'direction', 'administratif']
+  },
+  {
+    path: '/hseq',
+    label: 'HSEQ',
+    icon: ShieldCheck,
+    module: 'hseq',
+    allowedRoles: ['admin', 'hsecq', 'direction', 'transport']
   },
   {
     path: '/validations',
