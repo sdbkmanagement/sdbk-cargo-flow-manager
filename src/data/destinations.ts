@@ -30,7 +30,7 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Conakry",
     stations: [
-      "ACCG", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
+      "ACCG", "Alame SARL", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
       "Sobragui", "Sogeac", "Station Mafanco", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne",
       "Station Carriere", "Station Cimenterie", "Station Cosa2", "Station Coyah Somayah", 
       "Station Coyah Wonkifong", "Station Dabondi", "Station Dabondy", "Station Dixinn Ecole", 
