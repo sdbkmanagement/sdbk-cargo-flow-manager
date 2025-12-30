@@ -37,9 +37,6 @@ interface MissionsTableProps {
 }
 
 export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh, showHistoryFilters = false }: MissionsTableProps) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [typeFilter, setTypeFilter] = useState('all');
   const [selectedMissionForClosure, setSelectedMissionForClosure] = useState(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -104,21 +101,6 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
     return labels[status as keyof typeof labels] || status;
   };
 
-  const filteredMissions = missions.filter(mission => {
-    const matchesSearch = 
-      mission.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mission.chauffeur?.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mission.chauffeur?.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mission.vehicule?.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mission.site_depart?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mission.site_arrivee?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || mission.statut === statusFilter;
-    const matchesType = typeFilter === 'all' || mission.type_transport === typeFilter;
-
-    return matchesSearch && matchesStatus && matchesType;
-  });
-
   return (
     <>
       <Card className="sdbk-card">
@@ -130,7 +112,7 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
               </div>
               <div>
                 <CardTitle className="text-xl font-bold text-gray-900">
-                  Missions ({filteredMissions.length})
+                  Missions ({missions.length})
                 </CardTitle>
                 <p className="text-sm text-gray-500 mt-1">
                   Gestion des missions de transport
@@ -146,40 +128,6 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
               <RefreshCw className="w-4 h-4 mr-2" />
               Actualiser
             </Button>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mt-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Rechercher par numéro, chauffeur, véhicule..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 sdbk-input"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[200px] sdbk-input">
-                <SelectValue placeholder="Filtrer par statut" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les statuts</SelectItem>
-                <SelectItem value="en_attente">En attente</SelectItem>
-                <SelectItem value="en_cours">En cours</SelectItem>
-                <SelectItem value="terminee">Terminée</SelectItem>
-                <SelectItem value="annulee">Annulée</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[200px] sdbk-input">
-                <SelectValue placeholder="Filtrer par type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les types</SelectItem>
-                <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
-                <SelectItem value="bauxite">Bauxite</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
         
@@ -199,7 +147,7 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
                 </tr>
               </thead>
               <tbody>
-                {filteredMissions.map((mission) => (
+                {missions.map((mission) => (
                   <tr key={mission.id} className="sdbk-table-row">
                     {/* Numéro mission */}
                     <td className="py-4 px-6">
@@ -319,7 +267,7 @@ export const MissionsTable = ({ missions, onEdit, hasWritePermission, onRefresh,
               </tbody>
             </table>
             
-            {filteredMissions.length === 0 && (
+            {missions.length === 0 && (
               <div className="text-center py-12">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Calendar className="w-8 h-8 text-gray-400" />
