@@ -168,20 +168,26 @@ export const createConversation = async (
     if (existingConv) return existingConv;
   }
 
+  // Récupérer l'ID de l'utilisateur authentifié pour RLS
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) {
+    throw new Error('Utilisateur non authentifié');
+  }
+
   const { data: conversation, error } = await supabase
     .from('conversations')
     .insert({
       name: isGroup ? name : null,
       is_group: isGroup,
-      created_by: userId
+      created_by: authUser.id  // Utiliser l'ID de auth.users pour correspondre à auth.uid()
     })
     .select()
     .single();
 
   if (error) throw error;
 
-  // Ajouter tous les participants (y compris l'utilisateur actuel)
-  const allParticipants = [...new Set([userId, ...participantIds])];
+  // Ajouter tous les participants (y compris l'utilisateur actuel avec son auth.id)
+  const allParticipants = [...new Set([authUser.id, ...participantIds])];
   const { error: partError } = await supabase
     .from('conversation_participants')
     .insert(
