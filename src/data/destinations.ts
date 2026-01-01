@@ -30,7 +30,7 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Conakry",
     stations: [
-      "ACCG", "Alame SARL", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
+      "ACCG", "Alame SARL", "Beverage", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
       "Sobragui", "Sogeac", "Station Mafanco", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne",
       "Station Carriere", "Station Cimenterie", "Station Cosa2", "Station Coyah Somayah", 
       "Station Coyah Wonkifong", "Station Dabondi", "Station Dabondy", "Station Dixinn Ecole", 
@@ -167,7 +167,7 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "N'zerekore",
     stations: [
-      "Foret Forte", "Sgp N'Zerekore", "Station N'Zerekore Boma Ymc",
+      "Foret Forte", "N'zezkore Dalein", "Sgp N'Zerekore", "Station N'Zerekore Boma Ymc",
       "Station N'zerekore Dorota", "Station N'Zerekore Gr", "Station N'zerekore Horoya",
       "Station N'zerekore Mosque", "Station N'zerekore Tawu Tama", "Station N'zerekore YMC",
       "Station Total N'zerekore YMC", "SGESCO", "SOGUPAH"
