@@ -174,30 +174,44 @@ export const createConversation = async (
     throw new Error('Utilisateur non authentifié');
   }
 
-  const { data: conversation, error } = await supabase
+  // IMPORTANT:
+  // Ne pas faire `.select().single()` sur l'INSERT, sinon Postgres applique aussi la RLS de SELECT
+  // (et à ce moment-là l'utilisateur n'est pas encore participant) => erreur RLS.
+  const conversationId = crypto.randomUUID();
+
+  const { error } = await supabase
     .from('conversations')
     .insert({
-      name: isGroup ? name : null,
+      id: conversationId,
+      name: isGroup ? (name ?? null) : null,
       is_group: isGroup,
-      created_by: authUser.id  // Utiliser l'ID de auth.users pour correspondre à auth.uid()
-    })
-    .select()
-    .single();
+      created_by: authUser.id
+    });
 
   if (error) throw error;
 
-  // Ajouter tous les participants (y compris l'utilisateur actuel avec son auth.id)
+  // Ajouter tous les participants (y compris l'utilisateur actuel)
   const allParticipants = [...new Set([authUser.id, ...participantIds])];
   const { error: partError } = await supabase
     .from('conversation_participants')
     .insert(
-      allParticipants.map(pId => ({
-        conversation_id: conversation.id,
+      allParticipants.map((pId) => ({
+        conversation_id: conversationId,
         user_id: pId
       }))
     );
 
   if (partError) throw partError;
+
+  // Maintenant que les participants existent, le SELECT RLS passe.
+  const { data: conversation, error: fetchError } = await supabase
+    .from('conversations')
+    .select('*')
+    .eq('id', conversationId)
+    .maybeSingle();
+
+  if (fetchError) throw fetchError;
+  if (!conversation) throw new Error('Conversation créée mais non récupérable');
 
   return conversation;
 };
