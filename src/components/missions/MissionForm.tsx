@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BLMultiplesForm } from './BLMultiplesForm';
 import { BLSuiviForm } from './BLSuiviForm';
 import { BonLivraison } from '@/types/bl';
-import { Search } from 'lucide-react';
+import { Search, Fuel } from 'lucide-react';
 
 interface MissionFormProps {
   mission?: any;
@@ -50,6 +50,24 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     available: boolean;
     message: string;
   } | null>(null);
+
+  // Obtenir la capacité du véhicule sélectionné
+  const getCapaciteVehicule = (): number => {
+    if (!formData.vehicule_id) return 0;
+    const vehicule = vehicules.find((v: any) => v.id === formData.vehicule_id);
+    if (!vehicule) return 0;
+    
+    // Pour les tracteur-remorque, utiliser remorque_volume_litres
+    if (vehicule.type_vehicule === 'tracteur_remorque' && vehicule.remorque_volume_litres) {
+      return vehicule.remorque_volume_litres;
+    }
+    // Pour les porteurs ou autres, utiliser capacite_max
+    return vehicule.capacite_max || 0;
+  };
+
+  const capaciteVehicule = getCapaciteVehicule();
+  const totalQuantiteBLs = bls.reduce((sum, bl) => sum + (bl.quantite_prevue || 0), 0);
+  const ecartCapacite = capaciteVehicule - totalQuantiteBLs;
 
   // Fonction pour formater l'affichage du véhicule - Afficher uniquement le numéro de citerne
   const getVehiculeDisplayText = (vehicule: any) => {
@@ -309,6 +327,18 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       return;
     }
 
+    // Validation de la capacité du véhicule pour les hydrocarbures
+    if (formData.type_transport === 'hydrocarbures' && capaciteVehicule > 0) {
+      if (totalQuantiteBLs !== capaciteVehicule) {
+        toast({
+          title: 'Erreur de capacité',
+          description: `Le total des quantités (${totalQuantiteBLs.toLocaleString()} L) doit être égal à la capacité du camion (${capaciteVehicule.toLocaleString()} L). Écart: ${Math.abs(ecartCapacite).toLocaleString()} L`,
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+
     // Validation des BL simplifiée - seulement les champs actuellement présents
     if (formData.type_transport === 'hydrocarbures') {
       console.log('🔍 Validation des BL:', bls);
@@ -435,6 +465,11 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       });
       
       if (!tousBlsValides) return false;
+      
+      // Vérifier que le total des quantités = capacité du véhicule
+      if (capaciteVehicule > 0 && totalQuantiteBLs !== capaciteVehicule) {
+        return false;
+      }
     }
     
     return !saveMutation.isPending;
@@ -678,6 +713,33 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         {/* Section BL pour les hydrocarbures - Visible uniquement si véhicule et chauffeur assignés */}
         {isHydrocarbures && formData.vehicule_id && formData.chauffeur_id && (
           <>
+            {/* Affichage de la capacité du véhicule et validation */}
+            {capaciteVehicule > 0 && (
+              <Card className={`border-2 ${totalQuantiteBLs === capaciteVehicule ? 'border-green-500 bg-green-50' : totalQuantiteBLs > capaciteVehicule ? 'border-red-500 bg-red-50' : 'border-amber-500 bg-amber-50'}`}>
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Fuel className={`w-6 h-6 ${totalQuantiteBLs === capaciteVehicule ? 'text-green-600' : totalQuantiteBLs > capaciteVehicule ? 'text-red-600' : 'text-amber-600'}`} />
+                      <div>
+                        <p className="font-semibold text-foreground">Capacité du camion: {capaciteVehicule.toLocaleString()} L</p>
+                        <p className={`text-sm ${totalQuantiteBLs === capaciteVehicule ? 'text-green-700' : totalQuantiteBLs > capaciteVehicule ? 'text-red-700' : 'text-amber-700'}`}>
+                          Total BLs saisis: {totalQuantiteBLs.toLocaleString()} L
+                          {totalQuantiteBLs !== capaciteVehicule && (
+                            <span className="ml-2 font-medium">
+                              ({totalQuantiteBLs > capaciteVehicule ? 'Dépassement' : 'Manque'}: {Math.abs(ecartCapacite).toLocaleString()} L)
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${totalQuantiteBLs === capaciteVehicule ? 'bg-green-200 text-green-800' : totalQuantiteBLs > capaciteVehicule ? 'bg-red-200 text-red-800' : 'bg-amber-200 text-amber-800'}`}>
+                      {totalQuantiteBLs === capaciteVehicule ? '✓ Conforme' : totalQuantiteBLs > capaciteVehicule ? '✗ Dépassement' : '⚠ Incomplet'}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             {!isTerminee ? (
               <BLMultiplesForm
                 bls={bls}
