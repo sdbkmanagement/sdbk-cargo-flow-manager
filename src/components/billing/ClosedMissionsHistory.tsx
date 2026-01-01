@@ -101,7 +101,7 @@ export const ClosedMissionsHistory = () => {
             mission_id
           )
         `)
-        .in('statut', ['cloture', 'terminee'])
+        .eq('statut', 'cloture')
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
