@@ -124,7 +124,8 @@ export const ClosedMissionsHistory = () => {
             mission_id
           )
         `)
-        .eq('statut', 'cloture')
+        .eq('statut', 'terminee')
+        .or('facturation_statut.is.null,facturation_statut.neq.facturee')
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
