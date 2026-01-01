@@ -77,15 +77,30 @@ const Missions = () => {
     )
   );
   
+  // Missions terminées mais pas encore clôturées/facturées
   const missionsTerminees = filterMissions(
     missions.filter(mission => 
       mission.statut === 'terminee'
     )
   );
 
+  // Missions clôturées (statut = 'cloture') non facturées
+  const missionsClotureeNonFacturees = filterMissions(
+    missions.filter(mission => 
+      mission.statut === 'cloture' && mission.facturation_statut !== 'facturee'
+    )
+  );
+
+  // Missions clôturées et facturées
+  const missionsClotureeFacturees = filterMissions(
+    missions.filter(mission => 
+      mission.statut === 'cloture' && mission.facturation_statut === 'facturee'
+    )
+  );
+
   const missionsHistorique = filterMissions(
     missions.filter(mission => 
-      mission.statut === 'terminee' || mission.statut === 'annulee'
+      mission.statut === 'terminee' || mission.statut === 'annulee' || mission.statut === 'cloture'
     )
   );
 
@@ -222,15 +237,21 @@ const Missions = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="en-cours" className="flex items-center gap-2">
             En cours ({missionsEnCours.length})
           </TabsTrigger>
           <TabsTrigger value="terminees" className="flex items-center gap-2">
             Terminées ({missionsTerminees.length})
           </TabsTrigger>
+          <TabsTrigger value="cloturees-non-facturees" className="flex items-center gap-2 text-orange-600">
+            Non facturées ({missionsClotureeNonFacturees.length})
+          </TabsTrigger>
+          <TabsTrigger value="cloturees-facturees" className="flex items-center gap-2 text-green-600">
+            Facturées ({missionsClotureeFacturees.length})
+          </TabsTrigger>
           <TabsTrigger value="historique" className="flex items-center gap-2">
-            Historique complet ({missionsHistorique.length})
+            Historique ({missionsHistorique.length})
           </TabsTrigger>
         </TabsList>
         
@@ -246,6 +267,24 @@ const Missions = () => {
         <TabsContent value="terminees" className="mt-6">
           <MissionsTable
             missions={missionsTerminees}
+            onEdit={handleEditMission}
+            hasWritePermission={canWriteMissions}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
+          />
+        </TabsContent>
+
+        <TabsContent value="cloturees-non-facturees" className="mt-6">
+          <MissionsTable
+            missions={missionsClotureeNonFacturees}
+            onEdit={handleEditMission}
+            hasWritePermission={canWriteMissions}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
+          />
+        </TabsContent>
+
+        <TabsContent value="cloturees-facturees" className="mt-6">
+          <MissionsTable
+            missions={missionsClotureeFacturees}
             onEdit={handleEditMission}
             hasWritePermission={canWriteMissions}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
