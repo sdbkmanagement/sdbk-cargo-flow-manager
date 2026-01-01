@@ -1,14 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export const useRealtimeData = () => {
   const queryClient = useQueryClient();
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const isSubscribedRef = useRef(false);
 
   useEffect(() => {
+    // Éviter les souscriptions multiples
+    if (isSubscribedRef.current) {
+      return;
+    }
+
+    // Créer un nom de channel unique pour éviter les conflits
+    const channelName = `schema-db-changes-${Date.now()}`;
+    
     // Configuration des canaux realtime pour les tables principales
     const channel = supabase
-      .channel('schema-db-changes')
+      .channel(channelName)
       // Écouter les changements sur la table vehicules
       .on(
         'postgres_changes',
@@ -133,9 +144,16 @@ export const useRealtimeData = () => {
       )
       .subscribe();
 
+    channelRef.current = channel;
+    isSubscribedRef.current = true;
+
     // Nettoyage lors de la suppression du composant
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+        isSubscribedRef.current = false;
+      }
     };
   }, [queryClient]);
 };
