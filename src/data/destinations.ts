@@ -114,7 +114,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kindia",
-    stations: ["Station Friguiagbe", "Station Kindia Samoroya", "Station Total Friguiagbe", "EIFFAGE"]
+    stations: ["Station Friguiagbe", "Station Kindia Samoroya", "Station Total Friguiagbe", "Station Total Foulaya", "EIFFAGE"]
   },
   {
     ville: "Kissidougou",
