@@ -6,11 +6,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { format } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Search, FileCheck, Download } from 'lucide-react';
+import { Search, FileCheck, Calendar, X } from 'lucide-react';
 import { MissionsHistoryExport } from '@/components/missions/MissionsHistoryExport';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 interface Mission {
   id: string;
@@ -60,6 +63,26 @@ interface MissionWithBLs extends Mission {
 
 export const ClosedMissionsHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [dateDebut, setDateDebut] = useState<Date | undefined>(undefined);
+  const [dateFin, setDateFin] = useState<Date | undefined>(undefined);
+
+  const setQuickPeriod = (months: number) => {
+    const now = new Date();
+    if (months === 0) {
+      // Mois en cours
+      setDateDebut(startOfMonth(now));
+      setDateFin(endOfMonth(now));
+    } else {
+      // X derniers mois
+      setDateDebut(subMonths(now, months));
+      setDateFin(now);
+    }
+  };
+
+  const clearDateFilter = () => {
+    setDateDebut(undefined);
+    setDateFin(undefined);
+  };
 
   const { data: missions = [], isLoading } = useQuery({
     queryKey: ['closed-missions-billing-full'],
@@ -175,7 +198,87 @@ export const ClosedMissionsHistory = () => {
     }
   });
 
-  const filteredRows = tableRows.filter(row => {
+  // Filtrer les missions par période
+  const filteredMissions = missions.filter(mission => {
+    if (!dateDebut && !dateFin) return true;
+    
+    const missionDate = new Date(mission.updated_at || mission.created_at);
+    
+    if (dateDebut && dateFin) {
+      return missionDate >= dateDebut && missionDate <= dateFin;
+    } else if (dateDebut) {
+      return missionDate >= dateDebut;
+    } else if (dateFin) {
+      return missionDate <= dateFin;
+    }
+    return true;
+  });
+
+  // Recalculer les tableRows avec les missions filtrées
+  const filteredTableRows: any[] = [];
+  
+  filteredMissions.forEach(mission => {
+    const bls = mission.bons_livraison || [];
+    
+    if (bls.length === 0) {
+      filteredTableRows.push({
+        missionId: mission.id,
+        numero: mission.numero,
+        citerne: mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-',
+        chauffeur: mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-',
+        numeroBL: '-',
+        numeroTournee: '-',
+        nombreBL: 0,
+        capacite: mission.vehicule?.capacite_max || '-',
+        quantite: '-',
+        produit: mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
+        provenance: mission.site_depart,
+        destination: mission.site_arrivee,
+        dateReceptionDS: '-',
+        dateChargement: '-',
+        dateDepart: mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '-',
+        dateArrivee: '-',
+        dateDechargement: mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : '-',
+        manquantCiterne: '-',
+        manquantCuve: '-',
+        manquantCompteur: '-',
+        manquantTotal: '-',
+        isFirstRow: true,
+        facturationStatut: mission.facturation_statut
+      });
+    } else {
+      bls.forEach((bl, index) => {
+        const isFirst = index === 0;
+        filteredTableRows.push({
+          missionId: mission.id,
+          numero: isFirst ? mission.numero : '',
+          citerne: isFirst ? (mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-') : '',
+          chauffeur: isFirst ? (mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-') : '',
+          numeroBL: bl.numero || '-',
+          numeroTournee: bl.numero_tournee || '-',
+          nombreBL: isFirst ? bls.length : '',
+          capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
+          quantite: bl.quantite_livree || bl.quantite_prevue || '-',
+          produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
+          provenance: bl.lieu_depart || mission.site_depart,
+          destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
+          dateReceptionDS: bl.date_emission ? format(new Date(bl.date_emission), 'dd/MM/yyyy') : '-',
+          dateChargement: bl.date_chargement_reelle ? format(new Date(bl.date_chargement_reelle), 'dd/MM/yyyy') : '-',
+          dateDepart: bl.date_depart ? format(new Date(bl.date_depart), 'dd/MM/yyyy') : (isFirst && mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '-'),
+          dateArrivee: bl.date_arrivee_reelle ? format(new Date(bl.date_arrivee_reelle), 'dd/MM/yyyy') : '-',
+          dateDechargement: bl.date_dechargement ? format(new Date(bl.date_dechargement), 'dd/MM/yyyy') : '-',
+          manquantCiterne: bl.manquant_citerne ?? '-',
+          manquantCuve: bl.manquant_cuve ?? '-',
+          manquantCompteur: bl.manquant_compteur ?? '-',
+          manquantTotal: bl.manquant_total ?? '-',
+          isFirstRow: isFirst,
+          facturationStatut: mission.facturation_statut
+        });
+      });
+    }
+  });
+
+  const filteredRows = filteredTableRows.filter(row => {
     const searchLower = searchTerm.toLowerCase();
     return (
       row.numero?.toLowerCase().includes(searchLower) ||
@@ -221,21 +324,103 @@ export const ClosedMissionsHistory = () => {
               <div>
                 <CardTitle>Missions clôturées - Vérification avant facturation</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  {missions.length} mission(s) | {filteredRows.length} ligne(s) affichée(s)
+                  {filteredMissions.length} mission(s) sur {missions.length} | {filteredRows.length} ligne(s) affichée(s)
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Rechercher..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-background/50"
-                />
+            <div className="flex flex-col gap-3 w-full">
+              {/* Filtres rapides de période */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-muted-foreground">Période :</span>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setQuickPeriod(0)}
+                  className={cn(dateDebut && dateFin && format(dateDebut, 'MM/yyyy') === format(new Date(), 'MM/yyyy') ? 'bg-primary/20 border-primary' : '')}
+                >
+                  Mois en cours
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setQuickPeriod(1)}
+                >
+                  30 derniers jours
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setQuickPeriod(3)}
+                >
+                  3 derniers mois
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setQuickPeriod(6)}
+                >
+                  6 derniers mois
+                </Button>
+                
+                {/* Date début */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("w-[130px] justify-start text-left font-normal", !dateDebut && "text-muted-foreground")}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {dateDebut ? format(dateDebut, 'dd/MM/yyyy') : 'Du'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateDebut}
+                      onSelect={setDateDebut}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {/* Date fin */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn("w-[130px] justify-start text-left font-normal", !dateFin && "text-muted-foreground")}>
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {dateFin ? format(dateFin, 'dd/MM/yyyy') : 'Au'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={dateFin}
+                      onSelect={setDateFin}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {(dateDebut || dateFin) && (
+                  <Button variant="ghost" size="sm" onClick={clearDateFilter} className="text-muted-foreground">
+                    <X className="h-4 w-4 mr-1" />
+                    Effacer
+                  </Button>
+                )}
               </div>
-              <MissionsHistoryExport missions={missions} statusFilter="terminee" />
+
+              {/* Recherche et export */}
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 bg-background/50"
+                  />
+                </div>
+                <MissionsHistoryExport missions={filteredMissions} statusFilter="terminee" />
+              </div>
             </div>
           </div>
         </CardHeader>
