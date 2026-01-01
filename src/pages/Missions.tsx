@@ -77,30 +77,23 @@ const Missions = () => {
     )
   );
   
-  // Missions terminées mais pas encore clôturées/facturées
-  const missionsTerminees = filterMissions(
+  // Missions terminées non facturées (en attente de facturation)
+  const missionsTermineesNonFacturees = filterMissions(
     missions.filter(mission => 
-      mission.statut === 'terminee'
+      mission.statut === 'terminee' && mission.facturation_statut !== 'facturee'
     )
   );
 
-  // Missions clôturées (statut = 'cloture') non facturées
-  const missionsClotureeNonFacturees = filterMissions(
+  // Missions terminées et facturées
+  const missionsTermineesFacturees = filterMissions(
     missions.filter(mission => 
-      mission.statut === 'cloture' && mission.facturation_statut !== 'facturee'
-    )
-  );
-
-  // Missions clôturées et facturées
-  const missionsClotureeFacturees = filterMissions(
-    missions.filter(mission => 
-      mission.statut === 'cloture' && mission.facturation_statut === 'facturee'
+      mission.statut === 'terminee' && mission.facturation_statut === 'facturee'
     )
   );
 
   const missionsHistorique = filterMissions(
     missions.filter(mission => 
-      mission.statut === 'terminee' || mission.statut === 'annulee' || mission.statut === 'cloture'
+      mission.statut === 'terminee' || mission.statut === 'annulee'
     )
   );
 
@@ -237,18 +230,15 @@ const Missions = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="en-cours" className="flex items-center gap-2">
             En cours ({missionsEnCours.length})
           </TabsTrigger>
-          <TabsTrigger value="terminees" className="flex items-center gap-2">
-            Terminées ({missionsTerminees.length})
+          <TabsTrigger value="non-facturees" className="flex items-center gap-2 text-orange-600">
+            Non facturées ({missionsTermineesNonFacturees.length})
           </TabsTrigger>
-          <TabsTrigger value="cloturees-non-facturees" className="flex items-center gap-2 text-orange-600">
-            Non facturées ({missionsClotureeNonFacturees.length})
-          </TabsTrigger>
-          <TabsTrigger value="cloturees-facturees" className="flex items-center gap-2 text-green-600">
-            Facturées ({missionsClotureeFacturees.length})
+          <TabsTrigger value="facturees" className="flex items-center gap-2 text-green-600">
+            Facturées ({missionsTermineesFacturees.length})
           </TabsTrigger>
           <TabsTrigger value="historique" className="flex items-center gap-2">
             Historique ({missionsHistorique.length})
@@ -263,28 +253,19 @@ const Missions = () => {
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
           />
         </TabsContent>
-        
-        <TabsContent value="terminees" className="mt-6">
+
+        <TabsContent value="non-facturees" className="mt-6">
           <MissionsTable
-            missions={missionsTerminees}
+            missions={missionsTermineesNonFacturees}
             onEdit={handleEditMission}
             hasWritePermission={canWriteMissions}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
           />
         </TabsContent>
 
-        <TabsContent value="cloturees-non-facturees" className="mt-6">
+        <TabsContent value="facturees" className="mt-6">
           <MissionsTable
-            missions={missionsClotureeNonFacturees}
-            onEdit={handleEditMission}
-            hasWritePermission={canWriteMissions}
-            onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
-          />
-        </TabsContent>
-
-        <TabsContent value="cloturees-facturees" className="mt-6">
-          <MissionsTable
-            missions={missionsClotureeFacturees}
+            missions={missionsTermineesFacturees}
             onEdit={handleEditMission}
             hasWritePermission={canWriteMissions}
             onRefresh={() => queryClient.invalidateQueries({ queryKey: ['missions'] })}
