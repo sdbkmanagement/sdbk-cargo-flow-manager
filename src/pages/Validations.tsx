@@ -15,7 +15,7 @@ import { RefreshCw, ChevronLeft, ChevronRight, AlertCircle, Search } from 'lucid
 const Validations = () => {
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('en_validation');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
