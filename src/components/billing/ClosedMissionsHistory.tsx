@@ -84,7 +84,17 @@ export const ClosedMissionsHistory = () => {
     setDateFin(undefined);
   };
 
-  const { data: missions = [], isLoading } = useQuery({
+  const safeFormatDate = (
+    value: string | Date | null | undefined,
+    fmt: string = 'dd/MM/yyyy'
+  ) => {
+    if (!value) return '-';
+    const d = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(d.getTime())) return '-';
+    return format(d, fmt);
+  };
+
+  const { data: missions = [], isLoading, isError, error } = useQuery({
     queryKey: ['closed-missions-billing-full'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -125,7 +135,7 @@ export const ClosedMissionsHistory = () => {
           )
         `)
         .eq('statut', 'terminee')
-        .or('facturation_statut.is.null,facturation_statut.not.eq.facturee')
+        .or('facturation_statut.is.null,facturation_statut.neq.facturee')
         .order('updated_at', { ascending: false });
 
       if (error) throw error;
@@ -141,60 +151,60 @@ export const ClosedMissionsHistory = () => {
     
     if (bls.length === 0) {
       // Mission sans BL
-      tableRows.push({
-        missionId: mission.id,
-        numero: mission.numero,
-        citerne: mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-',
-        chauffeur: mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-',
-        numeroBL: '-',
-        numeroTournee: '-',
-        nombreBL: 0,
-        capacite: mission.vehicule?.capacite_max || '-',
-        quantite: '-',
-        produit: mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
-        provenance: mission.site_depart,
-        destination: mission.site_arrivee,
-        dateReceptionDS: '-',
-        dateChargement: '-',
-        dateDepart: mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '-',
-        dateArrivee: '-',
-        dateDechargement: mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : '-',
-        manquantCiterne: '-',
-        manquantCuve: '-',
-        manquantCompteur: '-',
-        manquantTotal: '-',
-        isFirstRow: true,
-        facturationStatut: mission.facturation_statut
-      });
+       tableRows.push({
+         missionId: mission.id,
+         numero: mission.numero,
+         citerne: mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-',
+         chauffeur: mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-',
+         numeroBL: '-',
+         numeroTournee: '-',
+         nombreBL: 0,
+         capacite: mission.vehicule?.capacite_max || '-',
+         quantite: '-',
+         produit: mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
+         provenance: mission.site_depart,
+         destination: mission.site_arrivee,
+         dateReceptionDS: '-',
+         dateChargement: '-',
+         dateDepart: safeFormatDate(mission.created_at),
+         dateArrivee: '-',
+         dateDechargement: safeFormatDate(mission.updated_at),
+         manquantCiterne: '-',
+         manquantCuve: '-',
+         manquantCompteur: '-',
+         manquantTotal: '-',
+         isFirstRow: true,
+         facturationStatut: mission.facturation_statut
+       });
     } else {
       // Une ligne par BL
       bls.forEach((bl, index) => {
         const isFirst = index === 0;
-        tableRows.push({
-          missionId: mission.id,
-          numero: isFirst ? mission.numero : '',
-          citerne: isFirst ? (mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-') : '',
-          chauffeur: isFirst ? (mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-') : '',
-          numeroBL: bl.numero || '-',
-          numeroTournee: bl.numero_tournee || '-',
-          nombreBL: isFirst ? bls.length : '',
-          capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
-          quantite: bl.quantite_livree || bl.quantite_prevue || '-',
-          produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
-          provenance: bl.lieu_depart || mission.site_depart,
-          destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
-          dateReceptionDS: bl.date_emission ? format(new Date(bl.date_emission), 'dd/MM/yyyy') : '-',
-          dateChargement: bl.date_chargement_reelle ? format(new Date(bl.date_chargement_reelle), 'dd/MM/yyyy') : '-',
-          dateDepart: bl.date_depart ? format(new Date(bl.date_depart), 'dd/MM/yyyy') : (isFirst && mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '-'),
-          dateArrivee: bl.date_arrivee_reelle ? format(new Date(bl.date_arrivee_reelle), 'dd/MM/yyyy') : '-',
-          dateDechargement: bl.date_dechargement ? format(new Date(bl.date_dechargement), 'dd/MM/yyyy') : '-',
-          manquantCiterne: bl.manquant_citerne ?? '-',
-          manquantCuve: bl.manquant_cuve ?? '-',
-          manquantCompteur: bl.manquant_compteur ?? '-',
-          manquantTotal: bl.manquant_total ?? '-',
-          isFirstRow: isFirst,
-          facturationStatut: mission.facturation_statut
-        });
+         tableRows.push({
+           missionId: mission.id,
+           numero: isFirst ? mission.numero : '',
+           citerne: isFirst ? (mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-') : '',
+           chauffeur: isFirst ? (mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-') : '',
+           numeroBL: bl.numero || '-',
+           numeroTournee: bl.numero_tournee || '-',
+           nombreBL: isFirst ? bls.length : '',
+           capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
+           quantite: bl.quantite_livree || bl.quantite_prevue || '-',
+           produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
+           provenance: bl.lieu_depart || mission.site_depart,
+           destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
+           dateReceptionDS: safeFormatDate(bl.date_emission),
+           dateChargement: safeFormatDate(bl.date_chargement_reelle),
+           dateDepart: bl.date_depart ? safeFormatDate(bl.date_depart) : (isFirst ? safeFormatDate(mission.created_at) : '-'),
+           dateArrivee: safeFormatDate(bl.date_arrivee_reelle),
+           dateDechargement: safeFormatDate(bl.date_dechargement),
+           manquantCiterne: bl.manquant_citerne ?? '-',
+           manquantCuve: bl.manquant_cuve ?? '-',
+           manquantCompteur: bl.manquant_compteur ?? '-',
+           manquantTotal: bl.manquant_total ?? '-',
+           isFirstRow: isFirst,
+           facturationStatut: mission.facturation_statut
+         });
       });
     }
   });
@@ -222,59 +232,59 @@ export const ClosedMissionsHistory = () => {
     const bls = mission.bons_livraison || [];
     
     if (bls.length === 0) {
-      filteredTableRows.push({
-        missionId: mission.id,
-        numero: mission.numero,
-        citerne: mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-',
-        chauffeur: mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-',
-        numeroBL: '-',
-        numeroTournee: '-',
-        nombreBL: 0,
-        capacite: mission.vehicule?.capacite_max || '-',
-        quantite: '-',
-        produit: mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
-        provenance: mission.site_depart,
-        destination: mission.site_arrivee,
-        dateReceptionDS: '-',
-        dateChargement: '-',
-        dateDepart: mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '-',
-        dateArrivee: '-',
-        dateDechargement: mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : '-',
-        manquantCiterne: '-',
-        manquantCuve: '-',
-        manquantCompteur: '-',
-        manquantTotal: '-',
-        isFirstRow: true,
-        facturationStatut: mission.facturation_statut
-      });
+       filteredTableRows.push({
+         missionId: mission.id,
+         numero: mission.numero,
+         citerne: mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-',
+         chauffeur: mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-',
+         numeroBL: '-',
+         numeroTournee: '-',
+         nombreBL: 0,
+         capacite: mission.vehicule?.capacite_max || '-',
+         quantite: '-',
+         produit: mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
+         provenance: mission.site_depart,
+         destination: mission.site_arrivee,
+         dateReceptionDS: '-',
+         dateChargement: '-',
+         dateDepart: safeFormatDate(mission.created_at),
+         dateArrivee: '-',
+         dateDechargement: safeFormatDate(mission.updated_at),
+         manquantCiterne: '-',
+         manquantCuve: '-',
+         manquantCompteur: '-',
+         manquantTotal: '-',
+         isFirstRow: true,
+         facturationStatut: mission.facturation_statut
+       });
     } else {
       bls.forEach((bl, index) => {
         const isFirst = index === 0;
-        filteredTableRows.push({
-          missionId: mission.id,
-          numero: isFirst ? mission.numero : '',
-          citerne: isFirst ? (mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-') : '',
-          chauffeur: isFirst ? (mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-') : '',
-          numeroBL: bl.numero || '-',
-          numeroTournee: bl.numero_tournee || '-',
-          nombreBL: isFirst ? bls.length : '',
-          capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
-          quantite: bl.quantite_livree || bl.quantite_prevue || '-',
-          produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
-          provenance: bl.lieu_depart || mission.site_depart,
-          destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
-          dateReceptionDS: bl.date_emission ? format(new Date(bl.date_emission), 'dd/MM/yyyy') : '-',
-          dateChargement: bl.date_chargement_reelle ? format(new Date(bl.date_chargement_reelle), 'dd/MM/yyyy') : '-',
-          dateDepart: bl.date_depart ? format(new Date(bl.date_depart), 'dd/MM/yyyy') : (isFirst && mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '-'),
-          dateArrivee: bl.date_arrivee_reelle ? format(new Date(bl.date_arrivee_reelle), 'dd/MM/yyyy') : '-',
-          dateDechargement: bl.date_dechargement ? format(new Date(bl.date_dechargement), 'dd/MM/yyyy') : '-',
-          manquantCiterne: bl.manquant_citerne ?? '-',
-          manquantCuve: bl.manquant_cuve ?? '-',
-          manquantCompteur: bl.manquant_compteur ?? '-',
-          manquantTotal: bl.manquant_total ?? '-',
-          isFirstRow: isFirst,
-          facturationStatut: mission.facturation_statut
-        });
+         filteredTableRows.push({
+           missionId: mission.id,
+           numero: isFirst ? mission.numero : '',
+           citerne: isFirst ? (mission.vehicule?.remorque_immatriculation || mission.vehicule?.immatriculation || mission.vehicule?.numero || '-') : '',
+           chauffeur: isFirst ? (mission.chauffeur ? `${mission.chauffeur.prenom} ${mission.chauffeur.nom}` : '-') : '',
+           numeroBL: bl.numero || '-',
+           numeroTournee: bl.numero_tournee || '-',
+           nombreBL: isFirst ? bls.length : '',
+           capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
+           quantite: bl.quantite_livree || bl.quantite_prevue || '-',
+           produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
+           provenance: bl.lieu_depart || mission.site_depart,
+           destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
+           dateReceptionDS: safeFormatDate(bl.date_emission),
+           dateChargement: safeFormatDate(bl.date_chargement_reelle),
+           dateDepart: bl.date_depart ? safeFormatDate(bl.date_depart) : (isFirst ? safeFormatDate(mission.created_at) : '-'),
+           dateArrivee: safeFormatDate(bl.date_arrivee_reelle),
+           dateDechargement: safeFormatDate(bl.date_dechargement),
+           manquantCiterne: bl.manquant_citerne ?? '-',
+           manquantCuve: bl.manquant_cuve ?? '-',
+           manquantCompteur: bl.manquant_compteur ?? '-',
+           manquantTotal: bl.manquant_total ?? '-',
+           isFirstRow: isFirst,
+           facturationStatut: mission.facturation_statut
+         });
       });
     }
   });
