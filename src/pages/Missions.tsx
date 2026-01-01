@@ -49,13 +49,34 @@ const Missions = () => {
   // Filtrer les missions selon l'onglet actif et les filtres
   const filterMissions = (missionsToFilter: any[]) => {
     return missionsToFilter.filter(mission => {
+      const searchLower = searchTerm.toLowerCase();
+      
+      // Recherche par numéro de mission
+      const matchesNumero = mission.numero?.toLowerCase().includes(searchLower);
+      
+      // Recherche par N° Citerne (remorque_immatriculation ou immatriculation véhicule)
+      const matchesCiterne = 
+        mission.vehicule?.remorque_immatriculation?.toLowerCase().includes(searchLower) ||
+        mission.vehicule?.immatriculation?.toLowerCase().includes(searchLower) ||
+        mission.vehicule?.numero?.toLowerCase().includes(searchLower);
+      
+      // Recherche par N° Tournée (dans les bons de livraison)
+      const matchesTournee = mission.bons_livraison?.some((bl: any) => 
+        bl.numero_tournee?.toLowerCase().includes(searchLower)
+      );
+      
+      // Recherche par chauffeur
+      const matchesChauffeur = 
+        mission.chauffeur?.nom?.toLowerCase().includes(searchLower) ||
+        mission.chauffeur?.prenom?.toLowerCase().includes(searchLower);
+      
+      // Recherche par lieu (départ/arrivée)
+      const matchesLieu = 
+        mission.site_depart?.toLowerCase().includes(searchLower) ||
+        mission.site_arrivee?.toLowerCase().includes(searchLower);
+      
       const matchesSearch = !searchTerm || 
-        mission.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mission.vehicule?.numero?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mission.chauffeur?.nom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mission.chauffeur?.prenom?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mission.site_depart?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        mission.site_arrivee?.toLowerCase().includes(searchTerm.toLowerCase());
+        matchesNumero || matchesCiterne || matchesTournee || matchesChauffeur || matchesLieu;
       
       const matchesStatus = statusFilter === 'all' || mission.statut === statusFilter;
       
@@ -209,7 +230,7 @@ const Missions = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
         <div className="md:col-span-2">
           <Input
-            placeholder="Rechercher par n° mission, véhicule, chauffeur, lieu..."
+            placeholder="Rechercher par n° mission, n° citerne, n° tournée, chauffeur, lieu..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
