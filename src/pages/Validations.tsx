@@ -16,6 +16,7 @@ const Validations = () => {
   const [searchInput, setSearchInput] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('en_validation');
+  const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -44,7 +45,7 @@ const Validations = () => {
 
   // Récupération optimisée des véhicules avec pagination côté serveur
   const { data: vehiclesData, isLoading: vehiclesLoading, error: vehiclesError, refetch: refetchVehicles } = useQuery({
-    queryKey: ['vehicles-validation', currentPage, searchTerm, statusFilter],
+    queryKey: ['vehicles-validation', currentPage, searchTerm, statusFilter, departmentFilter],
     queryFn: async () => {
       console.log('🚗 [VALIDATIONS] Début du chargement des véhicules...');
       
@@ -55,13 +56,45 @@ const Validations = () => {
       // Préparer la liste des IDs
       const vehiculeIds = allVehicles.map((v: Vehicule) => v.id);
 
-      // Récupérer tous les workflows existants
+      // Récupérer tous les workflows existants avec leurs étapes
       const { data: allWorkflows } = await supabase
         .from('validation_workflows')
         .select('vehicule_id, statut_global')
         .in('vehicule_id', vehiculeIds);
 
       const workflowMap = new Map((allWorkflows || []).map(w => [w.vehicule_id, w.statut_global]));
+
+      // Récupérer toutes les étapes de validation pour le filtre par département
+      const { data: allEtapes } = await supabase
+        .from('validation_etapes')
+        .select('workflow_id, etape, statut')
+        .in('workflow_id', (allWorkflows || []).map(w => w.vehicule_id).length > 0 
+          ? await supabase
+              .from('validation_workflows')
+              .select('id, vehicule_id')
+              .in('vehicule_id', vehiculeIds)
+              .then(res => (res.data || []).map(w => w.id))
+          : []);
+
+      // Créer une map des étapes par véhicule
+      const { data: workflowsWithIds } = await supabase
+        .from('validation_workflows')
+        .select('id, vehicule_id')
+        .in('vehicule_id', vehiculeIds);
+      
+      const workflowIdToVehiculeId = new Map((workflowsWithIds || []).map(w => [w.id, w.vehicule_id]));
+      
+      // Map des étapes par véhicule: vehiculeId -> { maintenance: status, administratif: status, ... }
+      const etapesParVehicule = new Map<string, Record<string, string>>();
+      (allEtapes || []).forEach(etape => {
+        const vehiculeId = workflowIdToVehiculeId.get(etape.workflow_id);
+        if (vehiculeId) {
+          if (!etapesParVehicule.has(vehiculeId)) {
+            etapesParVehicule.set(vehiculeId, {});
+          }
+          etapesParVehicule.get(vehiculeId)![etape.etape] = etape.statut;
+        }
+      });
       
       // Récupérer les véhicules avec missions actives (à exclure)
       const { data: missionsActives } = await supabase
@@ -128,7 +161,13 @@ const Validations = () => {
           statusFilter === 'rejete' ? isRejected :
           true;
         
-        const finalMatch = matchesSearch && matchesStatus;
+        // Filtre par département: afficher les véhicules où ce département n'est pas encore validé
+        const vehicleEtapes = etapesParVehicule.get(vehicle.id) || {};
+        const matchesDepartment = departmentFilter === 'all' ? true :
+          vehicleEtapes[departmentFilter] === 'en_attente' || 
+          vehicleEtapes[departmentFilter] === undefined;
+        
+        const finalMatch = matchesSearch && matchesStatus && matchesDepartment;
         console.log(`🚗 [FINAL] ${vehicle.numero} - Final match: ${finalMatch}`);
         return finalMatch;
       });
@@ -192,6 +231,11 @@ const Validations = () => {
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleDepartmentChange = (value: string) => {
+    setDepartmentFilter(value);
     setCurrentPage(1); // Reset to first page when filtering
   };
 
@@ -283,6 +327,20 @@ const Validations = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="w-full sm:w-52">
+                <Select value={departmentFilter} onValueChange={handleDepartmentChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Département" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les départements</SelectItem>
+                    <SelectItem value="maintenance">Maintenance</SelectItem>
+                    <SelectItem value="administratif">Administratif</SelectItem>
+                    <SelectItem value="hsecq">HSEQ</SelectItem>
+                    <SelectItem value="obc">OBC (Opérations)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -329,6 +387,7 @@ const Validations = () => {
                   setSearchInput('');
                   setSearchTerm('');
                   setStatusFilter('all');
+                  setDepartmentFilter('all');
                   setCurrentPage(1);
                 }} variant="outline" className="mt-4">
                   Réinitialiser les filtres
