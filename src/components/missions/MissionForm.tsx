@@ -51,24 +51,6 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     message: string;
   } | null>(null);
 
-  // Obtenir la capacité du véhicule sélectionné
-  const getCapaciteVehicule = (): number => {
-    if (!formData.vehicule_id) return 0;
-    const vehicule = vehicules.find((v: any) => v.id === formData.vehicule_id);
-    if (!vehicule) return 0;
-    
-    // Pour les tracteur-remorque, utiliser remorque_volume_litres
-    if (vehicule.type_vehicule === 'tracteur_remorque' && vehicule.remorque_volume_litres) {
-      return vehicule.remorque_volume_litres;
-    }
-    // Pour les porteurs ou autres, utiliser capacite_max
-    return vehicule.capacite_max || 0;
-  };
-
-  const capaciteVehicule = getCapaciteVehicule();
-  const totalQuantiteBLs = bls.reduce((sum, bl) => sum + (bl.quantite_prevue || 0), 0);
-  const ecartCapacite = capaciteVehicule - totalQuantiteBLs;
-
   // Fonction pour formater l'affichage du véhicule - Afficher uniquement le numéro de citerne
   const getVehiculeDisplayText = (vehicule: any) => {
     if (vehicule.type_vehicule === 'tracteur_remorque') {
@@ -87,6 +69,24 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     retry: 2
   });
   
+  // Obtenir la capacité du véhicule sélectionné
+  const getCapaciteVehicule = (): number => {
+    if (!formData.vehicule_id || !vehicules || vehicules.length === 0) return 0;
+    const vehicule = vehicules.find((v: any) => v.id === formData.vehicule_id);
+    if (!vehicule) return 0;
+    
+    // Pour les tracteur-remorque, utiliser remorque_volume_litres
+    if (vehicule.type_vehicule === 'tracteur_remorque' && vehicule.remorque_volume_litres) {
+      return vehicule.remorque_volume_litres;
+    }
+    // Pour les porteurs ou autres, utiliser capacite_max
+    return vehicule.capacite_max || 0;
+  };
+
+  const capaciteVehicule = getCapaciteVehicule();
+  const totalQuantiteBLs = bls.reduce((sum, bl) => sum + (bl.quantite_prevue || 0), 0);
+  const ecartCapacite = capaciteVehicule - totalQuantiteBLs;
+
   // Filtrer les véhicules selon la recherche (priorité au numéro de citerne)
   const filteredVehicules = vehicules.filter((v: any) => {
     if (!vehiculeSearch) return true;
