@@ -145,6 +145,10 @@ export const DESTINATIONS: Destination[] = [
     stations: ["Smm Mandianna", "Station Loila"]
   },
   {
+    ville: "Macenta",
+    stations: ["YMC", "Macenta C"]
+  },
+  {
     ville: "Lola",
     stations: ["Gajah Investiment Guinea", "Station Lola"]
   },
