@@ -52,14 +52,22 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
     chargerBLs();
   }, [mission.id, toast]);
 
+  // Champs à propager à tous les BL (mêmes valeurs pour toute la mission)
+  const champsAPartager: (keyof BonLivraison)[] = [
+    'numero_tournee',
+    'date_chargement_reelle',
+    'date_depart',
+    'date_arrivee_reelle'
+  ];
+
   const updateBL = (index: number, field: keyof BonLivraison, value: any) => {
     const nouveauxBLs = [...bls];
     nouveauxBLs[index] = { ...nouveauxBLs[index], [field]: value };
     
-    // Si c'est le numéro de tournée, le propager à tous les BL (même numéro pour toute la mission)
-    if (field === 'numero_tournee') {
+    // Si c'est un champ partagé, le propager à tous les BL
+    if (champsAPartager.includes(field)) {
       nouveauxBLs.forEach((bl, i) => {
-        nouveauxBLs[i] = { ...nouveauxBLs[i], numero_tournee: value };
+        nouveauxBLs[i] = { ...nouveauxBLs[i], [field]: value };
       });
     }
     
@@ -248,35 +256,54 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                         </div>
                       </div>
 
-                      {/* Dates de la tournée */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Date de chargement *</Label>
-                          <Input
-                            type="datetime-local"
-                            value={bl.date_chargement_reelle || ''}
-                            onChange={(e) => updateBL(index, 'date_chargement_reelle', e.target.value)}
-                          />
+                      {/* Dates de la tournée - affichées seulement sur le 1er BL */}
+                      {index === 0 && (
+                        <>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                            <div className="md:col-span-3">
+                              <p className="text-xs text-green-700 font-medium mb-2">
+                                {bls.length > 1 ? `Ces dates seront appliquées à tous les ${bls.length} BL de cette mission` : 'Dates de la mission'}
+                              </p>
+                            </div>
+                            <div>
+                              <Label className="text-green-800">Date de chargement *</Label>
+                              <Input
+                                type="datetime-local"
+                                value={bl.date_chargement_reelle || ''}
+                                onChange={(e) => updateBL(index, 'date_chargement_reelle', e.target.value)}
+                                className="border-green-300"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-green-800">Date de départ *</Label>
+                              <Input
+                                type="datetime-local"
+                                value={bl.date_depart || ''}
+                                onChange={(e) => updateBL(index, 'date_depart', e.target.value)}
+                                className="border-green-300"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-green-800">Date d'arrivée *</Label>
+                              <Input
+                                type="datetime-local"
+                                value={bl.date_arrivee_reelle || ''}
+                                onChange={(e) => updateBL(index, 'date_arrivee_reelle', e.target.value)}
+                                className="border-green-300"
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                      {index > 0 && (bl.date_chargement_reelle || bl.date_depart || bl.date_arrivee_reelle) && (
+                        <div className="bg-gray-100 p-3 rounded-lg border text-sm text-gray-600 grid grid-cols-3 gap-2">
+                          {bl.date_chargement_reelle && <span><span className="font-medium">Chargement:</span> {new Date(bl.date_chargement_reelle).toLocaleString('fr-FR')}</span>}
+                          {bl.date_depart && <span><span className="font-medium">Départ:</span> {new Date(bl.date_depart).toLocaleString('fr-FR')}</span>}
+                          {bl.date_arrivee_reelle && <span><span className="font-medium">Arrivée:</span> {new Date(bl.date_arrivee_reelle).toLocaleString('fr-FR')}</span>}
                         </div>
-                        <div>
-                          <Label>Date de départ *</Label>
-                          <Input
-                            type="datetime-local"
-                            value={bl.date_depart || ''}
-                            onChange={(e) => updateBL(index, 'date_depart', e.target.value)}
-                          />
-                        </div>
-                      </div>
+                      )}
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Date d'arrivée *</Label>
-                          <Input
-                            type="datetime-local"
-                            value={bl.date_arrivee_reelle || ''}
-                            onChange={(e) => updateBL(index, 'date_arrivee_reelle', e.target.value)}
-                          />
-                        </div>
                         <div>
                           <Label>Date de déchargement *</Label>
                           <Input
