@@ -13,7 +13,7 @@ export interface Client {
 export const DESTINATIONS: Destination[] = [
   {
     ville: "Beyla",
-    stations: ["Station Beyla Donzo"]
+    stations: ["Station Beyla Donzo", "IPT PowerTech PL"]
   },
   {
     ville: "Boffa",
@@ -97,7 +97,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kamasar",
-    stations: ["Compaagnie Des Baux"]
+    stations: ["Compaagnie Des Baux", "PL Katibini Port"]
   },
   {
     ville: "Kamsar",
@@ -122,7 +122,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kissidougou",
-    stations: ["Kissidougou Route Nzerekore", "Kissidougou YMC2", "Station Kissidougou Centre", "Station Kissidougou Ymc1"]
+    stations: ["Kissidougou Route Nzerekore", "Kissidougou YMC2", "Station Kissidougou Centre", "Station Kissidougou Ymc1", "IPT PowerTech PL"]
   },
   {
     ville: "Kolaboui",
@@ -178,7 +178,7 @@ export const DESTINATIONS: Destination[] = [
       "Foret Forte", "N'zezkore Dalein", "Sgp N'Zerekore", "Station N'Zerekore Boma Ymc",
       "Station N'zerekore Dorota", "Station N'Zerekore Gr", "Station N'zerekore Horoya",
       "Station N'zerekore Mosque", "Station N'zerekore Tawu Tama", "Station N'zerekore YMC",
-      "Station Total N'zerekore YMC", "SGESCO", "SOGUPAH"
+      "Station Total N'zerekore YMC", "SGESCO", "SOGUPAH", "IPT PowerTech PL"
     ]
   },
   {
