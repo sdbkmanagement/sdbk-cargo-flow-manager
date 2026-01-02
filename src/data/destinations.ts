@@ -106,7 +106,7 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Kankan",
     stations: [
-      "Guineenne de Terrassement", "SGP Kankan", "Station Kankan Gare Routiere",
+      "Guineenne de Terrassement", "IPT PowerTech PL", "SGP Kankan", "Station Kankan Gare Routiere",
       "Station Kankan Grand Marche", "Station Kankan Grande Mosque", "Station Kankan Koura",
       "Station Kankan Mbalia", "Station Kankan Sinkefara", "Station Kankan Timbo",
       "Station Kankan Yes", "Station Kankan YMC"
