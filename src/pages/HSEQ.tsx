@@ -48,7 +48,7 @@ import { inopineService } from '@/services/inopineService';
 import { useHSEQPermissions } from '@/hooks/useHSEQPermissions';
 import { SafeToLoadForm } from '@/components/hseq/SafeToLoadForm';
 import { InopineControlForm } from '@/components/hseq/InopineControlForm';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   exportSTLControlsToExcel, 
   exportNCToExcel, 
