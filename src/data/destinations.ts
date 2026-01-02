@@ -96,6 +96,10 @@ export const DESTINATIONS: Destination[] = [
     stations: ["Station Gueckedou Carriere", "Station Gueckedou Gare Routiere"]
   },
   {
+    ville: "Kamasar",
+    stations: ["Compaagnie Des Baux"]
+  },
+  {
     ville: "Kamsar",
     stations: ["Station Kamsar Barrage", "Station Kamsar Commissariat", "Station Kamsar Filima"]
   },
@@ -158,7 +162,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Mamou",
-    stations: ["Station Mamou B", "Station Mamou C", "Station Mamou Carrefour", "Station Mamou Contournante", "Station Mamou D", "Station Mamou Holo", "Station Total Mamou D"]
+    stations: ["Station Mamou B", "Station Mamou C", "Station Mamou Carrefour", "Station Mamou Contournante", "Station Mamou D", "Station Mamou Holo", "Station Total Mamou D", "IPT PowerTech PL"]
   },
   {
     ville: "Mandiana",
