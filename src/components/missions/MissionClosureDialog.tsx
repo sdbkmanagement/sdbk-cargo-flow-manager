@@ -55,6 +55,14 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
   const updateBL = (index: number, field: keyof BonLivraison, value: any) => {
     const nouveauxBLs = [...bls];
     nouveauxBLs[index] = { ...nouveauxBLs[index], [field]: value };
+    
+    // Si c'est le numéro de tournée, le propager à tous les BL (même numéro pour toute la mission)
+    if (field === 'numero_tournee') {
+      nouveauxBLs.forEach((bl, i) => {
+        nouveauxBLs[i] = { ...nouveauxBLs[i], numero_tournee: value };
+      });
+    }
+    
     setBls(nouveauxBLs);
   };
 
@@ -190,22 +198,29 @@ export const MissionClosureDialog = ({ mission, onClose, onSuccess }: MissionClo
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {/* Numéro de tournée - mis en évidence */}
-                      <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                        <Label htmlFor={`tournee-${index}`} className="text-orange-800 font-medium">
-                          Numéro de tournée *
-                        </Label>
-                        <Input
-                          id={`tournee-${index}`}
-                          value={bl.numero_tournee || ''}
-                          onChange={(e) => updateBL(index, 'numero_tournee', e.target.value)}
-                          placeholder="Ex: T2024-001"
-                          className="mt-1 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
-                        />
-                        <p className="text-xs text-orange-600 mt-1">
-                          Ce numéro apparaîtra sur les factures et exports
-                        </p>
-                      </div>
+                      {/* Numéro de tournée - mis en évidence - affiché seulement sur le 1er BL ou si un seul BL */}
+                      {index === 0 && (
+                        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                          <Label htmlFor={`tournee-${index}`} className="text-orange-800 font-medium">
+                            Numéro de tournée * {bls.length > 1 && <span className="text-xs font-normal">(appliqué à tous les BL)</span>}
+                          </Label>
+                          <Input
+                            id={`tournee-${index}`}
+                            value={bl.numero_tournee || ''}
+                            onChange={(e) => updateBL(index, 'numero_tournee', e.target.value)}
+                            placeholder="Ex: T2024-001"
+                            className="mt-1 border-orange-300 focus:border-orange-500 focus:ring-orange-500"
+                          />
+                          <p className="text-xs text-orange-600 mt-1">
+                            Ce numéro sera appliqué à {bls.length > 1 ? `tous les ${bls.length} BL de cette mission` : 'ce BL'}
+                          </p>
+                        </div>
+                      )}
+                      {index > 0 && bl.numero_tournee && (
+                        <div className="bg-gray-100 p-3 rounded-lg border text-sm text-gray-600">
+                          <span className="font-medium">Tournée:</span> {bl.numero_tournee}
+                        </div>
+                      )}
 
                       {/* Modification du client/destination */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
