@@ -114,7 +114,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kérouané",
-    stations: ["Simfer Cr18 Camp1 Keroune"]
+    stations: ["Simfer Cr18 Camp1 Keroune", "Station Total Kerouan"]
   },
   {
     ville: "Kindia",
