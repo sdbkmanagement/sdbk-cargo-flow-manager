@@ -138,7 +138,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Labe",
-    stations: ["Station Labe Centre", "Station Labe Donghora", "Station Labe Safatou", "Station Labe Tourisme", "Station Total Labe Safatou", "Stationt Total Labe Safatou", "EIFFAGE"]
+    stations: ["Station Labe Centre", "Station Labe Donghora", "Station Labe Safatou", "Station Labe Tourisme", "Station Total Labe Safatou", "Stationt Total Labe Safatou", "EIFFAGE", "IPT PowerTech PL"]
   },
   {
     ville: "Lelouma",
