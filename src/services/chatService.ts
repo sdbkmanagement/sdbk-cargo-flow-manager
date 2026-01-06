@@ -165,45 +165,34 @@ export const createConversation = async (
   // Vérifier si une conversation 1:1 existe déjà
   if (!isGroup && participantIds.length === 1) {
     const existingConv = await findExistingDirectConversation(userId, participantIds[0]);
-    if (existingConv) return existingConv;
+    if (existingConv) {
+      return await fetchConversationWithParticipants(existingConv.id);
+    }
   }
 
-  // Récupérer l'ID de l'utilisateur authentifié pour RLS
-  const { data: { user: authUser } } = await supabase.auth.getUser();
-  if (!authUser) {
-    throw new Error('Utilisateur non authentifié');
-  }
+  // Vérifier l'auth (le RPC utilise auth.uid())
+  const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+  if (authError) throw authError;
+  if (!authUser) throw new Error('Utilisateur non authentifié');
 
-  // IMPORTANT:
-  // Ne pas faire `.select().single()` sur l'INSERT, sinon Postgres applique aussi la RLS de SELECT
-  // (et à ce moment-là l'utilisateur n'est pas encore participant) => erreur RLS.
-  const conversationId = crypto.randomUUID();
+  // Création atomique (conversation + participants) côté DB pour éviter les erreurs RLS
+  const { data: conversationId, error: rpcError } = await (supabase as any).rpc(
+    'create_conversation_with_participants',
+    {
+      p_name: isGroup ? (name ?? null) : null,
+      p_is_group: isGroup,
+      // Ne pas inclure l'utilisateur courant : la fonction l'ajoute automatiquement
+      p_participant_ids: participantIds
+    }
+  );
 
-  const { error } = await supabase
-    .from('conversations')
-    .insert({
-      id: conversationId,
-      name: isGroup ? (name ?? null) : null,
-      is_group: isGroup,
-      created_by: authUser.id
-    });
+  if (rpcError) throw rpcError;
+  if (!conversationId) throw new Error('Conversation non créée (RPC sans retour)');
 
-  if (error) throw error;
+  return await fetchConversationWithParticipants(String(conversationId));
+};
 
-  // Ajouter tous les participants (y compris l'utilisateur actuel)
-  const allParticipants = [...new Set([authUser.id, ...participantIds])];
-  const { error: partError } = await supabase
-    .from('conversation_participants')
-    .insert(
-      allParticipants.map((pId) => ({
-        conversation_id: conversationId,
-        user_id: pId
-      }))
-    );
-
-  if (partError) throw partError;
-
-  // Maintenant que les participants existent, le SELECT RLS passe.
+const fetchConversationWithParticipants = async (conversationId: string): Promise<Conversation> => {
   const { data: conversation, error: fetchError } = await supabase
     .from('conversations')
     .select('*')
@@ -213,7 +202,18 @@ export const createConversation = async (
   if (fetchError) throw fetchError;
   if (!conversation) throw new Error('Conversation créée mais non récupérable');
 
-  return conversation;
+  const { data: participants } = await supabase
+    .from('conversation_participants')
+    .select(`
+      *,
+      user:users(id, first_name, last_name, email)
+    `)
+    .eq('conversation_id', conversationId);
+
+  return {
+    ...conversation,
+    participants: participants || []
+  };
 };
 
 // Trouver une conversation directe existante

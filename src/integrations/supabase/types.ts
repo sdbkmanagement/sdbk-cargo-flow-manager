@@ -3315,6 +3315,14 @@ export type Database = {
           vehicule_disponible: boolean
         }[]
       }
+      create_conversation_with_participants: {
+        Args: {
+          p_is_group?: boolean
+          p_name?: string
+          p_participant_ids?: string[]
+        }
+        Returns: string
+      }
       create_or_reset_validation_workflow: {
         Args: { p_vehicule_id: string }
         Returns: string
