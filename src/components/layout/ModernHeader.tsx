@@ -1,5 +1,5 @@
-import React from 'react';
-import { Menu, User, Bell, Search, Settings, Home, Truck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Menu, User, Bell, Search, Settings, Home, Truck, AlertTriangle, FileWarning, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -12,8 +12,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { alertesService, AlerteDocument } from '@/services/alertesService';
 
 interface ModernHeaderProps {
   title?: string;
@@ -28,6 +30,24 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [alertes, setAlertes] = useState<AlerteDocument[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadAlertes();
+  }, []);
+
+  const loadAlertes = async () => {
+    setLoading(true);
+    try {
+      const data = await alertesService.getToutesAlertes();
+      setAlertes(data);
+    } catch (error) {
+      console.error('Erreur chargement alertes:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -36,6 +56,24 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
       console.error('Erreur lors de la déconnexion:', error);
     }
   };
+
+  const getAlerteBadgeColor = (niveau: string) => {
+    if (niveau.includes('EXPIRÉ')) return 'bg-red-600';
+    if (niveau === 'URGENT') return 'bg-orange-500';
+    return 'bg-yellow-500';
+  };
+
+  const handleAlerteClick = (alerte: AlerteDocument) => {
+    if (alerte.type === 'chauffeur') {
+      navigate('/drivers');
+    } else {
+      navigate('/fleet');
+    }
+  };
+
+  const urgentCount = alertes.filter(a => 
+    a.niveau_alerte.includes('EXPIRÉ') || a.niveau_alerte === 'URGENT'
+  ).length;
 
   return (
     <header className="bg-white/80 backdrop-blur-md border-b border-white/20 px-6 py-4 flex items-center justify-between sticky top-0 z-50 shadow-sm">
@@ -98,17 +136,98 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
           />
         </div>
 
-        {/* Notifications avec animation */}
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="relative hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 rounded-xl"
-        >
-          <Bell className="h-5 w-5" />
-          <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-red-500 hover:bg-red-600 transition-colors animate-pulse">
-            3
-          </Badge>
-        </Button>
+        {/* Notifications avec dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="relative hover:bg-blue-50 hover:text-blue-600 transition-colors duration-200 rounded-xl"
+            >
+              <Bell className="h-5 w-5" />
+              {alertes.length > 0 && (
+                <Badge className={`absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs ${urgentCount > 0 ? 'bg-red-500 animate-pulse' : 'bg-orange-500'} hover:bg-red-600 transition-colors`}>
+                  {alertes.length > 9 ? '9+' : alertes.length}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80 bg-white/95 backdrop-blur-md border-white/20 shadow-xl rounded-xl">
+            <DropdownMenuLabel className="flex items-center justify-between py-3">
+              <div className="flex items-center gap-2">
+                <Bell className="h-4 w-4 text-blue-600" />
+                <span className="font-semibold text-gray-900">Notifications</span>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {alertes.length} alerte{alertes.length > 1 ? 's' : ''}
+              </Badge>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            
+            {loading ? (
+              <div className="py-8 text-center text-gray-500">
+                <div className="animate-spin h-6 w-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto mb-2"></div>
+                Chargement...
+              </div>
+            ) : alertes.length === 0 ? (
+              <div className="py-8 text-center text-gray-500">
+                <Bell className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p>Aucune alerte en cours</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[300px]">
+                {alertes.slice(0, 10).map((alerte) => (
+                  <DropdownMenuItem
+                    key={alerte.id}
+                    className="flex flex-col items-start gap-1 p-3 cursor-pointer hover:bg-blue-50 transition-colors duration-200 border-b border-gray-100 last:border-0"
+                    onClick={() => handleAlerteClick(alerte)}
+                  >
+                    <div className="flex items-center gap-2 w-full">
+                      <div className={`p-1.5 rounded-full ${alerte.type === 'chauffeur' ? 'bg-blue-100' : 'bg-green-100'}`}>
+                        {alerte.type === 'chauffeur' ? (
+                          <User className="h-3 w-3 text-blue-600" />
+                        ) : (
+                          <Truck className="h-3 w-3 text-green-600" />
+                        )}
+                      </div>
+                      <span className="font-medium text-sm text-gray-900 flex-1 truncate">
+                        {alerte.type === 'chauffeur' ? alerte.chauffeur_nom : `${alerte.vehicule_numero}`}
+                      </span>
+                      <Badge className={`text-[10px] px-1.5 py-0 ${getAlerteBadgeColor(alerte.niveau_alerte)} text-white`}>
+                        {alerte.niveau_alerte}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-500 pl-7">
+                      <FileWarning className="h-3 w-3" />
+                      <span className="truncate">{alerte.document_nom}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-400 pl-7">
+                      <Calendar className="h-3 w-3" />
+                      <span>
+                        {alerte.jours_restants !== null && alerte.jours_restants < 0 
+                          ? `Expiré depuis ${Math.abs(alerte.jours_restants)} jour(s)`
+                          : `Expire dans ${alerte.jours_restants} jour(s)`
+                        }
+                      </span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+                {alertes.length > 10 && (
+                  <div className="p-3 text-center">
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="text-blue-600"
+                      onClick={() => navigate('/fleet')}
+                    >
+                      Voir toutes les alertes ({alertes.length})
+                    </Button>
+                  </div>
+                )}
+              </ScrollArea>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* Menu utilisateur moderne */}
         <DropdownMenu>
