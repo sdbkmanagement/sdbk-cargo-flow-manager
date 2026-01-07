@@ -19,10 +19,10 @@ const ChatWidget: React.FC = () => {
   const [showNewConversation, setShowNewConversation] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      loadConversations();
-      subscribeToMessages();
-    }
+    if (!user?.id) return;
+
+    loadConversations();
+    return subscribeToMessages();
   }, [user?.id]);
 
   const loadConversations = async () => {

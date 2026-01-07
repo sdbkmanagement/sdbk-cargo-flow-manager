@@ -7,6 +7,7 @@ import { ModuleLayout } from '@/components/layout/ModuleLayout';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as SonnerToaster } from '@/components/ui/sonner';
 import ChatWidget from '@/components/chat/ChatWidget';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import Home from '@/pages/Home';
 import Dashboard from '@/pages/Dashboard';
 import Fleet from '@/pages/Fleet';
@@ -35,131 +36,133 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <Routes>
-            {/* Route publique pour l'authentification */}
-            <Route path="/auth" element={<Auth />} />
-            
-            {/* Page d'accueil moderne sans layout */}
-            <Route path="/" element={
-              <AuthGuard>
-                <Home />
-              </AuthGuard>
-            } />
-            
-            {/* Routes protégées avec nouveau layout fullscreen */}
-            <Route 
-              path="/dashboard" 
-              element={
+        <ErrorBoundary>
+          <Router>
+            <Routes>
+              {/* Route publique pour l'authentification */}
+              <Route path="/auth" element={<Auth />} />
+              
+              {/* Page d'accueil moderne sans layout */}
+              <Route path="/" element={
                 <AuthGuard>
-                  <Dashboard />
+                  <Home />
                 </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/fleet" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Flotte" subtitle="Gestion véhicules et maintenance">
-                    <Fleet />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/missions" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Missions" subtitle="Planification et suivi transports">
-                    <Missions />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/drivers" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Chauffeurs" subtitle="Gestion conducteurs et documents">
-                    <Drivers />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/billing" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Facturation" subtitle="Devis, factures et paiements">
-                    <Billing />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/rh" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="RH" subtitle="Ressources humaines et formations">
-                    <RH />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/admin" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Administration" subtitle="Utilisateurs, rôles et paramètres">
-                    <Administration />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/validations" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Validations" subtitle="Workflows validation véhicules">
-                    <Validations />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/clients" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Clients" subtitle="Gestion des clients et contacts">
-                    <Clients />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/societe" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="Société" subtitle="Documents juridiques et administratifs">
-                    <Societe />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route 
-              path="/hseq" 
-              element={
-                <AuthGuard>
-                  <ModuleLayout title="HSEQ" subtitle="Hygiène, Sécurité, Environnement & Qualité">
-                    <HSEQ />
-                  </ModuleLayout>
-                </AuthGuard>
-              } 
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <ChatWidget />
-        </Router>
+              } />
+              
+              {/* Routes protégées avec nouveau layout fullscreen */}
+              <Route 
+                path="/dashboard" 
+                element={
+                  <AuthGuard>
+                    <Dashboard />
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/fleet" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Flotte" subtitle="Gestion véhicules et maintenance">
+                      <Fleet />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/missions" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Missions" subtitle="Planification et suivi transports">
+                      <Missions />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/drivers" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Chauffeurs" subtitle="Gestion conducteurs et documents">
+                      <Drivers />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/billing" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Facturation" subtitle="Devis, factures et paiements">
+                      <Billing />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/rh" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="RH" subtitle="Ressources humaines et formations">
+                      <RH />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/admin" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Administration" subtitle="Utilisateurs, rôles et paramètres">
+                      <Administration />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/validations" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Validations" subtitle="Workflows validation véhicules">
+                      <Validations />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/clients" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Clients" subtitle="Gestion des clients et contacts">
+                      <Clients />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/societe" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Société" subtitle="Documents juridiques et administratifs">
+                      <Societe />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/hseq" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="HSEQ" subtitle="Hygiène, Sécurité, Environnement & Qualité">
+                      <HSEQ />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <ChatWidget />
+          </Router>
+        </ErrorBoundary>
         <Toaster />
         <SonnerToaster />
       </AuthProvider>
