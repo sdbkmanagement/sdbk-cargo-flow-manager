@@ -31,7 +31,7 @@ const ChatConversation: React.FC<ChatConversationProps> = ({
   useEffect(() => {
     loadMessages();
     markAsRead();
-    subscribeToMessages();
+    return subscribeToMessages();
   }, [conversation.id]);
 
   useEffect(() => {
