@@ -21,7 +21,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boke",
-    stations: ["Henanchine", "Station Boke Yomboya", "Dabis"]
+    stations: ["Henanchine", "Station Boke Yomboya", "Dabis", "PL MCK Malapoula"]
   },
   {
     ville: "Cissela",
@@ -44,7 +44,7 @@ export const DESTINATIONS: Destination[] = [
       "Station T6 Yattaya", "Station Tanneri", "Station Taouyah Petit Lac", "Station Tombolia", 
       "Station Total Belle Vue", "Station Total Sanoyah", "Station Total T1 Concasseur", "Station Total Taouyah Petit Lac", 
       "Station Wassa Wassa", "Station Yimbaya Rp", "Station Total Dixin Oasis", 
-      "Station Total Matoto Mosquée", "Station Total Ratoma"
+      "Station Total Matoto Mosquée", "Station Total Ratoma", "PL Kouria Coyah"
     ]
   },
   {
@@ -77,7 +77,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Forecariah",
-    stations: ["Kaleah", "Setc Forecariah"]
+    stations: ["Kaleah", "Setc Forecariah", "PL Maferinyah Forecariah"]
   },
   {
     ville: "Fria",
@@ -101,7 +101,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kamsar",
-    stations: ["Station Kamsar Barrage", "Station Kamsar Commissariat", "Station Kamsar Filima"]
+    stations: ["Station Kamsar Barrage", "Station Kamsar Commissariat", "Station Kamsar Filima", "Compagnie des Bauxite de Guinée"]
   },
   {
     ville: "Kankan",
@@ -154,7 +154,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Lola",
-    stations: ["Gajah Investiment Guinea", "Station Lola"]
+    stations: ["Gajah Investiment Guinea", "Station Lola", "Societe Mines De Fer de Guinée", "Henanchine Lola"]
   },
   {
     ville: "Maferenya",
@@ -170,7 +170,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Niagassola",
-    stations: ["PL Niagassola Wely Mining", "Wely Mining"]
+    stations: ["PL Niagassola Wely Mining", "Wely Mining", "PL Niagassola welly Mining"]
   },
   {
     ville: "N'zerekore",
