@@ -16,6 +16,7 @@ import {
   Trash2,
   Camera
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import { documentsSocieteService, DocumentSociete, DocumentSocieteCategorie, Societe, DocumentSocieteFichier } from '@/services/documentsSociete';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -59,6 +60,7 @@ export const SocieteDocumentForm: React.FC<SocieteDocumentFormProps> = ({
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [motifModification, setMotifModification] = useState('');
 
+  const [isPerishable, setIsPerishable] = useState(true);
   const [formData, setFormData] = useState({
     nom: '',
     type_document: '',
@@ -104,6 +106,8 @@ export const SocieteDocumentForm: React.FC<SocieteDocumentFormProps> = ({
     try {
       const doc = await documentsSocieteService.getDocument(id);
       if (doc) {
+        // Déterminer si le document est périssable (a une date d'expiration)
+        setIsPerishable(!!doc.date_expiration);
         setFormData({
           nom: doc.nom || '',
           type_document: doc.type_document || '',
@@ -182,6 +186,18 @@ export const SocieteDocumentForm: React.FC<SocieteDocumentFormProps> = ({
         variant: 'destructive'
       });
       return;
+    }
+
+    // Validation des dates pour documents périssables
+    if (isPerishable) {
+      if (!formData.date_delivrance || !formData.date_expiration) {
+        toast({
+          title: 'Champs requis',
+          description: 'Pour un document périssable, les dates de délivrance et d\'expiration sont obligatoires',
+          variant: 'destructive'
+        });
+        return;
+      }
     }
 
     try {
@@ -335,27 +351,57 @@ export const SocieteDocumentForm: React.FC<SocieteDocumentFormProps> = ({
             </div>
           </div>
 
+          {/* Option périssable */}
+          <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-lg">
+            <Switch
+              id="is_perishable"
+              checked={isPerishable}
+              onCheckedChange={(checked) => {
+                setIsPerishable(checked);
+                if (!checked) {
+                  handleInputChange('date_expiration', '');
+                }
+              }}
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="is_perishable" className="cursor-pointer">
+                Document périssable
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {isPerishable 
+                  ? 'Ce document a une date d\'expiration' 
+                  : 'Ce document n\'expire pas'}
+              </p>
+            </div>
+          </div>
+
           {/* Dates et références */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date_delivrance">Date de délivrance</Label>
+              <Label htmlFor="date_delivrance">
+                Date de délivrance {isPerishable && '*'}
+              </Label>
               <Input
                 id="date_delivrance"
                 type="date"
                 value={formData.date_delivrance}
                 onChange={(e) => handleInputChange('date_delivrance', e.target.value)}
+                required={isPerishable}
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="date_expiration">Date d'expiration</Label>
-              <Input
-                id="date_expiration"
-                type="date"
-                value={formData.date_expiration}
-                onChange={(e) => handleInputChange('date_expiration', e.target.value)}
-              />
-            </div>
+            {isPerishable && (
+              <div className="space-y-2">
+                <Label htmlFor="date_expiration">Date d'expiration *</Label>
+                <Input
+                  id="date_expiration"
+                  type="date"
+                  value={formData.date_expiration}
+                  onChange={(e) => handleInputChange('date_expiration', e.target.value)}
+                  required
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="numero_reference">N° de référence</Label>
