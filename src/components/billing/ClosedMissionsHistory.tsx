@@ -44,6 +44,7 @@ interface BonLivraison {
   produit: string;
   quantite_prevue: number;
   quantite_livree: number | null;
+  prix_unitaire: number | null;
   date_emission: string;
   date_chargement_reelle: string | null;
   date_depart: string | null;
@@ -121,6 +122,7 @@ export const ClosedMissionsHistory = () => {
             produit,
             quantite_prevue,
             quantite_livree,
+            prix_unitaire,
             date_emission,
             date_chargement_reelle,
             date_depart,
@@ -161,6 +163,8 @@ export const ClosedMissionsHistory = () => {
          nombreBL: 0,
          capacite: mission.vehicule?.capacite_max || '-',
          quantite: '-',
+         prixUnitaire: '-',
+         montant: '-',
          produit: mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
          provenance: mission.site_depart,
          destination: mission.site_arrivee,
@@ -180,6 +184,9 @@ export const ClosedMissionsHistory = () => {
       // Une ligne par BL
       bls.forEach((bl, index) => {
         const isFirst = index === 0;
+        const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+        const prixUnitaire = bl.prix_unitaire || 0;
+        const montant = quantite * prixUnitaire;
          tableRows.push({
            missionId: mission.id,
            numero: isFirst ? mission.numero : '',
@@ -190,6 +197,8 @@ export const ClosedMissionsHistory = () => {
            nombreBL: isFirst ? bls.length : '',
            capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
            quantite: bl.quantite_livree || bl.quantite_prevue || '-',
+           prixUnitaire: prixUnitaire || '-',
+           montant: montant || '-',
            produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
            provenance: bl.lieu_depart || mission.site_depart,
            destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
@@ -242,6 +251,8 @@ export const ClosedMissionsHistory = () => {
          nombreBL: 0,
          capacite: mission.vehicule?.capacite_max || '-',
          quantite: '-',
+         prixUnitaire: '-',
+         montant: '-',
          produit: mission.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite',
          provenance: mission.site_depart,
          destination: mission.site_arrivee,
@@ -260,6 +271,9 @@ export const ClosedMissionsHistory = () => {
     } else {
       bls.forEach((bl, index) => {
         const isFirst = index === 0;
+        const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+        const prixUnitaire = bl.prix_unitaire || 0;
+        const montant = quantite * prixUnitaire;
          filteredTableRows.push({
            missionId: mission.id,
            numero: isFirst ? mission.numero : '',
@@ -270,6 +284,8 @@ export const ClosedMissionsHistory = () => {
            nombreBL: isFirst ? bls.length : '',
            capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
            quantite: bl.quantite_livree || bl.quantite_prevue || '-',
+           prixUnitaire: prixUnitaire || '-',
+           montant: montant || '-',
            produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
            provenance: bl.lieu_depart || mission.site_depart,
            destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
@@ -455,6 +471,8 @@ export const ClosedMissionsHistory = () => {
                       <TableHead className="whitespace-nowrap text-center">Nb BL</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Capacité</TableHead>
                       <TableHead className="whitespace-nowrap text-right">Quantité</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Péréquation</TableHead>
+                      <TableHead className="whitespace-nowrap text-right">Montant</TableHead>
                       <TableHead className="whitespace-nowrap">Produit</TableHead>
                       <TableHead className="whitespace-nowrap">Provenance</TableHead>
                       <TableHead className="whitespace-nowrap">Destination</TableHead>
@@ -484,6 +502,8 @@ export const ClosedMissionsHistory = () => {
                         <TableCell className="text-center">{row.nombreBL}</TableCell>
                         <TableCell className="text-right">{row.capacite !== '-' ? `${row.capacite} L` : '-'}</TableCell>
                         <TableCell className="text-right">{row.quantite !== '-' ? row.quantite.toLocaleString?.('fr-FR') || row.quantite : '-'}</TableCell>
+                        <TableCell className="text-right">{row.prixUnitaire !== '-' ? `${row.prixUnitaire.toLocaleString?.('fr-FR') || row.prixUnitaire} GNF` : '-'}</TableCell>
+                        <TableCell className="text-right font-medium">{row.montant !== '-' ? `${row.montant.toLocaleString?.('fr-FR') || row.montant} GNF` : '-'}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="capitalize text-xs">
                             {row.produit}
