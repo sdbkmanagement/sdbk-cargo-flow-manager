@@ -8,9 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { tarifsHydrocarburesService, TarifHydrocarbure } from "@/services/tarifsHydrocarburesService";
+import { bonsLivraisonService } from "@/services/bonsLivraison";
 
 export const TarifsHydrocarburesManagement = () => {
   const [tarifs, setTarifs] = useState<TarifHydrocarbure[]>([]);
@@ -20,6 +21,7 @@ export const TarifsHydrocarburesManagement = () => {
   const [editingTarif, setEditingTarif] = useState<TarifHydrocarbure | null>(null);
   const [selectedLieuFilter, setSelectedLieuFilter] = useState<string>('');
   const [searchDestination, setSearchDestination] = useState('');
+  const [recalculEnCours, setRecalculEnCours] = useState(false);
 
   const [formData, setFormData] = useState({
     numero_ordre: '',
@@ -118,6 +120,32 @@ export const TarifsHydrocarburesManagement = () => {
     setShowDialog(true);
   };
 
+  // Recalculer tous les BL sans prix
+  const handleRecalculerTous = async () => {
+    if (!window.confirm('Cette opération va recalculer les prix de tous les BL sans tarif. Continuer ?')) {
+      return;
+    }
+    
+    setRecalculEnCours(true);
+    try {
+      const resultats = await bonsLivraisonService.recalculerTousBLSansPrix();
+      
+      if (resultats.succes > 0) {
+        toast.success(`${resultats.succes} BL mis à jour avec succès`);
+      }
+      if (resultats.erreurs > 0) {
+        toast.warning(`${resultats.erreurs} BL n'ont pas pu être mis à jour (destination non trouvée)`);
+      }
+      
+      console.log('Détails du recalcul:', resultats.details);
+    } catch (error) {
+      console.error('Erreur lors du recalcul:', error);
+      toast.error('Erreur lors du recalcul des prix');
+    } finally {
+      setRecalculEnCours(false);
+    }
+  };
+
   // Filtrer les tarifs
   const filteredTarifs = tarifs.filter(tarif => {
     const matchLieu = !selectedLieuFilter || tarif.lieu_depart === selectedLieuFilter;
@@ -141,16 +169,31 @@ export const TarifsHydrocarburesManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="text-2xl font-bold">Gestion des Tarifs Hydrocarbures</h2>
-        <Dialog open={showDialog} onOpenChange={setShowDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreateDialog} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nouveau Tarif
-            </Button>
-          </DialogTrigger>
-        </Dialog>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRecalculerTous}
+            disabled={recalculEnCours}
+            className="flex items-center gap-2"
+          >
+            {recalculEnCours ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            {recalculEnCours ? 'Recalcul en cours...' : 'Recalculer tous les BL sans prix'}
+          </Button>
+          <Dialog open={showDialog} onOpenChange={setShowDialog}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreateDialog} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Nouveau Tarif
+              </Button>
+            </DialogTrigger>
+          </Dialog>
+        </div>
       </div>
 
       {/* Filtres */}
