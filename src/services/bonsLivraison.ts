@@ -125,26 +125,49 @@ export const bonsLivraisonService = {
         throw new Error('Destination non définie pour ce BL');
       }
 
-      // Recherche flexible du tarif
+      // Normaliser la destination pour la recherche (enlever tirets, espaces multiples)
+      const normalizeStr = (str: string) => str.toLowerCase()
+        .replace(/[-_]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      const destinationNormalized = normalizeStr(destination);
+      const destinationWords = destinationNormalized.split(' ').filter(w => w.length > 2);
+
+      // Recherche flexible du tarif - récupérer tous les tarifs du lieu de départ
       const { data: tarifs, error: tarifError } = await supabase
         .from('tarifs_hydrocarbures')
         .select('*')
-        .eq('lieu_depart', bl.lieu_depart || 'Conakry')
-        .ilike('destination', `%${destination.split(' ')[0]}%`);
+        .eq('lieu_depart', bl.lieu_depart || 'Conakry');
 
       if (tarifError) {
         throw tarifError;
       }
 
-      // Trouver le meilleur match
-      let tarifMatch = tarifs?.find(t => 
-        t.destination.toLowerCase().includes(destination.toLowerCase()) ||
-        destination.toLowerCase().includes(t.destination.toLowerCase())
-      );
+      // Trouver le meilleur match avec scoring
+      let tarifMatch = null;
+      let bestScore = 0;
 
-      // Si pas de match exact, prendre le premier résultat
-      if (!tarifMatch && tarifs && tarifs.length > 0) {
-        tarifMatch = tarifs[0];
+      for (const tarif of tarifs || []) {
+        const tarifNormalized = normalizeStr(tarif.destination);
+        
+        // Calculer le score basé sur les mots en commun
+        let score = 0;
+        for (const word of destinationWords) {
+          if (tarifNormalized.includes(word)) {
+            score += word.length; // Les mots plus longs comptent plus
+          }
+        }
+        
+        // Bonus si correspondance exacte partielle
+        if (tarifNormalized.includes(destinationNormalized) || destinationNormalized.includes(tarifNormalized)) {
+          score += 100;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          tarifMatch = tarif;
+        }
       }
 
       if (!tarifMatch) {
