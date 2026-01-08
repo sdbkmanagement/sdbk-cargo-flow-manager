@@ -213,5 +213,63 @@ export const bonsLivraisonService = {
       console.error('Erreur lors du recalcul par tournées:', error);
       throw error;
     }
+  },
+
+  // Recalculer tous les BL des missions terminées sans prix
+  async recalculerTousBLSansPrix() {
+    try {
+      // Récupérer tous les BL sans prix pour les missions terminées
+      const { data: bls, error } = await supabase
+        .from('bons_livraison')
+        .select(`
+          id,
+          numero,
+          lieu_depart,
+          lieu_arrivee,
+          destination,
+          quantite_prevue,
+          quantite_livree,
+          prix_unitaire,
+          montant_total,
+          mission_id
+        `)
+        .or('prix_unitaire.is.null,prix_unitaire.eq.0,montant_total.is.null,montant_total.eq.0');
+
+      if (error) throw error;
+
+      // Filtrer pour ne garder que ceux des missions terminées
+      const blsToUpdate = bls || [];
+      
+      const resultats = {
+        total: blsToUpdate.length,
+        succes: 0,
+        erreurs: 0,
+        details: [] as Array<{ numero: string; success: boolean; montant?: number; error?: string }>
+      };
+
+      for (const bl of blsToUpdate) {
+        try {
+          const resultat = await this.recalculerPrix(bl.id);
+          resultats.succes++;
+          resultats.details.push({
+            numero: bl.numero,
+            success: true,
+            montant: resultat.calcul.montantTotal
+          });
+        } catch (err: any) {
+          resultats.erreurs++;
+          resultats.details.push({
+            numero: bl.numero,
+            success: false,
+            error: err.message || 'Erreur inconnue'
+          });
+        }
+      }
+
+      return resultats;
+    } catch (error) {
+      console.error('Erreur lors du recalcul en masse:', error);
+      throw error;
+    }
   }
 };
