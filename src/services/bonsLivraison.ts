@@ -103,5 +103,115 @@ export const bonsLivraisonService = {
       console.error('Erreur lors de la suppression du BL:', error);
       throw error;
     }
+  },
+
+  // Recalculer et mettre à jour le prix d'un BL
+  async recalculerPrix(blId: string) {
+    try {
+      // Récupérer le BL
+      const { data: bl, error: blError } = await supabase
+        .from('bons_livraison')
+        .select('*')
+        .eq('id', blId)
+        .single();
+
+      if (blError || !bl) {
+        throw new Error('BL non trouvé');
+      }
+
+      // Chercher le tarif correspondant
+      const destination = bl.lieu_arrivee || bl.destination;
+      if (!destination) {
+        throw new Error('Destination non définie pour ce BL');
+      }
+
+      // Recherche flexible du tarif
+      const { data: tarifs, error: tarifError } = await supabase
+        .from('tarifs_hydrocarbures')
+        .select('*')
+        .eq('lieu_depart', bl.lieu_depart || 'Conakry')
+        .ilike('destination', `%${destination.split(' ')[0]}%`);
+
+      if (tarifError) {
+        throw tarifError;
+      }
+
+      // Trouver le meilleur match
+      let tarifMatch = tarifs?.find(t => 
+        t.destination.toLowerCase().includes(destination.toLowerCase()) ||
+        destination.toLowerCase().includes(t.destination.toLowerCase())
+      );
+
+      // Si pas de match exact, prendre le premier résultat
+      if (!tarifMatch && tarifs && tarifs.length > 0) {
+        tarifMatch = tarifs[0];
+      }
+
+      if (!tarifMatch) {
+        throw new Error(`Aucun tarif trouvé pour la destination: ${destination}`);
+      }
+
+      // Calculer le montant
+      const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
+      const prixUnitaire = tarifMatch.tarif_au_litre;
+      const montantTotal = quantite * prixUnitaire;
+
+      // Mettre à jour le BL
+      const { data: updatedBL, error: updateError } = await supabase
+        .from('bons_livraison')
+        .update({
+          destination: tarifMatch.destination,
+          prix_unitaire: prixUnitaire,
+          montant_total: montantTotal,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', blId)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      return {
+        bl: updatedBL,
+        tarif: tarifMatch,
+        calcul: {
+          quantite,
+          prixUnitaire,
+          montantTotal
+        }
+      };
+    } catch (error) {
+      console.error('Erreur lors du recalcul du prix:', error);
+      throw error;
+    }
+  },
+
+  // Recalculer les prix pour plusieurs BL par numéros de tournée
+  async recalculerPrixParTournees(numerosTournees: string[]) {
+    try {
+      const { data: bls, error } = await supabase
+        .from('bons_livraison')
+        .select('*')
+        .in('numero_tournee', numerosTournees);
+
+      if (error) throw error;
+
+      const resultats = [];
+      for (const bl of bls || []) {
+        try {
+          const resultat = await this.recalculerPrix(bl.id);
+          resultats.push({ success: true, bl: resultat.bl, calcul: resultat.calcul });
+        } catch (err) {
+          resultats.push({ success: false, blId: bl.id, numero: bl.numero, error: err });
+        }
+      }
+
+      return resultats;
+    } catch (error) {
+      console.error('Erreur lors du recalcul par tournées:', error);
+      throw error;
+    }
   }
 };
