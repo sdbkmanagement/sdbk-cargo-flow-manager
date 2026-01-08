@@ -1,20 +1,26 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { FileText, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { FileText, AlertTriangle, CheckCircle, Calculator, Loader2 } from 'lucide-react';
 import { BonLivraison } from '@/types/bl';
+import { bonsLivraisonService } from '@/services/bonsLivraison';
+import { toast } from 'sonner';
 
 interface BLSuiviDetailProps {
   bl: BonLivraison;
   index: number;
   onUpdate: (field: keyof BonLivraison, value: any) => void;
   isReadOnly?: boolean;
+  onRefresh?: () => void;
 }
 
-export const BLSuiviDetail = ({ bl, index, onUpdate, isReadOnly = false }: BLSuiviDetailProps) => {
+export const BLSuiviDetail = ({ bl, index, onUpdate, isReadOnly = false, onRefresh }: BLSuiviDetailProps) => {
+  const [isRecalculating, setIsRecalculating] = useState(false);
+
   const getStatutBadge = (statut: string) => {
     const variants = {
       'emis': 'bg-blue-100 text-blue-800',
@@ -31,8 +37,22 @@ export const BLSuiviDetail = ({ bl, index, onUpdate, isReadOnly = false }: BLSui
     );
   };
 
+  const handleRecalculerPrix = async () => {
+    setIsRecalculating(true);
+    try {
+      const resultat = await bonsLivraisonService.recalculerPrix(bl.id);
+      toast.success(`Prix recalculé: ${resultat.calcul.montantTotal.toLocaleString()} GNF (${resultat.calcul.prixUnitaire} GNF/L)`);
+      if (onRefresh) onRefresh();
+    } catch (error: any) {
+      toast.error(`Erreur: ${error.message || 'Impossible de recalculer le prix'}`);
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   const manquantTotal = (bl.manquant_cuve || 0) + (bl.manquant_compteur || 0);
   const hasProblems = manquantTotal > 0;
+  const hasPricing = bl.prix_unitaire && bl.montant_total;
 
   return (
     <Card className={`border-2 ${hasProblems ? 'border-red-200 bg-red-50' : 'border-gray-200'}`}>
@@ -74,6 +94,51 @@ export const BLSuiviDetail = ({ bl, index, onUpdate, isReadOnly = false }: BLSui
           <p className="text-xs text-orange-600 mt-1">
             Ce numéro apparaîtra sur les factures et exports
           </p>
+        </div>
+
+        {/* Section Tarification */}
+        <div className={`p-4 rounded-lg border ${hasPricing ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <Label className={`font-medium ${hasPricing ? 'text-green-800' : 'text-yellow-800'}`}>
+              Tarification
+            </Label>
+            {!isReadOnly && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRecalculerPrix}
+                disabled={isRecalculating}
+                className="text-xs"
+              >
+                {isRecalculating ? (
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                ) : (
+                  <Calculator className="w-3 h-3 mr-1" />
+                )}
+                Recalculer
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs text-gray-500">Prix unitaire (GNF/L)</Label>
+              <div className="text-lg font-semibold">
+                {bl.prix_unitaire ? `${bl.prix_unitaire.toLocaleString()} GNF` : '-'}
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Quantité</Label>
+              <div className="text-lg font-semibold">
+                {(bl.quantite_livree || bl.quantite_prevue || 0).toLocaleString()} L
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Montant total</Label>
+              <div className={`text-lg font-bold ${hasPricing ? 'text-green-700' : 'text-yellow-700'}`}>
+                {bl.montant_total ? `${bl.montant_total.toLocaleString()} GNF` : 'Non calculé'}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Informations de suivi */}
