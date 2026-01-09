@@ -95,6 +95,72 @@ export const ClosedMissionsHistory = () => {
     return format(d, fmt);
   };
 
+  // Charger les tarifs pour calculer dynamiquement les prix manquants
+  const { data: tarifs = [] } = useQuery({
+    queryKey: ['tarifs-hydrocarbures'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('tarifs_hydrocarbures')
+        .select('*');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  // Fonction pour trouver le tarif correspondant à une destination
+  const findTarifForDestination = (destination: string): number | null => {
+    if (!destination || tarifs.length === 0) return null;
+    
+    const normalizeStr = (str: string) => 
+      str.toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    
+    const destinationNormalized = normalizeStr(destination);
+    const destinationWords = destinationNormalized.split(' ').filter(w => w.length > 2);
+    const mainCity = destinationWords[0] || '';
+    
+    let bestTarif = null;
+    let bestScore = 0;
+    
+    for (const tarif of tarifs) {
+      const tarifNormalized = normalizeStr(tarif.destination || '');
+      const tarifWords = tarifNormalized.split(' ').filter((w: string) => w.length > 2);
+      
+      let score = 0;
+      
+      if (mainCity && tarifNormalized.startsWith(mainCity)) {
+        score += 200;
+      } else if (mainCity && tarifNormalized.includes(mainCity)) {
+        score += 150;
+      }
+      
+      if (tarifWords[0] && destinationWords[0] && tarifWords[0] === destinationWords[0]) {
+        score += 100;
+      }
+      
+      for (const word of destinationWords) {
+        if (tarifNormalized.includes(word)) {
+          score += word.length * 2;
+        }
+      }
+      
+      if (tarifNormalized.includes(destinationNormalized) || destinationNormalized.includes(tarifNormalized)) {
+        score += 50;
+      }
+      
+      if (score > bestScore) {
+        bestScore = score;
+        bestTarif = tarif;
+      }
+    }
+    
+    return bestScore >= 10 && bestTarif ? bestTarif.prix_litre : null;
+  };
+
   const { data: missions = [], isLoading, isError, error } = useQuery({
     queryKey: ['closed-missions-billing-full'],
     queryFn: async () => {
@@ -272,7 +338,18 @@ export const ClosedMissionsHistory = () => {
       bls.forEach((bl, index) => {
         const isFirst = index === 0;
         const quantite = bl.quantite_livree || bl.quantite_prevue || 0;
-        const prixUnitaire = bl.prix_unitaire || 0;
+        
+        // Utiliser le prix du BL, ou calculer dynamiquement à partir de la destination
+        let prixUnitaire = bl.prix_unitaire || 0;
+        if (!prixUnitaire) {
+          // Essayer de trouver le tarif via la destination du BL, sinon via site_arrivee de la mission
+          const destinationToUse = bl.destination || bl.lieu_arrivee || mission.site_arrivee;
+          const tarifTrouve = findTarifForDestination(destinationToUse);
+          if (tarifTrouve) {
+            prixUnitaire = tarifTrouve;
+          }
+        }
+        
         const montant = quantite * prixUnitaire;
          filteredTableRows.push({
            missionId: mission.id,
@@ -284,8 +361,8 @@ export const ClosedMissionsHistory = () => {
            nombreBL: isFirst ? bls.length : '',
            capacite: isFirst ? (mission.vehicule?.capacite_max || '-') : '',
            quantite: bl.quantite_livree || bl.quantite_prevue || '-',
-           prixUnitaire: prixUnitaire || '-',
-           montant: montant || '-',
+           prixUnitaire: prixUnitaire > 0 ? prixUnitaire : '-',
+           montant: montant > 0 ? montant : '-',
            produit: bl.produit === 'essence' ? 'ESSENCE' : bl.produit === 'gasoil' ? 'GASOIL' : bl.produit || 'Hydrocarbures',
            provenance: bl.lieu_depart || mission.site_depart,
            destination: bl.lieu_arrivee || bl.destination || mission.site_arrivee,
