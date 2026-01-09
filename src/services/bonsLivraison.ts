@@ -133,35 +133,72 @@ export const bonsLivraisonService = {
       
       const destinationNormalized = normalizeStr(destination);
       const destinationWords = destinationNormalized.split(' ').filter(w => w.length > 2);
+      
+      // Extraire le premier mot significatif (ville principale)
+      const mainCity = destinationWords[0] || '';
 
-      // Recherche flexible du tarif - récupérer tous les tarifs du lieu de départ
-      const { data: tarifs, error: tarifError } = await supabase
+      // Recherche flexible du tarif - récupérer TOUS les tarifs d'abord
+      const { data: allTarifs, error: tarifError } = await supabase
         .from('tarifs_hydrocarbures')
-        .select('*')
-        .eq('lieu_depart', bl.lieu_depart || 'Conakry');
+        .select('*');
 
       if (tarifError) {
         throw tarifError;
       }
 
-      // Trouver le meilleur match avec scoring
+      // Filtrer par lieu_depart si défini, sinon chercher dans tous
+      const lieuDepart = bl.lieu_depart || 'Conakry';
+      let tarifs = (allTarifs || []).filter(t => 
+        normalizeStr(t.lieu_depart || 'Conakry') === normalizeStr(lieuDepart)
+      );
+      
+      // Si pas de résultat avec le lieu de départ, chercher dans tous les tarifs
+      if (tarifs.length === 0) {
+        tarifs = allTarifs || [];
+      }
+
+      // Trouver le meilleur match avec scoring amélioré
       let tarifMatch = null;
       let bestScore = 0;
 
-      for (const tarif of tarifs || []) {
+      for (const tarif of tarifs) {
         const tarifNormalized = normalizeStr(tarif.destination);
+        const tarifWords = tarifNormalized.split(' ').filter(w => w.length > 2);
         
-        // Calculer le score basé sur les mots en commun
         let score = 0;
+        
+        // 1. Correspondance exacte de la ville principale (priorité haute)
+        if (mainCity && tarifNormalized.startsWith(mainCity)) {
+          score += 200;
+        } else if (mainCity && tarifNormalized.includes(mainCity)) {
+          score += 150;
+        }
+        
+        // 2. Vérifier si le premier mot du tarif correspond au premier mot de la destination
+        if (tarifWords[0] && destinationWords[0] && tarifWords[0] === destinationWords[0]) {
+          score += 100;
+        }
+        
+        // 3. Score basé sur les mots en commun
         for (const word of destinationWords) {
           if (tarifNormalized.includes(word)) {
-            score += word.length; // Les mots plus longs comptent plus
+            score += word.length * 2;
           }
         }
         
-        // Bonus si correspondance exacte partielle
+        // 4. Bonus si correspondance exacte partielle
         if (tarifNormalized.includes(destinationNormalized) || destinationNormalized.includes(tarifNormalized)) {
-          score += 100;
+          score += 50;
+        }
+        
+        // 5. Bonus pour correspondance dans observations
+        if (tarif.observations) {
+          const obsNormalized = normalizeStr(tarif.observations);
+          for (const word of destinationWords) {
+            if (obsNormalized.includes(word)) {
+              score += word.length;
+            }
+          }
         }
 
         if (score > bestScore) {
@@ -170,7 +207,7 @@ export const bonsLivraisonService = {
         }
       }
 
-      if (!tarifMatch) {
+      if (!tarifMatch || bestScore < 10) {
         throw new Error(`Aucun tarif trouvé pour la destination: ${destination}`);
       }
 
