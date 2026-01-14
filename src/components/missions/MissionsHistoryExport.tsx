@@ -23,6 +23,18 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
   const [dateFin, setDateFin] = useState<Date>();
   const [isExporting, setIsExporting] = useState(false);
 
+  // Fonction utilitaire pour formater une date en toute sécurité
+  const safeFormatDate = (dateValue: string | null | undefined, formatStr: string = 'dd/MM/yyyy'): string => {
+    if (!dateValue) return '';
+    try {
+      const date = new Date(dateValue);
+      if (isNaN(date.getTime())) return '';
+      return format(date, formatStr);
+    } catch {
+      return '';
+    }
+  };
+
   const handleExport = async () => {
     if (!dateDebut || !dateFin) {
       toast({
@@ -37,7 +49,9 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
     try {
       // Filtrer les missions selon la période et le filtre de statut actuel
       const missionsFiltrees = missions.filter(m => {
+        if (!m.created_at) return false;
         const missionDate = new Date(m.created_at);
+        if (isNaN(missionDate.getTime())) return false;
         const dateMatch = missionDate >= dateDebut && missionDate <= dateFin;
         
         // Si un filtre de statut spécifique est sélectionné, l'appliquer
@@ -89,9 +103,9 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
             'Sites': mission.sites || '',
             'date reception DS': '',
             'DATE chargements': '',
-            'DATE DEPART': mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : '',
+            'DATE DEPART': safeFormatDate(mission.created_at),
             'DATE ARRIVEE': '',
-            'DATE Dechargement': mission.statut === 'terminee' && mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : '',
+            'DATE Dechargement': mission.statut === 'terminee' ? safeFormatDate(mission.updated_at) : '',
             'Manquant Citerne (T)': '',
             'Manquant Cuve': '',
             'Manquant Compteur': '',
@@ -118,11 +132,11 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
             'Provenance': bl.lieu_depart || mission.site_depart || '',
             'Destinations': bl.lieu_arrivee || bl.destination || mission.site_arrivee || '',
             'Sites': mission.sites || '',
-            'date reception DS': bl.date_emission ? format(new Date(bl.date_emission), 'dd/MM/yyyy') : '',
-            'DATE chargements': bl.date_chargement_reelle ? format(new Date(bl.date_chargement_reelle), 'dd/MM/yyyy') : '',
-            'DATE DEPART': bl.date_depart ? format(new Date(bl.date_depart), 'dd/MM/yyyy') : (mission.created_at ? format(new Date(mission.created_at), 'dd/MM/yyyy') : ''),
-            'DATE ARRIVEE': bl.date_arrivee_reelle ? format(new Date(bl.date_arrivee_reelle), 'dd/MM/yyyy') : '',
-            'DATE Dechargement': bl.date_dechargement ? format(new Date(bl.date_dechargement), 'dd/MM/yyyy') : (mission.statut === 'terminee' && mission.updated_at ? format(new Date(mission.updated_at), 'dd/MM/yyyy') : ''),
+            'date reception DS': safeFormatDate(bl.date_emission),
+            'DATE chargements': safeFormatDate(bl.date_chargement_reelle),
+            'DATE DEPART': safeFormatDate(bl.date_depart) || safeFormatDate(mission.created_at),
+            'DATE ARRIVEE': safeFormatDate(bl.date_arrivee_reelle),
+            'DATE Dechargement': safeFormatDate(bl.date_dechargement) || (mission.statut === 'terminee' ? safeFormatDate(mission.updated_at) : ''),
             // Manquants individuels par BL - NON AGRÉGÉS
             'Manquant Citerne (T)': bl.manquant_citerne !== null && bl.manquant_citerne !== undefined ? bl.manquant_citerne : '',
             'Manquant Cuve': bl.manquant_cuve !== null && bl.manquant_cuve !== undefined ? bl.manquant_cuve : '',
