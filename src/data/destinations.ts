@@ -77,7 +77,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Forecariah",
-    stations: ["Kaleah", "Setc Forecariah", "PL Maferinyah Forecariah"]
+    stations: ["Kaleah", "Setc Forecariah"]
   },
   {
     ville: "Fria",
@@ -158,7 +158,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Maferenya",
-    stations: ["Beverage", "Client Divers au comptant"]
+    stations: ["Beverage", "Client Divers au comptant", "PL Maferinyah Forecariah"]
   },
   {
     ville: "Mamou",
