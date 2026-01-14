@@ -21,7 +21,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boke",
-    stations: ["Henanchine", "Station Boke Yomboya", "Dabis", "PL MCK Malapoula"]
+    stations: ["Henanchine", "Station Boke Yomboya", "Dabis", "PL MCK Malapouya"]
   },
   {
     ville: "Cissela",
@@ -31,7 +31,7 @@ export const DESTINATIONS: Destination[] = [
     ville: "Conakry",
     stations: [
       "ACCG", "Alame SARL", "Beverage", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
-      "Sobragui", "Sogeac", "Station Mafanco", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne",
+      "Ministère de la Défense Nationale", "Sobragui", "Sogeac", "Station Mafanco", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne",
       "Station Carriere", "Station Cimenterie", "Station Cosa2", "Station Coyah Somayah", 
       "Station Coyah Wonkifong", "Station Dabondi", "Station Dabondy", "Station Dixinn Ecole", 
       "Station Gare Routiere", "Station Hamdallaye Deflendre", "Station Hamdallaye Marcket", 
@@ -138,7 +138,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Labe",
-    stations: ["Station Labe Centre", "Station Labe Donghora", "Station Labe Safatou", "Station Labe Tourisme", "Station Total Labe Safatou", "Stationt Total Labe Safatou", "EIFFAGE", "IPT PowerTech PL"]
+    stations: ["Ministère de la Défense Nationale", "Station Labe Centre", "Station Labe Donghora", "Station Labe Safatou", "Station Labe Tourisme", "Station Total Labe Safatou", "Stationt Total Labe Safatou", "EIFFAGE", "IPT PowerTech PL"]
   },
   {
     ville: "Lelouma",
@@ -162,7 +162,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Mamou",
-    stations: ["Station Mamou B", "Station Mamou C", "Station Mamou Carrefour", "Station Mamou Contournante", "Station Mamou D", "Station Mamou Holo", "Station Total Mamou D", "IPT PowerTech PL"]
+    stations: ["Henanchine Mamou", "Ministère de la Défense Nationale", "Station Mamou B", "Station Mamou C", "Station Mamou Carrefour", "Station Mamou Contournante", "Station Mamou D", "Station Mamou Holo", "Station Total Mamou D", "IPT PowerTech PL"]
   },
   {
     ville: "Mandiana",
@@ -190,12 +190,16 @@ export const DESTINATIONS: Destination[] = [
     stations: ["Ashapura Minex", "Station Sangaredi"]
   },
   {
+    ville: "Senko",
+    stations: ["Sinko Diaraguerela"]
+  },
+  {
     ville: "Siguiri",
     stations: ["Station Siguiri Didi Gare", "Station Siguiri Koro", "Station Siguiri Ouba Cisse", "Station Siguiri YMC", "Station Total Siguiri Didi Gare", "Station Total Siguiri Koro", "Station Total Siguiri Ouba Cisse"]
   },
   {
     ville: "Tanene",
-    stations: ["Ashapura", "Station Tanene", "Tanene Continental groupe"]
+    stations: ["Ashapura", "Sogeac/Satom", "Station Tanene", "Tanene Continental groupe"]
   },
   {
     ville: "Taressa",
