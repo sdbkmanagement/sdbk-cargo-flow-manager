@@ -21,7 +21,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boke",
-    stations: ["Henanchine", "Station Boke Yomboya", "Dabis", "PL MCK Malapouya"]
+    stations: ["Henanchine", "Station Boke Yomboya", "Dabis", "PL MCK Malapouya", "Dingsheng Sarl"]
   },
   {
     ville: "Cissela",
@@ -30,7 +30,7 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Conakry",
     stations: [
-      "ACCG", "Alame SARL", "Beverage", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
+      "ACCG", "Africa Global Logistiques", "Alame SARL", "Beverage", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
       "Ministère de la Défense Nationale", "Sobragui", "Sogeac", "Station Mafanco", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne",
       "Station Carriere", "Station Cimenterie", "Station Cosa2", "Station Coyah Somayah", 
       "Station Coyah Wonkifong", "Station Dabondi", "Station Dabondy", "Station Dixinn Ecole", 
@@ -106,7 +106,7 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Kankan",
     stations: [
-      "Guineenne de Terrassement", "IPT PowerTech PL", "SGP Kankan", "Station Kankan Gare Routiere",
+      "Guineenne de Terrassement", "Guiter Kankan", "IPT PowerTech PL", "SGP Kankan", "Station Kankan Gare Routiere",
       "Station Kankan Grand Marche", "Station Kankan Grande Mosque", "Station Kankan Koura",
       "Station Kankan Mbalia", "Station Kankan Sinkefara", "Station Kankan Timbo",
       "Station Kankan Yes", "Station Kankan YMC"
