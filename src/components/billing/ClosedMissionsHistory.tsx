@@ -586,8 +586,8 @@ export const ClosedMissionsHistory = () => {
                             {row.produit}
                           </Badge>
                         </TableCell>
-                        <TableCell className="max-w-[120px] truncate" title={row.provenance}>{row.provenance}</TableCell>
-                        <TableCell className="max-w-[120px] truncate" title={row.destination}>{row.destination}</TableCell>
+                        <TableCell className="whitespace-nowrap">{row.provenance}</TableCell>
+                        <TableCell className="min-w-[200px] whitespace-normal">{row.destination}</TableCell>
                         <TableCell>{row.dateReceptionDS}</TableCell>
                         <TableCell>{row.dateChargement}</TableCell>
                         <TableCell>{row.dateDepart}</TableCell>
