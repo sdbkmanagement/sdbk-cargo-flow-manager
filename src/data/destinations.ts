@@ -17,11 +17,11 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Boffa",
-    stations: ["Ashapura Boffa", "Chalco Guineea", "Chec Boffa", "Rouge Minig", "Station Boffa Bollonde", "Station Boffa Torodoya"]
+    stations: ["Ashapura Boffa", "Chalco Guineea", "Chec Boffa", "PL Chec Lalafangni", "Rouge Minig", "Station Boffa Bollonde", "Station Boffa Torodoya"]
   },
   {
     ville: "Boke",
-    stations: ["Henanchine", "Station Boke Yomboya", "Dabis", "PL MCK Malapouya", "Dingsheng Sarl"]
+    stations: ["Henanchine", "PL Dapilon CDP Henanchine", "Station Boke Yomboya", "Dabis", "PL MCK Malapouya", "Dingsheng Sarl"]
   },
   {
     ville: "Cissela",
@@ -30,17 +30,17 @@ export const DESTINATIONS: Destination[] = [
   {
     ville: "Conakry",
     stations: [
-      "ACCG", "Africa Global Logistiques", "Alame SARL", "Beverage", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
+      "ACCG", "Africa Global Logistiques", "Alame SARL", "Beverage", "Bonagui", "CBK Simbaya", "Conakry Terminal", "Domino", "Fortune Construction", "Huillerie de Guinee", 
       "Kagbelen GmG", "Ministère de la Défense Nationale", "Sobragui", "Sogeac", "Station Mafanco", "Station Madina Koumi", "Station Belle Vue", "Station Camayenne",
       "Station Carriere", "Station Cimenterie", "Station Cosa2", "Station Coyah Somayah", 
       "Station Coyah Wonkifong", "Station Dabondi", "Station Dabondy", "Station Dixinn Ecole", 
-      "Station Gare Routiere", "Station Hamdallaye Deflendre", "Station Hamdallaye Marcket", 
+      "Station Gare Routiere", "Station Hamdallaye Deflendre", "Station Hamdallaye Marcket", "Station Total Hamdallaye Carrefour", 
       "Station Kagbeling Village", "Station Kissosso", "Station Koloma", "Station Lambanyi", 
       "Station Lansanayah", "Station Le Prince Nana", "Station Lycee Français", "Station Maneah", 
       "Station Maneyah", "Station Matam", "Station Matam Corniche", "Station Miniere", 
       "Station Sangoyah", "Station Sans Fil", "Station Sig Madina", "Station Sonfonia", 
       "Station Symbaya", "Station T10 Keitaya", "Station T2 Kipe", "Station T3 Cosa",
-      "Station T3 Cosa Le Prince", "Station T5 Kobaya", "Station T5 Wanindara", "Station T6 Yataya",
+      "Station Matoto Marche", "Station T3 Cosa Le Prince", "Station T5 Kobaya", "Station T5 Wanindara", "Station T6 Yataya",
       "Station T6 Yattaya", "Station Tanneri", "Station Taouyah Petit Lac", "Station Tombolia", 
       "Station Total Belle Vue", "Station Total Sanoyah", "Station Total T1 Concasseur", "Station Total Taouyah Petit Lac", 
       "Station Wassa Wassa", "Station Yimbaya Rp", "Station Total Dixin Oasis", 
@@ -134,7 +134,7 @@ export const DESTINATIONS: Destination[] = [
   },
   {
     ville: "Kouroussa",
-    stations: ["Station Kouroussa", "Station Kouroussa G", "Videri Entreprises SARL"]
+    stations: ["PL Videri Kouroussa", "Station Kouroussa", "Station Kouroussa G", "Videri Entreprises SARL"]
   },
   {
     ville: "Kouremale",
