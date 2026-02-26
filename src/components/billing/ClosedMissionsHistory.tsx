@@ -158,7 +158,7 @@ export const ClosedMissionsHistory = () => {
       }
     }
     
-    return bestScore >= 10 && bestTarif ? bestTarif.prix_litre : null;
+    return bestScore >= 10 && bestTarif ? bestTarif.tarif_au_litre : null;
   };
 
   const { data: missions = [], isLoading, isError, error } = useQuery({
