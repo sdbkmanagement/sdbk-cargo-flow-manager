@@ -382,10 +382,22 @@ export const billingService = {
     }
   },
 
-  async getStats(): Promise<any> {
+  async getStats(filters?: { dateDebut?: string; dateFin?: string }): Promise<any> {
     try {
-      const { data: factures } = await supabase.from('factures').select('*');
-      const { data: devis } = await supabase.from('devis').select('*');
+      let facturesQuery = supabase.from('factures').select('*');
+      let devisQuery = supabase.from('devis').select('*');
+
+      if (filters?.dateDebut) {
+        facturesQuery = facturesQuery.gte('date_emission', filters.dateDebut);
+        devisQuery = devisQuery.gte('date_creation', filters.dateDebut);
+      }
+      if (filters?.dateFin) {
+        facturesQuery = facturesQuery.lte('date_emission', filters.dateFin);
+        devisQuery = devisQuery.lte('date_creation', filters.dateFin);
+      }
+
+      const { data: factures } = await facturesQuery;
+      const { data: devis } = await devisQuery;
 
       const stats = {
         totalFacture: factures?.reduce((sum, f) => sum + Number(f.montant_ttc), 0) || 0,

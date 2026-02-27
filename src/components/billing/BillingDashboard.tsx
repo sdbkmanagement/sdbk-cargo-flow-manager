@@ -1,6 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { 
   Euro, 
   Clock, 
@@ -9,10 +14,14 @@ import {
   TrendingUp,
   Users,
   Calendar,
-  Calculator
+  Calculator,
+  Filter,
+  X
 } from 'lucide-react';
 import { billingService } from '@/services/billing';
 import { toast } from '@/hooks/use-toast';
+
+type FilterMode = 'all' | 'month' | 'period';
 
 export const BillingDashboard = () => {
   const [stats, setStats] = useState({
@@ -25,13 +34,57 @@ export const BillingDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
+  // Filtres
+  const [filterMode, setFilterMode] = useState<FilterMode>('all');
+  const [selectedMonth, setSelectedMonth] = useState('');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
+  const [dateDebut, setDateDebut] = useState('');
+  const [dateFin, setDateFin] = useState('');
+
+  const months = [
+    { value: '01', label: 'Janvier' },
+    { value: '02', label: 'Février' },
+    { value: '03', label: 'Mars' },
+    { value: '04', label: 'Avril' },
+    { value: '05', label: 'Mai' },
+    { value: '06', label: 'Juin' },
+    { value: '07', label: 'Juillet' },
+    { value: '08', label: 'Août' },
+    { value: '09', label: 'Septembre' },
+    { value: '10', label: 'Octobre' },
+    { value: '11', label: 'Novembre' },
+    { value: '12', label: 'Décembre' },
+  ];
+
+  const years = Array.from({ length: 5 }, (_, i) => {
+    const y = new Date().getFullYear() - i;
+    return { value: y.toString(), label: y.toString() };
+  });
+
   useEffect(() => {
     loadStats();
   }, []);
 
-  const loadStats = async () => {
+  const getFilters = (): { dateDebut?: string; dateFin?: string } | undefined => {
+    if (filterMode === 'month' && selectedMonth && selectedYear) {
+      const monthNum = parseInt(selectedMonth);
+      const yearNum = parseInt(selectedYear);
+      const start = `${selectedYear}-${selectedMonth}-01`;
+      const end = monthNum === 12 
+        ? `${yearNum + 1}-01-01` 
+        : `${selectedYear}-${(monthNum + 1).toString().padStart(2, '0')}-01`;
+      return { dateDebut: start, dateFin: end };
+    }
+    if (filterMode === 'period' && dateDebut && dateFin) {
+      return { dateDebut, dateFin };
+    }
+    return undefined;
+  };
+
+  const loadStats = async (filters?: { dateDebut?: string; dateFin?: string }) => {
     try {
-      const data = await billingService.getStats();
+      setLoading(true);
+      const data = await billingService.getStats(filters);
       setStats(data);
     } catch (error) {
       console.error('Erreur lors du chargement des statistiques:', error);
@@ -43,6 +96,31 @@ export const BillingDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilter = () => {
+    const filters = getFilters();
+    loadStats(filters);
+  };
+
+  const resetFilter = () => {
+    setFilterMode('all');
+    setSelectedMonth('');
+    setSelectedYear(new Date().getFullYear().toString());
+    setDateDebut('');
+    setDateFin('');
+    loadStats();
+  };
+
+  const getFilterLabel = () => {
+    if (filterMode === 'month' && selectedMonth && selectedYear) {
+      const monthLabel = months.find(m => m.value === selectedMonth)?.label;
+      return `${monthLabel} ${selectedYear}`;
+    }
+    if (filterMode === 'period' && dateDebut && dateFin) {
+      return `Du ${new Date(dateDebut).toLocaleDateString('fr-FR')} au ${new Date(dateFin).toLocaleDateString('fr-FR')}`;
+    }
+    return 'Toutes les données';
   };
 
   const recentActivity = [
@@ -57,6 +135,93 @@ export const BillingDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Filtres */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Filter className="h-4 w-4" />
+            Filtrer les données
+            {filterMode !== 'all' && (
+              <Badge variant="secondary" className="ml-2">{getFilterLabel()}</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <Label className="text-xs">Type de filtre</Label>
+              <Select value={filterMode} onValueChange={(v: FilterMode) => setFilterMode(v)}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les données</SelectItem>
+                  <SelectItem value="month">Par mois</SelectItem>
+                  <SelectItem value="period">Par période</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {filterMode === 'month' && (
+              <>
+                <div>
+                  <Label className="text-xs">Mois</Label>
+                  <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                    <SelectTrigger className="w-[150px]">
+                      <SelectValue placeholder="Mois" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {months.map(m => (
+                        <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Année</Label>
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map(y => (
+                        <SelectItem key={y.value} value={y.value}>{y.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            {filterMode === 'period' && (
+              <>
+                <div>
+                  <Label className="text-xs">Date début</Label>
+                  <Input type="date" value={dateDebut} onChange={e => setDateDebut(e.target.value)} className="w-[160px]" />
+                </div>
+                <div>
+                  <Label className="text-xs">Date fin</Label>
+                  <Input type="date" value={dateFin} onChange={e => setDateFin(e.target.value)} className="w-[160px]" />
+                </div>
+              </>
+            )}
+
+            {filterMode !== 'all' && (
+              <div className="flex gap-2">
+                <Button size="sm" onClick={applyFilter}>
+                  <Filter className="h-3 w-3 mr-1" />
+                  Appliquer
+                </Button>
+                <Button size="sm" variant="outline" onClick={resetFilter}>
+                  <X className="h-3 w-3 mr-1" />
+                  Réinitialiser
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Statistiques principales */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -84,10 +249,10 @@ export const BillingDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Factures en retard</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.facturesEnRetard}</div>
+            <div className="text-2xl font-bold text-destructive">{stats.facturesEnRetard}</div>
             <p className="text-xs text-muted-foreground">Relance requise</p>
           </CardContent>
         </Card>
@@ -95,24 +260,23 @@ export const BillingDashboard = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Devis créés</CardTitle>
-            <Calculator className="h-4 w-4 text-blue-500" />
+            <Calculator className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.totalDevis}</div>
+            <div className="text-2xl font-bold text-primary">{stats.totalDevis}</div>
             <p className="text-xs text-muted-foreground">Total des devis</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Chiffre d'affaires mensuel */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
               Chiffre d'affaires
             </CardTitle>
-            <CardDescription>Performance financière actuelle</CardDescription>
+            <CardDescription>Performance financière {filterMode !== 'all' ? `– ${getFilterLabel()}` : 'actuelle'}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600 mb-2">
@@ -132,7 +296,6 @@ export const BillingDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* Répartition des statuts */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -169,7 +332,6 @@ export const BillingDashboard = () => {
         </Card>
       </div>
 
-      {/* Activités récentes */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
