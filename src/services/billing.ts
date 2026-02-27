@@ -384,28 +384,47 @@ export const billingService = {
 
   async getStats(filters?: { dateDebut?: string; dateFin?: string }): Promise<any> {
     try {
-      let facturesQuery = supabase.from('factures').select('*');
-      let devisQuery = supabase.from('devis').select('*');
+      // Toujours récupérer toutes les données puis filtrer côté client
+      // car les factures mensuelles ont une date_emission différente de la période couverte
+      const { data: factures } = await supabase.from('factures').select('*');
+      const { data: devis } = await supabase.from('devis').select('*');
 
-      if (filters?.dateDebut) {
-        facturesQuery = facturesQuery.gte('date_emission', filters.dateDebut);
-        devisQuery = devisQuery.gte('date_creation', filters.dateDebut);
-      }
-      if (filters?.dateFin) {
-        facturesQuery = facturesQuery.lt('date_emission', filters.dateFin);
-        devisQuery = devisQuery.lt('date_creation', filters.dateFin);
-      }
+      let filteredFactures = factures || [];
+      let filteredDevis = devis || [];
 
-      const { data: factures } = await facturesQuery;
-      const { data: devis } = await devisQuery;
+      if (filters?.dateDebut && filters?.dateFin) {
+        const filterStart = filters.dateDebut; // ex: "2025-11-01"
+        const filterEnd = filters.dateFin;     // ex: "2025-12-01"
+
+        filteredFactures = filteredFactures.filter(f => {
+          // Essayer d'extraire la période depuis le numéro (FMYYYYMM-XXX)
+          const match = f.numero?.match(/^FM(\d{4})(\d{2})/);
+          if (match) {
+            const invoicePeriodStart = `${match[1]}-${match[2]}-01`;
+            const monthNum = parseInt(match[2]);
+            const yearNum = parseInt(match[1]);
+            const invoicePeriodEnd = monthNum === 12
+              ? `${yearNum + 1}-01-01`
+              : `${match[1]}-${(monthNum + 1).toString().padStart(2, '0')}-01`;
+            // La période de la facture chevauche-t-elle la période du filtre ?
+            return invoicePeriodStart >= filterStart && invoicePeriodStart < filterEnd;
+          }
+          // Fallback: utiliser date_emission
+          return f.date_emission >= filterStart && f.date_emission < filterEnd;
+        });
+
+        filteredDevis = filteredDevis.filter(d => {
+          return d.date_creation >= filterStart && d.date_creation < filterEnd;
+        });
+      }
 
       const stats = {
-        totalFacture: factures?.reduce((sum, f) => sum + Number(f.montant_ttc), 0) || 0,
-        facturesEnAttente: factures?.filter(f => f.statut === 'en_attente').length || 0,
-        facturesEnRetard: factures?.filter(f => f.statut === 'en_retard').length || 0,
-        facturesReglees: factures?.filter(f => f.statut === 'paye').length || 0,
-        totalDevis: devis?.length || 0,
-        chiffreAffaireMois: factures?.reduce((sum, f) => sum + Number(f.montant_ttc), 0) || 0
+        totalFacture: filteredFactures.reduce((sum, f) => sum + Number(f.montant_ttc), 0),
+        facturesEnAttente: filteredFactures.filter(f => f.statut === 'en_attente').length,
+        facturesEnRetard: filteredFactures.filter(f => f.statut === 'en_retard').length,
+        facturesReglees: filteredFactures.filter(f => f.statut === 'paye').length,
+        totalDevis: filteredDevis.length,
+        chiffreAffaireMois: filteredFactures.reduce((sum, f) => sum + Number(f.montant_ht), 0)
       };
 
       return stats;
