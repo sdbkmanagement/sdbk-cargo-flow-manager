@@ -392,8 +392,8 @@ export const billingService = {
         devisQuery = devisQuery.gte('date_creation', filters.dateDebut);
       }
       if (filters?.dateFin) {
-        facturesQuery = facturesQuery.lte('date_emission', filters.dateFin);
-        devisQuery = devisQuery.lte('date_creation', filters.dateFin);
+        facturesQuery = facturesQuery.lt('date_emission', filters.dateFin);
+        devisQuery = devisQuery.lt('date_creation', filters.dateFin);
       }
 
       const { data: factures } = await facturesQuery;
