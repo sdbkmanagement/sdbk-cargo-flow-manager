@@ -1,13 +1,15 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Button } from '@/components/ui/button';
-import { MapPin, Building, Check, ChevronsUpDown } from 'lucide-react';
+import { MapPin, Building, Check, ChevronsUpDown, Plus } from 'lucide-react';
 import { getClientsByVille, DESTINATIONS, getAllClients } from '@/data/destinations';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { AddClientDialog } from './AddClientDialog';
 
 interface ClientSelectorProps {
   selectedClient: string;
@@ -30,15 +32,36 @@ export const ClientSelector = ({
   const [selectedVille, setSelectedVille] = useState('');
   const [selectedLieuNom, setSelectedLieuNom] = useState('');
   const [lieuOpen, setLieuOpen] = useState(false);
+  const [addClientOpen, setAddClientOpen] = useState(false);
+  const [dbClients, setDbClients] = useState<{ nom: string; ville: string }[]>([]);
 
-  // Obtenir les lieux de livraison pour la ville sélectionnée
+  // Charger les clients ajoutés depuis la DB
+  useEffect(() => {
+    const loadDbClients = async () => {
+      const { data } = await supabase
+        .from('clients')
+        .select('nom, ville')
+        .order('nom');
+      if (data) setDbClients(data.filter(c => c.ville));
+    };
+    loadDbClients();
+  }, []);
+
+  // Obtenir les lieux de livraison pour la ville sélectionnée (statique + DB)
   const lieuxLivraisonForVille = useMemo(() => {
-    if (selectedVille) {
-      const clientsForVille = getClientsByVille(selectedVille);
-      return clientsForVille.filter(client => client.type !== 'ville');
-    }
-    return [];
-  }, [selectedVille]);
+    const staticClients = selectedVille
+      ? getClientsByVille(selectedVille).filter(client => client.type !== 'ville')
+      : [];
+    
+    const dbClientsForVille = selectedVille
+      ? dbClients
+          .filter(c => c.ville === selectedVille)
+          .filter(c => !staticClients.some(sc => sc.nom === c.nom))
+          .map(c => ({ nom: c.nom, ville: c.ville, type: 'entreprise' as const }))
+      : [];
+    
+    return [...staticClients, ...dbClientsForVille].sort((a, b) => a.nom.localeCompare(b.nom));
+  }, [selectedVille, dbClients]);
 
   // Initialiser les valeurs depuis selectedClient au premier rendu
   React.useEffect(() => {
@@ -128,14 +151,26 @@ export const ClientSelector = ({
 
       {/* Sélection du lieu de livraison avec recherche */}
       <div>
-        <Label>Lieu de livraison</Label>
+        <div className="flex items-center justify-between">
+          <Label>Lieu de livraison</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => setAddClientOpen(true)}
+          >
+            <Plus className="h-3 w-3" />
+            Nouveau client
+          </Button>
+        </div>
         <Popover open={lieuOpen} onOpenChange={setLieuOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               role="combobox"
               aria-expanded={lieuOpen}
-              className="w-full justify-between font-normal"
+              className="w-full justify-between font-normal mt-1"
               disabled={!selectedVille}
             >
               {selectedLieuNom ? (
@@ -194,6 +229,19 @@ export const ClientSelector = ({
           </div>
         )}
       </div>
+
+      <AddClientDialog
+        open={addClientOpen}
+        onOpenChange={setAddClientOpen}
+        defaultVille={selectedVille}
+        onClientAdded={(ville, nom) => {
+          setDbClients(prev => [...prev, { nom, ville }]);
+          setSelectedVille(ville);
+          setSelectedLieuNom(nom);
+          const destinationComplete = `${ville} ${nom}`;
+          onClientChange(destinationComplete);
+        }}
+      />
     </div>
   );
 };
