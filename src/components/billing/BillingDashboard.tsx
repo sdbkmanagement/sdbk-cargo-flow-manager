@@ -62,8 +62,15 @@ export const BillingDashboard = () => {
   });
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    if (filterMode === 'all') {
+      loadStats();
+    } else if (filterMode === 'month' && selectedMonth && selectedYear) {
+      loadStats(getFilters());
+    } else if (filterMode === 'period' && dateDebut && dateFin) {
+      loadStats(getFilters());
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterMode, selectedMonth, selectedYear, dateDebut, dateFin]);
 
   const getFilters = (): { dateDebut?: string; dateFin?: string } | undefined => {
     if (filterMode === 'month' && selectedMonth && selectedYear) {
@@ -208,10 +215,6 @@ export const BillingDashboard = () => {
 
             {filterMode !== 'all' && (
               <div className="flex gap-2">
-                <Button size="sm" onClick={applyFilter}>
-                  <Filter className="h-3 w-3 mr-1" />
-                  Appliquer
-                </Button>
                 <Button size="sm" variant="outline" onClick={resetFilter}>
                   <X className="h-3 w-3 mr-1" />
                   Réinitialiser
