@@ -14,7 +14,15 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [clientNom, setClientNom] = useState('');
+  const [selectedDepot, setSelectedDepot] = useState('tous');
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const depots = [
+    { value: 'tous', label: 'Tous les dépôts (facture globale)' },
+    { value: 'Conakry', label: 'Conakry' },
+    { value: 'Kankan', label: 'Kankan' },
+    { value: 'N\'Zerekore', label: 'N\'Zérékoré' }
+  ];
 
   const handleGenerate = async () => {
     if (!selectedMonth || !selectedYear) {
@@ -37,8 +45,9 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         ? `${yearNumber + 1}-01-01` 
         : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`;
 
-      // Vérifier si une facture existe déjà pour ce mois/année
-      const facturePrefix = `FM${selectedYear}${padMonth}`;
+      // Vérifier si une facture existe déjà pour ce mois/année/dépôt
+      const depotSuffix = selectedDepot !== 'tous' ? `-${selectedDepot.substring(0, 3).toUpperCase()}` : '';
+      const facturePrefix = `FM${selectedYear}${padMonth}${depotSuffix}`;
       const { data: existingFactures } = await supabase
         .from('factures')
         .select('id, numero')
@@ -67,7 +76,14 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
 
       if (blResult.error) throw blResult.error;
       
-      const blData = blResult.data || [];
+      // Filtrer par dépôt côté client si nécessaire
+      let blData = blResult.data || [];
+      if (selectedDepot !== 'tous') {
+        blData = blData.filter((bl: any) => {
+          const siteDepart = (bl.missions?.site_depart || '').toLowerCase();
+          return siteDepart.includes(selectedDepot.toLowerCase());
+        });
+      }
       const tarifs = tarifsResult.data || [];
 
       if (blData.length === 0) {
@@ -187,7 +203,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         facture = { numero: existingFacture.numero };
       } else {
         // CRÉATION d'une nouvelle facture
-        const numero = `FM${selectedYear}${padMonth}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+        const numero = `FM${selectedYear}${padMonth}${depotSuffix}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         const today = new Date();
         const date_emission = today.toISOString().split('T')[0];
         const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -216,10 +232,11 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       ]);
 
       // Générer le PDF
+      const depotLabel = selectedDepot !== 'tous' ? ` – Dépôt: ${selectedDepot}` : '';
       generateMonthlyInvoicePDF({
         month: selectedMonth,
         year: selectedYear,
-        clientNom: clientNom || 'TOTALEnergies GUINEE SA',
+        clientNom: (clientNom || 'TOTALEnergies GUINEE SA') + depotLabel,
         totalHT,
         totalTVA,
         totalTTC,
@@ -228,7 +245,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
 
       toast({
         title: isUpdate ? 'Facture mise à jour' : 'Facture groupée créée',
-        description: `Facture ${facture.numero} ${isUpdate ? 'mise à jour' : 'créée'} (${blIds.length} BL) – Total: ${totalTTC.toLocaleString('fr-FR')} GNF`
+        description: `Facture ${facture.numero} ${isUpdate ? 'mise à jour' : 'créée'} (${blIds.length} BL${depotLabel}) – Total: ${totalTTC.toLocaleString('fr-FR')} GNF`
       });
 
       onInvoiceCreated?.();
@@ -327,9 +344,25 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
             </div>
           </div>
 
+          <div>
+            <Label>Dépôt (lieu de départ)</Label>
+            <Select value={selectedDepot} onValueChange={setSelectedDepot}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {depots.map(depot => (
+                  <SelectItem key={depot.value} value={depot.value}>
+                    {depot.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
             <RefreshCw className="w-3 h-3 inline mr-1" />
-            Si une facture existe déjà pour ce mois, elle sera mise à jour automatiquement.
+            Si une facture existe déjà pour ce mois{selectedDepot !== 'tous' ? ` et ce dépôt (${selectedDepot})` : ''}, elle sera mise à jour automatiquement.
           </div>
 
           <Button 
