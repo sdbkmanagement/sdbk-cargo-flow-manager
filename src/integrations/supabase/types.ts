@@ -2474,7 +2474,7 @@ export type Database = {
           cout: number | null
           created_at: string
           date_rapport: string
-          duree_intervention: unknown
+          duree_intervention: string | null
           id: string
           observations: string | null
           service: string
@@ -2486,7 +2486,7 @@ export type Database = {
           cout?: number | null
           created_at?: string
           date_rapport?: string
-          duree_intervention?: unknown
+          duree_intervention?: string | null
           id?: string
           observations?: string | null
           service: string
@@ -2498,7 +2498,7 @@ export type Database = {
           cout?: number | null
           created_at?: string
           date_rapport?: string
-          duree_intervention?: unknown
+          duree_intervention?: string | null
           id?: string
           observations?: string | null
           service?: string
