@@ -100,7 +100,7 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
             </div>
             <div className="hidden md:block">
               <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                SDBK Transport
+                SDBK - AMS
               </h1>
             </div>
           </div>
