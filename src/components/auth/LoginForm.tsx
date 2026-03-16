@@ -118,7 +118,7 @@ export const LoginForm = () => {
         
         toast({
           title: "Connexion réussie",
-          description: "Bienvenue sur SDBK Transport",
+          description: "Bienvenue sur SDBK - AMS",
         });
         
         // Reset login attempts counter

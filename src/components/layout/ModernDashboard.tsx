@@ -113,9 +113,9 @@ export const ModernDashboard: React.FC = () => {
               </div>
               <div>
                 <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                  SDBK Transport
+                  SDBK - AMS
                 </h1>
-                <p className="text-sm text-gray-500 font-medium">Plateforme de gestion</p>
+                <p className="text-sm text-gray-500 font-medium">Administration Management System</p>
               </div>
             </div>
             
