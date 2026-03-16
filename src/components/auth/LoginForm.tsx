@@ -175,9 +175,9 @@ export const LoginForm = () => {
               <Truck className="w-8 h-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">SDBK Transport</CardTitle>
+          <CardTitle className="text-2xl font-bold">SDBK - AMS</CardTitle>
           <CardDescription>
-            Connexion au système de gestion de flotte
+            Administration Management System
           </CardDescription>
         </CardHeader>
         <CardContent>
