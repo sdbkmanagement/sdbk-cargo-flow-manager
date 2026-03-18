@@ -397,3 +397,5 @@ const Validations = () => {
     </div>
   );
 };
+
+export default Validations;
