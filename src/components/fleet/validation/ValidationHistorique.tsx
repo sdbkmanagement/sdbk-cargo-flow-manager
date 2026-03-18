@@ -69,12 +69,12 @@ export const ValidationHistorique = ({ workflowId }: ValidationHistoriqueProps) 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" onClick={loadHistorique}>
-          <History className="w-4 h-4 mr-2" />
-          Historique ({historique.length})
+        <Button variant="outline" size="sm" onClick={loadHistorique} className="text-xs px-2 h-7 sm:h-8 sm:px-3 sm:text-sm">
+          <History className="w-3.5 h-3.5 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Historique</span> ({historique.length})
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[700px] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
