@@ -270,19 +270,19 @@ const Validations = () => {
   const totalCount = vehiclesData?.totalCount || 0;
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Workflows de Validation</h1>
-          <p className="text-gray-600 mt-2">
-            Gestion des processus de validation des véhicules (Page {currentPage} - {totalCount} véhicule(s))
+          <h1 className="text-xl sm:text-3xl font-bold text-gray-900">Workflows de Validation</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-1">
+            Page {currentPage} - {totalCount} véhicule(s)
           </p>
-          <div className="mt-2 text-sm text-blue-600">
-            <p>Connecté en tant que : <strong>{getUserRole() === 'hsecq' ? 'HSEQ' : getUserRole()}</strong></p>
-            <p>Rôles : {getUserRoles().map(r => r === 'hsecq' ? 'HSEQ' : r).join(', ')}</p>
+          <div className="mt-1 text-xs sm:text-sm text-blue-600">
+            <p>Connecté : <strong>{getUserRole() === 'hsecq' ? 'HSEQ' : getUserRole()}</strong> — Rôles : {getUserRoles().map(r => r === 'hsecq' ? 'HSEQ' : r).join(', ')}</p>
           </div>
         </div>
-        <Button onClick={handleRefresh} variant="outline">
+        <Button onClick={handleRefresh} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
           Actualiser
         </Button>
@@ -292,55 +292,52 @@ const Validations = () => {
       <ValidationStats />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Validation des véhicules</CardTitle>
-          <CardDescription>
-            Suivez et gérez les workflows de validation pour chaque véhicule
+        <CardHeader className="px-4 sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Validation des véhicules</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
+            Suivez et gérez les workflows de validation
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           {/* Filtres */}
-          <div className="flex flex-col gap-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1 flex gap-2">
-                <Input
-                  placeholder="Rechercher par numéro, immatriculation, marque..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                />
-                <Button onClick={handleSearch} variant="default">
-                  <Search className="w-4 h-4 mr-2" />
-                  Rechercher
-                </Button>
-              </div>
-              <div className="w-full sm:w-48">
-                <Select value={statusFilter} onValueChange={handleStatusChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les statuts</SelectItem>
-                    <SelectItem value="en_validation">En validation</SelectItem>
-                    <SelectItem value="valide">Validé</SelectItem>
-                    <SelectItem value="rejete">Rejeté</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-full sm:w-52">
-                <Select value={departmentFilter} onValueChange={handleDepartmentChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Département" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les départements</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                    <SelectItem value="administratif">Administratif</SelectItem>
-                    <SelectItem value="hsecq">HSEQ</SelectItem>
-                    <SelectItem value="obc">OBC (Opérations)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex gap-2">
+              <Input
+                placeholder="Rechercher..."
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                className="flex-1 text-sm"
+              />
+              <Button onClick={handleSearch} variant="default" size="sm">
+                <Search className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Rechercher</span>
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Select value={statusFilter} onValueChange={handleStatusChange}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="en_validation">En validation</SelectItem>
+                  <SelectItem value="valide">Validé</SelectItem>
+                  <SelectItem value="rejete">Rejeté</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={departmentFilter} onValueChange={handleDepartmentChange}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Département" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les dép.</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="administratif">Administratif</SelectItem>
+                  <SelectItem value="hsecq">HSEQ</SelectItem>
+                  <SelectItem value="obc">OBC (Opérations)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -352,11 +349,11 @@ const Validations = () => {
               variant="outline"
               size="sm"
             >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Précédent
+              <ChevronLeft className="w-4 h-4" />
+              <span className="hidden sm:inline ml-1">Précédent</span>
             </Button>
-            <span className="text-sm text-gray-500">
-              Page {currentPage} - {vehicles.length} véhicule(s) sur {totalCount}
+            <span className="text-xs sm:text-sm text-gray-500 text-center">
+              {vehicles.length}/{totalCount}
             </span>
             <Button 
               onClick={handleNextPage} 
@@ -364,8 +361,8 @@ const Validations = () => {
               variant="outline"
               size="sm"
             >
-              Suivant
-              <ChevronRight className="w-4 h-4 ml-2" />
+              <span className="hidden sm:inline mr-1">Suivant</span>
+              <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
 
@@ -382,14 +379,14 @@ const Validations = () => {
               ))
             ) : (
               <div className="text-center py-8">
-                <p className="text-gray-500">Aucun véhicule trouvé pour les critères sélectionnés.</p>
+                <p className="text-gray-500 text-sm">Aucun véhicule trouvé.</p>
                 <Button onClick={() => {
                   setSearchInput('');
                   setSearchTerm('');
                   setStatusFilter('all');
                   setDepartmentFilter('all');
                   setCurrentPage(1);
-                }} variant="outline" className="mt-4">
+                }} variant="outline" size="sm" className="mt-4">
                   Réinitialiser les filtres
                 </Button>
               </div>

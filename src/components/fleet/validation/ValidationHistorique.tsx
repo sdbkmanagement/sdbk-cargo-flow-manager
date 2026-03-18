@@ -69,12 +69,12 @@ export const ValidationHistorique = ({ workflowId }: ValidationHistoriqueProps) 
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" onClick={loadHistorique}>
-          <History className="w-4 h-4 mr-2" />
-          Historique ({historique.length})
+        <Button variant="outline" size="sm" onClick={loadHistorique} className="text-xs px-2 h-7 sm:h-8 sm:px-3 sm:text-sm">
+          <History className="w-3.5 h-3.5 mr-1 sm:mr-2" />
+          <span className="hidden sm:inline">Historique</span> ({historique.length})
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[700px] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-4xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
@@ -95,22 +95,22 @@ export const ValidationHistorique = ({ workflowId }: ValidationHistoriqueProps) 
               <div className="space-y-3">
                 {historique.map((entry) => (
                   <Card key={entry.id} className="border-l-4 border-l-blue-500">
-                    <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-3">
-                          <h4 className="font-medium text-lg">
+                    <CardContent className="p-3 sm:p-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-1 mb-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-medium text-sm sm:text-base">
                             {ETAPE_LABELS[entry.etape as keyof typeof ETAPE_LABELS] || entry.etape}
                           </h4>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1">
                             {entry.ancien_statut && getStatutBadge(entry.ancien_statut)}
                             {entry.ancien_statut && entry.nouveau_statut && (
-                              <ArrowRight className="w-4 h-4 text-gray-400" />
+                              <ArrowRight className="w-3 h-3 text-gray-400" />
                             )}
                             {getStatutBadge(entry.nouveau_statut)}
                           </div>
                         </div>
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
-                          <Calendar className="w-4 h-4" />
+                        <div className="flex items-center gap-1 text-xs text-gray-500">
+                          <Calendar className="w-3 h-3" />
                           {formatDateHeure(entry.created_at)}
                         </div>
                       </div>

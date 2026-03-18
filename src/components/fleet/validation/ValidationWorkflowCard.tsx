@@ -201,49 +201,41 @@ export const ValidationWorkflowCard = ({ vehiculeId, vehiculeNumero, userRole = 
 
   return (
     <Card className="transition-all duration-200 hover:shadow-md">
-      <CardHeader className="pb-4">
-        <div className="flex justify-between items-center">
-          <CardTitle className="text-lg">{vehiculeNumero}</CardTitle>
-          <div className="flex items-center gap-2">
+      <CardHeader className="px-4 sm:px-6 pb-3">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <CardTitle className="text-base sm:text-lg leading-tight">{vehiculeNumero}</CardTitle>
+          <div className="flex items-center gap-1.5 flex-wrap">
             {getStatutGlobalBadge(workflow.statut_global)}
             <ValidationHistorique workflowId={workflow.id} />
-            <Button onClick={loadWorkflow} variant="ghost" size="sm">
-              <RefreshCw className="w-4 h-4" />
+            <Button onClick={loadWorkflow} variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <RefreshCw className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <CardContent className="px-4 sm:px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {workflow.etapes.map((etape) => {
             const canModify = canModifyEtape(etape);
             
             return (
-              <div key={etape.id} className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex justify-between items-start mb-3">
-                  <div className="flex items-center gap-3">
-                    <h4 className="font-medium text-sm">{ETAPE_LABELS[etape.etape as EtapeType]}</h4>
-                    <ValidationStatusBadge statut={etape.statut as StatutEtape} />
-                  </div>
+              <div key={etape.id} className="border rounded-lg p-3 bg-gray-50">
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <h4 className="font-medium text-sm">{ETAPE_LABELS[etape.etape as EtapeType]}</h4>
+                  <ValidationStatusBadge statut={etape.statut as StatutEtape} size="sm" />
                   
                   {canModify ? (
-                    <ValidationActionButtons
-                      currentStatus={etape.statut as StatutEtape}
-                      onStatusChange={(status) => setShowCommentDialog({show: true, etapeId: etape.id, action: status})}
-                      isLoading={actionLoading === etape.id}
-                    />
-                  ) : (
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge variant="outline" className="text-xs text-gray-500">
-                        Accès limité
-                      </Badge>
-                      <div className="text-xs text-gray-400">
-                        Rôle requis: {etape.etape}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        Vos rôles: {getUserRoles().join(', ')}
-                      </div>
+                    <div className="ml-auto">
+                      <ValidationActionButtons
+                        currentStatus={etape.statut as StatutEtape}
+                        onStatusChange={(status) => setShowCommentDialog({show: true, etapeId: etape.id, action: status})}
+                        isLoading={actionLoading === etape.id}
+                      />
                     </div>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] text-gray-500 ml-auto">
+                      Accès limité
+                    </Badge>
                   )}
                 </div>
                 
