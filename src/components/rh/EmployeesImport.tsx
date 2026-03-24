@@ -7,6 +7,7 @@ import { Upload, Download, FileText, CheckCircle, X } from 'lucide-react';
 import { rhService } from '@/services/rh';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import * as XLSX from 'xlsx';
 
 interface ImportResult {
   success: boolean;
@@ -77,13 +78,19 @@ export const EmployeesImport: React.FC<EmployeesImportProps> = ({ onSuccess, onC
   };
 
   const handleDownloadTemplate = () => {
-    const templateUrl = '/templates/template-employes.xlsx';
-    const link = document.createElement('a');
-    link.href = templateUrl;
-    link.download = 'template-employes.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const headers = [
+      'Nom', 'Prénom', 'Poste', 'Service', 'Type contrat', 
+      'Statut', 'Téléphone', 'Email', 'Date embauche', 'Remarques'
+    ];
+    const exampleRow = [
+      'Diallo', 'Mamadou', 'Chauffeur', 'Transport', 'CDI',
+      'actif', '+224 620 00 00 00', 'mamadou@example.com', '2025-01-15', ''
+    ];
+    const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
+    ws['!cols'] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Modèle Employés');
+    XLSX.writeFile(wb, 'modele_import_employes.xlsx');
   };
 
   return (
