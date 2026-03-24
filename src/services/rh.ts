@@ -272,21 +272,68 @@ export const rhService = {
   },
 
   async importEmployees(file: File): Promise<{ success: boolean; message: string; imported: number; errors: string[] }> {
+    const XLSX = await import('xlsx');
+    const errors: string[] = [];
+    let imported = 0;
+
     try {
-      // Simuler l'import pour le moment
+      const arrayBuffer = await file.arrayBuffer();
+      const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const rows: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+      if (rows.length === 0) {
+        return { success: false, message: "Le fichier est vide", imported: 0, errors: ["Aucune donnée trouvée"] };
+      }
+
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const nom = row['Nom'] || row['nom'];
+        const prenom = row['Prénom'] || row['prenom'];
+        const poste = row['Poste'] || row['poste'] || 'Non défini';
+        const service = row['Service'] || row['service'] || 'Non défini';
+
+        if (!nom || !prenom) {
+          errors.push(`Ligne ${i + 2}: Nom ou prénom manquant`);
+          continue;
+        }
+
+        const { error } = await supabase.from('employes').insert({
+          nom,
+          prenom,
+          poste,
+          service,
+          type_contrat: row['Type contrat'] || row['type_contrat'] || 'CDI',
+          statut: row['Statut'] || row['statut'] || 'actif',
+          telephone: row['Téléphone'] || row['telephone'] || null,
+          email: row['Email'] || row['email'] || null,
+          date_embauche: row['Date embauche'] || row['date_embauche'] || new Date().toISOString().split('T')[0],
+          remarques: row['Remarques'] || row['remarques'] || null,
+        });
+
+        if (error) {
+          errors.push(`Ligne ${i + 2}: ${error.message}`);
+        } else {
+          imported++;
+        }
+      }
+
       return {
-        success: true,
-        message: "Import simulé - fonctionnalité à implémenter",
-        imported: 0,
-        errors: []
+        success: imported > 0,
+        message: imported > 0
+          ? `${imported} employé(s) importé(s) avec succès${errors.length > 0 ? `, ${errors.length} erreur(s)` : ''}`
+          : "Aucun employé importé",
+        imported,
+        errors,
       };
     } catch (error) {
       console.error('Erreur import employés:', error);
       return {
         success: false,
-        message: "Erreur lors de l'import",
+        message: "Erreur lors de la lecture du fichier",
         imported: 0,
-        errors: [error instanceof Error ? error.message : "Erreur inconnue"]
+        errors: [error instanceof Error ? error.message : "Erreur inconnue"],
       };
     }
   }
