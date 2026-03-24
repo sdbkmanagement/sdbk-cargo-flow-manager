@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Users, 
   UserPlus, 
@@ -25,6 +26,9 @@ import { FormationsList } from '@/components/rh/FormationsList';
 import { AlertesRH } from '@/components/rh/AlertesRH';
 import { RHStats } from '@/components/rh/RHStats';
 import { EmployeesImport } from '@/components/rh/EmployeesImport';
+import { ExportButton } from '@/components/common/ExportButton';
+import { exportRHService } from '@/services/exportRHService';
+import { toast } from '@/hooks/use-toast';
 
 const RH = () => {
   const queryClient = useQueryClient();
@@ -99,12 +103,16 @@ const RH = () => {
 
   const services = ['tous', 'Transport', 'Maintenance', 'HSEQ', 'Administration', 'Direction'];
 
-  const exportToExcel = () => {
-    // Logique d'export Excel (à implémenter)
-    console.log('Export Excel des données RH');
+  const handleExportExcel = () => {
+    exportRHService.exportToExcel(employes || [], 'employes_rh');
+  };
+
+  const handleExportCSV = () => {
+    exportRHService.exportToCSV(employes || [], 'employes_rh');
   };
 
   const handleImportSuccess = () => {
+    setShowImport(false);
     queryClient.invalidateQueries({ queryKey: ['employes'] });
   };
 
@@ -118,10 +126,11 @@ const RH = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={exportToExcel} variant="outline">
-            <Download className="w-4 h-4 mr-2" />
-            Export Excel
-          </Button>
+          <ExportButton
+            onExportExcel={handleExportExcel}
+            onExportCSV={handleExportCSV}
+            disabled={!employes || employes.length === 0}
+          />
           <Button variant="outline" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4 mr-2" />
             Importer Excel
@@ -241,12 +250,14 @@ const RH = () => {
         />
       )}
 
-      {showImport && (
-        <EmployeesImport
-          onClose={() => setShowImport(false)}
-          onSuccess={handleImportSuccess}
-        />
-      )}
+      <Dialog open={showImport} onOpenChange={setShowImport}>
+        <DialogContent className="max-w-lg">
+          <EmployeesImport
+            onClose={() => setShowImport(false)}
+            onSuccess={handleImportSuccess}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
