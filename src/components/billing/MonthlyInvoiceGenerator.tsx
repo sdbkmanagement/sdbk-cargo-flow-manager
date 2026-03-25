@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, RefreshCw, Search } from 'lucide-react';
+import { FileText, Plus, RefreshCw, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { billingService } from '@/services/billing';
 import { supabase } from '@/integrations/supabase/client';
@@ -163,10 +163,9 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     setSelectedBLIds(checked ? new Set(previewItems.map(i => i.id)) : new Set());
   };
 
-  const handleGenerate = async () => {
-    const selectedItems = previewItems.filter(i => selectedBLIds.has(i.id));
-    if (selectedItems.length === 0) {
-      toast({ title: 'Erreur', description: 'Veuillez sélectionner au moins un BL', variant: 'destructive' });
+  const generateInvoiceForItems = async (items: BLPreviewItem[], isAdditive: boolean) => {
+    if (items.length === 0) {
+      toast({ title: 'Erreur', description: 'Aucun BL à facturer', variant: 'destructive' });
       return;
     }
 
@@ -174,7 +173,8 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     try {
       const padMonth = selectedMonth.padStart(2, '0');
       const depotSuffix = selectedDepot !== 'tous' ? `-${selectedDepot.substring(0, 3).toUpperCase()}` : '';
-      const facturePrefix = `FM${selectedYear}${padMonth}${depotSuffix}`;
+      const addSuffix = isAdditive ? '-ADD' : '';
+      const facturePrefix = `FM${selectedYear}${padMonth}${depotSuffix}${addSuffix}`;
 
       const { data: existingFactures } = await supabase
         .from('factures')
@@ -185,18 +185,18 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       const existingFacture = existingFactures && existingFactures.length > 0 ? existingFactures[0] : null;
       const isUpdate = !!existingFacture;
 
-      // Build invoice lines from selected items only
       let totalHT = 0;
       const lignes: { description: string; quantite: number; prix_unitaire: number; total: number }[] = [];
       const blIds: string[] = [];
       const missionIds = new Set<string>();
 
-      for (const item of selectedItems) {
+      for (const item of items) {
         const bl = rawBLData.find((b: any) => b.id === item.id);
         const mission = bl?.missions || {};
 
         totalHT += item.total;
-        const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${item.depart} → ${item.lieu_arrivee || item.destination} (BL: ${item.numero})`;
+        const prefix = isAdditive ? '[ADD] ' : '';
+        const description = `${prefix}${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${item.depart} → ${item.lieu_arrivee || item.destination} (BL: ${item.numero})`;
         lignes.push({ description, quantite: item.quantite, prix_unitaire: item.prix_unitaire, total: item.total });
         blIds.push(item.id);
         if (mission.id) missionIds.add(mission.id);
@@ -233,7 +233,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         }
         facture = { numero: existingFacture.numero };
       } else {
-        const numero = `FM${selectedYear}${padMonth}${depotSuffix}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+        const numero = `${facturePrefix}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         const today = new Date();
         const date_emission = today.toISOString().split('T')[0];
         const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
@@ -254,14 +254,15 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       ]);
 
       const depotLabel = selectedDepot !== 'tous' ? ` – Dépôt: ${selectedDepot}` : '';
+      const typeLabel = isAdditive ? ' (Additive)' : '';
       generateMonthlyInvoicePDF({
         month: selectedMonth, year: selectedYear,
-        clientNom: (clientNom || 'TOTALEnergies GUINEE SA') + depotLabel,
+        clientNom: (clientNom || 'TOTALEnergies GUINEE SA') + depotLabel + typeLabel,
         totalHT, totalTVA, totalTTC, blCount: blIds.length
       });
 
       toast({
-        title: isUpdate ? 'Facture mise à jour' : 'Facture groupée créée',
+        title: isUpdate ? 'Facture mise à jour' : `Facture ${isAdditive ? 'additive ' : ''}créée`,
         description: `Facture ${facture.numero} ${isUpdate ? 'mise à jour' : 'créée'} (${blIds.length} BL${depotLabel}) – Total: ${totalTTC.toLocaleString('fr-FR')} GNF`
       });
 
@@ -274,6 +275,16 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleGenerate = () => {
+    const selectedItems = previewItems.filter(i => selectedBLIds.has(i.id));
+    return generateInvoiceForItems(selectedItems, false);
+  };
+
+  const handleGenerateAdditive = () => {
+    const excludedItems = previewItems.filter(i => !selectedBLIds.has(i.id));
+    return generateInvoiceForItems(excludedItems, true);
   };
 
   const months = [
@@ -364,7 +375,9 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
           </div>
         )}
 
-        {step === 'preview' && (
+        {step === 'preview' && (() => {
+          const excludedCount = previewItems.length - selectedBLIds.size;
+          return (
           <div className="space-y-4">
             <BLPreviewList
               items={previewItems}
@@ -382,6 +395,17 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
               <Button variant="outline" onClick={() => setStep('config')} className="flex-1">
                 Retour
               </Button>
+              {excludedCount > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={handleGenerateAdditive}
+                  disabled={isGenerating}
+                  className="flex-1"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {isGenerating ? 'Génération...' : `Facture additive (${excludedCount} BL)`}
+                </Button>
+              )}
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || selectedBLIds.size === 0}
@@ -392,7 +416,8 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
               </Button>
             </div>
           </div>
-        )}
+          );
+        })()}
       </DialogContent>
     </Dialog>
   );
