@@ -1,0 +1,20 @@
+
+ALTER TABLE public.employes
+  ADD COLUMN IF NOT EXISTS matricule varchar NULL,
+  ADD COLUMN IF NOT EXISTS immatricule_cnss varchar NULL,
+  ADD COLUMN IF NOT EXISTS genre varchar NULL,
+  ADD COLUMN IF NOT EXISTS date_naissance date NULL,
+  ADD COLUMN IF NOT EXISTS lieu_naissance varchar NULL,
+  ADD COLUMN IF NOT EXISTS age integer NULL,
+  ADD COLUMN IF NOT EXISTS fonction varchar NULL,
+  ADD COLUMN IF NOT EXISTS anciennete_transporteur varchar NULL,
+  ADD COLUMN IF NOT EXISTS groupe_sanguin varchar NULL,
+  ADD COLUMN IF NOT EXISTS date_derniere_visite_medicale date NULL,
+  ADD COLUMN IF NOT EXISTS statut_visite_medicale varchar NULL DEFAULT 'a_faire',
+  ADD COLUMN IF NOT EXISTS date_prochaine_visite date NULL,
+  ADD COLUMN IF NOT EXISTS jours_restants_visite integer NULL,
+  ADD COLUMN IF NOT EXISTS nom_mere varchar NULL,
+  ADD COLUMN IF NOT EXISTS nom_pere varchar NULL,
+  ADD COLUMN IF NOT EXISTS diplome varchar NULL,
+  ADD COLUMN IF NOT EXISTS personne_urgence varchar NULL,
+  ADD COLUMN IF NOT EXISTS telephone_urgence varchar NULL;
