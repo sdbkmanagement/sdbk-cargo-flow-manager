@@ -375,7 +375,9 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
           </div>
         )}
 
-        {step === 'preview' && (
+        {step === 'preview' && (() => {
+          const excludedCount = previewItems.length - selectedBLIds.size;
+          return (
           <div className="space-y-4">
             <BLPreviewList
               items={previewItems}
