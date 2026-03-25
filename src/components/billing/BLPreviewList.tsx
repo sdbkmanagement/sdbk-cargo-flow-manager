@@ -25,13 +25,36 @@ interface BLPreviewListProps {
 }
 
 export const BLPreviewList = ({ items, selectedIds, onToggle, onToggleAll }: BLPreviewListProps) => {
+  const [searchQuery, setSearchQuery] = useState('');
   const allSelected = items.length > 0 && selectedIds.size === items.length;
   const someSelected = selectedIds.size > 0 && selectedIds.size < items.length;
   const totalSelected = items.filter(i => selectedIds.has(i.id)).reduce((s, i) => s + i.total, 0);
   const excludedCount = items.length - selectedIds.size;
 
+  const filteredItems = useMemo(() => {
+    if (!searchQuery.trim()) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter(i =>
+      i.numero.toLowerCase().includes(q) ||
+      i.destination.toLowerCase().includes(q) ||
+      (i.lieu_arrivee || '').toLowerCase().includes(q) ||
+      i.depart.toLowerCase().includes(q) ||
+      (i.mission_numero || '').toLowerCase().includes(q)
+    );
+  }, [items, searchQuery]);
+
   return (
     <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Rechercher un BL (numéro, trajet, mission)..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-2">
           <Checkbox
@@ -69,7 +92,7 @@ export const BLPreviewList = ({ items, selectedIds, onToggle, onToggleAll }: BLP
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item) => {
+            {filteredItems.map((item) => {
               const checked = selectedIds.has(item.id);
               return (
                 <TableRow
@@ -100,6 +123,13 @@ export const BLPreviewList = ({ items, selectedIds, onToggle, onToggleAll }: BLP
                 </TableRow>
               );
             })}
+            {filteredItems.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center text-muted-foreground text-sm py-4">
+                  Aucun BL trouvé pour « {searchQuery} »
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
