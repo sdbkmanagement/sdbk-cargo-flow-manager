@@ -79,15 +79,29 @@ export const EmployeesImport: React.FC<EmployeesImportProps> = ({ onSuccess, onC
 
   const handleDownloadTemplate = () => {
     const headers = [
-      'Nom', 'Prénom', 'Poste', 'Service', 'Type contrat', 
-      'Statut', 'Téléphone', 'Email', 'Date embauche', 'Remarques'
+      'Matricule', 'Immatricule CNSS', 'Nom', 'Prénom', 'Genre',
+      'Date de naissance', 'Lieu de naissance',
+      'Fonction', 'Date embauche', 'Ancienneté transporteur', 'Type contrat', 'Service',
+      'Groupe sanguin', 'Date dernière visite médicale', 'Statut visite médicale', 'Date prochaine visite',
+      'Téléphone', 'Email',
+      'Nom du père', 'Nom de la mère',
+      'Diplôme',
+      'Personne urgence', 'Téléphone urgence',
+      'Statut', 'Remarques'
     ];
     const exampleRow = [
-      'Diallo', 'Mamadou', 'Chauffeur', 'Transport', 'CDI',
-      'actif', '+224 620 00 00 00', 'mamadou@example.com', '2025-01-15', ''
+      'MAT-001', '', 'Diallo', 'Mamadou', 'Masculin',
+      '1990-05-15', 'Conakry',
+      'Chauffeur', '2025-01-15', '5 ans', 'CDI', 'Transport',
+      'O+', '2025-06-01', 'a_jour', '2026-06-01',
+      '+224 620 00 00 00', 'mamadou@example.com',
+      'Diallo Ibrahima', 'Bah Fatoumata',
+      'Bac',
+      'Sow Amadou', '+224 621 00 00 00',
+      'actif', ''
     ];
     const ws = XLSX.utils.aoa_to_sheet([headers, exampleRow]);
-    ws['!cols'] = headers.map(() => ({ wch: 18 }));
+    ws['!cols'] = headers.map(() => ({ wch: 22 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Modèle Employés');
     XLSX.writeFile(wb, 'modele_import_employes.xlsx');
