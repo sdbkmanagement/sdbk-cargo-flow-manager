@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertTriangle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { AlertTriangle, Search } from 'lucide-react';
 
 export interface BLPreviewItem {
   id: string;
