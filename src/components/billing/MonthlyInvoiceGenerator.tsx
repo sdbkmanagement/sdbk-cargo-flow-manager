@@ -393,6 +393,17 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
               <Button variant="outline" onClick={() => setStep('config')} className="flex-1">
                 Retour
               </Button>
+              {excludedCount > 0 && (
+                <Button
+                  variant="secondary"
+                  onClick={handleGenerateAdditive}
+                  disabled={isGenerating}
+                  className="flex-1"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {isGenerating ? 'Génération...' : `Facture additive (${excludedCount} BL)`}
+                </Button>
+              )}
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || selectedBLIds.size === 0}
