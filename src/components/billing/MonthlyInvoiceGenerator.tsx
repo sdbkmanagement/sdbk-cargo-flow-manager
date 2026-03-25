@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, RefreshCw } from 'lucide-react';
+import { FileText, RefreshCw, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { billingService } from '@/services/billing';
 import { supabase } from '@/integrations/supabase/client';
 import { generateMonthlyInvoicePDF } from '@/utils/pdfGenerator';
+import { BLPreviewList, type BLPreviewItem } from './BLPreviewList';
 
 export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated?: () => void }) => {
   const [open, setOpen] = useState(false);
@@ -16,6 +17,14 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
   const [clientNom, setClientNom] = useState('');
   const [selectedDepot, setSelectedDepot] = useState('tous');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Preview state
+  const [step, setStep] = useState<'config' | 'preview'>('config');
+  const [previewItems, setPreviewItems] = useState<BLPreviewItem[]>([]);
+  const [selectedBLIds, setSelectedBLIds] = useState<Set<string>>(new Set());
+  const [rawBLData, setRawBLData] = useState<any[]>([]);
+  const [tarifs, setTarifs] = useState<any[]>([]);
 
   const depots = [
     { value: 'tous', label: 'Tous les dépôts (facture globale)' },
@@ -24,40 +33,53 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     { value: 'N\'Zerekore', label: 'N\'Zérékoré' }
   ];
 
-  const handleGenerate = async () => {
+  const resetState = () => {
+    setStep('config');
+    setPreviewItems([]);
+    setSelectedBLIds(new Set());
+    setRawBLData([]);
+    setTarifs([]);
+  };
+
+  // Tarif lookup helper
+  const buildTarifMap = (tarifsData: any[]) => {
+    const tarifMap = new Map<string, number>();
+    tarifsData.forEach(t => {
+      tarifMap.set(`${t.lieu_depart.toLowerCase()}|${t.destination.toLowerCase()}`, t.tarif_au_litre);
+    });
+    return tarifMap;
+  };
+
+  const findTarif = (tarifMap: Map<string, number>, depart: string, dest: string): number => {
+    const key = `${depart.toLowerCase()}|${dest.toLowerCase()}`;
+    if (tarifMap.has(key)) return tarifMap.get(key)!;
+    for (const [k, v] of tarifMap) {
+      const [d, dst] = k.split('|');
+      if (depart.toLowerCase().includes(d) || d.includes(depart.toLowerCase())) {
+        if (dest.toLowerCase().includes(dst) || dst.includes(dest.toLowerCase())) {
+          return v;
+        }
+      }
+    }
+    return 0;
+  };
+
+  const handlePreview = async () => {
     if (!selectedMonth || !selectedYear) {
-      toast({
-        title: 'Erreur',
-        description: 'Veuillez sélectionner le mois et l\'année',
-        variant: 'destructive'
-      });
+      toast({ title: 'Erreur', description: 'Veuillez sélectionner le mois et l\'année', variant: 'destructive' });
       return;
     }
 
-    setIsGenerating(true);
+    setIsLoading(true);
     try {
       const monthNumber = parseInt(selectedMonth);
       const yearNumber = parseInt(selectedYear);
       const padMonth = selectedMonth.padStart(2, '0');
-
       const startDate = `${yearNumber}-${padMonth}-01`;
-      const endDate = monthNumber === 12 
-        ? `${yearNumber + 1}-01-01` 
+      const endDate = monthNumber === 12
+        ? `${yearNumber + 1}-01-01`
         : `${yearNumber}-${(monthNumber + 1).toString().padStart(2, '0')}-01`;
 
-      // Vérifier si une facture existe déjà pour ce mois/année/dépôt
-      const depotSuffix = selectedDepot !== 'tous' ? `-${selectedDepot.substring(0, 3).toUpperCase()}` : '';
-      const facturePrefix = `FM${selectedYear}${padMonth}${depotSuffix}`;
-      const { data: existingFactures } = await supabase
-        .from('factures')
-        .select('id, numero')
-        .like('numero', `${facturePrefix}%`)
-        .limit(1);
-
-      const existingFacture = existingFactures && existingFactures.length > 0 ? existingFactures[0] : null;
-      const isUpdate = !!existingFacture;
-
-      // Charger BL et tarifs en parallèle
       const [blResult, tarifsResult] = await Promise.all([
         supabase
           .from('bons_livraison')
@@ -75,8 +97,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       ]);
 
       if (blResult.error) throw blResult.error;
-      
-      // Filtrer par dépôt côté client si nécessaire
+
       let blData = blResult.data || [];
       if (selectedDepot !== 'tous') {
         blData = blData.filter((bl: any) => {
@@ -84,125 +105,134 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
           return siteDepart.includes(selectedDepot.toLowerCase());
         });
       }
-      const tarifs = tarifsResult.data || [];
 
       if (blData.length === 0) {
-        toast({
-          title: 'Aucun BL',
-          description: 'Aucun bon de livraison trouvé pour cette période',
-          variant: 'destructive'
-        });
-        setIsGenerating(false);
+        toast({ title: 'Aucun BL', description: 'Aucun bon de livraison trouvé pour cette période', variant: 'destructive' });
+        setIsLoading(false);
         return;
       }
 
-      // Créer un map des tarifs pour recherche rapide
-      const tarifMap = new Map<string, number>();
-      tarifs.forEach(t => {
-        tarifMap.set(`${t.lieu_depart.toLowerCase()}|${t.destination.toLowerCase()}`, t.tarif_au_litre);
+      const tarifsData = tarifsResult.data || [];
+      const tarifMap = buildTarifMap(tarifsData);
+
+      const items: BLPreviewItem[] = blData.map((bl: any) => {
+        const mission = bl.missions || {};
+        const depart = mission.site_depart || '';
+        const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
+        const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+        let prixUnitaire = bl.prix_unitaire ?? 0;
+        if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
+          prixUnitaire = findTarif(tarifMap, depart, destination);
+        }
+        return {
+          id: bl.id,
+          numero: bl.numero,
+          destination: bl.destination,
+          lieu_arrivee: bl.lieu_arrivee,
+          quantite,
+          prix_unitaire: prixUnitaire,
+          total: quantite * prixUnitaire,
+          depart,
+          mission_numero: mission.numero
+        };
       });
 
-      // Fonction pour trouver un tarif (avec recherche flexible)
-      const findTarif = (depart: string, dest: string): number => {
-        const key = `${depart.toLowerCase()}|${dest.toLowerCase()}`;
-        if (tarifMap.has(key)) return tarifMap.get(key)!;
-        
-        for (const [k, v] of tarifMap) {
-          const [d, dst] = k.split('|');
-          if (depart.toLowerCase().includes(d) || d.includes(depart.toLowerCase())) {
-            if (dest.toLowerCase().includes(dst) || dst.includes(dest.toLowerCase())) {
-              return v;
-            }
-          }
-        }
-        return 0;
-      };
+      setPreviewItems(items);
+      setSelectedBLIds(new Set(items.map(i => i.id)));
+      setRawBLData(blData);
+      setTarifs(tarifsData);
+      setStep('preview');
+    } catch (error: any) {
+      console.error('Erreur:', error);
+      toast({ title: 'Erreur', description: error?.message || 'Erreur lors du chargement', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      // Une seule boucle pour tout calculer
+  const handleToggleBL = (id: string) => {
+    setSelectedBLIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleToggleAll = (checked: boolean) => {
+    setSelectedBLIds(checked ? new Set(previewItems.map(i => i.id)) : new Set());
+  };
+
+  const handleGenerate = async () => {
+    const selectedItems = previewItems.filter(i => selectedBLIds.has(i.id));
+    if (selectedItems.length === 0) {
+      toast({ title: 'Erreur', description: 'Veuillez sélectionner au moins un BL', variant: 'destructive' });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const padMonth = selectedMonth.padStart(2, '0');
+      const depotSuffix = selectedDepot !== 'tous' ? `-${selectedDepot.substring(0, 3).toUpperCase()}` : '';
+      const facturePrefix = `FM${selectedYear}${padMonth}${depotSuffix}`;
+
+      const { data: existingFactures } = await supabase
+        .from('factures')
+        .select('id, numero')
+        .like('numero', `${facturePrefix}%`)
+        .limit(1);
+
+      const existingFacture = existingFactures && existingFactures.length > 0 ? existingFactures[0] : null;
+      const isUpdate = !!existingFacture;
+
+      // Build invoice lines from selected items only
       let totalHT = 0;
       const lignes: { description: string; quantite: number; prix_unitaire: number; total: number }[] = [];
       const blIds: string[] = [];
       const missionIds = new Set<string>();
 
-      for (const bl of blData as any[]) {
-        const mission = bl.missions || {};
-        const depart = mission.site_depart || '';
-        const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
-        const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
-        
-        if (!quantite) continue;
-        
-        let prixUnitaire = bl.prix_unitaire ?? 0;
-        if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-          prixUnitaire = findTarif(depart, destination);
-        }
+      for (const item of selectedItems) {
+        const bl = rawBLData.find((b: any) => b.id === item.id);
+        const mission = bl?.missions || {};
 
-        const total = quantite * prixUnitaire;
-        totalHT += total;
-
-        const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${depart} → ${destination} (BL: ${bl.numero})`;
-        lignes.push({ description, quantite, prix_unitaire: prixUnitaire, total });
-        blIds.push(bl.id);
+        totalHT += item.total;
+        const description = `${mission.type_transport === 'hydrocarbures' ? 'Transport hydrocarbures' : 'Transport'} ${item.depart} → ${item.lieu_arrivee || item.destination} (BL: ${item.numero})`;
+        lignes.push({ description, quantite: item.quantite, prix_unitaire: item.prix_unitaire, total: item.total });
+        blIds.push(item.id);
         if (mission.id) missionIds.add(mission.id);
       }
 
       if (totalHT === 0 || blIds.length === 0) {
-        toast({
-          title: 'Aucun montant',
-          description: 'Aucun montant à facturer pour cette période',
-          variant: 'destructive'
-        });
+        toast({ title: 'Aucun montant', description: 'Aucun montant à facturer', variant: 'destructive' });
         setIsGenerating(false);
         return;
       }
 
       const totalTVA = totalHT * 0.18;
       const totalTTC = totalHT + totalTVA;
-
       let facture: any;
 
       if (isUpdate && existingFacture) {
-        // MISE À JOUR de la facture existante
         const today = new Date();
         const date_emission = today.toISOString().split('T')[0];
         const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-        // Mettre à jour la facture
-        await supabase
-          .from('factures')
-          .update({
-            client_nom: clientNom || 'TOTALEnergies GUINEE SA',
-            date_emission,
-            date_echeance,
-            montant_ht: totalHT,
-            montant_tva: totalTVA,
-            montant_ttc: totalTTC,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingFacture.id);
+        await supabase.from('factures').update({
+          client_nom: clientNom || 'TOTALEnergies GUINEE SA',
+          date_emission, date_echeance,
+          montant_ht: totalHT, montant_tva: totalTVA, montant_ttc: totalTTC,
+          updated_at: new Date().toISOString()
+        }).eq('id', existingFacture.id);
 
-        // Supprimer les anciennes lignes
-        await supabase
-          .from('facture_lignes')
-          .delete()
-          .eq('facture_id', existingFacture.id);
+        await supabase.from('facture_lignes').delete().eq('facture_id', existingFacture.id);
 
-        // Insérer les nouvelles lignes
         if (lignes.length > 0) {
-          await supabase
-            .from('facture_lignes')
-            .insert(lignes.map(l => ({
-              facture_id: existingFacture.id,
-              description: l.description,
-              quantite: l.quantite,
-              prix_unitaire: l.prix_unitaire,
-              total: l.total
-            })));
+          await supabase.from('facture_lignes').insert(
+            lignes.map(l => ({ facture_id: existingFacture.id, description: l.description, quantite: l.quantite, prix_unitaire: l.prix_unitaire, total: l.total }))
+          );
         }
-
         facture = { numero: existingFacture.numero };
       } else {
-        // CRÉATION d'une nouvelle facture
         const numero = `FM${selectedYear}${padMonth}${depotSuffix}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
         const today = new Date();
         const date_emission = today.toISOString().split('T')[0];
@@ -211,36 +241,23 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         facture = await billingService.createFacture({
           numero,
           client_nom: clientNom || 'TOTALEnergies GUINEE SA',
-          date_emission,
-          date_echeance,
-          montant_ht: totalHT,
-          montant_tva: totalTVA,
-          montant_ttc: totalTTC,
+          date_emission, date_echeance,
+          montant_ht: totalHT, montant_tva: totalTVA, montant_ttc: totalTTC,
           statut: 'en_attente'
         } as any, lignes);
       }
 
-      // Marquer BL et missions en parallèle
       const missionsToUpdate = Array.from(missionIds);
       await Promise.all([
-        blIds.length > 0 
-          ? supabase.from('bons_livraison').update({ facture: true }).in('id', blIds)
-          : Promise.resolve(),
-        missionsToUpdate.length > 0
-          ? supabase.from('missions').update({ facturation_statut: 'facturee', facturation_date: new Date().toISOString() }).in('id', missionsToUpdate)
-          : Promise.resolve()
+        blIds.length > 0 ? supabase.from('bons_livraison').update({ facture: true }).in('id', blIds) : Promise.resolve(),
+        missionsToUpdate.length > 0 ? supabase.from('missions').update({ facturation_statut: 'facturee', facturation_date: new Date().toISOString() }).in('id', missionsToUpdate) : Promise.resolve()
       ]);
 
-      // Générer le PDF
       const depotLabel = selectedDepot !== 'tous' ? ` – Dépôt: ${selectedDepot}` : '';
       generateMonthlyInvoicePDF({
-        month: selectedMonth,
-        year: selectedYear,
+        month: selectedMonth, year: selectedYear,
         clientNom: (clientNom || 'TOTALEnergies GUINEE SA') + depotLabel,
-        totalHT,
-        totalTVA,
-        totalTTC,
-        blCount: blIds.length
+        totalHT, totalTVA, totalTTC, blCount: blIds.length
       });
 
       toast({
@@ -249,131 +266,133 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       });
 
       onInvoiceCreated?.();
+      resetState();
       setOpen(false);
     } catch (error: any) {
       console.error('Erreur:', error);
-      toast({
-        title: 'Erreur',
-        description: error?.message || 'Erreur lors de la génération',
-        variant: 'destructive'
-      });
+      toast({ title: 'Erreur', description: error?.message || 'Erreur lors de la génération', variant: 'destructive' });
     } finally {
       setIsGenerating(false);
     }
   };
 
   const months = [
-    { value: '1', label: 'Janvier' },
-    { value: '2', label: 'Février' },
-    { value: '3', label: 'Mars' },
-    { value: '4', label: 'Avril' },
-    { value: '5', label: 'Mai' },
-    { value: '6', label: 'Juin' },
-    { value: '7', label: 'Juillet' },
-    { value: '8', label: 'Août' },
-    { value: '9', label: 'Septembre' },
-    { value: '10', label: 'Octobre' },
-    { value: '11', label: 'Novembre' },
-    { value: '12', label: 'Décembre' }
+    { value: '1', label: 'Janvier' }, { value: '2', label: 'Février' },
+    { value: '3', label: 'Mars' }, { value: '4', label: 'Avril' },
+    { value: '5', label: 'Mai' }, { value: '6', label: 'Juin' },
+    { value: '7', label: 'Juillet' }, { value: '8', label: 'Août' },
+    { value: '9', label: 'Septembre' }, { value: '10', label: 'Octobre' },
+    { value: '11', label: 'Novembre' }, { value: '12', label: 'Décembre' }
   ];
 
   const years = [];
   const currentYear = new Date().getFullYear();
-  for (let i = currentYear - 2; i <= currentYear + 1; i++) {
-    years.push(i.toString());
-  }
+  for (let i = currentYear - 2; i <= currentYear + 1; i++) years.push(i.toString());
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetState(); }}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileText className="w-4 h-4 mr-2" />
           Facture groupée mensuelle
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className={step === 'preview' ? 'max-w-3xl' : ''}>
         <DialogHeader>
-          <DialogTitle>Générer une facture groupée mensuelle</DialogTitle>
+          <DialogTitle>
+            {step === 'config' ? 'Générer une facture groupée mensuelle' : 'Sélection des BL à facturer'}
+          </DialogTitle>
           <DialogDescription>
-            Créer ou mettre à jour la facture unique pour toutes les missions du mois
+            {step === 'config'
+              ? 'Sélectionnez la période puis prévisualisez les BL avant de facturer'
+              : 'Décochez les BL en litige ou en attente d\'information'}
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div>
-            <Label>Nom du client (optionnel)</Label>
-            <input
-              type="text"
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="Ex: TOTALEnergies GUINEE SA"
-              value={clientNom}
-              onChange={(e) => setClientNom(e.target.value)}
+
+        {step === 'config' && (
+          <div className="space-y-4">
+            <div>
+              <Label>Nom du client (optionnel)</Label>
+              <input
+                type="text"
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="Ex: TOTALEnergies GUINEE SA"
+                value={clientNom}
+                onChange={(e) => setClientNom(e.target.value)}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Mois</Label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    {months.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Année</Label>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div>
+              <Label>Dépôt (lieu de départ)</Label>
+              <Select value={selectedDepot} onValueChange={setSelectedDepot}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {depots.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button
+              onClick={handlePreview}
+              disabled={isLoading || !selectedMonth || !selectedYear}
+              className="w-full"
+            >
+              <Search className="w-4 h-4 mr-2" />
+              {isLoading ? 'Chargement des BL...' : 'Prévisualiser les BL'}
+            </Button>
+          </div>
+        )}
+
+        {step === 'preview' && (
+          <div className="space-y-4">
+            <BLPreviewList
+              items={previewItems}
+              selectedIds={selectedBLIds}
+              onToggle={handleToggleBL}
+              onToggleAll={handleToggleAll}
             />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Mois</Label>
-              <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map(month => (
-                    <SelectItem key={month.value} value={month.value}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+              <RefreshCw className="w-3 h-3 inline mr-1" />
+              Si une facture existe déjà pour ce mois{selectedDepot !== 'tous' ? ` et ce dépôt (${selectedDepot})` : ''}, elle sera mise à jour automatiquement.
             </div>
 
-            <div>
-              <Label>Année</Label>
-              <Select value={selectedYear} onValueChange={setSelectedYear}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(year => (
-                    <SelectItem key={year} value={year}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setStep('config')} className="flex-1">
+                Retour
+              </Button>
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || selectedBLIds.size === 0}
+                className="flex-1"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {isGenerating ? 'Génération...' : `Facturer ${selectedBLIds.size} BL`}
+              </Button>
             </div>
           </div>
-
-          <div>
-            <Label>Dépôt (lieu de départ)</Label>
-            <Select value={selectedDepot} onValueChange={setSelectedDepot}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {depots.map(depot => (
-                  <SelectItem key={depot.value} value={depot.value}>
-                    {depot.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-            <RefreshCw className="w-3 h-3 inline mr-1" />
-            Si une facture existe déjà pour ce mois{selectedDepot !== 'tous' ? ` et ce dépôt (${selectedDepot})` : ''}, elle sera mise à jour automatiquement.
-          </div>
-
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isGenerating || !selectedMonth || !selectedYear}
-            className="w-full"
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            {isGenerating ? 'Génération...' : 'Générer / Mettre à jour'}
-          </Button>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );
