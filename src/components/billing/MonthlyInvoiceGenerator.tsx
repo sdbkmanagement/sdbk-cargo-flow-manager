@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, RefreshCw, Search } from 'lucide-react';
+import { FileText, Plus, RefreshCw, Search } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { billingService } from '@/services/billing';
 import { supabase } from '@/integrations/supabase/client';
