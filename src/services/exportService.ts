@@ -123,10 +123,10 @@ export const exportService = {
           vehicules(numero, marque, modele, immatriculation),
           chauffeurs(nom, prenom)
         `)
-        .gte('date_emission', dateDebut)
-        .lte('date_emission', dateFin)
+        .gte('date_chargement_reelle', dateDebut)
+        .lte('date_chargement_reelle', dateFin)
         .eq('statut', 'livre')
-        .order('date_emission', { ascending: true });
+        .order('date_chargement_reelle', { ascending: true });
 
       if (error) {
         console.error('❌ Erreur lors de la récupération des BL:', error);
@@ -241,10 +241,10 @@ export const exportService = {
           vehicules(numero, marque, modele, immatriculation),
           chauffeurs(nom, prenom)
         `)
-        .gte('date_emission', dateDebut)
-        .lte('date_emission', dateFin)
+        .gte('date_chargement_reelle', dateDebut)
+        .lte('date_chargement_reelle', dateFin)
         .eq('statut', 'livre')
-        .order('date_emission', { ascending: true });
+        .order('date_chargement_reelle', { ascending: true });
 
       if (error) {
         console.error('❌ Erreur lors de la récupération des BL:', error);
