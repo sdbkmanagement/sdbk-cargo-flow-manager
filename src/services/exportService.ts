@@ -124,7 +124,7 @@ export const exportService = {
           chauffeurs(nom, prenom)
         `)
         .gte('date_chargement_reelle', dateDebut)
-        .lte('date_chargement_reelle', dateFin)
+        .lte('date_chargement_reelle', dateFin + 'T23:59:59')
         .eq('statut', 'livre')
         .order('date_chargement_reelle', { ascending: true });
 
@@ -242,7 +242,7 @@ export const exportService = {
           chauffeurs(nom, prenom)
         `)
         .gte('date_chargement_reelle', dateDebut)
-        .lte('date_chargement_reelle', dateFin)
+        .lte('date_chargement_reelle', dateFin + 'T23:59:59')
         .eq('statut', 'livre')
         .order('date_chargement_reelle', { ascending: true });
 

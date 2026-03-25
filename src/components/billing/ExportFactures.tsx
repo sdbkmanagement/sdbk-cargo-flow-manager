@@ -100,7 +100,7 @@ export const ExportFactures = () => {
       `)
       .in('statut', ['livre', 'termine'])
       .gte('date_chargement_reelle', dateDebutStr)
-      .lte('date_chargement_reelle', dateFinStr)
+      .lte('date_chargement_reelle', dateFinStr + 'T23:59:59')
       .order('date_chargement_reelle', { ascending: false });
 
     if (error) throw error;
