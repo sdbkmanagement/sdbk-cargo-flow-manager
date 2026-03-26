@@ -41,22 +41,28 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     setTarifs([]);
   };
 
-  // Tarif lookup - même logique que tarifsHydrocarburesService.getTarif
-  // pour garantir la cohérence entre facture et export
+  // Extraire le nom de ville simplifié - identique à ExportFactures
+  const extraireNomVille = (destination: string): string => {
+    if (!destination) return '';
+    const avantStation = destination.split(' Station ')[0];
+    if (avantStation) return avantStation.trim();
+    return destination.split(' ')[0].trim();
+  };
+
+  // Tarif lookup - aligné exactement avec ExportFactures
   const findTarif = (tarifsData: any[], depart: string, dest: string): number => {
     if (!depart || !dest) return 0;
     const departLower = depart.toLowerCase();
     const destLower = dest.toLowerCase();
 
-    // 1. Recherche exacte (lieu_depart exact, destination exacte)
+    // 1. Recherche exacte
     const exactMatch = tarifsData.find(t =>
       t.lieu_depart.toLowerCase() === departLower &&
       t.destination.toLowerCase() === destLower
     );
     if (exactMatch) return exactMatch.tarif_au_litre;
 
-    // 2. Recherche flexible (lieu_depart exact, destination includes)
-    // Identique à tarifsHydrocarburesService.getTarif
+    // 2. Recherche flexible (même logique que tarifsHydrocarburesService.getTarif)
     const tarifsForDepart = tarifsData.filter(t =>
       t.lieu_depart.toLowerCase() === departLower
     );
