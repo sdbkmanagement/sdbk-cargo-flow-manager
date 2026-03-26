@@ -118,7 +118,6 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       }
 
       const tarifsData = tarifsResult.data || [];
-      const tarifMap = buildTarifMap(tarifsData);
 
       const items: BLPreviewItem[] = blData.map((bl: any) => {
         const mission = bl.missions || {};
@@ -127,7 +126,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
         let prixUnitaire = bl.prix_unitaire ?? 0;
         if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-          prixUnitaire = findTarif(tarifMap, depart, destination);
+          prixUnitaire = findTarif(tarifsData, depart, destination);
         }
         return {
           id: bl.id,
