@@ -41,22 +41,28 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     setTarifs([]);
   };
 
-  // Tarif lookup - même logique que tarifsHydrocarburesService.getTarif
-  // pour garantir la cohérence entre facture et export
+  // Extraire le nom de ville simplifié - identique à ExportFactures
+  const extraireNomVille = (destination: string): string => {
+    if (!destination) return '';
+    const avantStation = destination.split(' Station ')[0];
+    if (avantStation) return avantStation.trim();
+    return destination.split(' ')[0].trim();
+  };
+
+  // Tarif lookup - aligné exactement avec ExportFactures
   const findTarif = (tarifsData: any[], depart: string, dest: string): number => {
     if (!depart || !dest) return 0;
     const departLower = depart.toLowerCase();
     const destLower = dest.toLowerCase();
 
-    // 1. Recherche exacte (lieu_depart exact, destination exacte)
+    // 1. Recherche exacte
     const exactMatch = tarifsData.find(t =>
       t.lieu_depart.toLowerCase() === departLower &&
       t.destination.toLowerCase() === destLower
     );
     if (exactMatch) return exactMatch.tarif_au_litre;
 
-    // 2. Recherche flexible (lieu_depart exact, destination includes)
-    // Identique à tarifsHydrocarburesService.getTarif
+    // 2. Recherche flexible (même logique que tarifsHydrocarburesService.getTarif)
     const tarifsForDepart = tarifsData.filter(t =>
       t.lieu_depart.toLowerCase() === departLower
     );
@@ -122,11 +128,15 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       const items: BLPreviewItem[] = blData.map((bl: any) => {
         const mission = bl.missions || {};
         const depart = mission.site_depart || '';
-        const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
+        // Résolution de destination identique à ExportFactures
+        const destinationComplete = bl.destination || bl.lieu_arrivee || mission.site_arrivee || '';
+        const destinationVille = extraireNomVille(destinationComplete);
         const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+        // Utiliser prix_unitaire de la DB en priorité (comme l'export)
         let prixUnitaire = bl.prix_unitaire ?? 0;
         if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-          prixUnitaire = findTarif(tarifsData, depart, destination);
+          // Utiliser la ville simplifiée pour le matching (comme l'export)
+          prixUnitaire = findTarif(tarifsData, depart, destinationVille);
         }
         return {
           id: bl.id,
