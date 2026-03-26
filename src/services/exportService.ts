@@ -43,7 +43,7 @@ export const exportService = {
         'Prix Unitaire': bl.prix_unitaire || 0,
         'Montant Facturé': bl.montant_facture || 0,
         'Manquant Compteur': bl.manquant_compteur || 0,
-        'Manquant Cuve': bl.manquant_cuve || 0,
+        'Manquant Citerne': bl.manquant_citerne || 0,
         'Code Client TOTAL': bl.client_code_total || '',
         'Statut': bl.statut || '',
         'Date Chargement': bl.date_chargement_reelle || '',
@@ -186,9 +186,9 @@ export const exportService = {
           'Quantité': quantite,
           'Prix Unitaire': prixUnitaire,
           'Montant': bl.montant_facture || montantCalcule,
-          'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
+          'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_citerne || 0),
           'Manquant Compteur': bl.manquant_compteur || 0,
-          'Manquant Cuve': bl.manquant_cuve || 0,
+          'Manquant Citerne': bl.manquant_citerne || 0,
           'Numéros Clients': bl.client_code_total || bl.client_code || ''
         };
       }));
@@ -273,9 +273,9 @@ export const exportService = {
           'Quantité': quantite,
           'Prix Unitaire': prixUnitaire,
           'Montant': bl.montant_facture || montantCalcule,
-          'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_cuve || 0),
+          'Manquants (Total)': (bl.manquant_compteur || 0) + (bl.manquant_citerne || 0),
           'Manquant Compteur': bl.manquant_compteur || 0,
-          'Manquant Cuve': bl.manquant_cuve || 0,
+          'Manquant Citerne': bl.manquant_citerne || 0,
           'Numéros Clients': bl.client_code_total || bl.client_code || ''
         };
       });
