@@ -41,26 +41,31 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
     setTarifs([]);
   };
 
-  // Tarif lookup helper
-  const buildTarifMap = (tarifsData: any[]) => {
-    const tarifMap = new Map<string, number>();
-    tarifsData.forEach(t => {
-      tarifMap.set(`${t.lieu_depart.toLowerCase()}|${t.destination.toLowerCase()}`, t.tarif_au_litre);
-    });
-    return tarifMap;
-  };
+  // Tarif lookup - même logique que tarifsHydrocarburesService.getTarif
+  // pour garantir la cohérence entre facture et export
+  const findTarif = (tarifsData: any[], depart: string, dest: string): number => {
+    if (!depart || !dest) return 0;
+    const departLower = depart.toLowerCase();
+    const destLower = dest.toLowerCase();
 
-  const findTarif = (tarifMap: Map<string, number>, depart: string, dest: string): number => {
-    const key = `${depart.toLowerCase()}|${dest.toLowerCase()}`;
-    if (tarifMap.has(key)) return tarifMap.get(key)!;
-    for (const [k, v] of tarifMap) {
-      const [d, dst] = k.split('|');
-      if (depart.toLowerCase().includes(d) || d.includes(depart.toLowerCase())) {
-        if (dest.toLowerCase().includes(dst) || dst.includes(dest.toLowerCase())) {
-          return v;
-        }
-      }
-    }
+    // 1. Recherche exacte (lieu_depart exact, destination exacte)
+    const exactMatch = tarifsData.find(t =>
+      t.lieu_depart.toLowerCase() === departLower &&
+      t.destination.toLowerCase() === destLower
+    );
+    if (exactMatch) return exactMatch.tarif_au_litre;
+
+    // 2. Recherche flexible (lieu_depart exact, destination includes)
+    // Identique à tarifsHydrocarburesService.getTarif
+    const tarifsForDepart = tarifsData.filter(t =>
+      t.lieu_depart.toLowerCase() === departLower
+    );
+    const flexMatch = tarifsForDepart.find(t => {
+      const destTarif = t.destination.toLowerCase();
+      return destLower.includes(destTarif) || destTarif.includes(destLower);
+    });
+    if (flexMatch) return flexMatch.tarif_au_litre;
+
     return 0;
   };
 
@@ -113,7 +118,6 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       }
 
       const tarifsData = tarifsResult.data || [];
-      const tarifMap = buildTarifMap(tarifsData);
 
       const items: BLPreviewItem[] = blData.map((bl: any) => {
         const mission = bl.missions || {};
@@ -122,7 +126,7 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
         let prixUnitaire = bl.prix_unitaire ?? 0;
         if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-          prixUnitaire = findTarif(tarifMap, depart, destination);
+          prixUnitaire = findTarif(tarifsData, depart, destination);
         }
         return {
           id: bl.id,
