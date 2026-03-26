@@ -128,11 +128,15 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       const items: BLPreviewItem[] = blData.map((bl: any) => {
         const mission = bl.missions || {};
         const depart = mission.site_depart || '';
-        const destination = bl.lieu_arrivee || bl.destination || mission.site_arrivee || '';
+        // Résolution de destination identique à ExportFactures
+        const destinationComplete = bl.destination || bl.lieu_arrivee || mission.site_arrivee || '';
+        const destinationVille = extraireNomVille(destinationComplete);
         const quantite = bl.quantite_livree ?? bl.quantite_prevue ?? 0;
+        // Utiliser prix_unitaire de la DB en priorité (comme l'export)
         let prixUnitaire = bl.prix_unitaire ?? 0;
         if ((!prixUnitaire || prixUnitaire === 0) && mission.type_transport === 'hydrocarbures') {
-          prixUnitaire = findTarif(tarifsData, depart, destination);
+          // Utiliser la ville simplifiée pour le matching (comme l'export)
+          prixUnitaire = findTarif(tarifsData, depart, destinationVille);
         }
         return {
           id: bl.id,
