@@ -62,7 +62,7 @@ export interface AlerteManagement {
 
 // Helper to fetch all rows beyond Supabase's 1000-row limit
 async function fetchAllRows<T>(
-  tableName: string,
+  tableName: any,
   selectColumns: string,
   filters?: (query: any) => any
 ): Promise<T[]> {
