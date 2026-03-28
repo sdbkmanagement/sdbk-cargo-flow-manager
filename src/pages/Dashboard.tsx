@@ -18,6 +18,8 @@ import {
   ClientRanking,
   PipelineData,
   AlerteManagement,
+  CAMensuel,
+  RHStats,
 } from '@/services/managementDashboardService';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
@@ -26,6 +28,8 @@ import { AlertesManagementBlock } from '@/components/dashboard/AlertesManagement
 import { FinancialAnalysis } from '@/components/dashboard/FinancialAnalysis';
 import { ProductivityMetrics } from '@/components/dashboard/ProductivityMetrics';
 import { FleetOverview } from '@/components/dashboard/FleetOverview';
+import { CAEvolutionChart } from '@/components/dashboard/CAEvolutionChart';
+import { RHDashboardCharts } from '@/components/dashboard/RHDashboardCharts';
 
 const formatGNF = (value: number) => {
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)} Md`;
