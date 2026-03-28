@@ -255,6 +255,14 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* CA Evolution Chart */}
+        <CAEvolutionChart data={caMensuel} />
+
+        {/* RH Dashboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RHDashboardCharts stats={rhStats} />
+        </div>
+
         {/* Rankings */}
         <Rankings
           topVehicules={topVehicules}
