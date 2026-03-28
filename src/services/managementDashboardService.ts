@@ -1,7 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ManagementKPIs {
-  // Fleet overview
   totalVehicules: number;
   vehiculesDisponibles: number;
   vehiculesEnMission: number;
@@ -9,8 +8,6 @@ export interface ManagementKPIs {
   vehiculesValidation: number;
   totalChauffeurs: number;
   chauffeursActifs: number;
-
-  // Financial
   chiffreAffaires: number;
   caEnAttente: number;
   caMoisActuel: number;
@@ -18,14 +15,10 @@ export interface ManagementKPIs {
   facturesPayees: number;
   facturesEnAttente: number;
   totalMaintenance: number;
-
-  // Operational
   missionsEnCours: number;
   missionsTerminees: number;
   missionsTotal: number;
   blTotal: number;
-
-  // Alerts
   alertesDocuments: number;
   nonConformites: number;
   maintenancesEnCours: number;
@@ -67,6 +60,30 @@ export interface AlerteManagement {
   date: string;
 }
 
+// Helper to fetch all rows beyond Supabase's 1000-row limit
+async function fetchAllRows<T>(
+  tableName: string,
+  selectColumns: string,
+  filters?: (query: any) => any
+): Promise<T[]> {
+  const PAGE_SIZE = 1000;
+  let allData: T[] = [];
+  let from = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    let query = supabase.from(tableName).select(selectColumns).range(from, from + PAGE_SIZE - 1);
+    if (filters) query = filters(query);
+    const { data, error } = await query;
+    if (error || !data) break;
+    allData = allData.concat(data as T[]);
+    hasMore = data.length === PAGE_SIZE;
+    from += PAGE_SIZE;
+  }
+
+  return allData;
+}
+
 export const managementDashboardService = {
   async getKPIs(): Promise<ManagementKPIs> {
     const now = new Date();
@@ -75,35 +92,26 @@ export const managementDashboardService = {
     const finMoisPrecedent = new Date(now.getFullYear(), now.getMonth(), 0).toISOString();
 
     const [
-      vehiculesRes,
-      chauffeursRes,
-      missionsRes,
-      facturesRes,
-      blMoisActuelRes,
-      blMoisPrecedentRes,
-      maintenanceRes,
-      ncRes,
+      vehicules,
+      chauffeurs,
+      missions,
+      factures,
+      blMoisActuel,
+      blMoisPrecedent,
+      maintenances,
+      ncs,
       blTotalRes
     ] = await Promise.all([
-      supabase.from('vehicules').select('id, statut'),
-      supabase.from('chauffeurs').select('id, statut'),
-      supabase.from('missions').select('id, statut'),
-      supabase.from('factures').select('id, montant_ttc, statut, numero'),
-      supabase.from('bons_livraison').select('id, montant_total, date_chargement_reelle').gte('date_chargement_reelle', debutMoisActuel),
-      supabase.from('bons_livraison').select('id, montant_total, date_chargement_reelle').gte('date_chargement_reelle', debutMoisPrecedent).lt('date_chargement_reelle', finMoisPrecedent),
-      supabase.from('diagnostics_maintenance').select('id, statut, cout_reparation'),
-      supabase.from('non_conformites').select('id, statut').neq('statut', 'cloturee'),
+      fetchAllRows<any>('vehicules', 'id, statut'),
+      fetchAllRows<any>('chauffeurs', 'id, statut'),
+      fetchAllRows<any>('missions', 'id, statut'),
+      fetchAllRows<any>('factures', 'id, montant_ttc, statut, numero'),
+      fetchAllRows<any>('bons_livraison', 'id, montant_total, date_chargement_reelle', q => q.gte('date_chargement_reelle', debutMoisActuel)),
+      fetchAllRows<any>('bons_livraison', 'id, montant_total, date_chargement_reelle', q => q.gte('date_chargement_reelle', debutMoisPrecedent).lt('date_chargement_reelle', finMoisPrecedent)),
+      fetchAllRows<any>('diagnostics_maintenance', 'id, statut, cout_reparation'),
+      fetchAllRows<any>('non_conformites', 'id, statut', q => q.neq('statut', 'cloturee')),
       supabase.from('bons_livraison').select('id', { count: 'exact' }).limit(1)
     ]);
-
-    const vehicules = vehiculesRes.data || [];
-    const chauffeurs = chauffeursRes.data || [];
-    const missions = missionsRes.data || [];
-    const factures = facturesRes.data || [];
-    const blMoisActuel = blMoisActuelRes.data || [];
-    const blMoisPrecedent = blMoisPrecedentRes.data || [];
-    const maintenances = maintenanceRes.data || [];
-    const ncs = ncRes.data || [];
 
     const facturesMensuelles = factures.filter(f => f.numero?.startsWith('FM'));
 
@@ -126,18 +134,14 @@ export const managementDashboardService = {
       missionsTerminees: missions.filter(m => m.statut === 'terminee').length,
       missionsTotal: missions.length,
       blTotal: blTotalRes.count || 0,
-      alertesDocuments: 0, // Will be filled by alertesService
+      alertesDocuments: 0,
       nonConformites: ncs.length,
       maintenancesEnCours: maintenances.filter(m => m.statut === 'en_cours').length,
     };
   },
 
   async getTopVehicules(): Promise<VehiculeRanking[]> {
-    const { data } = await supabase
-      .from('bons_livraison')
-      .select('vehicule_id, montant_total, vehicule:vehicules(numero, immatriculation)');
-
-    if (!data) return [];
+    const data = await fetchAllRows<any>('bons_livraison', 'vehicule_id, montant_total, vehicule:vehicules(numero, immatriculation)');
 
     const vehiculeMap = new Map<string, VehiculeRanking>();
     data.forEach(bl => {
@@ -163,11 +167,7 @@ export const managementDashboardService = {
   },
 
   async getTopChauffeurs(): Promise<ChauffeurRanking[]> {
-    const { data } = await supabase
-      .from('bons_livraison')
-      .select('chauffeur_id, chauffeur:chauffeurs(nom, prenom)');
-
-    if (!data) return [];
+    const data = await fetchAllRows<any>('bons_livraison', 'chauffeur_id, chauffeur:chauffeurs(nom, prenom)');
 
     const map = new Map<string, ChauffeurRanking>();
     data.forEach(bl => {
@@ -192,12 +192,7 @@ export const managementDashboardService = {
   },
 
   async getTopClients(): Promise<ClientRanking[]> {
-    const { data } = await supabase
-      .from('factures')
-      .select('client_nom, montant_ttc')
-      .eq('statut', 'payee');
-
-    if (!data) return [];
+    const data = await fetchAllRows<any>('factures', 'client_nom, montant_ttc', q => q.eq('statut', 'payee'));
 
     const map = new Map<string, ClientRanking>();
     data.forEach(f => {
@@ -259,7 +254,6 @@ export const managementDashboardService = {
   async getAlertesManagement(): Promise<AlerteManagement[]> {
     const alertes: AlerteManagement[] = [];
 
-    // Non-conformités ouvertes
     const { data: ncs } = await supabase
       .from('non_conformites')
       .select('id, type_nc, description, categorie, created_at, vehicule_id')
@@ -277,7 +271,6 @@ export const managementDashboardService = {
       });
     });
 
-    // Maintenances en cours
     const { data: maintenances } = await supabase
       .from('diagnostics_maintenance')
       .select('id, type_panne, description_panne, created_at, vehicule_id, vehicule:vehicules(numero)')
@@ -303,14 +296,12 @@ export const managementDashboardService = {
   },
 
   async getCAParTypeTransport(): Promise<{ hydrocarbures: number; bauxite: number }> {
-    const { data } = await supabase
-      .from('bons_livraison')
-      .select('montant_total, mission:missions(type_transport)');
+    const data = await fetchAllRows<any>('bons_livraison', 'montant_total, mission:missions(type_transport)');
 
     let hydrocarbures = 0;
     let bauxite = 0;
 
-    data?.forEach(bl => {
+    data.forEach(bl => {
       const mission = bl.mission as any;
       const montant = bl.montant_total || 0;
       if (mission?.type_transport === 'hydrocarbures') {
