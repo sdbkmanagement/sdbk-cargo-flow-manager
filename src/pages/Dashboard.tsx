@@ -50,6 +50,8 @@ const Dashboard = () => {
   const [alertesManagement, setAlertesManagement] = useState<AlerteManagement[]>([]);
   const [caParType, setCaParType] = useState<{ hydrocarbures: number; bauxite: number }>({ hydrocarbures: 0, bauxite: 0 });
   const [alertesCount, setAlertesCount] = useState(0);
+  const [caMensuel, setCaMensuel] = useState<CAMensuel[]>([]);
+  const [rhStats, setRhStats] = useState<RHStats>({ totalEmployes: 0, actifs: 0, inactifs: 0, hommes: 0, femmes: 0, cdi: 0, cdd: 0, autres: 0, parService: [], parContrat: [], visiteMedicaleAJour: 0, visiteMedicaleExpiree: 0, visiteMedicaleAFaire: 0 });
 
   const loadData = async () => {
     try {
