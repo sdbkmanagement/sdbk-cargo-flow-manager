@@ -60,6 +60,29 @@ export interface AlerteManagement {
   date: string;
 }
 
+export interface CAMensuel {
+  mois: string;
+  label: string;
+  ca: number;
+  nbBL: number;
+}
+
+export interface RHStats {
+  totalEmployes: number;
+  actifs: number;
+  inactifs: number;
+  hommes: number;
+  femmes: number;
+  cdi: number;
+  cdd: number;
+  autres: number;
+  parService: { service: string; count: number }[];
+  parContrat: { type: string; count: number }[];
+  visiteMedicaleAJour: number;
+  visiteMedicaleExpiree: number;
+  visiteMedicaleAFaire: number;
+}
+
 // Helper to fetch all rows beyond Supabase's 1000-row limit
 async function fetchAllRows<T>(
   tableName: any,
