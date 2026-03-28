@@ -1,388 +1,276 @@
-
 import React, { useState, useEffect } from 'react';
 import { ModuleLayout } from '@/components/layout/ModuleLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { 
-  Users, 
-  Truck, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
-  Plus,
-  FileText,
-  UserCheck,
-  TrendingUp,
-  Calendar,
-  XCircle,
-  DollarSign
+import {
+  Truck, Users, DollarSign, TrendingUp, Clock,
+  AlertTriangle, FileText, Calendar, RefreshCw,
+  BarChart3, Route, Wrench, ShieldCheck
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { alertesService } from '@/services/alertesService';
-import { statsService } from '@/services/admin/statsService';
+import {
+  managementDashboardService,
+  ManagementKPIs,
+  VehiculeRanking,
+  ChauffeurRanking,
+  ClientRanking,
+  PipelineData,
+  AlerteManagement,
+} from '@/services/managementDashboardService';
+import { KPICard } from '@/components/dashboard/KPICard';
+import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
+import { Rankings } from '@/components/dashboard/Rankings';
+import { AlertesManagementBlock } from '@/components/dashboard/AlertesManagementBlock';
+import { FinancialAnalysis } from '@/components/dashboard/FinancialAnalysis';
+import { ProductivityMetrics } from '@/components/dashboard/ProductivityMetrics';
+import { FleetOverview } from '@/components/dashboard/FleetOverview';
 
-interface DashboardStats {
-  totalChauffeurs: number;
-  chauffeursActifs: number;
-  totalVehicules: number;
-  vehiculesDisponibles: number;
-  missionsEnCours: number;
-  alertesDocuments: number;
-  facturesEnAttente: number;
-  chargementsAujourdhui: number;
-  chiffreAffaires: number;
-  facturesPayees: number;
-  caEnAttente: number;
-}
+const formatGNF = (value: number) => {
+  if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)} Md`;
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)} M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)} K`;
+  return value.toLocaleString('fr-FR');
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalChauffeurs: 0,
-    chauffeursActifs: 0,
-    totalVehicules: 0,
-    vehiculesDisponibles: 0,
-    missionsEnCours: 0,
-    alertesDocuments: 0,
-    facturesEnAttente: 0,
-    chargementsAujourdhui: 0,
-    chiffreAffaires: 0,
-    facturesPayees: 0,
-    caEnAttente: 0
-  });
   const [loading, setLoading] = useState(true);
-  const [alertes, setAlertes] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [kpis, setKpis] = useState<ManagementKPIs | null>(null);
+  const [topVehicules, setTopVehicules] = useState<VehiculeRanking[]>([]);
+  const [topChauffeurs, setTopChauffeurs] = useState<ChauffeurRanking[]>([]);
+  const [topClients, setTopClients] = useState<ClientRanking[]>([]);
+  const [pipeline, setPipeline] = useState<PipelineData>({ maintenance: 0, administratif: 0, hsecq: 0, obc: 0, disponibles: 0 });
+  const [alertesManagement, setAlertesManagement] = useState<AlerteManagement[]>([]);
+  const [caParType, setCaParType] = useState<{ hydrocarbures: number; bauxite: number }>({ hydrocarbures: 0, bauxite: 0 });
+  const [alertesCount, setAlertesCount] = useState(0);
 
-  useEffect(() => {
-    loadDashboardData();
-    
-    // Actualiser les données toutes les 30 secondes
-    const interval = setInterval(loadDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadData = async () => {
     try {
-      setLoading(true);
-      console.log('📊 Chargement des données réelles du dashboard...');
-      
-      // Charger les vraies statistiques avec la nouvelle fonction
-      const [
-        dashboardStats,
-        financialStats,
-        chargementsResult,
-        toutesAlertes
-      ] = await Promise.all([
-        statsService.getDashboardStats(),
-        statsService.getFinancialStats(),
-        supabase.from('chargements').select('id, created_at').gte('created_at', new Date().toISOString().split('T')[0]),
-        alertesService.getToutesAlertes()
+      const [kpiData, vehiculesRank, chauffeursRank, clientsRank, pipelineData, alertesMgmt, caType, alertes] = await Promise.all([
+        managementDashboardService.getKPIs(),
+        managementDashboardService.getTopVehicules(),
+        managementDashboardService.getTopChauffeurs(),
+        managementDashboardService.getTopClients(),
+        managementDashboardService.getPipelineData(),
+        managementDashboardService.getAlertesManagement(),
+        managementDashboardService.getCAParTypeTransport(),
+        alertesService.getToutesAlertes(),
       ]);
 
-      const chargements = chargementsResult.data || [];
-
-      console.log('📊 Dashboard stats loaded:', dashboardStats);
-      console.log('💰 Financial stats loaded:', financialStats);
-      console.log('🚨 Alertes loaded:', toutesAlertes.length);
-
-      setStats({
-        totalChauffeurs: dashboardStats.chauffeurs,
-        chauffeursActifs: dashboardStats.chauffeurs, // Pour l'instant on assume tous actifs
-        totalVehicules: dashboardStats.vehicules,
-        vehiculesDisponibles: dashboardStats.vehicules, // Pour l'instant on assume tous disponibles
-        missionsEnCours: dashboardStats.missionsEnCours,
-        alertesDocuments: toutesAlertes.length,
-        facturesEnAttente: financialStats.facturesEnAttente,
-        chargementsAujourdhui: chargements.length,
-        chiffreAffaires: financialStats.chiffreAffaires,
-        facturesPayees: financialStats.facturesPayees,
-        caEnAttente: financialStats.caEnAttente
-      });
-
-      // Limiter à 10 alertes pour l'affichage
-      setAlertes(toutesAlertes.slice(0, 10));
-
+      setKpis({ ...kpiData, alertesDocuments: alertes.length });
+      setTopVehicules(vehiculesRank);
+      setTopChauffeurs(chauffeursRank);
+      setTopClients(clientsRank);
+      setPipeline(pipelineData);
+      setAlertesManagement(alertesMgmt);
+      setCaParType(caType);
+      setAlertesCount(alertes.length);
     } catch (error) {
-      console.error('❌ Erreur lors du chargement des données:', error);
-      toast.error('Erreur lors du chargement des données du tableau de bord');
-    } finally {
-      setLoading(false);
+      console.error('Erreur dashboard:', error);
+      toast.error('Erreur lors du chargement du tableau de bord');
     }
   };
 
-  const getAlertIcon = (joursRestants: number | null) => {
-    if (joursRestants === null) return Clock;
-    if (joursRestants < 0) return XCircle;
-    if (joursRestants <= 7) return AlertTriangle;
-    return Clock;
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await loadData();
+      setLoading(false);
+    };
+    init();
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
+    toast.success('Données actualisées');
   };
 
-  const getAlertColor = (joursRestants: number | null) => {
-    if (joursRestants === null) return 'text-gray-500';
-    if (joursRestants < 0) return 'text-red-600';
-    if (joursRestants <= 7) return 'text-red-600';
-    return 'text-orange-600';
-  };
-
-  if (loading) {
+  if (loading || !kpis) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Chargement du tableau de bord...</div>
-      </div>
+      <ModuleLayout title="Tableau de Bord Management" subtitle="Chargement...">
+        <div className="flex justify-center items-center h-64">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </ModuleLayout>
     );
   }
 
+  const variationCA = kpis.caMoisPrecedent > 0
+    ? ((kpis.caMoisActuel - kpis.caMoisPrecedent) / kpis.caMoisPrecedent) * 100
+    : 0;
+
+  const tauxUtilisation = kpis.totalVehicules > 0
+    ? (kpis.vehiculesEnMission / kpis.totalVehicules) * 100
+    : 0;
+
+  const revenuMoyenCamion = kpis.totalVehicules > 0
+    ? kpis.chiffreAffaires / kpis.totalVehicules
+    : 0;
+
   return (
-    <ModuleLayout title="Tableau de Bord" subtitle="Vue d'ensemble de vos opérations">
+    <ModuleLayout title="Tableau de Bord Management" subtitle="Pilotage stratégique de la flotte SDBK">
       <div className="space-y-6">
-        {/* En-tête avec date */}
-        <div className="flex justify-between items-center">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Analytics & Statistiques</h2>
-            <p className="text-gray-600">Suivi en temps réel de vos activités</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            <span className="text-sm text-muted-foreground">
-              {new Date().toLocaleDateString('fr-FR', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            <h2 className="text-2xl font-bold text-foreground">Indicateurs Stratégiques</h2>
+            <p className="text-muted-foreground text-sm flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {new Date().toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
               })}
-            </span>
+            </p>
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
         </div>
 
-      {/* Statistiques principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Chauffeurs</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalChauffeurs}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.chauffeursActifs} actifs
-            </p>
-          </CardContent>
-        </Card>
+        {/* KPI Row 1 - Financier */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            title="Chiffre d'Affaires"
+            value={`${formatGNF(kpis.chiffreAffaires)} GNF`}
+            icon={DollarSign}
+            subtitle={`${kpis.facturesPayees} factures payées`}
+            color="text-emerald-600"
+          />
+          <KPICard
+            title="CA en Attente"
+            value={`${formatGNF(kpis.caEnAttente)} GNF`}
+            icon={Clock}
+            subtitle={`${kpis.facturesEnAttente} factures`}
+            color="text-amber-600"
+          />
+          <KPICard
+            title="CA Mois Actuel"
+            value={`${formatGNF(kpis.caMoisActuel)} GNF`}
+            icon={TrendingUp}
+            variation={variationCA}
+            variationLabel="vs mois préc."
+            color="text-blue-600"
+          />
+          <KPICard
+            title="Revenu Moyen / Camion"
+            value={`${formatGNF(revenuMoyenCamion)} GNF`}
+            icon={Truck}
+            subtitle={`${kpis.totalVehicules} véhicules`}
+            color="text-purple-600"
+          />
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Véhicules</CardTitle>
-            <Truck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalVehicules}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.vehiculesDisponibles} disponibles
-            </p>
-          </CardContent>
-        </Card>
+        {/* KPI Row 2 - Opérationnel */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <KPICard
+            title="Véhicules"
+            value={kpis.totalVehicules}
+            icon={Truck}
+            subtitle={`${kpis.vehiculesDisponibles} disponibles`}
+            color="text-blue-600"
+          />
+          <KPICard
+            title="Chauffeurs Actifs"
+            value={`${kpis.chauffeursActifs}/${kpis.totalChauffeurs}`}
+            icon={Users}
+            color="text-emerald-600"
+          />
+          <KPICard
+            title="Missions en Cours"
+            value={kpis.missionsEnCours}
+            icon={Route}
+            subtitle={`${kpis.missionsTerminees} terminées`}
+            color="text-indigo-600"
+          />
+          <KPICard
+            title="Non-Conformités"
+            value={kpis.nonConformites}
+            icon={AlertTriangle}
+            color={kpis.nonConformites > 0 ? 'text-red-600' : 'text-emerald-600'}
+          />
+          <KPICard
+            title="Taux d'Utilisation"
+            value={`${tauxUtilisation.toFixed(1)}%`}
+            icon={BarChart3}
+            color={tauxUtilisation > 50 ? 'text-emerald-600' : 'text-amber-600'}
+          />
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Chiffre d'Affaires</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {stats.chiffreAffaires === 0 ? '0 FG' : new Intl.NumberFormat('fr-GN', { 
-                style: 'currency', 
-                currency: 'GNF',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-              }).format(stats.chiffreAffaires)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.facturesPayees} factures payées
-            </p>
-          </CardContent>
-        </Card>
+        {/* Main grid - Analyse + Pipeline + Alertes */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <FinancialAnalysis
+            chiffreAffaires={kpis.chiffreAffaires}
+            caEnAttente={kpis.caEnAttente}
+            totalMaintenance={kpis.totalMaintenance}
+            caMoisActuel={kpis.caMoisActuel}
+            caMoisPrecedent={kpis.caMoisPrecedent}
+            caHydrocarbures={caParType.hydrocarbures}
+            caBauxite={caParType.bauxite}
+          />
+          <PipelineFunnel data={pipeline} />
+          <AlertesManagementBlock alertes={alertesManagement} />
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">CA en Attente</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {stats.caEnAttente === 0 ? '0 FG' : new Intl.NumberFormat('fr-GN', { 
-                style: 'currency', 
-                currency: 'GNF',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-              }).format(stats.caEnAttente)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.facturesEnAttente} factures en attente
-            </p>
-          </CardContent>
-        </Card>
+        {/* Fleet + Productivity */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FleetOverview
+            total={kpis.totalVehicules}
+            disponibles={kpis.vehiculesDisponibles}
+            enMission={kpis.vehiculesEnMission}
+            maintenance={kpis.vehiculesMaintenance}
+            validation={kpis.vehiculesValidation}
+          />
+          <ProductivityMetrics
+            totalVehicules={kpis.totalVehicules}
+            vehiculesEnMission={kpis.vehiculesEnMission}
+            vehiculesMaintenance={kpis.vehiculesMaintenance}
+            missionsTerminees={kpis.missionsTerminees}
+            missionsTotal={kpis.missionsTotal}
+            blTotal={kpis.blTotal}
+          />
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Missions en cours</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.missionsEnCours}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.chargementsAujourdhui} chargements aujourd'hui
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Rankings */}
+        <Rankings
+          topVehicules={topVehicules}
+          topChauffeurs={topChauffeurs}
+          topClients={topClients}
+        />
 
-      {/* Accès rapides */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Accès Rapides</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Quick Actions */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: 'Nouvelle Mission', icon: Route, route: '/missions', color: 'text-blue-500' },
+            { label: 'Flotte', icon: Truck, route: '/fleet', color: 'text-emerald-500' },
+            { label: 'Facturation', icon: FileText, route: '/billing', color: 'text-amber-500' },
+            { label: 'Validations', icon: ShieldCheck, route: '/validations', color: 'text-purple-500' },
+          ].map((action) => (
             <Button
+              key={action.route}
               variant="outline"
-              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
-              onClick={() => navigate('/missions')}
+              className="h-auto p-4 flex flex-col items-center gap-2"
+              onClick={() => navigate(action.route)}
             >
-              <Plus className="h-5 w-5 text-blue-500" />
-              <div className="text-center">
-                <div className="font-medium">Nouvelle Mission</div>
-                <div className="text-xs text-muted-foreground">Créer une nouvelle mission de transport</div>
-              </div>
+              <action.icon className={`h-5 w-5 ${action.color}`} />
+              <span className="text-xs font-medium">{action.label}</span>
             </Button>
-            <Button
-              variant="outline"
-              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
-              onClick={() => navigate('/fleet')}
-            >
-              <Truck className="h-5 w-5 text-green-500" />
-              <div className="text-center">
-                <div className="font-medium">Ajouter Véhicule</div>
-                <div className="text-xs text-muted-foreground">Enregistrer un nouveau véhicule</div>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
-              onClick={() => navigate('/drivers')}
-            >
-              <Users className="h-5 w-5 text-orange-500" />
-              <div className="text-center">
-                <div className="font-medium">Gérer Chauffeurs</div>
-                <div className="text-xs text-muted-foreground">Gestion des chauffeurs et conducteurs</div>
-              </div>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto p-4 flex flex-col items-center justify-center space-y-2 hover:shadow-md transition-shadow"
-              onClick={() => navigate('/validations')}
-            >
-              <UserCheck className="h-5 w-5 text-purple-500" />
-              <div className="text-center">
-                <div className="font-medium">Validations</div>
-                <div className="text-xs text-muted-foreground">Processus de validation des véhicules</div>
-              </div>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Alertes récentes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5" />
-            Alertes Documents Récentes
-            {stats.alertesDocuments > 0 && (
-              <Badge className="bg-orange-500 text-white">
-                {stats.alertesDocuments}
-              </Badge>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {alertes.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
-              <p className="text-lg font-medium">Aucune alerte récente</p>
-              <p className="text-sm">Tous les documents sont à jour</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {alertes.map((alerte, index) => {
-                const AlertIcon = getAlertIcon(alerte.jours_restants);
-                const alertColor = getAlertColor(alerte.jours_restants);
-                
-                return (
-                  <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg border-l-4 border-l-orange-500">
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
-                        alerte.jours_restants !== null && alerte.jours_restants < 0
-                          ? 'bg-red-100' 
-                          : alerte.jours_restants !== null && alerte.jours_restants <= 7
-                          ? 'bg-red-100'
-                          : 'bg-orange-100'
-                      }`}>
-                        <AlertIcon className={`h-4 w-4 ${alertColor}`} />
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {alerte.type === 'vehicule' ? alerte.vehicule_numero : alerte.chauffeur_nom}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {alerte.document_nom} - {
-                            alerte.jours_restants !== null && alerte.jours_restants < 0 
-                              ? 'Expiré' 
-                              : alerte.jours_restants !== null && alerte.jours_restants <= 7
-                              ? 'Critique'
-                              : 'À renouveler'
-                          }
-                        </p>
-                        {alerte.date_expiration && (
-                          <p className="text-xs text-muted-foreground">
-                            Expiration: {new Date(alerte.date_expiration).toLocaleDateString('fr-FR')}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <Badge variant={
-                      alerte.jours_restants !== null && alerte.jours_restants < 0 
-                        ? 'destructive' 
-                        : alerte.jours_restants !== null && alerte.jours_restants <= 7
-                        ? 'destructive'
-                        : 'secondary'
-                    }>
-                      {alerte.jours_restants !== null && alerte.jours_restants < 0 ? 
-                        `Expiré depuis ${Math.abs(alerte.jours_restants)} jours` : 
-                        `${alerte.jours_restants} jours restants`
-                      }
-                    </Badge>
-                  </div>
-                );
-              })}
-              {stats.alertesDocuments > alertes.length && (
-                <div className="text-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => navigate('/drivers?tab=alertes')}
-                    className="text-orange-600 border-orange-600 hover:bg-orange-50"
-                  >
-                    Voir toutes les alertes ({stats.alertesDocuments})
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          ))}
+        </div>
       </div>
     </ModuleLayout>
   );
