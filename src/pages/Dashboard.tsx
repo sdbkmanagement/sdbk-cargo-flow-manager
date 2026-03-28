@@ -76,6 +76,8 @@ const Dashboard = () => {
       setAlertesManagement(alertesMgmt);
       setCaParType(caType);
       setAlertesCount(alertes.length);
+      setCaMensuel(caEvolution);
+      setRhStats(rhData);
     } catch (error) {
       console.error('Erreur dashboard:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
