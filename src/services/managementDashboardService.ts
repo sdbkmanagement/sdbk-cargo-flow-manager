@@ -60,6 +60,29 @@ export interface AlerteManagement {
   date: string;
 }
 
+export interface CAMensuel {
+  mois: string;
+  label: string;
+  ca: number;
+  nbBL: number;
+}
+
+export interface RHStats {
+  totalEmployes: number;
+  actifs: number;
+  inactifs: number;
+  hommes: number;
+  femmes: number;
+  cdi: number;
+  cdd: number;
+  autres: number;
+  parService: { service: string; count: number }[];
+  parContrat: { type: string; count: number }[];
+  visiteMedicaleAJour: number;
+  visiteMedicaleExpiree: number;
+  visiteMedicaleAFaire: number;
+}
+
 // Helper to fetch all rows beyond Supabase's 1000-row limit
 async function fetchAllRows<T>(
   tableName: any,
@@ -312,5 +335,85 @@ export const managementDashboardService = {
     });
 
     return { hydrocarbures, bauxite };
+  },
+
+  async getCAMensuel(): Promise<CAMensuel[]> {
+    const data = await fetchAllRows<any>('bons_livraison', 'montant_total, date_chargement_reelle', 
+      q => q.not('date_chargement_reelle', 'is', null).order('date_chargement_reelle', { ascending: true })
+    );
+
+    const moisMap = new Map<string, { ca: number; nbBL: number }>();
+    
+    data.forEach(bl => {
+      if (!bl.date_chargement_reelle) return;
+      const date = new Date(bl.date_chargement_reelle);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const existing = moisMap.get(key);
+      if (existing) {
+        existing.ca += bl.montant_total || 0;
+        existing.nbBL++;
+      } else {
+        moisMap.set(key, { ca: bl.montant_total || 0, nbBL: 1 });
+      }
+    });
+
+    const moisNoms = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
+
+    return Array.from(moisMap.entries())
+      .filter(([key]) => key.match(/^\d{4}-\d{2}$/))
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-12)
+      .map(([key, val]) => {
+        const [year, month] = key.split('-');
+        return {
+          mois: key,
+          label: `${moisNoms[parseInt(month) - 1]} ${year.slice(2)}`,
+          ca: val.ca,
+          nbBL: val.nbBL,
+        };
+      });
+  },
+
+  async getRHStats(): Promise<RHStats> {
+    const employes = await fetchAllRows<any>('employes', 'id, statut, genre, type_contrat, service, statut_visite_medicale');
+
+    const parService = new Map<string, number>();
+    const parContrat = new Map<string, number>();
+    let visiteMedicaleAJour = 0;
+    let visiteMedicaleExpiree = 0;
+    let visiteMedicaleAFaire = 0;
+
+    employes.forEach(e => {
+      const svc = e.service || 'Non défini';
+      parService.set(svc, (parService.get(svc) || 0) + 1);
+      
+      const contrat = e.type_contrat || 'Non défini';
+      parContrat.set(contrat, (parContrat.get(contrat) || 0) + 1);
+
+      if (e.statut_visite_medicale === 'A jour') visiteMedicaleAJour++;
+      else if (e.statut_visite_medicale === 'Expirée') visiteMedicaleExpiree++;
+      else visiteMedicaleAFaire++;
+    });
+
+    return {
+      totalEmployes: employes.length,
+      actifs: employes.filter(e => e.statut === 'actif').length,
+      inactifs: employes.filter(e => e.statut !== 'actif').length,
+      hommes: employes.filter(e => e.genre === 'Masculin').length,
+      femmes: employes.filter(e => e.genre === 'Féminin').length,
+      cdi: employes.filter(e => e.type_contrat === 'CDI').length,
+      cdd: employes.filter(e => e.type_contrat === 'CDD').length,
+      autres: employes.filter(e => e.type_contrat && e.type_contrat !== 'CDI' && e.type_contrat !== 'CDD').length,
+      parService: Array.from(parService.entries())
+        .map(([service, count]) => ({ service, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8),
+      parContrat: Array.from(parContrat.entries())
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count),
+      visiteMedicaleAJour,
+      visiteMedicaleExpiree,
+      visiteMedicaleAFaire,
+    };
   }
 };

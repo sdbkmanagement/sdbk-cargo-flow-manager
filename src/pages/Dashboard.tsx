@@ -18,6 +18,8 @@ import {
   ClientRanking,
   PipelineData,
   AlerteManagement,
+  CAMensuel,
+  RHStats,
 } from '@/services/managementDashboardService';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
@@ -26,6 +28,8 @@ import { AlertesManagementBlock } from '@/components/dashboard/AlertesManagement
 import { FinancialAnalysis } from '@/components/dashboard/FinancialAnalysis';
 import { ProductivityMetrics } from '@/components/dashboard/ProductivityMetrics';
 import { FleetOverview } from '@/components/dashboard/FleetOverview';
+import { CAEvolutionChart } from '@/components/dashboard/CAEvolutionChart';
+import { RHDashboardCharts } from '@/components/dashboard/RHDashboardCharts';
 
 const formatGNF = (value: number) => {
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)} Md`;
@@ -46,10 +50,12 @@ const Dashboard = () => {
   const [alertesManagement, setAlertesManagement] = useState<AlerteManagement[]>([]);
   const [caParType, setCaParType] = useState<{ hydrocarbures: number; bauxite: number }>({ hydrocarbures: 0, bauxite: 0 });
   const [alertesCount, setAlertesCount] = useState(0);
+  const [caMensuel, setCaMensuel] = useState<CAMensuel[]>([]);
+  const [rhStats, setRhStats] = useState<RHStats>({ totalEmployes: 0, actifs: 0, inactifs: 0, hommes: 0, femmes: 0, cdi: 0, cdd: 0, autres: 0, parService: [], parContrat: [], visiteMedicaleAJour: 0, visiteMedicaleExpiree: 0, visiteMedicaleAFaire: 0 });
 
   const loadData = async () => {
     try {
-      const [kpiData, vehiculesRank, chauffeursRank, clientsRank, pipelineData, alertesMgmt, caType, alertes] = await Promise.all([
+      const [kpiData, vehiculesRank, chauffeursRank, clientsRank, pipelineData, alertesMgmt, caType, alertes, caEvolution, rhData] = await Promise.all([
         managementDashboardService.getKPIs(),
         managementDashboardService.getTopVehicules(),
         managementDashboardService.getTopChauffeurs(),
@@ -58,6 +64,8 @@ const Dashboard = () => {
         managementDashboardService.getAlertesManagement(),
         managementDashboardService.getCAParTypeTransport(),
         alertesService.getToutesAlertes(),
+        managementDashboardService.getCAMensuel(),
+        managementDashboardService.getRHStats(),
       ]);
 
       setKpis({ ...kpiData, alertesDocuments: alertes.length });
@@ -68,6 +76,8 @@ const Dashboard = () => {
       setAlertesManagement(alertesMgmt);
       setCaParType(caType);
       setAlertesCount(alertes.length);
+      setCaMensuel(caEvolution);
+      setRhStats(rhData);
     } catch (error) {
       console.error('Erreur dashboard:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -243,6 +253,14 @@ const Dashboard = () => {
             missionsTotal={kpis.missionsTotal}
             blTotal={kpis.blTotal}
           />
+        </div>
+
+        {/* CA Evolution Chart */}
+        <CAEvolutionChart data={caMensuel} />
+
+        {/* RH Dashboard */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <RHDashboardCharts stats={rhStats} />
         </div>
 
         {/* Rankings */}
