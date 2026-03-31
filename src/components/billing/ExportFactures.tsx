@@ -32,9 +32,9 @@ export const ExportFactures = () => {
       'Qté',
       'Pu',
       'Montant',
-      'Manquants (Total)',
-      'Manquant Compteur',
-      'Manquant Citerne',
+      'Manquant Citerne (T)',
+      'Manquant Cuve (L)',
+      'Manquant Compteur (L)',
       'Numéros Clients'
     ];
 
@@ -52,9 +52,9 @@ export const ExportFactures = () => {
         item.quantite_livree?.toLocaleString('fr-FR') || '0',
         item.prix_unitaire?.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) || '0,00',
         item.montant_total?.toLocaleString('fr-FR') || '0',
-        item.manquant_total?.toLocaleString('fr-FR') || '0',
-        item.manquant_compteur?.toLocaleString('fr-FR') || '0',
         item.manquant_citerne?.toLocaleString('fr-FR') || '0',
+        item.manquant_cuve?.toLocaleString('fr-FR') || '0',
+        item.manquant_compteur?.toLocaleString('fr-FR') || '0',
         item.client_code || ''
       ].map(field => `"${field}"`).join(','))
     ].join('\n');
@@ -129,9 +129,9 @@ export const ExportFactures = () => {
         quantite_livree: (bl.quantite_livree ?? bl.quantite_prevue) || 0,
         prix_unitaire: bl.prix_unitaire || 0,
         montant_total: ((bl.quantite_livree ?? bl.quantite_prevue) || 0) * (bl.prix_unitaire || 0),
-        manquant_total: (bl.manquant_compteur || 0) + (bl.manquant_citerne || 0),
         manquant_compteur: bl.manquant_compteur || 0,
         manquant_citerne: bl.manquant_citerne || 0,
+        manquant_cuve: bl.manquant_cuve || 0,
         client_code: bl.client_code || bl.client_code_total || '',
         type_transport: bl.missions?.type_transport || ''
       };
@@ -238,9 +238,9 @@ export const ExportFactures = () => {
         'Qté': item.quantite_livree || 0,
         'Pu': item.prix_unitaire || 0,
         'Montant': item.montant_total || 0,
-        'Manq$': item.manquant_total || 0,
-        'Cpteur': item.manquant_compteur || 0,
-        'Citerne': item.manquant_citerne || 0,
+        'Manquant Citerne (T)': item.manquant_citerne || 0,
+        'Manquant Cuve (L)': item.manquant_cuve || 0,
+        'Manquant Compteur (L)': item.manquant_compteur || 0,
         'Numéros Clients': item.client_code || ''
       }));
 
@@ -260,9 +260,9 @@ export const ExportFactures = () => {
         { wch: 12 },  // Qté
         { wch: 12 },  // Pu
         { wch: 15 },  // Montant
-        { wch: 12 },  // Manq$
-        { wch: 12 },  // Cpteur
-        { wch: 12 },  // Cuve
+        { wch: 18 },  // Manquant Citerne (T)
+        { wch: 18 },  // Manquant Cuve (L)
+        { wch: 18 },  // Manquant Compteur (L)
         { wch: 20 }   // Numéros Clients
       ];
       ws['!cols'] = colWidths;
