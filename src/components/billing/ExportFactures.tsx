@@ -32,9 +32,9 @@ export const ExportFactures = () => {
       'Qté',
       'Pu',
       'Montant',
-      'Manquants (Total)',
-      'Manquant Compteur',
-      'Manquant Citerne',
+      'Manquant Citerne (T)',
+      'Manquant Cuve (L)',
+      'Manquant Compteur (L)',
       'Numéros Clients'
     ];
 
