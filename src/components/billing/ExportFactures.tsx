@@ -52,9 +52,9 @@ export const ExportFactures = () => {
         item.quantite_livree?.toLocaleString('fr-FR') || '0',
         item.prix_unitaire?.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) || '0,00',
         item.montant_total?.toLocaleString('fr-FR') || '0',
-        item.manquant_total?.toLocaleString('fr-FR') || '0',
-        item.manquant_compteur?.toLocaleString('fr-FR') || '0',
         item.manquant_citerne?.toLocaleString('fr-FR') || '0',
+        item.manquant_cuve?.toLocaleString('fr-FR') || '0',
+        item.manquant_compteur?.toLocaleString('fr-FR') || '0',
         item.client_code || ''
       ].map(field => `"${field}"`).join(','))
     ].join('\n');
