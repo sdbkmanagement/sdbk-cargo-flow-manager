@@ -238,9 +238,9 @@ export const ExportFactures = () => {
         'Qté': item.quantite_livree || 0,
         'Pu': item.prix_unitaire || 0,
         'Montant': item.montant_total || 0,
-        'Manq$': item.manquant_total || 0,
-        'Cpteur': item.manquant_compteur || 0,
-        'Citerne': item.manquant_citerne || 0,
+        'Manquant Citerne (T)': item.manquant_citerne || 0,
+        'Manquant Cuve (L)': item.manquant_cuve || 0,
+        'Manquant Compteur (L)': item.manquant_compteur || 0,
         'Numéros Clients': item.client_code || ''
       }));
 
