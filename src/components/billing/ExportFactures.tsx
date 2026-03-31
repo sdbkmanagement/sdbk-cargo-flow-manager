@@ -261,9 +261,9 @@ export const ExportFactures = () => {
         { wch: 12 },  // Qté
         { wch: 12 },  // Pu
         { wch: 15 },  // Montant
-        { wch: 12 },  // Manq$
-        { wch: 12 },  // Cpteur
-        { wch: 12 },  // Cuve
+        { wch: 18 },  // Manquant Citerne (T)
+        { wch: 18 },  // Manquant Cuve (L)
+        { wch: 18 },  // Manquant Compteur (L)
         { wch: 20 }   // Numéros Clients
       ];
       ws['!cols'] = colWidths;
