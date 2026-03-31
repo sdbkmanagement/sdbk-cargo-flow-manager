@@ -129,8 +129,9 @@ export const ExportFactures = () => {
         quantite_livree: (bl.quantite_livree ?? bl.quantite_prevue) || 0,
         prix_unitaire: bl.prix_unitaire || 0,
         montant_total: ((bl.quantite_livree ?? bl.quantite_prevue) || 0) * (bl.prix_unitaire || 0),
-        manquant_total: (bl.manquant_compteur || 0) + (bl.manquant_citerne || 0),
         manquant_compteur: bl.manquant_compteur || 0,
+        manquant_citerne: bl.manquant_citerne || 0,
+        manquant_cuve: bl.manquant_cuve || 0,
         manquant_citerne: bl.manquant_citerne || 0,
         client_code: bl.client_code || bl.client_code_total || '',
         type_transport: bl.missions?.type_transport || ''
