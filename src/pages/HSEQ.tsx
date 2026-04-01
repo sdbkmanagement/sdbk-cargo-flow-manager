@@ -89,6 +89,18 @@ const HSEQ: React.FC = () => {
     enabled: canManageControls,
   });
 
+  // Filtrer les véhicules par recherche
+  const filteredVehicules = useMemo(() => {
+    if (!vehicules) return [];
+    if (!vehiculeSearch.trim()) return vehicules;
+    const search = vehiculeSearch.toLowerCase();
+    return vehicules.filter(v => 
+      (v.numero?.toLowerCase() || '').includes(search) ||
+      (v.immatriculation?.toLowerCase() || '').includes(search) ||
+      (v.remorque_immatriculation?.toLowerCase() || '').includes(search)
+    );
+  }, [vehicules, vehiculeSearch]);
+
   // Charger tous les chauffeurs actifs pour le contrôle inopiné
   const { data: chauffeurs } = useQuery({
     queryKey: ['chauffeurs-hseq'],
