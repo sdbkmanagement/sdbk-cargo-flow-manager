@@ -108,33 +108,49 @@ export const InopineCheckItem: React.FC<InopineCheckItemProps> = ({
             <p className="text-xs text-muted-foreground mt-1">{item.categorie}</p>
           </div>
           
-          {/* Boutons Oui/Non */}
-          <div className="flex gap-2">
+          {/* Boutons Oui/Non/NA */}
+          <div className="flex gap-1.5">
             <Button
               type="button"
               size="sm"
-              variant={item.is_conforme === true ? 'default' : 'outline'}
+              variant={!isNA && item.is_conforme === true ? 'default' : 'outline'}
               className={cn(
-                'h-10 w-14',
-                item.is_conforme === true && 'bg-green-600 hover:bg-green-700'
+                'h-10 w-12',
+                !isNA && item.is_conforme === true && 'bg-green-600 hover:bg-green-700'
               )}
               onClick={() => handleConformityChange(true)}
               disabled={disabled}
+              title="Conforme"
             >
               <CheckCircle2 className="h-5 w-5" />
             </Button>
             <Button
               type="button"
               size="sm"
-              variant={item.is_conforme === false ? 'default' : 'outline'}
+              variant={!isNA && item.is_conforme === false ? 'default' : 'outline'}
               className={cn(
-                'h-10 w-14',
-                item.is_conforme === false && 'bg-red-600 hover:bg-red-700'
+                'h-10 w-12',
+                !isNA && item.is_conforme === false && 'bg-red-600 hover:bg-red-700'
               )}
               onClick={() => handleConformityChange(false)}
               disabled={disabled}
+              title="Non conforme"
             >
               <XCircle className="h-5 w-5" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={isNA ? 'default' : 'outline'}
+              className={cn(
+                'h-10 w-12 text-xs font-semibold',
+                isNA && 'bg-gray-500 hover:bg-gray-600'
+              )}
+              onClick={handleNAChange}
+              disabled={disabled}
+              title="Non applicable"
+            >
+              NA
             </Button>
           </div>
         </div>
