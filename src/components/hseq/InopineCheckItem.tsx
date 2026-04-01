@@ -88,8 +88,9 @@ export const InopineCheckItem: React.FC<InopineCheckItemProps> = ({
   return (
     <Card className={cn(
       'transition-all',
-      item.is_conforme === true && 'border-green-200 bg-green-50/50',
-      item.is_conforme === false && 'border-red-200 bg-red-50/50',
+      !isNA && item.is_conforme === true && 'border-green-200 bg-green-50/50',
+      !isNA && item.is_conforme === false && 'border-red-200 bg-red-50/50',
+      isNA && 'border-gray-200 bg-gray-50/50',
       item.is_critical && 'ring-1 ring-orange-300'
     )}>
       <CardContent className="p-4 space-y-3">
