@@ -30,15 +30,24 @@ export const InopineCheckItem: React.FC<InopineCheckItemProps> = ({
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [showComment, setShowComment] = useState(item.is_conforme === false);
+  const [isNA, setIsNA] = useState(item.commentaire?.startsWith('[NA]') || false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleConformityChange = (isConforme: boolean) => {
     if (disabled) return;
-    onUpdate(item.id, { is_conforme: isConforme });
-    // Afficher le champ commentaire si non conforme
+    setIsNA(false);
+    onUpdate(item.id, { is_conforme: isConforme, commentaire: item.commentaire?.startsWith('[NA]') ? '' : item.commentaire });
     if (!isConforme) {
       setShowComment(true);
     }
+  };
+
+  const handleNAChange = () => {
+    if (disabled) return;
+    setIsNA(true);
+    setShowComment(false);
+    // NA = conforme true + commentaire marqué [NA] pour le distinguer
+    onUpdate(item.id, { is_conforme: true, commentaire: '[NA] Non applicable' });
   };
 
   const handleCommentChange = (commentaire: string) => {
