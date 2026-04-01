@@ -758,65 +758,47 @@ const HSEQ: React.FC = () => {
                 <Truck className="h-4 w-4" />
                 Véhicule
               </Label>
-              <div className="relative">
-                <div 
-                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background cursor-pointer"
-                  onClick={() => setVehiculeDropdownOpen(!vehiculeDropdownOpen)}
-                >
-                  <span className={selectedVehicule ? 'text-foreground' : 'text-muted-foreground'}>
-                    {selectedVehicule 
-                      ? (() => {
-                          const v = vehicules?.find(v => v.id === selectedVehicule);
-                          return v ? `${v.numero?.replace(/^V/i, '')} - ${v.remorque_immatriculation || v.immatriculation}` : 'Sélectionner un véhicule';
-                        })()
-                      : 'Sélectionner un véhicule'}
-                  </span>
-                  <Search className="h-4 w-4 opacity-50" />
-                </div>
-                {vehiculeDropdownOpen && (
-                  <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md">
-                    <div className="p-2">
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          placeholder="Rechercher par numéro, immatriculation..."
-                          value={vehiculeSearch}
-                          onChange={(e) => setVehiculeSearch(e.target.value)}
-                          className="pl-8 h-9"
-                          autoFocus
-                        />
-                      </div>
-                    </div>
-                    <div className="max-h-48 overflow-y-auto p-1">
-                      {filteredVehicules.length === 0 ? (
-                        <div className="py-3 text-center text-sm text-muted-foreground">
-                          Aucun véhicule trouvé
-                        </div>
-                      ) : (
-                        filteredVehicules.map((v) => (
-                          <div
-                            key={v.id}
-                            className={cn(
-                              "flex items-center gap-2 rounded-sm px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground",
-                              selectedVehicule === v.id && "bg-accent"
-                            )}
-                            onClick={() => {
-                              setSelectedVehicule(v.id);
-                              setVehiculeDropdownOpen(false);
-                              setVehiculeSearch('');
-                            }}
-                          >
-                            {selectedVehicule === v.id && <Check className="h-4 w-4" />}
-                            <span className={selectedVehicule !== v.id ? "pl-6" : ""}>
-                              {v.numero?.replace(/^V/i, '')} - {v.remorque_immatriculation || v.immatriculation}
-                            </span>
-                          </div>
-                        ))
-                      )}
+               <Select
+                value={selectedVehicule}
+                onValueChange={(value) => setSelectedVehicule(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Rechercher ou sélectionner un véhicule..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="p-2 sticky top-0 bg-popover">
+                    <div className="relative">
+                      <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Rechercher par numéro, immatriculation..."
+                        value={vehiculeSearch}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setVehiculeSearch(e.target.value);
+                        }}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        className="pl-8 h-9"
+                      />
                     </div>
                   </div>
-                )}
-              </div>
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredVehicules.length === 0 ? (
+                      <div className="py-3 text-center text-sm text-muted-foreground">
+                        Aucun véhicule trouvé
+                      </div>
+                    ) : (
+                      filteredVehicules.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          <div className="flex items-center gap-2">
+                            <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                            {v.numero?.replace(/^V/i, '')} - {v.remorque_immatriculation || v.immatriculation}
+                          </div>
+                        </SelectItem>
+                      ))
+                    )}
+                  </div>
+                </SelectContent>
+              </Select>
             </div>
             
             {controlType === 'stl' ? (
