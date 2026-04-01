@@ -172,17 +172,18 @@ export const InopineControlForm: React.FC<InopineControlFormProps> = ({
     }
   }, [controlId, vehiculeId, chauffeurId]);
 
-  // Calculer les statistiques de progression
+  // Calculer les statistiques de progression (NA = vérifié mais non applicable)
+  const naItems = items.filter(i => i.commentaire?.startsWith('[NA]'));
   const checkedItems = items.filter(i => i.is_conforme !== null).length;
   const totalItems = items.length;
   const progressPercent = totalItems > 0 ? (checkedItems / totalItems) * 100 : 0;
   
-  const criticalFailed = items.filter(i => i.is_critical && i.is_conforme === false).length;
-  const nonCriticalFailed = items.filter(i => !i.is_critical && i.is_conforme === false).length;
+  const criticalFailed = items.filter(i => i.is_critical && i.is_conforme === false && !i.commentaire?.startsWith('[NA]')).length;
+  const nonCriticalFailed = items.filter(i => !i.is_critical && i.is_conforme === false && !i.commentaire?.startsWith('[NA]')).length;
   const allChecked = checkedItems === totalItems && totalItems > 0;
 
-  // Vérifier les commentaires obligatoires
-  const missingComments = items.filter(i => i.is_conforme === false && !i.commentaire?.trim()).length;
+  // Vérifier les commentaires obligatoires (pas pour les NA)
+  const missingComments = items.filter(i => i.is_conforme === false && !i.commentaire?.startsWith('[NA]') && !i.commentaire?.trim()).length;
 
   // Déterminer le statut
   const isNonConforme = criticalFailed > 0 || nonCriticalFailed > 2;
