@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   CheckCircle2, 
   XCircle, 
+  MinusCircle,
   Camera, 
   Video,
   Trash2,
@@ -29,15 +30,24 @@ export const InopineCheckItem: React.FC<InopineCheckItemProps> = ({
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [showComment, setShowComment] = useState(item.is_conforme === false);
+  const [isNA, setIsNA] = useState(item.commentaire?.startsWith('[NA]') || false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleConformityChange = (isConforme: boolean) => {
     if (disabled) return;
-    onUpdate(item.id, { is_conforme: isConforme });
-    // Afficher le champ commentaire si non conforme
+    setIsNA(false);
+    onUpdate(item.id, { is_conforme: isConforme, commentaire: item.commentaire?.startsWith('[NA]') ? '' : item.commentaire });
     if (!isConforme) {
       setShowComment(true);
     }
+  };
+
+  const handleNAChange = () => {
+    if (disabled) return;
+    setIsNA(true);
+    setShowComment(false);
+    // NA = conforme true + commentaire marqué [NA] pour le distinguer
+    onUpdate(item.id, { is_conforme: true, commentaire: '[NA] Non applicable' });
   };
 
   const handleCommentChange = (commentaire: string) => {
@@ -78,8 +88,9 @@ export const InopineCheckItem: React.FC<InopineCheckItemProps> = ({
   return (
     <Card className={cn(
       'transition-all',
-      item.is_conforme === true && 'border-green-200 bg-green-50/50',
-      item.is_conforme === false && 'border-red-200 bg-red-50/50',
+      !isNA && item.is_conforme === true && 'border-green-200 bg-green-50/50',
+      !isNA && item.is_conforme === false && 'border-red-200 bg-red-50/50',
+      isNA && 'border-gray-200 bg-gray-50/50',
       item.is_critical && 'ring-1 ring-orange-300'
     )}>
       <CardContent className="p-4 space-y-3">
@@ -97,33 +108,49 @@ export const InopineCheckItem: React.FC<InopineCheckItemProps> = ({
             <p className="text-xs text-muted-foreground mt-1">{item.categorie}</p>
           </div>
           
-          {/* Boutons Oui/Non */}
-          <div className="flex gap-2">
+          {/* Boutons Oui/Non/NA */}
+          <div className="flex gap-1.5">
             <Button
               type="button"
               size="sm"
-              variant={item.is_conforme === true ? 'default' : 'outline'}
+              variant={!isNA && item.is_conforme === true ? 'default' : 'outline'}
               className={cn(
-                'h-10 w-14',
-                item.is_conforme === true && 'bg-green-600 hover:bg-green-700'
+                'h-10 w-12',
+                !isNA && item.is_conforme === true && 'bg-green-600 hover:bg-green-700'
               )}
               onClick={() => handleConformityChange(true)}
               disabled={disabled}
+              title="Conforme"
             >
               <CheckCircle2 className="h-5 w-5" />
             </Button>
             <Button
               type="button"
               size="sm"
-              variant={item.is_conforme === false ? 'default' : 'outline'}
+              variant={!isNA && item.is_conforme === false ? 'default' : 'outline'}
               className={cn(
-                'h-10 w-14',
-                item.is_conforme === false && 'bg-red-600 hover:bg-red-700'
+                'h-10 w-12',
+                !isNA && item.is_conforme === false && 'bg-red-600 hover:bg-red-700'
               )}
               onClick={() => handleConformityChange(false)}
               disabled={disabled}
+              title="Non conforme"
             >
               <XCircle className="h-5 w-5" />
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={isNA ? 'default' : 'outline'}
+              className={cn(
+                'h-10 w-12 text-xs font-semibold',
+                isNA && 'bg-gray-500 hover:bg-gray-600'
+              )}
+              onClick={handleNAChange}
+              disabled={disabled}
+              title="Non applicable"
+            >
+              NA
             </Button>
           </div>
         </div>
