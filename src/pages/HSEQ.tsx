@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { 
   Shield, 
   FileCheck, 
@@ -41,7 +42,9 @@ import {
   RefreshCw,
   User,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Check
 } from 'lucide-react';
 import { hseqService } from '@/services/hseqService';
 import { inopineService } from '@/services/inopineService';
