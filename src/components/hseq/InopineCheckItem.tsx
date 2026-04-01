@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   CheckCircle2, 
   XCircle, 
+  MinusCircle,
   Camera, 
   Video,
   Trash2,
