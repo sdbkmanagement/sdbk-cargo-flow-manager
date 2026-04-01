@@ -72,7 +72,8 @@ const HSEQ: React.FC = () => {
   const [controlType, setControlType] = useState<'stl' | 'inopine'>('stl');
   const [selectedVehicule, setSelectedVehicule] = useState<string>('');
   const [selectedChauffeur, setSelectedChauffeur] = useState<string>('');
-
+  const [vehiculeSearch, setVehiculeSearch] = useState('');
+  const [vehiculeDropdownOpen, setVehiculeDropdownOpen] = useState(false);
   // Charger les véhicules disponibles
   const { data: vehicules } = useQuery({
     queryKey: ['vehicules-hseq'],
