@@ -79,6 +79,13 @@ const menuItems = [
     allowedRoles: ['admin', 'direction', 'administratif']
   },
   {
+    path: '/formations',
+    label: 'Formations',
+    icon: GraduationCap,
+    module: 'formations',
+    allowedRoles: ['admin', 'hsecq', 'direction', 'transport', 'rh']
+  },
+  {
     path: '/hseq',
     label: 'HSEQ',
     icon: ShieldCheck,
