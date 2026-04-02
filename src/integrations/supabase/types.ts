@@ -1893,6 +1893,66 @@ export type Database = {
           },
         ]
       }
+      formations: {
+        Row: {
+          chauffeur_id: string
+          commentaire: string | null
+          created_at: string
+          date_formation: string
+          date_recyclage: string | null
+          formateur_nom: string | null
+          id: string
+          signature_chauffeur: string | null
+          signature_formateur: string | null
+          statut: string
+          theme_id: string
+          updated_at: string
+        }
+        Insert: {
+          chauffeur_id: string
+          commentaire?: string | null
+          created_at?: string
+          date_formation: string
+          date_recyclage?: string | null
+          formateur_nom?: string | null
+          id?: string
+          signature_chauffeur?: string | null
+          signature_formateur?: string | null
+          statut?: string
+          theme_id: string
+          updated_at?: string
+        }
+        Update: {
+          chauffeur_id?: string
+          commentaire?: string | null
+          created_at?: string
+          date_formation?: string
+          date_recyclage?: string | null
+          formateur_nom?: string | null
+          id?: string
+          signature_chauffeur?: string | null
+          signature_formateur?: string | null
+          statut?: string
+          theme_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "formations_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "formations_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "themes_formation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formations_employes: {
         Row: {
           certificat_url: string | null
@@ -2878,6 +2938,39 @@ export type Database = {
           numero_ordre?: number
           observations?: string | null
           tarif_au_litre?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      themes_formation: {
+        Row: {
+          actif: boolean
+          created_at: string
+          description: string | null
+          duree_validite: number
+          id: string
+          nom: string
+          obligatoire: boolean
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          description?: string | null
+          duree_validite?: number
+          id?: string
+          nom: string
+          obligatoire?: boolean
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          description?: string | null
+          duree_validite?: number
+          id?: string
+          nom?: string
+          obligatoire?: boolean
           updated_at?: string
         }
         Relationships: []
