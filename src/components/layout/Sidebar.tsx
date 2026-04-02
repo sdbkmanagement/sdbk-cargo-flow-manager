@@ -61,10 +61,16 @@ const navigationItems = [
     permissions: ['societe', 'all']
   },
   {
+    title: 'Formations',
+    icon: GraduationCap,
+    href: '/formations',
+    permissions: ['formations', 'all']
+  },
+  {
     title: 'Validations',
     icon: Shield,
     href: '/validations',
-    permissions: ['validations'], // Utilisation spéciale pour les validations
+    permissions: ['validations'],
     requiresValidationRole: true
   },
   {
