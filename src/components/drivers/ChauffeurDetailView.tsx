@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Phone, Mail, MapPin, Calendar, FileText, Car, Clock, UserCheck } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, FileText, Car, Clock, UserCheck, GraduationCap } from 'lucide-react';
 import { ChauffeurStatutManager } from './ChauffeurStatutManager';
 import { ChauffeurDocumentManager } from './ChauffeurDocumentManagerSimple';
 import { useQuery } from '@tanstack/react-query';
