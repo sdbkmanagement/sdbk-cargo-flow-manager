@@ -5,12 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Users, CheckCircle, AlertTriangle, XCircle, Save } from 'lucide-react';
+import { Download, Users, CheckCircle, AlertTriangle, XCircle, Save, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { compagnonnageService, FicheCompagnonnage } from '@/services/compagnonnageService';
 import { chauffeursService } from '@/services/chauffeurs';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+
 
 const DUREE_RECYCLAGE_MOIS = 12; // 1 an par défaut
 
@@ -205,22 +205,85 @@ export const CompagnonnageTab = () => {
   };
 
   const handleExport = () => {
-    const exportData = filteredRows.map(r => ({
-      'Matricule': r.matricule || '',
-      'Nom': r.nom,
-      'Prénom': r.prenom,
-      'Formé': r.forme ? 'Oui' : 'Non',
-      'Date Formation': r.dateFormation ? new Date(r.dateFormation).toLocaleDateString('fr-FR') : '',
-      'Date Recyclage': r.dateEcheance ? new Date(r.dateEcheance).toLocaleDateString('fr-FR') : '',
-      'Statut': statutConfig[r.formationStatut]?.label || '',
-    }));
+    const year = new Date().getFullYear();
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
 
-    const ws = XLSX.utils.json_to_sheet(exportData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Compagnonnage');
-    ws['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-    XLSX.writeFile(wb, `Compagnonnage_${new Date().toISOString().slice(0, 10)}.xlsx`);
-    toast.success('Export téléchargé');
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Fiche de Compagnonnage ${year}</title>
+        <style>
+          @page { size: A4 landscape; margin: 10mm; }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; font-size: 9px; }
+          .header { text-align: center; margin-bottom: 10px; }
+          .header h1 { font-size: 16px; font-weight: bold; text-transform: uppercase; }
+          .header h2 { font-size: 12px; color: #333; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; }
+          th, td { border: 1px solid #333; padding: 3px 5px; text-align: left; }
+          th { background: #1a365d; color: white; font-size: 9px; text-align: center; }
+          td { font-size: 8px; }
+          tr:nth-child(even) { background: #f0f4f8; }
+          .num-col { width: 35px; text-align: center; }
+          .mat-col { width: 80px; text-align: center; }
+          .nom-col { width: 180px; }
+          .date-col { width: 100px; text-align: center; }
+          .statut-col { width: 90px; text-align: center; }
+          .obs-col { width: 120px; }
+          .footer { margin-top: 20px; display: flex; justify-content: space-between; }
+          .footer div { width: 45%; }
+          .footer .title { font-weight: bold; font-size: 10px; text-align: center; border-bottom: 1px solid #333; padding-bottom: 5px; margin-bottom: 30px; }
+          .company-name { font-size: 11px; font-weight: bold; color: #1a365d; }
+          @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="company-name">SDBK TRANSPORT</div>
+          <h1>Planning de Compagnonnage ${year}</h1>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="num-col">N°</th>
+              <th class="mat-col">Matricule</th>
+              <th class="nom-col">Nom / Prénoms</th>
+              <th class="date-col">Date réalisation</th>
+              <th class="date-col">Date recyclage</th>
+              <th class="statut-col">Statut</th>
+              <th class="obs-col">Obs</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredRows.map((r, i) => `
+              <tr>
+                <td class="num-col">${String(i + 1).padStart(2, '0')}</td>
+                <td class="mat-col">${r.matricule || ''}</td>
+                <td class="nom-col">${r.nom} ${r.prenom}</td>
+                <td class="date-col">${r.dateFormation ? new Date(r.dateFormation).toLocaleDateString('fr-FR') : ''}</td>
+                <td class="date-col">${r.dateEcheance ? new Date(r.dateEcheance).toLocaleDateString('fr-FR') : ''}</td>
+                <td class="statut-col">${statutConfig[r.formationStatut]?.label || ''}</td>
+                <td class="obs-col"></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="footer">
+          <div>
+            <div class="title">SERVICE FORMATION</div>
+          </div>
+          <div>
+            <div class="title">LA SOCIETE</div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
+    setTimeout(() => { printWindow.print(); }, 500);
   };
 
   const hasDirty = Object.keys(localEdits).length > 0;
@@ -268,8 +331,8 @@ export const CompagnonnageTab = () => {
                 className="w-48"
               />
               <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="w-4 h-4 mr-1" />
-                Export
+                <Printer className="w-4 h-4 mr-1" />
+                Imprimer
               </Button>
               {hasDirty && (
                 <Button size="sm" onClick={handleSaveAll} disabled={createMutation.isPending || updateMutation.isPending}>
