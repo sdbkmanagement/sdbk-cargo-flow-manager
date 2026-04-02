@@ -87,8 +87,8 @@ export const PlanningRecyclage = () => {
             const vehiculeId = affectationMap.get(c.id) || c.vehicule_assigne;
             let tracteur = 'Reserve';
             if (vehiculeId) {
-              // Try as ID first, then as direct immatriculation
-              tracteur = vehiculeMapById.get(vehiculeId) || vehiculeId || 'Reserve';
+              const immat = vehiculeMapById.get(vehiculeId);
+              tracteur = immat && immat.trim() !== '' ? immat : 'Reserve';
             }
             
             const lastFormation = lastFormationMap.get(c.id);
