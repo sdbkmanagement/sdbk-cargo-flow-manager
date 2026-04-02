@@ -26,6 +26,7 @@ export const FormationsModule = () => {
           <TabsTrigger value="formations">Chauffeurs</TabsTrigger>
           <TabsTrigger value="themes">Thèmes</TabsTrigger>
           <TabsTrigger value="alertes">Alertes</TabsTrigger>
+          <TabsTrigger value="compagnonnage">Compagnonnage</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
