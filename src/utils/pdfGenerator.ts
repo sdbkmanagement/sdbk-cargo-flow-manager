@@ -256,7 +256,7 @@ const getInvoiceStyles = () => `
     margin-top: 25px;
   }
   .spacer {
-    flex: 1;
+    flex: 0;
   }
   @media print { 
     body { margin: 0; }
