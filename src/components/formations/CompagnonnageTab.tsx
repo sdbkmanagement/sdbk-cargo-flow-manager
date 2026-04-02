@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Users, CheckCircle, AlertTriangle, XCircle, Save } from 'lucide-react';
+import { Download, Users, CheckCircle, AlertTriangle, XCircle, Save, Printer } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { compagnonnageService, FicheCompagnonnage } from '@/services/compagnonnageService';
 import { chauffeursService } from '@/services/chauffeurs';
