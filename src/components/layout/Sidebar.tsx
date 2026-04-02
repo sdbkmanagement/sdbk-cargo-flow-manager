@@ -12,7 +12,8 @@ import {
   UserCog, 
   Shield,
   Briefcase,
-  Settings
+  Settings,
+  GraduationCap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
