@@ -20,6 +20,7 @@ import Validations from '@/pages/Validations';
 import Clients from '@/pages/Clients';
 import Societe from '@/pages/Societe';
 import HSEQ from '@/pages/HSEQ';
+import Formations from '@/pages/Formations';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 
