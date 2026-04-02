@@ -12,8 +12,7 @@ import {
   UserCog, 
   Shield,
   Briefcase,
-  Settings,
-  GraduationCap
+  Settings
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -61,16 +60,10 @@ const navigationItems = [
     permissions: ['societe', 'all']
   },
   {
-    title: 'Formations',
-    icon: GraduationCap,
-    href: '/formations',
-    permissions: ['formations', 'all']
-  },
-  {
     title: 'Validations',
     icon: Shield,
     href: '/validations',
-    permissions: ['validations'],
+    permissions: ['validations'], // Utilisation spéciale pour les validations
     requiresValidationRole: true
   },
   {
