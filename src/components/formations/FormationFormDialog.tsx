@@ -14,6 +14,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formation?: any;
+  preselectedChauffeurId?: string;
+  preselectedThemeId?: string;
 }
 
 export const FormationFormDialog = ({ open, onOpenChange, formation }: Props) => {
