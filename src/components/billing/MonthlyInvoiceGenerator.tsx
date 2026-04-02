@@ -188,15 +188,29 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       const padMonth = selectedMonth.padStart(2, '0');
       const depotSuffix = selectedDepot !== 'tous' ? `-${selectedDepot.substring(0, 3).toUpperCase()}` : '';
       const addSuffix = isAdditive ? '-ADD' : '';
-      const facturePrefix = `FM${selectedYear}${padMonth}${depotSuffix}${addSuffix}`;
+      const factureBasePrefix = `FM${selectedYear}${padMonth}${depotSuffix}`;
+      const facturePrefix = `${factureBasePrefix}${addSuffix}`;
 
+      // Rechercher TOUTES les factures existantes pour cette période/dépôt/type
       const { data: existingFactures } = await supabase
         .from('factures')
         .select('id, numero')
         .like('numero', `${facturePrefix}%`)
-        .limit(1);
+        .order('created_at', { ascending: false });
 
+      // Prendre la première (la plus récente) comme facture à mettre à jour
       const existingFacture = existingFactures && existingFactures.length > 0 ? existingFactures[0] : null;
+      
+      // Supprimer les doublons s'il y en a (garder seulement la plus récente)
+      if (existingFactures && existingFactures.length > 1) {
+        const duplicateIds = existingFactures.slice(1).map(f => f.id);
+        for (const dupId of duplicateIds) {
+          await supabase.from('facture_lignes').delete().eq('facture_id', dupId);
+          await supabase.from('factures').delete().eq('id', dupId);
+        }
+        console.log(`Nettoyage: ${duplicateIds.length} facture(s) en doublon supprimée(s) pour ${facturePrefix}`);
+      }
+
       const isUpdate = !!existingFacture;
 
       let totalHT = 0;
@@ -226,11 +240,11 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
       const totalTTC = totalHT + totalTVA;
       let facture: any;
 
-      if (isUpdate && existingFacture) {
-        const today = new Date();
-        const date_emission = today.toISOString().split('T')[0];
-        const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const today = new Date();
+      const date_emission = today.toISOString().split('T')[0];
+      const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
+      if (isUpdate && existingFacture) {
         await supabase.from('factures').update({
           client_nom: clientNom || 'TOTALEnergies GUINEE SA',
           date_emission, date_echeance,
@@ -247,10 +261,8 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
         }
         facture = { numero: existingFacture.numero };
       } else {
-        const numero = `${facturePrefix}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-        const today = new Date();
-        const date_emission = today.toISOString().split('T')[0];
-        const date_echeance = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        // Numéro déterministe sans random pour éviter les doublons
+        const numero = `${facturePrefix}-001`;
 
         facture = await billingService.createFacture({
           numero,
