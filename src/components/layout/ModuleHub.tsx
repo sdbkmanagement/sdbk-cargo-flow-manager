@@ -16,7 +16,8 @@ import {
   LogOut,
   Building2,
   Briefcase,
-  ShieldCheck
+  ShieldCheck,
+  GraduationCap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
