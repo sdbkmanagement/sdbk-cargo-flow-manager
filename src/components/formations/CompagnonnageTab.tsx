@@ -331,8 +331,8 @@ export const CompagnonnageTab = () => {
                 className="w-48"
               />
               <Button variant="outline" size="sm" onClick={handleExport}>
-                <Download className="w-4 h-4 mr-1" />
-                Export
+                <Printer className="w-4 h-4 mr-1" />
+                Imprimer
               </Button>
               {hasDirty && (
                 <Button size="sm" onClick={handleSaveAll} disabled={createMutation.isPending || updateMutation.isPending}>
