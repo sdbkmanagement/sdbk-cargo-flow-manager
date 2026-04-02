@@ -327,14 +327,14 @@ export const MonthlyInvoiceGenerator = ({ onInvoiceCreated }: { onInvoiceCreated
   for (let i = currentYear - 2; i <= currentYear + 1; i++) years.push(i.toString());
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetState(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!isGenerating && !isLoading) { setOpen(v); if (!v) resetState(); } }}>
       <DialogTrigger asChild>
         <Button variant="outline">
           <FileText className="w-4 h-4 mr-2" />
           Facture groupée mensuelle
         </Button>
       </DialogTrigger>
-      <DialogContent className={step === 'preview' ? 'max-w-3xl' : ''}>
+      <DialogContent className={step === 'preview' ? 'max-w-3xl' : ''} onPointerDownOutside={(e) => { if (isGenerating || isLoading) e.preventDefault(); }} onEscapeKeyDown={(e) => { if (isGenerating || isLoading) e.preventDefault(); }}>
         <DialogHeader>
           <DialogTitle>
             {step === 'config' ? 'Générer une facture groupée mensuelle' : 'Sélection des BL à facturer'}
