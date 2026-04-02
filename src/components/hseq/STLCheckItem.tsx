@@ -95,14 +95,14 @@ export const STLCheckItem: React.FC<STLCheckItemProps> = ({
           )}
         </div>
 
-        {/* Boutons OK / NON OK */}
+        {/* Boutons OK / NON OK / NA */}
         <div className="flex gap-2">
           <Button
-            variant={item.is_conforme === true ? 'default' : 'outline'}
+            variant={item.is_conforme === true && !isNA ? 'default' : 'outline'}
             size="sm"
             className={cn(
               'flex-1',
-              item.is_conforme === true && 'bg-green-600 hover:bg-green-700'
+              item.is_conforme === true && !isNA && 'bg-green-600 hover:bg-green-700'
             )}
             onClick={() => handleConformityChange(true)}
             disabled={disabled}
@@ -119,6 +119,19 @@ export const STLCheckItem: React.FC<STLCheckItemProps> = ({
           >
             <XCircle className="h-4 w-4 mr-2" />
             NON OK
+          </Button>
+          <Button
+            variant={isNA ? 'default' : 'outline'}
+            size="sm"
+            className={cn(
+              'flex-1',
+              isNA && 'bg-muted-foreground hover:bg-muted-foreground/90 text-background'
+            )}
+            onClick={() => handleConformityChange(null, true)}
+            disabled={disabled}
+          >
+            <MinusCircle className="h-4 w-4 mr-2" />
+            NA
           </Button>
         </div>
 
