@@ -47,6 +47,9 @@ export const FormationsModule = () => {
         <TabsContent value="alertes">
           <FormationsAlerts />
         </TabsContent>
+        <TabsContent value="compagnonnage">
+          <CompagnonnageTab />
+        </TabsContent>
       </Tabs>
     </div>
   );
