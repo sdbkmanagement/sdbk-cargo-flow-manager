@@ -243,7 +243,7 @@ const getInvoiceStyles = () => `
   }
   .signature-section {
     text-align: right;
-    margin-top: 10px;
+    margin-top: 0;
     padding-right: 30px;
   }
   .signature-date {
@@ -256,7 +256,7 @@ const getInvoiceStyles = () => `
     margin-top: 25px;
   }
   .spacer {
-    flex: 1;
+    flex: 0;
   }
   @media print { 
     body { margin: 0; }
