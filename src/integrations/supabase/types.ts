@@ -1893,6 +1893,53 @@ export type Database = {
           },
         ]
       }
+      fiches_compagnonnage: {
+        Row: {
+          chauffeur_id: string
+          commentaire: string | null
+          created_at: string | null
+          date_echeance: string | null
+          date_formation: string
+          formateur_nom: string | null
+          id: string
+          statut: string | null
+          theme: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          chauffeur_id: string
+          commentaire?: string | null
+          created_at?: string | null
+          date_echeance?: string | null
+          date_formation: string
+          formateur_nom?: string | null
+          id?: string
+          statut?: string | null
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          chauffeur_id?: string
+          commentaire?: string | null
+          created_at?: string | null
+          date_echeance?: string | null
+          date_formation?: string
+          formateur_nom?: string | null
+          id?: string
+          statut?: string | null
+          theme?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiches_compagnonnage_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formations: {
         Row: {
           chauffeur_id: string
