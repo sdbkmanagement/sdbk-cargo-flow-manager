@@ -2009,6 +2009,42 @@ export type Database = {
           },
         ]
       }
+      formations_matrice: {
+        Row: {
+          categorie: string
+          completed: boolean
+          created_at: string
+          date_completion: string | null
+          id: string
+          module_nom: string
+          person_id: string
+          person_type: string
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          completed?: boolean
+          created_at?: string
+          date_completion?: string | null
+          id?: string
+          module_nom: string
+          person_id: string
+          person_type: string
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          completed?: boolean
+          created_at?: string
+          date_completion?: string | null
+          id?: string
+          module_nom?: string
+          person_id?: string
+          person_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       historique_rh: {
         Row: {
           ancien_poste: string | null
