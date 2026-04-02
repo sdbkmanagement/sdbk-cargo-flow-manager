@@ -3,11 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Phone, Mail, MapPin, Calendar, FileText, Car, Clock, UserCheck } from 'lucide-react';
+import { User, Phone, Mail, MapPin, Calendar, FileText, Car, Clock, UserCheck, GraduationCap } from 'lucide-react';
 import { ChauffeurStatutManager } from './ChauffeurStatutManager';
 import { ChauffeurDocumentManager } from './ChauffeurDocumentManagerSimple';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { ChauffeurFormationsTab } from '@/components/formations/ChauffeurFormationsTab';
 
 interface ChauffeurDetailViewProps {
   chauffeur: any;
@@ -130,6 +131,10 @@ export const ChauffeurDetailView = ({ chauffeur: initialChauffeur }: ChauffeurDe
           <TabsTrigger value="infos">Informations</TabsTrigger>
           <TabsTrigger value="statut">Statut</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="formations">
+            <GraduationCap className="w-4 h-4 mr-1" />
+            Formations
+          </TabsTrigger>
           <TabsTrigger value="permis">Permis</TabsTrigger>
         </TabsList>
 
@@ -281,6 +286,10 @@ export const ChauffeurDetailView = ({ chauffeur: initialChauffeur }: ChauffeurDe
 
         <TabsContent value="documents">
           <ChauffeurDocumentManager chauffeur={chauffeur} onUpdate={handleUpdate} />
+        </TabsContent>
+
+        <TabsContent value="formations">
+          <ChauffeurFormationsTab chauffeurId={chauffeur.id} />
         </TabsContent>
 
         <TabsContent value="permis" className="space-y-4">

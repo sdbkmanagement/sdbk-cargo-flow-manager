@@ -16,7 +16,8 @@ import {
   LogOut,
   Building2,
   Briefcase,
-  ShieldCheck
+  ShieldCheck,
+  GraduationCap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -184,6 +185,15 @@ export const ModuleHub: React.FC = () => {
       route: '/validations',
       gradient: 'from-indigo-500 to-blue-600',
       stats: loading ? '...' : `${stats.missionsEnAttente} en attente`
+    },
+    {
+      id: 'formations',
+      title: 'Formations',
+      description: 'Formations et recyclage des chauffeurs',
+      icon: GraduationCap,
+      route: '/formations',
+      gradient: 'from-amber-500 to-yellow-600',
+      isNew: true
     },
     {
       id: 'hseq',
