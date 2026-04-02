@@ -44,13 +44,23 @@ export const PlanningRecyclage = () => {
       if (chauffeursData) {
         setChauffeurs(chauffeursData);
         
-        // Load vehicles for assignment info
+        // Load vehicles for ID -> immatriculation mapping
         const { data: vehiculesData } = await supabase
           .from('vehicules')
           .select('id, immatriculation');
 
-        const vehiculeMap = new Map(
+        const vehiculeMapById = new Map(
           (vehiculesData || []).map(v => [v.id, v.immatriculation || ''])
+        );
+
+        // Also load active affectations
+        const { data: affectationsData } = await supabase
+          .from('affectations_chauffeurs')
+          .select('chauffeur_id, vehicule_id')
+          .eq('statut', 'active');
+
+        const affectationMap = new Map(
+          (affectationsData || []).map(a => [a.chauffeur_id, a.vehicule_id])
         );
 
         // Load formations with date_recyclage
@@ -59,7 +69,6 @@ export const PlanningRecyclage = () => {
           .select('chauffeur_id, date_formation, date_recyclage')
           .order('date_formation', { ascending: false });
 
-        // For each chauffeur, get last formation date and its recyclage date
         const lastFormationMap = new Map<string, { date_formation: string; date_recyclage: string | null }>();
         (formationsData || []).forEach((f: any) => {
           if (!lastFormationMap.has(f.chauffeur_id)) {
@@ -74,9 +83,13 @@ export const PlanningRecyclage = () => {
         const planningEntries: PlanningEntry[] = chauffeursData
           .filter(c => c.statut !== 'inactif')
           .map((c, index) => {
-            const tracteur = c.vehicule_assigne 
-              ? (vehiculeMap.get(c.vehicule_assigne) || 'Reserve')
-              : 'Reserve';
+            // Priority: affectation active > vehicule_assigne field
+            const vehiculeId = affectationMap.get(c.id) || c.vehicule_assigne;
+            let tracteur = 'Reserve';
+            if (vehiculeId) {
+              // Try as ID first, then as direct immatriculation
+              tracteur = vehiculeMapById.get(vehiculeId) || vehiculeId || 'Reserve';
+            }
             
             const lastFormation = lastFormationMap.get(c.id);
             const dateRealisation = lastFormation?.date_formation || null;
