@@ -53,16 +53,20 @@ export const PlanningRecyclage = () => {
           (vehiculesData || []).map(v => [v.id, v.immatriculation || ''])
         );
 
-        // Load formations for previous year dates
+        // Load formations with date_recyclage
         const { data: formationsData } = await supabase
           .from('formations' as any)
-          .select('chauffeur_id, date_formation')
+          .select('chauffeur_id, date_formation, date_recyclage')
           .order('date_formation', { ascending: false });
 
-        const lastFormationMap = new Map<string, string>();
+        // For each chauffeur, get last formation date and its recyclage date
+        const lastFormationMap = new Map<string, { date_formation: string; date_recyclage: string | null }>();
         (formationsData || []).forEach((f: any) => {
           if (!lastFormationMap.has(f.chauffeur_id)) {
-            lastFormationMap.set(f.chauffeur_id, f.date_formation);
+            lastFormationMap.set(f.chauffeur_id, {
+              date_formation: f.date_formation,
+              date_recyclage: f.date_recyclage
+            });
           }
         });
 
@@ -74,8 +78,9 @@ export const PlanningRecyclage = () => {
               ? (vehiculeMap.get(c.vehicule_assigne) || 'Reserve')
               : 'Reserve';
             
-            const lastDate = lastFormationMap.get(c.id);
-            const datePrevue = lastDate ? format(addYears(new Date(lastDate), 1), 'yyyy-MM-dd') : null;
+            const lastFormation = lastFormationMap.get(c.id);
+            const dateRealisation = lastFormation?.date_formation || null;
+            const datePrevue = lastFormation?.date_recyclage || null;
 
             return {
               id: c.id,
@@ -83,7 +88,7 @@ export const PlanningRecyclage = () => {
               chauffeur_id: c.id,
               chauffeur_nom: `${c.nom} ${c.prenom}`,
               tracteur,
-              date_realisation_precedente: lastDate || null,
+              date_realisation_precedente: dateRealisation,
               date_prevue: datePrevue,
               observations: ''
             };
