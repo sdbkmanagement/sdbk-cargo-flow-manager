@@ -1,3 +1,5 @@
+import { SDBK_TEMPLATE_BG } from './invoiceTemplateAssets';
+
 const numberToFrenchWords = (num: number): string => {
   if (num === 0) return 'zéro';
   
@@ -76,6 +78,351 @@ const numberToFrenchWords = (num: number): string => {
   return words.charAt(0).toUpperCase() + words.slice(1);
 };
 
+// Styles communs pour le template SDBK (une seule page A4)
+const getInvoiceStyles = () => `
+  @page { 
+    size: A4; 
+    margin: 0;
+  }
+  * { box-sizing: border-box; }
+  body { 
+    font-family: Arial, sans-serif; 
+    margin: 0; 
+    padding: 0;
+    color: #000;
+    font-size: 10pt;
+    line-height: 1.3;
+    width: 210mm;
+    height: 297mm;
+    position: relative;
+    overflow: hidden;
+  }
+  .bg-template {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 210mm;
+    height: 297mm;
+    z-index: -1;
+  }
+  .bg-template img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .content-wrapper {
+    position: relative;
+    z-index: 1;
+    padding: 32mm 18mm 30mm 18mm;
+    height: 297mm;
+    display: flex;
+    flex-direction: column;
+  }
+  .main-title {
+    text-align: center;
+    font-size: 12pt;
+    font-weight: bold;
+    margin-bottom: 8px;
+    padding: 6px;
+    border: 2px solid #000;
+  }
+  .depot {
+    text-align: center;
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 6px 0;
+  }
+  .facture-number {
+    text-align: center;
+    font-size: 14pt;
+    font-weight: bold;
+    margin: 12px 0;
+    text-decoration: underline;
+  }
+  .client-section {
+    margin: 10px 0;
+  }
+  .client-section .title {
+    font-size: 11pt;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+  .client-section .name {
+    font-size: 11pt;
+    font-weight: bold;
+    margin: 3px 0;
+  }
+  .client-section .address {
+    font-size: 10pt;
+  }
+  .two-col {
+    display: flex;
+    gap: 20px;
+    margin: 10px 0;
+  }
+  .col-left {
+    flex: 1;
+  }
+  .col-right {
+    flex: 1;
+  }
+  .totals-box {
+    border: 2px solid #000;
+    padding: 8px;
+  }
+  .totals-box table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .totals-box td {
+    padding: 5px 4px;
+    font-size: 9.5pt;
+  }
+  .totals-box .label {
+    text-align: left;
+    font-weight: bold;
+  }
+  .totals-box .amount {
+    text-align: right;
+    font-weight: bold;
+  }
+  .totals-box .total-row {
+    background-color: #e0e0e0;
+    font-size: 10pt;
+  }
+  .info-table {
+    border-collapse: collapse;
+    margin: 4px 0;
+  }
+  .info-table td {
+    padding: 4px 10px;
+    border: 1px solid #000;
+    font-size: 9.5pt;
+  }
+  .doit-section {
+    margin: 8px 0;
+    font-size: 10pt;
+    font-weight: bold;
+  }
+  .designation-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+  }
+  .designation-table th,
+  .designation-table td {
+    border: 2px solid #000;
+    padding: 8px;
+    text-align: center;
+    font-size: 10pt;
+  }
+  .designation-table th {
+    background-color: #f0f0f0;
+    font-weight: bold;
+  }
+  .designation-table td.text-left {
+    text-align: left;
+  }
+  .text-section {
+    margin: 8px 0;
+    text-align: justify;
+    font-size: 10pt;
+    line-height: 1.4;
+  }
+  .text-section p {
+    margin: 0;
+  }
+  .amount-letters {
+    margin: 6px 0;
+    font-size: 10pt;
+    font-weight: bold;
+  }
+  .bank-info {
+    font-size: 10pt;
+    margin-top: 8px;
+  }
+  .signature-section {
+    text-align: right;
+    margin-top: 10px;
+    padding-right: 30px;
+  }
+  .signature-date {
+    margin-bottom: 4px;
+    font-size: 10pt;
+  }
+  .signature-title {
+    font-weight: bold;
+    font-size: 10pt;
+    margin-top: 25px;
+  }
+  .spacer {
+    flex: 1;
+  }
+  @media print { 
+    body { margin: 0; }
+    .no-print { display: none !important; }
+    .bg-template { position: fixed; }
+  }
+  .no-print {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 10px;
+    text-align: center;
+    z-index: 100;
+    border-top: 1px solid #ccc;
+  }
+`;
+
+// Génère le HTML du contenu de facture (sans le wrapper)
+const getInvoiceBody = (params: {
+  isMonthly: boolean;
+  monthYear: string;
+  shortPeriod: string;
+  invoiceNumber: string;
+  clientNom: string;
+  clientAdresse: string;
+  clientNif: string;
+  montantHT: number;
+  montantTVA: number;
+  montantTTC: number;
+  designation: string;
+  blCount?: number;
+  dateEmission: string;
+  depot?: string;
+}) => {
+  const {
+    isMonthly, monthYear, shortPeriod, invoiceNumber,
+    clientNom, clientAdresse, clientNif,
+    montantHT, montantTVA, montantTTC,
+    designation, blCount, dateEmission, depot
+  } = params;
+
+  return `
+    ${isMonthly ? `
+    <div class="main-title">
+      FACTURE TRANSPORT DU MOIS DE ${monthYear} PRODUIT BLANC
+    </div>
+    <div class="depot">
+      DEPOT DE ${depot || 'CONAKRY'}
+    </div>
+    ` : ''}
+
+    <div class="facture-number">
+      ${isMonthly ? `FACTURE SDBK ${invoiceNumber} PB` : `FACTURE ${invoiceNumber}`}
+    </div>
+
+    <div class="client-section">
+      <div class="title">A l'intention de :</div>
+      <div class="name">${clientNom}</div>
+      <div class="address">Adresse: Guinée, Conakry${clientAdresse ? ', ' + clientAdresse : ', Coleah'}</div>
+    </div>
+
+    <div class="two-col">
+      <div class="col-left">
+        <table class="info-table">
+          <tr>
+            <td style="width: 180px; font-weight: bold;">Code transport à Total</td>
+            <td>G6</td>
+          </tr>
+          <tr>
+            <td style="font-weight: bold;">Code client à Total</td>
+            <td>315</td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-right">
+        <div class="totals-box">
+          <table>
+            <tr>
+              <td class="label">TOTAL ( HT )</td>
+              <td class="amount">${montantHT.toLocaleString('fr-FR')} GNF</td>
+            </tr>
+            <tr>
+              <td class="label">T V A (18 %)</td>
+              <td class="amount">${montantTVA.toLocaleString('fr-FR')} GNF</td>
+            </tr>
+            <tr class="total-row">
+              <td class="label">TOTAL ( TTC )</td>
+              <td class="amount">${montantTTC.toLocaleString('fr-FR')} GNF</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="doit-section">
+      Doit: ${clientNom} ${clientNif ? 'NIF : ' + clientNif : 'NIF : 852622687/3Z'}
+    </div>
+
+    <table class="designation-table">
+      <thead>
+        <tr>
+          <th>DESIGNATION</th>
+          <th>PERIODE</th>
+          <th>MONTANT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-left">${designation}</td>
+          <td>${shortPeriod}</td>
+          <td>${montantTTC.toLocaleString('fr-FR')} GNF</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="text-section">
+      <p>Suivant relevé de ${blCount ? `<strong>${blCount}</strong> ` : ''}bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens :</p>
+    </div>
+
+    <div class="amount-letters">
+      <em>${numberToFrenchWords(montantTTC)}</em>
+    </div>
+
+    <div class="bank-info">
+      Virement bancaire SGBG N° 01515080003-65
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="signature-section">
+      <div class="signature-date">${dateEmission}</div>
+      <div class="signature-title">Le Directeur Général</div>
+    </div>
+  `;
+};
+
+// Wrapper HTML complet avec le template SDBK en fond
+const buildInvoiceHTML = (title: string, bodyContent: string) => `
+  <!DOCTYPE html>
+  <html>
+  <head>
+      <meta charset="utf-8">
+      <title>${title}</title>
+      <style>${getInvoiceStyles()}</style>
+  </head>
+  <body>
+      <div class="bg-template">
+        <img src="${SDBK_TEMPLATE_BG}" alt="Template SDBK" />
+      </div>
+      <div class="content-wrapper">
+        ${bodyContent}
+      </div>
+      <div class="no-print">
+        <button onclick="window.print()" style="padding: 10px 20px; font-size: 14px; cursor: pointer; background: #1a56db; color: white; border: none; border-radius: 4px; margin-right: 10px;">
+          Imprimer / Enregistrer en PDF
+        </button>
+        <button onclick="window.close()" style="padding: 10px 20px; font-size: 14px; cursor: pointer; border: 1px solid #1a56db; background: white; border-radius: 4px;">
+          Fermer
+        </button>
+      </div>
+  </body>
+  </html>
+`;
+
 export const generateInvoicePDF = (invoice: any) => {
   const printWindow = window.open('', '_blank');
   
@@ -84,9 +431,9 @@ export const generateInvoicePDF = (invoice: any) => {
     return;
   }
 
-  // Extraire le mois/année du numéro de facture si c'est une facture mensuelle
   const isMonthly = invoice.numero?.startsWith('FM');
   let monthYear = '';
+  let shortPeriod = '';
   if (isMonthly) {
     const match = invoice.numero.match(/FM(\d{4})(\d{2})/);
     if (match) {
@@ -94,292 +441,36 @@ export const generateInvoicePDF = (invoice: any) => {
       const monthNum = match[2];
       const monthNames = ['', 'JANVIER', 'FÉVRIER', 'MARS', 'AVRIL', 'MAI', 'JUIN', 
                          'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE', 'DÉCEMBRE'];
+      const shortMonthNames = ['', 'JAN', 'FÉV', 'MARS', 'AVR', 'MAI', 'JUIN', 
+                              'JUIL', 'AOÛT', 'SEPT', 'OCT', 'NOV', 'DÉC'];
       monthYear = `${monthNames[parseInt(monthNum)]} ${year}`;
+      shortPeriod = `${shortMonthNames[parseInt(monthNum)]}-${year.substring(2)}`;
     }
   }
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>Facture ${invoice.numero}</title>
-        <style>
-            @page { 
-              size: A4; 
-              margin: 0;
-            }
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 0; 
-              padding: 0;
-              color: #000;
-              font-size: 11pt;
-              line-height: 1.4;
-              min-height: 297mm;
-              position: relative;
-            }
-            body::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              background-image: url('/templates/facture-template.jpg');
-              background-size: cover;
-              background-position: center top;
-              background-repeat: no-repeat;
-              transform: rotate(180deg);
-              z-index: -1;
-            }
-            .content-wrapper {
-              padding: 70mm 15mm 15mm 15mm;
-              position: relative;
-            }
-            .main-title {
-              text-align: center;
-              font-size: 14pt;
-              font-weight: bold;
-              margin-bottom: 20px;
-              padding: 8px;
-              border: 2px solid #000;
-            }
-            .depot {
-              text-align: center;
-              font-size: 13pt;
-              font-weight: bold;
-              margin: 15px 0;
-            }
-            .facture-number {
-              text-align: center;
-              font-size: 18pt;
-              font-weight: bold;
-              margin: 25px 0;
-              text-decoration: underline;
-            }
-            .client-section {
-              margin: 25px 0;
-            }
-            .client-section .title {
-              font-size: 14pt;
-              font-weight: bold;
-              margin-bottom: 10px;
-            }
-            .client-section .name {
-              font-size: 13pt;
-              font-weight: bold;
-              margin: 5px 0;
-            }
-            .totals-box {
-              float: right;
-              width: 45%;
-              margin: 20px 0;
-              border: 2px solid #000;
-              padding: 15px;
-            }
-            .totals-box table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            .totals-box td {
-              padding: 8px 5px;
-              font-size: 11pt;
-            }
-            .totals-box .label {
-              text-align: left;
-              font-weight: bold;
-            }
-            .totals-box .amount {
-              text-align: right;
-              font-weight: bold;
-            }
-            .totals-box .total-row {
-              background-color: #e0e0e0;
-              font-size: 12pt;
-            }
-            .info-section {
-              clear: both;
-              margin: 30px 0;
-            }
-            .info-section table {
-              border-collapse: collapse;
-              margin: 10px 0;
-            }
-            .info-section td {
-              padding: 6px 12px;
-              border: 1px solid #000;
-            }
-            .doit-section {
-              margin: 15px 0;
-              font-size: 12pt;
-              font-weight: bold;
-            }
-            .designation-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 20px 0;
-            }
-            .designation-table th,
-            .designation-table td {
-              border: 2px solid #000;
-              padding: 12px;
-              text-align: center;
-              font-size: 11pt;
-            }
-            .designation-table th {
-              background-color: #f0f0f0;
-              font-weight: bold;
-            }
-            .designation-table td.text-left {
-              text-align: left;
-            }
-            .text-section {
-              margin: 25px 0;
-              text-align: justify;
-              line-height: 1.6;
-            }
-            .amount-letters {
-              margin: 20px 0;
-              font-size: 11pt;
-              font-style: italic;
-            }
-            .footer-info {
-              margin-top: 30px;
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-            }
-            .bank-info {
-              font-size: 11pt;
-            }
-            .signature-section {
-              text-align: center;
-              margin-top: 50px;
-            }
-            .signature-date {
-              margin-bottom: 10px;
-            }
-            .signature-title {
-              font-weight: bold;
-              margin-top: 40px;
-            }
-            @media print { 
-              body { margin: 0; padding: 10mm; }
-              .no-print { display: none; }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="content-wrapper">
-        ${isMonthly ? `
-        <div class="main-title">
-          FACTURE TRANSPORT DU MOIS DE ${monthYear} PRODUIT BLANC
-        </div>
-        <div class="depot">
-          DEPOT DE CONAKRY
-        </div>
-        ` : ''}
+  const bodyContent = getInvoiceBody({
+    isMonthly,
+    monthYear,
+    shortPeriod: invoice.periode || shortPeriod || new Date(invoice.date_emission).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' }),
+    invoiceNumber: isMonthly ? invoice.numero.replace('FM', '') : invoice.numero,
+    clientNom: invoice.client_nom || 'TOTALEnergies GUINEE SA',
+    clientAdresse: invoice.client_adresse || '',
+    clientNif: invoice.client_nif || '',
+    montantHT: invoice.montant_ht,
+    montantTVA: invoice.montant_tva,
+    montantTTC: invoice.montant_ttc,
+    designation: invoice.designation || 'TRANSPORT PRODUIT BLANC',
+    dateEmission: new Date(invoice.date_emission).toLocaleDateString('fr-FR'),
+  });
 
-        <div class="facture-number">
-          ${isMonthly ? `FACTURE SDBK ${invoice.numero.replace('FM', '')} PB` : `FACTURE ${invoice.numero}`}
-        </div>
-
-        <div class="client-section">
-          <div class="title">A l'intention de :</div>
-          <div class="name">${invoice.client_nom || 'TOTALEnergies GUINEE SA'}</div>
-          <div>Adresse: Guinée, Conakry${invoice.client_adresse ? ', ' + invoice.client_adresse : ', Coleah'}</div>
-        </div>
-
-        <div class="totals-box">
-          <table>
-            <tr>
-              <td class="label">TOTAL ( HT )</td>
-              <td class="amount">${invoice.montant_ht.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-            <tr>
-              <td class="label">T V A (18 % )</td>
-              <td class="amount">${invoice.montant_tva.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-            <tr class="total-row">
-              <td class="label">TOTAL DE LA FACTURE ( TTC )</td>
-              <td class="amount">${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-          </table>
-        </div>
-
-        <div class="info-section">
-          <table>
-            <tr>
-              <td style="width: 250px; font-weight: bold;">Code transport à Total</td>
-              <td>G6</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold;">Code client à Total</td>
-              <td>315</td>
-            </tr>
-          </table>
-        </div>
-
-        <div class="doit-section">
-          Doit: ${invoice.client_nom || 'TOTAL GUINEE SA'} ${invoice.client_nif ? 'NIF : ' + invoice.client_nif : 'NIF : 852622687/3Z'}
-        </div>
-
-        <table class="designation-table">
-          <thead>
-            <tr>
-              <th>DESIGNATION</th>
-              <th>PERIODE</th>
-              <th>MONTANT</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="text-left">${invoice.designation || 'TRANSPORT PRODUIT BLANC'}</td>
-              <td>${invoice.periode || monthYear || new Date(invoice.date_emission).toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' })}</td>
-              <td>${invoice.montant_ttc.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="text-section">
-          <p>Suivant relevé de bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens :</p>
-        </div>
-
-        <div class="amount-letters">
-          <em>${numberToFrenchWords(invoice.montant_ttc)}</em>
-        </div>
-
-        <div class="footer-info">
-          <div class="bank-info">
-            Virement bancaire SGBG N° 01515080003-65
-          </div>
-        </div>
-
-        <div class="signature-section">
-          <div class="signature-date">${new Date(invoice.date_emission).toLocaleDateString('fr-FR')}</div>
-          <div class="signature-title">Le Directeur Général</div>
-        </div>
-
-        <div class="no-print" style="margin-top: 40px; text-align: center; padding: 20px;">
-          <button onclick="window.print()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; background: #000; color: white; border: none; border-radius: 4px; margin-right: 10px;">
-            Imprimer / Enregistrer en PDF
-          </button>
-          <button onclick="window.close()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; border: 1px solid #000; background: white; border-radius: 4px;">
-            Fermer
-          </button>
-        </div>
-        </div>
-    </body>
-    </html>
-  `;
+  const htmlContent = buildInvoiceHTML(`Facture ${invoice.numero}`, bodyContent);
 
   printWindow.document.write(htmlContent);
   printWindow.document.close();
   
   setTimeout(() => {
     printWindow.print();
-  }, 250);
+  }, 500);
 };
 
 export const generateQuotePDF = (quote: any) => {
@@ -490,6 +581,8 @@ export const generateMonthlyInvoicePDF = (data: {
   totalTVA: number;
   totalTTC: number;
   blCount: number;
+  depot?: string;
+  invoiceNumber?: string;
 }) => {
   const printWindow = window.open('', '_blank');
   
@@ -506,275 +599,31 @@ export const generateMonthlyInvoicePDF = (data: {
   const shortMonthName = shortMonthNames[parseInt(data.month)];
   const shortYear = data.year.substring(2);
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <title>Facture ${data.month}/${data.year}</title>
-        <style>
-            @page { 
-              size: A4; 
-              margin: 0;
-            }
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 0; 
-              padding: 0;
-              color: #000;
-              font-size: 11pt;
-              line-height: 1.4;
-              background-image: url('/templates/facture-template.jpg');
-              background-size: cover;
-              background-position: center top;
-              background-repeat: no-repeat;
-              min-height: 297mm;
-              position: relative;
-            }
-            .content-wrapper {
-              padding: 70mm 15mm 15mm 15mm;
-              position: relative;
-            }
-            .main-title {
-              text-align: center;
-              font-size: 14pt;
-              font-weight: bold;
-              margin-bottom: 20px;
-              padding: 8px;
-              border: 2px solid #000;
-            }
-            .depot {
-              text-align: center;
-              font-size: 13pt;
-              font-weight: bold;
-              margin: 15px 0;
-            }
-            .facture-number {
-              text-align: center;
-              font-size: 18pt;
-              font-weight: bold;
-              margin: 25px 0;
-              text-decoration: underline;
-            }
-            .client-section {
-              margin: 25px 0;
-            }
-            .client-section .title {
-              font-size: 14pt;
-              font-weight: bold;
-              margin-bottom: 10px;
-            }
-            .client-section .name {
-              font-size: 13pt;
-              font-weight: bold;
-              margin: 5px 0;
-            }
-            .totals-box {
-              float: right;
-              width: 45%;
-              margin: 20px 0;
-              border: 2px solid #000;
-              padding: 15px;
-            }
-            .totals-box table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            .totals-box td {
-              padding: 8px 5px;
-              font-size: 11pt;
-            }
-            .totals-box .label {
-              text-align: left;
-              font-weight: bold;
-            }
-            .totals-box .amount {
-              text-align: right;
-              font-weight: bold;
-            }
-            .totals-box .total-row {
-              background-color: #e0e0e0;
-              font-size: 12pt;
-            }
-            .info-section {
-              clear: both;
-              margin: 30px 0;
-            }
-            .info-section table {
-              border-collapse: collapse;
-              margin: 10px 0;
-            }
-            .info-section td {
-              padding: 6px 12px;
-              border: 1px solid #000;
-            }
-            .doit-section {
-              margin: 15px 0;
-              font-size: 12pt;
-              font-weight: bold;
-            }
-            .designation-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 20px 0;
-            }
-            .designation-table th,
-            .designation-table td {
-              border: 2px solid #000;
-              padding: 12px;
-              text-align: center;
-              font-size: 11pt;
-            }
-            .designation-table th {
-              background-color: #f0f0f0;
-              font-weight: bold;
-            }
-            .designation-table td.text-left {
-              text-align: left;
-            }
-            .text-section {
-              margin: 25px 0;
-              text-align: justify;
-              line-height: 1.6;
-            }
-            .amount-letters {
-              margin: 20px 0;
-              font-size: 12pt;
-              font-weight: bold;
-            }
-            .footer-info {
-              margin-top: 30px;
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-            }
-            .bank-info {
-              font-size: 11pt;
-            }
-            .signature-section {
-              text-align: center;
-              margin-top: 50px;
-            }
-            .signature-date {
-              margin-bottom: 10px;
-            }
-            .signature-title {
-              font-weight: bold;
-              margin-top: 40px;
-            }
-            @media print { 
-              body { margin: 0; padding: 10mm; }
-              .no-print { display: none; }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="content-wrapper">
-        <div class="main-title">
-          FACTURE TRANSPORT DU MOIS DE ${monthName} ${data.year} PRODUIT BLANC
-        </div>
+  const invoiceNum = data.invoiceNumber || `${data.month.padStart(2, '0')}/${data.year}-989`;
 
-        <div class="depot">
-          DEPOT DE CONAKRY
-        </div>
+  const bodyContent = getInvoiceBody({
+    isMonthly: true,
+    monthYear: `${monthName} ${data.year}`,
+    shortPeriod: `${shortMonthName}-${shortYear}`,
+    invoiceNumber: invoiceNum,
+    clientNom: data.clientNom || 'TOTALEnergies GUINEE SA',
+    clientAdresse: '',
+    clientNif: '',
+    montantHT: data.totalHT,
+    montantTVA: data.totalTVA,
+    montantTTC: data.totalTTC,
+    designation: 'TRANSPORT PRODUIT BLANC',
+    blCount: data.blCount,
+    dateEmission: new Date().toLocaleDateString('fr-FR'),
+    depot: data.depot,
+  });
 
-        <div class="facture-number">
-          FACTURE SDBK ${data.month.padStart(2, '0')}/${data.year}-989 PB
-        </div>
-
-        <div class="client-section">
-          <div class="title">A l'intention de :</div>
-          <div class="name">${data.clientNom || 'TOTALEnergies GUINEE SA'}</div>
-          <div>Adresse: Guinée, Conakry, Coleah</div>
-        </div>
-
-        <div class="totals-box">
-          <table>
-            <tr>
-              <td class="label">TOTAL ( HT )</td>
-              <td class="amount">${data.totalHT.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-            <tr>
-              <td class="label">T V A (18 % )</td>
-              <td class="amount">${data.totalTVA.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-            <tr class="total-row">
-              <td class="label">TOTAL DE LA FACTURE ( TTC )</td>
-              <td class="amount">${data.totalTTC.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-          </table>
-        </div>
-
-        <div class="info-section">
-          <table>
-            <tr>
-              <td style="width: 250px; font-weight: bold;">Code transport à Total</td>
-              <td>G6</td>
-            </tr>
-            <tr>
-              <td style="font-weight: bold;">Code client à Total</td>
-              <td>315</td>
-            </tr>
-          </table>
-        </div>
-
-        <div class="doit-section">
-          Doit: TOTAL GUINEE SA NIF : 852622687/3Z
-        </div>
-
-        <table class="designation-table">
-          <thead>
-            <tr>
-              <th>DESIGNATION</th>
-              <th>PERIODE</th>
-              <th>MONTANT</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="text-left">TRANSPORT PRODUIT BLANC</td>
-              <td>${shortMonthName}-${shortYear}</td>
-              <td>${data.totalTTC.toLocaleString('fr-FR')} GNF</td>
-            </tr>
-          </tbody>
-        </table>
-
-        <div class="text-section">
-          <p>Suivant relevé de <strong>${data.blCount}</strong> bons de livraison valorisés en annexe pour un montant total ( TTC ) en francs guinéens :</p>
-        </div>
-
-        <div class="amount-letters">
-          <em>${numberToFrenchWords(data.totalTTC)}</em>
-        </div>
-
-        <div class="footer-info">
-          <div class="bank-info">
-            Virement bancaire SGBG N° 01515080003-65
-          </div>
-        </div>
-
-        <div class="signature-section">
-          <div class="signature-date">${new Date().toLocaleDateString('fr-FR')}</div>
-          <div class="signature-title">Le Directeur Général</div>
-        </div>
-
-        <div class="no-print" style="margin-top: 40px; text-align: center; padding: 20px;">
-          <button onclick="window.print()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; background: #000; color: white; border: none; border-radius: 4px; margin-right: 10px;">
-            Imprimer / Enregistrer en PDF
-          </button>
-          <button onclick="window.close()" style="padding: 12px 24px; font-size: 14px; cursor: pointer; border: 1px solid #000; background: white; border-radius: 4px;">
-            Fermer
-          </button>
-        </div>
-        </div>
-    </body>
-    </html>
-  `;
+  const htmlContent = buildInvoiceHTML(`Facture ${data.month}/${data.year}`, bodyContent);
 
   printWindow.document.write(htmlContent);
   printWindow.document.close();
   
   setTimeout(() => {
     printWindow.print();
-  }, 250);
+  }, 500);
 };
