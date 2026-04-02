@@ -288,6 +288,10 @@ export const ChauffeurDetailView = ({ chauffeur: initialChauffeur }: ChauffeurDe
           <ChauffeurDocumentManager chauffeur={chauffeur} onUpdate={handleUpdate} />
         </TabsContent>
 
+        <TabsContent value="formations">
+          <ChauffeurFormationsTab chauffeurId={chauffeur.id} />
+        </TabsContent>
+
         <TabsContent value="permis" className="space-y-4">
           <Card>
             <CardHeader>
