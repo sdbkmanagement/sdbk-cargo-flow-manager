@@ -8,6 +8,7 @@ import { ChauffeurStatutManager } from './ChauffeurStatutManager';
 import { ChauffeurDocumentManager } from './ChauffeurDocumentManagerSimple';
 import { useQuery } from '@tanstack/react-query';
 import { chauffeursService } from '@/services/chauffeurs';
+import { ChauffeurFormationsTab } from '@/components/formations/ChauffeurFormationsTab';
 
 interface ChauffeurDetailViewProps {
   chauffeur: any;
