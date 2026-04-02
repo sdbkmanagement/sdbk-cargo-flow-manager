@@ -25,12 +25,19 @@ export const STLCheckItem: React.FC<STLCheckItemProps> = ({
   const [showComment, setShowComment] = useState(item.is_conforme === false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleConformityChange = (isConforme: boolean) => {
-    onUpdate(item.id, { is_conforme: isConforme });
-    if (!isConforme && item.is_critical) {
-      setShowComment(true);
+  const handleConformityChange = (isConforme: boolean | null, isNA = false) => {
+    if (isNA) {
+      onUpdate(item.id, { is_conforme: true, commentaire: '[NA] Non applicable' });
+      setShowComment(false);
+    } else {
+      onUpdate(item.id, { is_conforme: isConforme });
+      if (isConforme === false && item.is_critical) {
+        setShowComment(true);
+      }
     }
   };
+
+  const isNA = item.is_conforme === true && item.commentaire?.startsWith('[NA]');
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     onUpdate(item.id, { commentaire: e.target.value });
