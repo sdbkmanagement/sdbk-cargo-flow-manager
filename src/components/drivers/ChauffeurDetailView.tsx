@@ -131,6 +131,10 @@ export const ChauffeurDetailView = ({ chauffeur: initialChauffeur }: ChauffeurDe
           <TabsTrigger value="infos">Informations</TabsTrigger>
           <TabsTrigger value="statut">Statut</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="formations">
+            <GraduationCap className="w-4 h-4 mr-1" />
+            Formations
+          </TabsTrigger>
           <TabsTrigger value="permis">Permis</TabsTrigger>
         </TabsList>
 
