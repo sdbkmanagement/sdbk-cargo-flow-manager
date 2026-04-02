@@ -6,6 +6,7 @@ import { ThemesManagement } from './ThemesManagement';
 import { FormationsAlerts } from './FormationsAlerts';
 import { MatriceFormation } from './MatriceFormation';
 import { PlanningRecyclage } from './PlanningRecyclage';
+import { CompagnonnageTab } from './CompagnonnageTab';
 
 export const FormationsModule = () => {
   return (
