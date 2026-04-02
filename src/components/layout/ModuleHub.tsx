@@ -187,6 +187,15 @@ export const ModuleHub: React.FC = () => {
       stats: loading ? '...' : `${stats.missionsEnAttente} en attente`
     },
     {
+      id: 'formations',
+      title: 'Formations',
+      description: 'Formations et recyclage des chauffeurs',
+      icon: GraduationCap,
+      route: '/formations',
+      gradient: 'from-amber-500 to-yellow-600',
+      isNew: true
+    },
+    {
       id: 'hseq',
       title: 'HSEQ',
       description: 'Hygiène, Sécurité, Environnement & Qualité',
