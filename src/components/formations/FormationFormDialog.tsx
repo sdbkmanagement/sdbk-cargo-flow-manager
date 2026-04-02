@@ -14,9 +14,11 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   formation?: any;
+  preselectedChauffeurId?: string;
+  preselectedThemeId?: string;
 }
 
-export const FormationFormDialog = ({ open, onOpenChange, formation }: Props) => {
+export const FormationFormDialog = ({ open, onOpenChange, formation, preselectedChauffeurId, preselectedThemeId }: Props) => {
   const queryClient = useQueryClient();
   const [chauffeurId, setChauffeurId] = useState('');
   const [themeId, setThemeId] = useState('');
@@ -50,15 +52,15 @@ export const FormationFormDialog = ({ open, onOpenChange, formation }: Props) =>
       setSignatureChauffeur(formation.signature_chauffeur || '');
       setSignatureFormateur(formation.signature_formateur || '');
     } else {
-      setChauffeurId('');
-      setThemeId('');
+      setChauffeurId(preselectedChauffeurId || '');
+      setThemeId(preselectedThemeId || '');
       setDateFormation(new Date().toISOString().split('T')[0]);
       setFormateurNom('');
       setCommentaire('');
       setSignatureChauffeur('');
       setSignatureFormateur('');
     }
-  }, [formation, open]);
+  }, [formation, open, preselectedChauffeurId, preselectedThemeId]);
 
   const createMutation = useMutation({
     mutationFn: (data: any) => formationsService.create(data),
