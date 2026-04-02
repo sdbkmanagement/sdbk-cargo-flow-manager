@@ -52,15 +52,15 @@ export const FormationFormDialog = ({ open, onOpenChange, formation, preselected
       setSignatureChauffeur(formation.signature_chauffeur || '');
       setSignatureFormateur(formation.signature_formateur || '');
     } else {
-      setChauffeurId('');
-      setThemeId('');
+      setChauffeurId(preselectedChauffeurId || '');
+      setThemeId(preselectedThemeId || '');
       setDateFormation(new Date().toISOString().split('T')[0]);
       setFormateurNom('');
       setCommentaire('');
       setSignatureChauffeur('');
       setSignatureFormateur('');
     }
-  }, [formation, open]);
+  }, [formation, open, preselectedChauffeurId, preselectedThemeId]);
 
   const createMutation = useMutation({
     mutationFn: (data: any) => formationsService.create(data),
