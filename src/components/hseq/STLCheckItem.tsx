@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Camera, X, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Camera, X, AlertTriangle, CheckCircle2, XCircle, MinusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SafeToLoadItem } from '@/types/hseq';
 import { hseqService } from '@/services/hseqService';
