@@ -6,6 +6,7 @@ import { ThemesManagement } from './ThemesManagement';
 import { FormationsAlerts } from './FormationsAlerts';
 import { MatriceFormation } from './MatriceFormation';
 import { PlanningRecyclage } from './PlanningRecyclage';
+import { CompagnonnageTab } from './CompagnonnageTab';
 
 export const FormationsModule = () => {
   return (
@@ -25,6 +26,7 @@ export const FormationsModule = () => {
           <TabsTrigger value="formations">Chauffeurs</TabsTrigger>
           <TabsTrigger value="themes">Thèmes</TabsTrigger>
           <TabsTrigger value="alertes">Alertes</TabsTrigger>
+          <TabsTrigger value="compagnonnage">Compagnonnage</TabsTrigger>
         </TabsList>
 
         <TabsContent value="dashboard">
@@ -44,6 +46,9 @@ export const FormationsModule = () => {
         </TabsContent>
         <TabsContent value="alertes">
           <FormationsAlerts />
+        </TabsContent>
+        <TabsContent value="compagnonnage">
+          <CompagnonnageTab />
         </TabsContent>
       </Tabs>
     </div>
