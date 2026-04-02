@@ -5,6 +5,7 @@ import { FormationsListView } from './FormationsListView';
 import { ThemesManagement } from './ThemesManagement';
 import { FormationsAlerts } from './FormationsAlerts';
 import { MatriceFormation } from './MatriceFormation';
+import { PlanningRecyclage } from './PlanningRecyclage';
 
 export const FormationsModule = () => {
   return (
@@ -20,6 +21,7 @@ export const FormationsModule = () => {
         <TabsList>
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
           <TabsTrigger value="matrice">Matrice</TabsTrigger>
+          <TabsTrigger value="planning">Planning</TabsTrigger>
           <TabsTrigger value="formations">Chauffeurs</TabsTrigger>
           <TabsTrigger value="themes">Thèmes</TabsTrigger>
           <TabsTrigger value="alertes">Alertes</TabsTrigger>
@@ -30,6 +32,9 @@ export const FormationsModule = () => {
         </TabsContent>
         <TabsContent value="matrice">
           <MatriceFormation />
+        </TabsContent>
+        <TabsContent value="planning">
+          <PlanningRecyclage />
         </TabsContent>
         <TabsContent value="formations">
           <FormationsListView />
