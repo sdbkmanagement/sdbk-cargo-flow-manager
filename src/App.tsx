@@ -159,6 +159,16 @@ function App() {
                   </AuthGuard>
                 } 
               />
+              <Route 
+                path="/formations" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Formations" subtitle="Formations et recyclage des chauffeurs">
+                      <Formations />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ChatWidget />
