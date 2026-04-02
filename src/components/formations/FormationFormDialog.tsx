@@ -18,7 +18,7 @@ interface Props {
   preselectedThemeId?: string;
 }
 
-export const FormationFormDialog = ({ open, onOpenChange, formation }: Props) => {
+export const FormationFormDialog = ({ open, onOpenChange, formation, preselectedChauffeurId, preselectedThemeId }: Props) => {
   const queryClient = useQueryClient();
   const [chauffeurId, setChauffeurId] = useState('');
   const [themeId, setThemeId] = useState('');
