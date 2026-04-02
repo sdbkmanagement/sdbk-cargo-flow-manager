@@ -47,10 +47,10 @@ export const PlanningRecyclage = () => {
         // Load vehicles for assignment info
         const { data: vehiculesData } = await supabase
           .from('vehicules')
-          .select('id, immatriculation, numero_parc');
+          .select('id, immatriculation');
 
         const vehiculeMap = new Map(
-          (vehiculesData || []).map(v => [v.id, v.immatriculation || v.numero_parc || ''])
+          (vehiculesData || []).map(v => [v.id, v.immatriculation || ''])
         );
 
         // Load formations for previous year dates
