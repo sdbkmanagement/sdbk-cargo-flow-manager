@@ -17,7 +17,8 @@ import {
   X,
   Building2,
   Briefcase,
-  ShieldCheck
+  ShieldCheck,
+  GraduationCap
 } from 'lucide-react';
 
 interface ModernSidebarProps {
