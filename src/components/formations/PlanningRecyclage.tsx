@@ -85,6 +85,7 @@ export const PlanningRecyclage = () => {
           .map((c, index) => {
             // Priority: affectation active > vehicule_assigne field
             const vehiculeId = affectationMap.get(c.id) || c.vehicule_assigne;
+            let tracteur = 'Reserve';
             if (vehiculeId) {
               const immat = vehiculeMapById.get(vehiculeId);
               tracteur = immat && immat.trim() !== '' ? immat : 'Reserve';
