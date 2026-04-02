@@ -10,7 +10,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { compagnonnageService, FicheCompagnonnage } from '@/services/compagnonnageService';
 import { chauffeursService } from '@/services/chauffeurs';
 import { toast } from 'sonner';
-import * as XLSX from 'xlsx';
+
 
 const DUREE_RECYCLAGE_MOIS = 12; // 1 an par défaut
 
