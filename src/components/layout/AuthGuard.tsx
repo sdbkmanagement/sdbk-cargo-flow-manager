@@ -18,10 +18,13 @@ export const AuthGuard: React.FC<AuthGuardProps> = ({ children }) => {
   // Afficher un spinner pendant le chargement
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-orange-500 mx-auto mb-4" />
-          <p className="text-white">Chargement...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center animate-fade-in">
+          <div className="mb-6">
+            <img src="/images/logo-sdbk.png" alt="SDBK" className="h-12 object-contain mx-auto" />
+          </div>
+          <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-3" />
+          <p className="text-muted-foreground text-sm">Chargement...</p>
         </div>
       </div>
     );
