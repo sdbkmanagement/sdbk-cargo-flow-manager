@@ -64,7 +64,7 @@ export interface CAMensuel {
   mois: string;
   label: string;
   ca: number;
-  nbBL: number;
+  nbFactures: number;
 }
 
 export interface RHStats {
