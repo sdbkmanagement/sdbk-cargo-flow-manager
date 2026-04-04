@@ -171,9 +171,7 @@ export const LoginForm = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center">
-              <Truck className="w-8 h-8 text-white" />
-            </div>
+            <img src="/images/logo-sdbk.png" alt="SDBK" className="h-16 object-contain" />
           </div>
           <CardTitle className="text-2xl font-bold">SDBK - AMS</CardTitle>
           <CardDescription>

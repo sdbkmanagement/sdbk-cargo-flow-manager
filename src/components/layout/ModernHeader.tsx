@@ -95,9 +95,7 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
             className="flex items-center space-x-3 cursor-pointer group"
             onClick={() => navigate('/')}
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <Truck className="w-6 h-6 text-white" />
-            </div>
+            <img src="/images/logo-sdbk.png" alt="SDBK" className="h-10 object-contain group-hover:scale-105 transition-transform duration-200" />
             <div className="hidden md:block">
               <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                 SDBK - AMS
