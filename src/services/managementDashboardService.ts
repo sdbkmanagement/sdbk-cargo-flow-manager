@@ -64,7 +64,7 @@ export interface CAMensuel {
   mois: string;
   label: string;
   ca: number;
-  nbBL: number;
+  nbFactures: number;
 }
 
 export interface RHStats {
@@ -338,22 +338,22 @@ export const managementDashboardService = {
   },
 
   async getCAMensuel(): Promise<CAMensuel[]> {
-    const data = await fetchAllRows<any>('bons_livraison', 'montant_total, date_chargement_reelle', 
-      q => q.not('date_chargement_reelle', 'is', null).order('date_chargement_reelle', { ascending: true })
+    const data = await fetchAllRows<any>('factures', 'montant_ht, date_emission, numero', 
+      q => q.order('date_emission', { ascending: true })
     );
 
-    const moisMap = new Map<string, { ca: number; nbBL: number }>();
+    const moisMap = new Map<string, { ca: number; nbFactures: number }>();
     
-    data.forEach(bl => {
-      if (!bl.date_chargement_reelle) return;
-      const date = new Date(bl.date_chargement_reelle);
+    data.forEach(facture => {
+      if (!facture.date_emission) return;
+      const date = new Date(facture.date_emission);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       const existing = moisMap.get(key);
       if (existing) {
-        existing.ca += bl.montant_total || 0;
-        existing.nbBL++;
+        existing.ca += facture.montant_ht || 0;
+        existing.nbFactures++;
       } else {
-        moisMap.set(key, { ca: bl.montant_total || 0, nbBL: 1 });
+        moisMap.set(key, { ca: facture.montant_ht || 0, nbFactures: 1 });
       }
     });
 
@@ -369,7 +369,7 @@ export const managementDashboardService = {
           mois: key,
           label: `${moisNoms[parseInt(month) - 1]} ${year.slice(2)}`,
           ca: val.ca,
-          nbBL: val.nbBL,
+          nbFactures: val.nbFactures,
         };
       });
   },
