@@ -18,7 +18,8 @@ import {
   Building2,
   Briefcase,
   ShieldCheck,
-  GraduationCap
+  GraduationCap,
+  ChevronRight
 } from 'lucide-react';
 
 interface ModernSidebarProps {
@@ -51,7 +52,8 @@ const menuItems = [
     path: '/missions',
     label: 'Missions',
     icon: FileText,
-    module: 'missions'
+    module: 'missions',
+    allowedRoles: ['transitaire']
   },
   {
     path: '/billing',
@@ -66,31 +68,28 @@ const menuItems = [
     module: 'clients'
   },
   {
+    path: '/societe',
+    label: 'Société',
+    icon: Briefcase,
+    module: 'societe'
+  },
+  {
     path: '/rh',
     label: 'RH',
     icon: UserCog,
     module: 'rh'
   },
   {
-    path: '/societe',
-    label: 'Société',
-    icon: Briefcase,
-    module: 'societe',
-    allowedRoles: ['admin', 'direction', 'administratif']
-  },
-  {
     path: '/formations',
     label: 'Formations',
     icon: GraduationCap,
-    module: 'formations',
-    allowedRoles: ['admin', 'hsecq', 'direction', 'transport', 'rh']
+    module: 'formations'
   },
   {
     path: '/hseq',
     label: 'HSEQ',
     icon: ShieldCheck,
-    module: 'hseq',
-    allowedRoles: ['admin', 'hsecq', 'direction', 'transport']
+    module: 'hseq'
   },
   {
     path: '/validations',
@@ -117,52 +116,35 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
   const { hasValidationAccess } = useValidationPermissions();
   const location = useLocation();
 
-  // Filtrer les éléments du menu selon les permissions
   const filteredMenuItems = menuItems.filter(item => {
     if (!user) return false;
-
-    // L'admin a accès à tout
-    if (hasRole('admin')) {
-      return true;
-    }
-
-    // Vérifier l'accès spécial pour les validations
-    if (item.requiresValidationRole) {
-      return hasValidationAccess();
-    }
-
-    // Vérifier si le module a des rôles autorisés spécifiques
+    if (hasRole('admin')) return true;
+    if (item.requiresValidationRole) return hasValidationAccess();
     if ('allowedRoles' in item && item.allowedRoles) {
       const hasAllowedRole = (item.allowedRoles as string[]).some(role => hasRole(role as any));
       if (hasAllowedRole) return true;
     }
-
-    // Vérifier les permissions de module
     const modulePermissions = user.module_permissions || [];
     return modulePermissions.includes(item.module);
   });
 
   const handleLogout = async () => {
-    console.log('🚪 Logout initiated from sidebar');
     try {
       await logout();
-      console.log('✅ Logout completed successfully');
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error('Logout error:', error);
     }
   };
 
   const handleLinkClick = () => {
-    // Fermer le sidebar mobile lors du clic sur un lien
     if (onMobileClose) onMobileClose();
   };
 
   return (
     <>
-      {/* Overlay mobile */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden transition-opacity"
           onClick={onMobileClose}
         />
       )}
@@ -170,89 +152,84 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
       <aside 
         className={cn(
           "fixed top-0 left-0 z-50 h-screen transition-all duration-300 ease-out",
-          "bg-gradient-to-b from-sdbk-primary via-sdbk-secondary to-sdbk-primary border-r border-sdbk-medium/20 shadow-elegant",
-          // Mobile: slide in/out
+          "bg-sidebar-bg border-r border-white/[0.06]",
           "lg:translate-x-0",
           isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
-          // Desktop: responsive width
-          isCollapsed ? "w-16" : "w-64",
-          // Mobile: full width on small screens
-          "lg:w-auto w-64"
+          isCollapsed ? "w-[68px]" : "w-[260px]",
+          "lg:w-auto w-[260px]"
         )}
       >
-        <div className="h-full flex flex-col justify-between">
-          <div className="flex-grow flex flex-col py-4 lg:py-6 px-3">
-            {/* Header avec bouton fermer mobile */}
-            <div className="flex items-center justify-between mb-6 lg:mb-8">
-              <Link to="/" className="flex items-center justify-center pl-2.5" onClick={handleLinkClick}>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <img src="/images/logo-sdbk.png" alt="SDBK" className="h-8 lg:h-10 object-contain" />
-                </div>
-              </Link>
-              
-              {/* Bouton fermer mobile */}
-              <button
-                onClick={onMobileClose}
-                className="lg:hidden p-2 rounded-lg hover:bg-white/10 text-white"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 py-5 border-b border-white/[0.06]">
+            <Link to="/" className="flex items-center gap-3" onClick={handleLinkClick}>
+              <img src="/images/logo-sdbk.png" alt="SDBK" className="h-9 object-contain" />
+              {!isCollapsed && (
+                <span className="text-sm font-semibold text-white/90 tracking-tight">SDBK - AMS</span>
+              )}
+            </Link>
+            <button
+              onClick={onMobileClose}
+              className="lg:hidden p-1.5 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
 
-            {/* Menu items */}
-            <ul className="space-y-1 lg:space-y-2 font-medium">
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto py-4 px-3">
+            <div className="space-y-1">
               {filteredMenuItems.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
                 
                 return (
-                  <li key={item.path}>
-                    <Link
-                      to={item.path}
-                      onClick={handleLinkClick}
-                      className={cn(
-                        "flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 text-sm font-medium rounded-xl transition-all duration-300 group relative",
-                        isActive 
-                          ? "bg-gradient-to-r from-sdbk-accent/90 to-sdbk-accent text-white shadow-glow backdrop-blur-sm border border-white/20" 
-                          : "hover:bg-white/10 text-white/80 hover:text-white hover:shadow-medium backdrop-blur-sm border border-transparent hover:border-white/10"
-                      )}
-                    >
-                      <Icon className={cn(
-                        "w-4 lg:w-5 h-4 lg:h-5 flex-shrink-0 transition-all duration-300",
-                        isActive ? "text-white drop-shadow-md" : "text-white/70 group-hover:text-white group-hover:scale-110"
-                      )} />
-                      {!isCollapsed && (
-                        <span className="truncate font-medium text-sm lg:text-base">{item.label}</span>
-                      )}
-                      {isActive && (
-                        <div className="absolute right-2 w-2 h-2 bg-white rounded-full shadow-sm animate-pulse-soft"></div>
-                      )}
-                    </Link>
-                  </li>
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    onClick={handleLinkClick}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-lg transition-all duration-200 group relative",
+                      isActive 
+                        ? "bg-sidebar-accent text-white shadow-glow" 
+                        : "text-white/55 hover:text-white hover:bg-white/[0.06]"
+                    )}
+                  >
+                    <Icon className={cn(
+                      "w-[18px] h-[18px] shrink-0 transition-all duration-200",
+                      isActive ? "text-white" : "text-white/45 group-hover:text-white/80"
+                    )} />
+                    {!isCollapsed && (
+                      <span className="truncate">{item.label}</span>
+                    )}
+                    {isActive && !isCollapsed && (
+                      <ChevronRight className="w-3.5 h-3.5 ml-auto text-white/60" />
+                    )}
+                  </Link>
                 );
               })}
-            </ul>
-          </div>
+            </div>
+          </nav>
 
-          {/* User info et logout */}
-          <div className="py-3 lg:py-4 px-3 border-t border-white/20">
+          {/* Footer */}
+          <div className="px-3 py-4 border-t border-white/[0.06]">
             {user && !isCollapsed && (
-              <div className="mb-3 lg:mb-4 p-2 lg:p-3 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10">
-                <div className="text-xs text-white/60 mb-1">Connecté en tant que</div>
-                <div className="text-sm font-medium text-white truncate">{user.prenom} {user.nom}</div>
-                <div className="text-xs text-sdbk-accent capitalize">{user.role}</div>
+              <div className="mb-3 px-3 py-2.5 rounded-lg bg-white/[0.04]">
+                <div className="text-[11px] text-white/35 uppercase tracking-wider font-medium">Connecté</div>
+                <div className="text-sm font-medium text-white/80 truncate mt-0.5">{user.prenom} {user.nom}</div>
+                <div className="text-[11px] text-sidebar-accent/80 capitalize font-medium mt-0.5">{user.role}</div>
               </div>
             )}
             
             <button 
               onClick={handleLogout} 
               className={cn(
-                "flex items-center gap-3 px-3 lg:px-4 py-2 lg:py-3 text-sm font-medium rounded-xl w-full transition-all duration-300 group",
-                "hover:bg-red-500/20 text-white/80 hover:text-white hover:shadow-medium backdrop-blur-sm border border-transparent hover:border-red-400/30"
+                "flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-lg w-full transition-all duration-200 group",
+                "text-white/45 hover:text-red-400 hover:bg-red-500/10"
               )}
             >
-              <LogOut className="w-4 lg:w-5 h-4 lg:h-5 flex-shrink-0 text-red-400 group-hover:scale-110 transition-transform duration-300" />
-              {!isCollapsed && <span className="text-sm lg:text-base">Déconnexion</span>}
+              <LogOut className="w-[18px] h-[18px] shrink-0 group-hover:text-red-400 transition-colors" />
+              {!isCollapsed && <span>Déconnexion</span>}
             </button>
           </div>
         </div>
