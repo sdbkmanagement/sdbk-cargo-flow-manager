@@ -186,17 +186,7 @@ export const ModernSidebar: React.FC<ModernSidebarProps> = ({
             <div className="flex items-center justify-between mb-6 lg:mb-8">
               <Link to="/" className="flex items-center justify-center pl-2.5" onClick={handleLinkClick}>
                 <div className="flex items-center gap-3 p-3 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all duration-300">
-                  <Truck className="w-6 lg:w-8 h-6 lg:h-8 text-sdbk-accent drop-shadow-lg" />
-                  {!isCollapsed && (
-                    <div className="flex flex-col">
-                      <span className="text-lg lg:text-xl font-bold text-white drop-shadow-md">
-                        SDBK
-                      </span>
-                      <span className="text-xs text-sdbk-accent font-medium">
-                        Transport
-                      </span>
-                    </div>
-                  )}
+                  <img src="/images/logo-sdbk.png" alt="SDBK" className="h-8 lg:h-10 object-contain" />
                 </div>
               </Link>
               

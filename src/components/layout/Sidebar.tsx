@@ -127,9 +127,9 @@ export const Sidebar = () => {
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
           <img 
-            src="/lovable-uploads/5c1b1d8b-3d62-4847-8e12-3e4dd4c0ba33.png" 
+            src="/images/logo-sdbk.png" 
             alt="Logo SDBK" 
-            className="h-10 w-10 object-contain"
+            className="h-10 object-contain"
           />
           <div>
             <h1 className="text-lg font-bold text-gray-900">SDBK</h1>
