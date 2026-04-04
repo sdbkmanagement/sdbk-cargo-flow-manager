@@ -281,9 +281,7 @@ export const ModuleHub: React.FC = () => {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                <Truck className="w-6 h-6 text-white" />
-              </div>
+              <img src="/images/logo-sdbk.png" alt="SDBK" className="h-10 object-contain" />
               <div>
                 <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
                   SDBK - AMS
