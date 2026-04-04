@@ -345,9 +345,18 @@ export const managementDashboardService = {
     const moisMap = new Map<string, { ca: number; nbFactures: number }>();
     
     data.forEach(facture => {
-      if (!facture.date_emission) return;
-      const date = new Date(facture.date_emission);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!facture.numero) return;
+      // Extraire le mois/année du numéro de facture (ex: FM202512-xxx -> 2025-12)
+      const match = facture.numero.match(/FM(\d{4})(\d{2})/);
+      let key: string;
+      if (match) {
+        key = `${match[1]}-${match[2]}`;
+      } else if (facture.date_emission) {
+        const date = new Date(facture.date_emission);
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      } else {
+        return;
+      }
       const existing = moisMap.get(key);
       if (existing) {
         existing.ca += facture.montant_ht || 0;
