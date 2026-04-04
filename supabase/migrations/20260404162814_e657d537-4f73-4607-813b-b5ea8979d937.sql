@@ -1,0 +1,1 @@
+UPDATE public.users SET module_permissions = array_append(module_permissions, 'formations') WHERE email = 'aissatoulamarana.diallo@societedbk.com' AND NOT ('formations' = ANY(module_permissions));
