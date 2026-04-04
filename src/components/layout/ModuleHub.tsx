@@ -17,13 +17,16 @@ import {
   Building2,
   Briefcase,
   ShieldCheck,
-  GraduationCap,
-  ArrowRight,
-  Sun,
-  Moon
+  GraduationCap
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -39,8 +42,7 @@ interface ModuleTile {
   description: string;
   icon: React.ElementType;
   route: string;
-  color: string;
-  bgColor: string;
+  gradient: string;
   stats?: string;
   isNew?: boolean;
 }
@@ -66,28 +68,15 @@ export const ModuleHub: React.FC = () => {
     missionsEnAttente: 0
   });
   const [loading, setLoading] = useState(true);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('sdbk-dark-mode');
-    if (saved === 'true') {
-      setIsDark(true);
-      document.documentElement.classList.add('dark');
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    const newVal = !isDark;
-    setIsDark(newVal);
-    localStorage.setItem('sdbk-dark-mode', String(newVal));
-    document.documentElement.classList.toggle('dark', newVal);
-  };
 
   useEffect(() => {
     const loadHubStats = async () => {
       try {
+        console.log('🔄 Loading hub stats with real data...');
+        
         const hubStats = await statsService.getDashboardStats();
         const financialStats = await statsService.getFinancialStats();
+        
         setStats({
           vehicules: hubStats.vehicules,
           chauffeurs: hubStats.chauffeurs,
@@ -96,13 +85,22 @@ export const ModuleHub: React.FC = () => {
           employes: hubStats.employes,
           missionsEnAttente: hubStats.validationsEnAttente
         });
+        
+        console.log('✅ Hub stats loaded:', {
+          ...hubStats,
+          validationsEnAttente: hubStats.validationsEnAttente
+        });
+        
       } catch (error) {
-        console.error('Error loading hub stats:', error);
+        console.error('❌ Error loading hub stats:', error);
       } finally {
         setLoading(false);
       }
     };
+
     loadHubStats();
+    
+    // Actualiser les données toutes les 30 secondes pour les validations
     const interval = setInterval(loadHubStats, 30000);
     return () => clearInterval(interval);
   }, []);
@@ -111,41 +109,37 @@ export const ModuleHub: React.FC = () => {
     {
       id: 'dashboard',
       title: 'Dashboard',
-      description: 'Vue d\'ensemble et analytics',
+      description: 'Vue d\'ensemble et analytics en temps réel',
       icon: BarChart3,
       route: '/dashboard',
-      color: 'text-violet-600 dark:text-violet-400',
-      bgColor: 'bg-violet-50 dark:bg-violet-500/10',
+      gradient: 'from-violet-500 to-purple-600',
       stats: 'Temps réel'
     },
     {
       id: 'fleet',
       title: 'Flotte',
-      description: 'Véhicules et maintenance',
+      description: 'Gestion véhicules et maintenance',
       icon: Truck,
       route: '/fleet',
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-50 dark:bg-blue-500/10',
+      gradient: 'from-blue-500 to-cyan-600',
       stats: loading ? '...' : `${stats.vehicules} véhicules`
     },
     {
       id: 'drivers',
       title: 'Chauffeurs',
-      description: 'Conducteurs et documents',
+      description: 'Gestion conducteurs et documents',
       icon: Users,
       route: '/drivers',
-      color: 'text-emerald-600 dark:text-emerald-400',
-      bgColor: 'bg-emerald-50 dark:bg-emerald-500/10',
+      gradient: 'from-emerald-500 to-teal-600',
       stats: loading ? '...' : `${stats.chauffeurs} chauffeurs`
     },
     {
       id: 'missions',
       title: 'Missions',
-      description: 'Planification et suivi',
+      description: 'Planification et suivi transports',
       icon: Route,
       route: '/missions',
-      color: 'text-orange-600 dark:text-orange-400',
-      bgColor: 'bg-orange-50 dark:bg-orange-500/10',
+      gradient: 'from-orange-500 to-red-600',
       stats: loading ? '...' : `${stats.missionsEnCours} en cours`
     },
     {
@@ -154,91 +148,123 @@ export const ModuleHub: React.FC = () => {
       description: 'Devis, factures et paiements',
       icon: Coins,
       route: '/billing',
-      color: 'text-amber-600 dark:text-amber-400',
-      bgColor: 'bg-amber-50 dark:bg-amber-500/10',
+      gradient: 'from-yellow-500 to-orange-600',
       stats: loading ? '...' : `${stats.factures} factures`
     },
     {
       id: 'clients',
       title: 'Clients',
-      description: 'Gestion des clients',
+      description: 'Gestion des clients et contacts',
       icon: Building2,
       route: '/clients',
-      color: 'text-teal-600 dark:text-teal-400',
-      bgColor: 'bg-teal-50 dark:bg-teal-500/10'
+      gradient: 'from-teal-500 to-emerald-600'
     },
     {
       id: 'societe',
       title: 'Société',
-      description: 'Documents administratifs',
+      description: 'Documents juridiques, administratifs et contractuels',
       icon: Briefcase,
       route: '/societe',
-      color: 'text-slate-600 dark:text-slate-400',
-      bgColor: 'bg-slate-100 dark:bg-slate-500/10',
+      gradient: 'from-slate-600 to-slate-800',
       isNew: true
     },
     {
       id: 'rh',
       title: 'RH',
-      description: 'Ressources humaines',
+      description: 'Ressources humaines et formations',
       icon: UserCog,
       route: '/rh',
-      color: 'text-pink-600 dark:text-pink-400',
-      bgColor: 'bg-pink-50 dark:bg-pink-500/10',
+      gradient: 'from-pink-500 to-rose-600',
       stats: loading ? '...' : `${stats.employes} employés`
     },
     {
       id: 'validations',
       title: 'Validations',
-      description: 'Workflows de validation',
+      description: 'Workflows validation véhicules',
       icon: CheckCircle,
       route: '/validations',
-      color: 'text-indigo-600 dark:text-indigo-400',
-      bgColor: 'bg-indigo-50 dark:bg-indigo-500/10',
+      gradient: 'from-indigo-500 to-blue-600',
       stats: loading ? '...' : `${stats.missionsEnAttente} en attente`
     },
     {
       id: 'formations',
       title: 'Formations',
-      description: 'Formations et recyclage',
+      description: 'Formations et recyclage des chauffeurs',
       icon: GraduationCap,
       route: '/formations',
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bgColor: 'bg-yellow-50 dark:bg-yellow-500/10',
+      gradient: 'from-amber-500 to-yellow-600',
       isNew: true
     },
     {
       id: 'hseq',
       title: 'HSEQ',
-      description: 'Sécurité et qualité',
+      description: 'Hygiène, Sécurité, Environnement & Qualité',
       icon: ShieldCheck,
       route: '/hseq',
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-50 dark:bg-green-500/10',
+      gradient: 'from-green-500 to-emerald-600',
       isNew: true
     },
     {
       id: 'admin',
       title: 'Administration',
-      description: 'Utilisateurs et paramètres',
+      description: 'Utilisateurs, rôles et paramètres',
       icon: Settings,
       route: '/admin',
-      color: 'text-gray-600 dark:text-gray-400',
-      bgColor: 'bg-gray-100 dark:bg-gray-500/10'
+      gradient: 'from-gray-500 to-slate-600',
+      isNew: true
     }
   ];
 
   const modules = allModules.filter(module => {
     if (!user) return false;
-    if (hasRole('admin')) return true;
-    if (module.id === 'dashboard') return false;
+    
+    console.log(`🔍 Vérification accès module ${module.id} pour utilisateur:`, {
+      email: user.email,
+      roles: user.roles,
+      role: user.role,
+      modulePermissions: user.module_permissions
+    });
+    
+    // L'admin a accès à tout
+    if (hasRole('admin')) {
+      console.log(`✅ Utilisateur admin - accès complet au module ${module.id}`);
+      return true;
+    }
+
+    // Dashboard visible uniquement pour les admins
+    if (module.id === 'dashboard') {
+      console.log(`🔍 Vérification accès dashboard - Admin: false`);
+      return false;
+    }
+
+    // Vérification spéciale pour les transitaires et le module missions
     if (module.id === 'missions') {
       const isTransitaire = user.roles?.includes('transitaire') || user.role === 'transitaire';
-      if (isTransitaire) return true;
+      if (isTransitaire) {
+        console.log(`✅ Utilisateur transitaire - accès accordé au module missions`);
+        return true;
+      }
     }
+    
+    // Vérification générale des permissions de modules
     const modulePermissions = user.module_permissions || [];
-    return modulePermissions.includes(module.id);
+    const hasAccess = modulePermissions.includes(module.id);
+    
+    console.log(`🔍 Vérification permissions module ${module.id}:`, {
+      userEmail: user.email,
+      userPermissions: modulePermissions,
+      hasAccess: hasAccess
+    });
+    
+    return hasAccess;
   });
+
+  console.log('📋 Modules filtrés pour l\'utilisateur:', modules.map(m => m.id));
+
+  const handleModuleClick = (route: string) => {
+    console.log('🎯 Navigation vers:', route);
+    navigate(route);
+  };
 
   const handleLogout = async () => {
     try {
@@ -249,122 +275,123 @@ export const ModuleHub: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-card/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/images/logo-sdbk.png" alt="SDBK" className="h-9 object-contain" />
-            <div className="hidden sm:block">
-              <h1 className="text-base font-bold text-foreground tracking-tight">SDBK - AMS</h1>
-              <p className="text-[11px] text-muted-foreground font-medium -mt-0.5">Administration Management System</p>
+    <TooltipProvider>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-indigo-50/30">
+        <header className="bg-white/80 backdrop-blur-md border-b border-white/20 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <img src="/images/logo-sdbk.png" alt="SDBK" className="h-10 object-contain" />
+              <div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                  SDBK - AMS
+                </h1>
+                <p className="text-sm text-gray-500 font-medium">Administration Management System</p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleDarkMode}
-              className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground"
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" className="relative">
+                <Bell className="w-5 h-5" />
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></div>
+              </Button>
 
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-lg text-muted-foreground">
-              <Bell className="w-4 h-4" />
-              <span className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 bg-destructive rounded-full border-2 border-card" />
-            </Button>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2 h-9 px-2 rounded-lg">
-                  <div className="w-7 h-7 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <User className="w-3.5 h-3.5 text-primary" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="font-medium">{user?.prenom} {user?.nom}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium">{user?.prenom} {user?.nom}</p>
+                    <p className="text-xs text-muted-foreground capitalize">{user?.role}</p>
                   </div>
-                  <span className="hidden sm:block text-[13px] font-medium text-foreground">{user?.prenom} {user?.nom}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-popover/95 backdrop-blur-xl rounded-xl shadow-elegant">
-                <div className="px-3 py-2.5">
-                  <p className="text-sm font-semibold text-foreground">{user?.prenom} {user?.nom}</p>
-                  <p className="text-[11px] text-muted-foreground capitalize">{user?.role}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="text-destructive text-[13px] rounded-lg mx-1">
-                  <LogOut className="w-3.5 h-3.5 mr-2" />
-                  Déconnexion
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Déconnexion
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight mb-3">
-            Bienvenue, {user?.prenom} 👋
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            Bienvenue sur votre plateforme
           </h2>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto">
-            Accédez à vos modules de gestion
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Accédez rapidement à tous vos modules de gestion transport 
+            dans une interface moderne et intuitive.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {modules.map((module, index) => {
-            const Icon = module.icon;
-            return (
-              <button
-                key={module.id}
-                className="group text-left bg-card border border-border/50 rounded-xl p-5 hover:shadow-card-hover hover:border-border transition-all duration-300 animate-fade-in relative overflow-hidden"
-                style={{ animationDelay: `${index * 0.05}s` }}
-                onClick={() => navigate(module.route)}
-              >
-                {/* Hover gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                
-                <div className="relative">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`w-11 h-11 ${module.bgColor} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                      <Icon className={`w-5 h-5 ${module.color}`} />
-                    </div>
-                    {module.isNew && (
-                      <Badge className="bg-primary/10 text-primary border-0 text-[10px] font-semibold px-2 py-0.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 max-w-6xl mx-auto">
+          {modules.map((module, index) => (
+            <Tooltip key={module.id}>
+              <TooltipTrigger asChild>
+                <div
+                  className="group cursor-pointer animate-fade-in hover:scale-105 transition-all duration-300"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                  onClick={() => handleModuleClick(module.route)}
+                >
+                  <div className="relative overflow-hidden rounded-2xl bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className={`h-32 bg-gradient-to-br ${module.gradient} relative`}>
+                  <div className="absolute inset-0 bg-black/10"></div>
+                  
+                  <div className="absolute top-6 left-6">
+                    <module.icon className="w-8 h-8 text-white drop-shadow-lg" />
+                  </div>
+                  
+                  {module.isNew && (
+                    <div className="absolute top-4 right-4">
+                      <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
                         Nouveau
                       </Badge>
-                    )}
-                  </div>
-                  
-                  <h3 className="font-semibold text-[15px] text-foreground mb-1 group-hover:text-primary transition-colors duration-200">
+                    </div>
+                  )}
+
+                  {module.stats && (
+                    <div className="absolute bottom-4 left-6">
+                      <Badge className="bg-white/20 text-white border-white/30 backdrop-blur-sm">
+                        {module.stats}
+                      </Badge>
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+                </div>
+
+                <div className="p-6">
+                  <h3 className="font-semibold text-lg text-gray-900 mb-2">
                     {module.title}
                   </h3>
-                  <p className="text-[12px] text-muted-foreground leading-relaxed mb-3">
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     {module.description}
                   </p>
-                  
-                  <div className="flex items-center justify-between">
-                    {module.stats && (
-                      <span className="text-[11px] font-medium text-muted-foreground bg-secondary/80 px-2 py-1 rounded-md">
-                        {module.stats}
-                      </span>
-                    )}
-                    <ArrowRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-200 ml-auto" />
-                  </div>
                 </div>
-              </button>
-            );
-          })}
+              </div>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs">
+            <p className="font-semibold">{module.title}</p>
+            <p className="text-sm text-muted-foreground">{module.description}</p>
+            {module.stats && (
+              <p className="text-xs mt-1 text-primary">{module.stats}</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+          ))}
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border/30 py-6 mt-8">
-        <p className="text-center text-[11px] text-muted-foreground/50">
-          © {new Date().getFullYear()} SDBK — Société Diallo-Bah-Kane · Administration Management System
-        </p>
-      </footer>
     </div>
+    </TooltipProvider>
   );
 };
