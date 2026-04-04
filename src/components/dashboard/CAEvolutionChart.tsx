@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { TrendingUp } from 'lucide-react';
 import { CAMensuel } from '@/services/managementDashboardService';
 
@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return (
     <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
       <p className="text-sm font-semibold text-foreground">{label}</p>
-      <p className="text-sm text-emerald-600">{formatGNF(payload[0].value)} GNF</p>
+      <p className="text-sm text-primary">{formatGNF(payload[0].value)} GNF</p>
       <p className="text-xs text-muted-foreground">{payload[0].payload.nbFactures} facture(s)</p>
     </div>
   );
@@ -43,13 +43,7 @@ export const CAEvolutionChart: React.FC<CAEvolutionChartProps> = ({ data }) => {
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-              <defs>
-                <linearGradient id="colorCA" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
+            <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
               <XAxis
                 dataKey="label"
@@ -63,16 +57,13 @@ export const CAEvolutionChart: React.FC<CAEvolutionChartProps> = ({ data }) => {
                 width={60}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
+              <Bar
                 dataKey="ca"
-                stroke="hsl(var(--primary))"
-                strokeWidth={2.5}
-                fill="url(#colorCA)"
-                dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 2, stroke: '#fff' }}
-                activeDot={{ r: 6, fill: 'hsl(var(--primary))', strokeWidth: 2, stroke: '#fff' }}
+                fill="hsl(var(--primary))"
+                radius={[4, 4, 0, 0]}
+                maxBarSize={50}
               />
-            </AreaChart>
+            </BarChart>
           </ResponsiveContainer>
         )}
       </CardContent>
