@@ -67,6 +67,23 @@ export interface CAMensuel {
   nbFactures: number;
 }
 
+export interface BLParJour {
+  date: string;
+  label: string;
+  count: number;
+}
+
+export interface FormationsKPIs {
+  totalFormations: number;
+  valides: number;
+  aRenouveler: number;
+  expirees: number;
+  tauxConformite: number;
+  compagnonnagesTotal: number;
+  compagnonnagesAJour: number;
+  compagnonnagesExpires: number;
+}
+
 export interface RHStats {
   totalEmployes: number;
   actifs: number;
