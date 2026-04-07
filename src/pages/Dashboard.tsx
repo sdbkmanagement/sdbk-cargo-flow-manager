@@ -32,6 +32,8 @@ import { ProductivityMetrics } from '@/components/dashboard/ProductivityMetrics'
 import { FleetOverview } from '@/components/dashboard/FleetOverview';
 import { CAEvolutionChart } from '@/components/dashboard/CAEvolutionChart';
 import { RHDashboardCharts } from '@/components/dashboard/RHDashboardCharts';
+import { BLParJourChart } from '@/components/dashboard/BLParJourChart';
+import { FormationsKPICards } from '@/components/dashboard/FormationsKPICards';
 
 const formatGNF = (value: number) => {
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)} Md`;
