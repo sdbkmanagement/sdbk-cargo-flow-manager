@@ -265,6 +265,12 @@ const Dashboard = () => {
           />
         </div>
 
+        {/* BL par jour + Formations KPIs */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <BLParJourChart data={blParJour} />
+          <FormationsKPICards data={formationsKPIs} />
+        </div>
+
         {/* CA Evolution Chart */}
         <CAEvolutionChart data={caMensuel} />
 
