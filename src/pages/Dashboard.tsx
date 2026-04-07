@@ -86,6 +86,8 @@ const Dashboard = () => {
       setAlertesCount(alertes.length);
       setCaMensuel(caEvolution);
       setRhStats(rhData);
+      setBlParJour(blJour);
+      setFormationsKPIs(formKPIs);
     } catch (error) {
       console.error('Erreur dashboard:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
