@@ -20,6 +20,8 @@ import {
   AlerteManagement,
   CAMensuel,
   RHStats,
+  BLParJour,
+  FormationsKPIs,
 } from '@/services/managementDashboardService';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
