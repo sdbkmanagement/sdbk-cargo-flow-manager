@@ -74,8 +74,9 @@ export const missionsService = {
         };
       }
 
-      // Le véhicule doit être disponible et ne pas nécessiter de validation
-      if (vehicule.statut !== 'disponible') {
+      // Le véhicule doit être disponible ou en_mission (pour permettre plusieurs missions simultanées)
+      const statutsAutorises = ['disponible', 'en_mission'];
+      if (!statutsAutorises.includes(vehicule.statut)) {
         return {
           available: false,
           message: `Véhicule non disponible. Statut actuel: ${vehicule.statut}`
@@ -86,36 +87,6 @@ export const missionsService = {
         return {
           available: false,
           message: 'Véhicule nécessite une validation avant assignation'
-        };
-      }
-
-      // Vérifier s'il y a des missions en cours pour ce véhicule
-      let query = supabase
-        .from('missions')
-        .select('id, numero, statut')
-        .eq('vehicule_id', vehiculeId)
-        .in('statut', ['en_attente', 'en_cours']);
-
-      // Exclure la mission actuelle si on est en train de la modifier
-      if (missionId) {
-        query = query.neq('id', missionId);
-      }
-
-      const { data: missionsEnCours, error: missionsError } = await query;
-
-      if (missionsError) {
-        console.error('Erreur lors de la vérification des missions:', missionsError);
-        return {
-          available: false,
-          message: 'Erreur lors de la vérification des missions en cours'
-        };
-      }
-
-      if (missionsEnCours && missionsEnCours.length > 0) {
-        const mission = missionsEnCours[0];
-        return {
-          available: false,
-          message: `Véhicule déjà assigné à la mission ${mission.numero} (${mission.statut})`
         };
       }
 
@@ -338,11 +309,11 @@ export const missionsService = {
     try {
       console.log('🔍 Recherche des véhicules disponibles...');
       
-      // Récupérer tous les véhicules qui sont disponibles et ne nécessitent pas de validation
+      // Récupérer tous les véhicules disponibles ou en mission (permettre missions simultanées)
       const { data: vehicules, error } = await supabase
         .from('vehicules')
         .select('*')
-        .eq('statut', 'disponible')
+        .in('statut', ['disponible', 'en_mission'])
         .eq('validation_requise', false)
         .order('numero', { ascending: true });
 
@@ -356,28 +327,8 @@ export const missionsService = {
         return [];
       }
 
-      console.log(`✅ ${vehicules.length} véhicules potentiellement disponibles`);
-
-      // Vérifier qu'ils ne sont pas déjà assignés à une mission en cours
-      const vehiculesDisponibles = [];
-      
-      for (const vehicule of vehicules) {
-        const { data: missionsEnCours } = await supabase
-          .from('missions')
-          .select('id, numero')
-          .eq('vehicule_id', vehicule.id)
-          .in('statut', ['en_attente', 'en_cours'])
-          .limit(1);
-
-        if (!missionsEnCours || missionsEnCours.length === 0) {
-          vehiculesDisponibles.push(vehicule);
-        } else {
-          console.log(`⚠️ Véhicule ${vehicule.numero} déjà assigné à la mission ${missionsEnCours[0].numero}`);
-        }
-      }
-
-      console.log(`✅ ${vehiculesDisponibles.length} véhicules réellement disponibles`);
-      return vehiculesDisponibles;
+      console.log(`✅ ${vehicules.length} véhicules disponibles pour nouvelle mission`);
+      return vehicules;
     } catch (error) {
       console.error('Erreur récupération véhicules disponibles:', error)
       return []
