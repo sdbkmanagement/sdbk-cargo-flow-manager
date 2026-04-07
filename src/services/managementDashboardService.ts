@@ -441,5 +441,79 @@ export const managementDashboardService = {
       visiteMedicaleExpiree,
       visiteMedicaleAFaire,
     };
-  }
+  },
+
+  async getBLParJour(nbJours: number = 30): Promise<BLParJour[]> {
+    const dateDebut = new Date();
+    dateDebut.setDate(dateDebut.getDate() - nbJours);
+    
+    const { data, error } = await supabase
+      .from('bons_livraison')
+      .select('date_emission')
+      .gte('date_emission', dateDebut.toISOString().split('T')[0]);
+    
+    if (error) throw error;
+    
+    const countMap = new Map<string, number>();
+    
+    // Initialize all days
+    for (let i = 0; i < nbJours; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (nbJours - 1 - i));
+      const key = d.toISOString().split('T')[0];
+      countMap.set(key, 0);
+    }
+    
+    (data || []).forEach((bl: any) => {
+      const key = bl.date_emission;
+      if (countMap.has(key)) {
+        countMap.set(key, (countMap.get(key) || 0) + 1);
+      }
+    });
+    
+    return Array.from(countMap.entries()).map(([date, count]) => {
+      const d = new Date(date);
+      return {
+        date,
+        label: d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }),
+        count,
+      };
+    });
+  },
+
+  async getFormationsKPIs(): Promise<FormationsKPIs> {
+    const [formationsRes, compagnonnagesRes] = await Promise.all([
+      supabase.from('formations' as any).select('statut'),
+      supabase.from('compagnonnage' as any).select('date_formation, date_echeance'),
+    ]);
+
+    const formations = (formationsRes.data || []) as any[];
+    const compagnonnages = (compagnonnagesRes.data || []) as any[];
+    
+    const valides = formations.filter(f => f.statut === 'valide').length;
+    const aRenouveler = formations.filter(f => f.statut === 'a_renouveler').length;
+    const expirees = formations.filter(f => f.statut === 'expire').length;
+    const tauxConformite = formations.length > 0 ? Math.round((valides / formations.length) * 100) : 100;
+
+    const today = new Date();
+    const compagnonnagesAJour = compagnonnages.filter(c => {
+      if (!c.date_echeance) return false;
+      return new Date(c.date_echeance) >= today;
+    }).length;
+    const compagnonnagesExpires = compagnonnages.filter(c => {
+      if (!c.date_echeance) return false;
+      return new Date(c.date_echeance) < today;
+    }).length;
+
+    return {
+      totalFormations: formations.length,
+      valides,
+      aRenouveler,
+      expirees,
+      tauxConformite,
+      compagnonnagesTotal: compagnonnages.length,
+      compagnonnagesAJour,
+      compagnonnagesExpires,
+    };
+  },
 };
