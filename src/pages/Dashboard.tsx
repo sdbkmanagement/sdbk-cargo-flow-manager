@@ -20,6 +20,8 @@ import {
   AlerteManagement,
   CAMensuel,
   RHStats,
+  BLParJour,
+  FormationsKPIs,
 } from '@/services/managementDashboardService';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
@@ -30,6 +32,8 @@ import { ProductivityMetrics } from '@/components/dashboard/ProductivityMetrics'
 import { FleetOverview } from '@/components/dashboard/FleetOverview';
 import { CAEvolutionChart } from '@/components/dashboard/CAEvolutionChart';
 import { RHDashboardCharts } from '@/components/dashboard/RHDashboardCharts';
+import { BLParJourChart } from '@/components/dashboard/BLParJourChart';
+import { FormationsKPICards } from '@/components/dashboard/FormationsKPICards';
 
 const formatGNF = (value: number) => {
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(2)} Md`;
@@ -52,10 +56,12 @@ const Dashboard = () => {
   const [alertesCount, setAlertesCount] = useState(0);
   const [caMensuel, setCaMensuel] = useState<CAMensuel[]>([]);
   const [rhStats, setRhStats] = useState<RHStats>({ totalEmployes: 0, actifs: 0, inactifs: 0, hommes: 0, femmes: 0, cdi: 0, cdd: 0, autres: 0, parService: [], parContrat: [], visiteMedicaleAJour: 0, visiteMedicaleExpiree: 0, visiteMedicaleAFaire: 0 });
+  const [blParJour, setBlParJour] = useState<BLParJour[]>([]);
+  const [formationsKPIs, setFormationsKPIs] = useState<FormationsKPIs>({ totalFormations: 0, valides: 0, aRenouveler: 0, expirees: 0, tauxConformite: 100, compagnonnagesTotal: 0, compagnonnagesAJour: 0, compagnonnagesExpires: 0 });
 
   const loadData = async () => {
     try {
-      const [kpiData, vehiculesRank, chauffeursRank, clientsRank, pipelineData, alertesMgmt, caType, alertes, caEvolution, rhData] = await Promise.all([
+      const [kpiData, vehiculesRank, chauffeursRank, clientsRank, pipelineData, alertesMgmt, caType, alertes, caEvolution, rhData, blJour, formKPIs] = await Promise.all([
         managementDashboardService.getKPIs(),
         managementDashboardService.getTopVehicules(),
         managementDashboardService.getTopChauffeurs(),
@@ -66,6 +72,8 @@ const Dashboard = () => {
         alertesService.getToutesAlertes(),
         managementDashboardService.getCAMensuel(),
         managementDashboardService.getRHStats(),
+        managementDashboardService.getBLParJour(30),
+        managementDashboardService.getFormationsKPIs(),
       ]);
 
       setKpis({ ...kpiData, alertesDocuments: alertes.length });
@@ -78,6 +86,8 @@ const Dashboard = () => {
       setAlertesCount(alertes.length);
       setCaMensuel(caEvolution);
       setRhStats(rhData);
+      setBlParJour(blJour);
+      setFormationsKPIs(formKPIs);
     } catch (error) {
       console.error('Erreur dashboard:', error);
       toast.error('Erreur lors du chargement du tableau de bord');
@@ -253,6 +263,12 @@ const Dashboard = () => {
             missionsTotal={kpis.missionsTotal}
             blTotal={kpis.blTotal}
           />
+        </div>
+
+        {/* BL par jour + Formations KPIs */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <BLParJourChart data={blParJour} />
+          <FormationsKPICards data={formationsKPIs} />
         </div>
 
         {/* CA Evolution Chart */}
