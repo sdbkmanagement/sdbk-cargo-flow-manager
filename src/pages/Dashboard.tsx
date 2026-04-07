@@ -56,6 +56,8 @@ const Dashboard = () => {
   const [alertesCount, setAlertesCount] = useState(0);
   const [caMensuel, setCaMensuel] = useState<CAMensuel[]>([]);
   const [rhStats, setRhStats] = useState<RHStats>({ totalEmployes: 0, actifs: 0, inactifs: 0, hommes: 0, femmes: 0, cdi: 0, cdd: 0, autres: 0, parService: [], parContrat: [], visiteMedicaleAJour: 0, visiteMedicaleExpiree: 0, visiteMedicaleAFaire: 0 });
+  const [blParJour, setBlParJour] = useState<BLParJour[]>([]);
+  const [formationsKPIs, setFormationsKPIs] = useState<FormationsKPIs>({ totalFormations: 0, valides: 0, aRenouveler: 0, expirees: 0, tauxConformite: 100, compagnonnagesTotal: 0, compagnonnagesAJour: 0, compagnonnagesExpires: 0 });
 
   const loadData = async () => {
     try {
