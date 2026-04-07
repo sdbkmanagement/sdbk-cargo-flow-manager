@@ -61,7 +61,7 @@ const Dashboard = () => {
 
   const loadData = async () => {
     try {
-      const [kpiData, vehiculesRank, chauffeursRank, clientsRank, pipelineData, alertesMgmt, caType, alertes, caEvolution, rhData] = await Promise.all([
+      const [kpiData, vehiculesRank, chauffeursRank, clientsRank, pipelineData, alertesMgmt, caType, alertes, caEvolution, rhData, blJour, formKPIs] = await Promise.all([
         managementDashboardService.getKPIs(),
         managementDashboardService.getTopVehicules(),
         managementDashboardService.getTopChauffeurs(),
@@ -72,6 +72,8 @@ const Dashboard = () => {
         alertesService.getToutesAlertes(),
         managementDashboardService.getCAMensuel(),
         managementDashboardService.getRHStats(),
+        managementDashboardService.getBLParJour(30),
+        managementDashboardService.getFormationsKPIs(),
       ]);
 
       setKpis({ ...kpiData, alertesDocuments: alertes.length });
