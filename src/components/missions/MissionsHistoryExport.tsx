@@ -237,20 +237,13 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
         <DialogHeader>
           <DialogTitle>Exporter les missions</DialogTitle>
           <DialogDescription>
-            {statusFilter === 'all' 
-              ? 'Sélectionnez la période pour exporter toutes les missions'
-              : statusFilter === 'en_attente'
-              ? 'Sélectionnez la période pour exporter les missions en attente'
-              : statusFilter === 'en_cours'
-              ? 'Sélectionnez la période pour exporter les missions en cours'
-              : statusFilter === 'terminee'
-              ? 'Sélectionnez la période pour exporter les missions terminées'
-              : 'Sélectionnez la période pour exporter les missions annulées'}
+            Sélectionnez la période de chargement pour exporter les missions
+            {statusFilter !== 'all' && ` (${statusFilter === 'en_attente' ? 'en attente' : statusFilter === 'en_cours' ? 'en cours' : statusFilter === 'terminee' ? 'terminées' : 'annulées'})`}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
-            <Label>Date de début</Label>
+            <Label>Date de chargement - Début</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left">
