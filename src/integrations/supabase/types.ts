@@ -3609,6 +3609,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_admin_or_rh: { Args: { p_user_id: string }; Returns: boolean }
       is_admin_user: { Args: { user_id: string }; Returns: boolean }
       is_conversation_creator: {
         Args: { _conversation_id: string; _user_id: string }
