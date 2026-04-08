@@ -449,8 +449,8 @@ export const managementDashboardService = {
     
     const { data, error } = await supabase
       .from('bons_livraison')
-      .select('date_emission')
-      .gte('date_emission', dateDebut.toISOString().split('T')[0]);
+      .select('created_at')
+      .gte('created_at', dateDebut.toISOString());
     
     if (error) throw error;
     
@@ -465,7 +465,7 @@ export const managementDashboardService = {
     }
     
     (data || []).forEach((bl: any) => {
-      const key = bl.date_emission ? bl.date_emission.substring(0, 10) : null;
+      const key = bl.created_at ? bl.created_at.substring(0, 10) : null;
       if (key && countMap.has(key)) {
         countMap.set(key, (countMap.get(key) || 0) + 1);
       }
