@@ -91,10 +91,13 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
       const missionsDetails: any[] = [];
       
       for (const mission of missionsFiltrees) {
+        // Récupérer uniquement les BL dont la date de chargement est dans la période
         const { data: bls } = await supabase
           .from('bons_livraison')
           .select('*')
-          .eq('mission_id', mission.id);
+          .eq('mission_id', mission.id)
+          .gte('date_chargement_reelle', debutISO)
+          .lte('date_chargement_reelle', finISO);
 
         // Si pas de BL, créer une ligne pour la mission quand même
         if (!bls || bls.length === 0) {
