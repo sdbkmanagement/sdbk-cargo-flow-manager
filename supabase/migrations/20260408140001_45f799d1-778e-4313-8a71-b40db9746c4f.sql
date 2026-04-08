@@ -1,0 +1,1 @@
+DELETE FROM employes WHERE id = '91e9e974-0d0a-4679-9d6e-9046fb05cc17';
