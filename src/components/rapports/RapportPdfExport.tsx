@@ -48,6 +48,71 @@ export const RapportPdfExport: React.FC<Props> = ({ data, comments }) => {
   );
 };
 
+function buildSvgLineChart(data: { month: string; revenue: number }[], width = 500, height = 200): string {
+  if (data.length === 0) return '';
+  const maxVal = Math.max(...data.map(d => d.revenue), 1);
+  const padL = 70, padR = 20, padT = 20, padB = 40;
+  const chartW = width - padL - padR;
+  const chartH = height - padT - padB;
+  
+  const points = data.map((d, i) => {
+    const x = padL + (i / Math.max(data.length - 1, 1)) * chartW;
+    const y = padT + chartH - (d.revenue / maxVal) * chartH;
+    return { x, y, ...d };
+  });
+
+  const polyline = points.map(p => `${p.x},${p.y}`).join(' ');
+  const gridLines = [0, 0.25, 0.5, 0.75, 1].map(frac => {
+    const y = padT + chartH - frac * chartH;
+    const val = (frac * maxVal / 1e6).toFixed(0) + 'M';
+    return `<line x1="${padL}" y1="${y}" x2="${width - padR}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>
+            <text x="${padL - 8}" y="${y + 4}" text-anchor="end" font-size="9" fill="#666">${val}</text>`;
+  }).join('');
+
+  const labels = points.map(p => 
+    `<text x="${p.x}" y="${height - 8}" text-anchor="middle" font-size="8" fill="#666">${p.month}</text>`
+  ).join('');
+
+  const dots = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="#1e3a5f" stroke="white" stroke-width="1.5"/>`).join('');
+
+  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    ${gridLines}
+    <polyline points="${polyline}" fill="none" stroke="#1e3a5f" stroke-width="2"/>
+    ${dots}
+    ${labels}
+  </svg>`;
+}
+
+function buildSvgBarChart(data: { date: string; count: number }[], width = 500, height = 200): string {
+  if (data.length === 0) return '';
+  const maxVal = Math.max(...data.map(d => d.count), 1);
+  const padL = 40, padR = 10, padT = 15, padB = 40;
+  const chartW = width - padL - padR;
+  const chartH = height - padT - padB;
+  const barW = Math.min(Math.max(chartW / data.length - 2, 4), 20);
+
+  const bars = data.map((d, i) => {
+    const x = padL + (i + 0.5) * (chartW / data.length) - barW / 2;
+    const barH = (d.count / maxVal) * chartH;
+    const y = padT + chartH - barH;
+    const label = d.date.slice(5).replace('-', '/');
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" fill="#3b82f6" rx="2"/>
+            <text x="${x + barW / 2}" y="${height - 8}" text-anchor="middle" font-size="7" fill="#666">${label}</text>`;
+  }).join('');
+
+  const gridLines = [0, 0.5, 1].map(frac => {
+    const y = padT + chartH - frac * chartH;
+    const val = Math.round(frac * maxVal);
+    return `<line x1="${padL}" y1="${y}" x2="${width - padR}" y2="${y}" stroke="#e5e7eb" stroke-width="1"/>
+            <text x="${padL - 6}" y="${y + 4}" text-anchor="end" font-size="9" fill="#666">${val}</text>`;
+  }).join('');
+
+  return `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+    ${gridLines}
+    ${bars}
+  </svg>`;
+}
+
 function buildReportHtml(data: MonthlyReportData, comments: SectionComments, title: string, monthName: string): string {
   const section = (title: string, content: string, comment?: string) => `
     <div class="section">
@@ -70,6 +135,9 @@ function buildReportHtml(data: MonthlyReportData, comments: SectionComments, tit
   const alertsHtml = data.alerts.length > 0
     ? data.alerts.map(a => `<div class="alert alert-${a.type}"><strong>${a.message}</strong><br/><small>💡 ${a.recommendation}</small></div>`).join('')
     : '<p>Aucune alerte ce mois.</p>';
+
+  const caChart = buildSvgLineChart(data.financial.revenue_trend);
+  const blChart = buildSvgBarChart(data.operations.bl_par_jour);
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -96,6 +164,9 @@ function buildReportHtml(data: MonthlyReportData, comments: SectionComments, tit
   .alert-danger { background: #fef2f2; border-color: #ef4444; }
   .alert-warning { background: #fffbeb; border-color: #f59e0b; }
   .alert-info { background: #eff6ff; border-color: #3b82f6; }
+  .charts-row { display: flex; gap: 20px; margin: 15px 0; }
+  .chart-box { flex: 1; border: 1px solid #e0e7ef; border-radius: 8px; padding: 12px; text-align: center; }
+  .chart-box h3 { font-size: 11px; color: #1e3a5f; margin-bottom: 8px; }
   .conclusion { margin-top: 20px; padding: 14px 18px; background: #f0f4f8; border: 2px solid #1e3a5f; border-radius: 8px; font-size: 11px; line-height: 1.6; }
   .conclusion h2 { border: none; margin-bottom: 8px; }
   .footer { text-align: center; color: #999; font-size: 9px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; }
@@ -117,6 +188,17 @@ ${section('1. Résumé Exécutif', kpiRow([
   { label: 'Incidents', value: String(data.executive.total_incidents) },
   { label: 'Coût maintenance', value: formatCurrency(data.executive.total_maintenance_cost) },
 ]), comments.executive)}
+
+<div class="charts-row">
+  <div class="chart-box">
+    <h3>📈 Évolution CA (6 mois)</h3>
+    ${caChart}
+  </div>
+  <div class="chart-box">
+    <h3>📊 BL saisis par jour</h3>
+    ${blChart}
+  </div>
+</div>
 
 ${section('2. Opérations', kpiRow([
   { label: 'Volume total', value: `${data.operations.total_tonnage.toLocaleString()} L/T` },
