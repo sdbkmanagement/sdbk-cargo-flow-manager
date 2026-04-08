@@ -465,8 +465,8 @@ export const managementDashboardService = {
     }
     
     (data || []).forEach((bl: any) => {
-      const key = bl.date_emission;
-      if (countMap.has(key)) {
+      const key = bl.date_emission ? bl.date_emission.substring(0, 10) : null;
+      if (key && countMap.has(key)) {
         countMap.set(key, (countMap.get(key) || 0) + 1);
       }
     });
