@@ -39,7 +39,7 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
     if (!dateDebut || !dateFin) {
       toast({
         title: 'Erreur',
-        description: 'Veuillez sélectionner une période',
+        description: 'Veuillez sélectionner une période (basée sur la date de chargement)',
         variant: 'destructive'
       });
       return;
@@ -47,20 +47,30 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
 
     setIsExporting(true);
     try {
-      // Filtrer les missions selon la période et le filtre de statut actuel
+      // Récupérer les BL dont la date de chargement réelle est dans la période sélectionnée
+      const debutISO = dateDebut.toISOString().split('T')[0];
+      const finDate = new Date(dateFin);
+      finDate.setHours(23, 59, 59, 999);
+      const finISO = finDate.toISOString();
+
+      const { data: blsInPeriod, error: blError } = await supabase
+        .from('bons_livraison')
+        .select('mission_id')
+        .gte('date_chargement_reelle', debutISO)
+        .lte('date_chargement_reelle', finISO);
+
+      if (blError) throw blError;
+
+      // Extraire les IDs de missions uniques depuis les BL trouvés
+      const missionIds = [...new Set((blsInPeriod || []).map(bl => bl.mission_id).filter(Boolean))];
+
+      // Filtrer les missions correspondantes
       const missionsFiltrees = missions.filter(m => {
-        if (!m.created_at) return false;
-        const missionDate = new Date(m.created_at);
-        if (isNaN(missionDate.getTime())) return false;
-        const dateMatch = missionDate >= dateDebut && missionDate <= dateFin;
-        
-        // Si un filtre de statut spécifique est sélectionné, l'appliquer
+        const inPeriod = missionIds.includes(m.id);
         if (statusFilter !== 'all') {
-          return dateMatch && m.statut === statusFilter;
+          return inPeriod && m.statut === statusFilter;
         }
-        
-        // Sinon, exporter toutes les missions de la période
-        return dateMatch;
+        return inPeriod;
       });
 
       if (missionsFiltrees.length === 0) {
