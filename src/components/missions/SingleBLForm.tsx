@@ -55,9 +55,15 @@ export const SingleBLForm = ({ bl, index, onUpdate, onRemove, canRemove }: Singl
     <Card className="border-2 border-orange-100">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
-            <FileText className="w-5 h-5 mr-2 text-orange-500" />
-            BL #{bl.numero}
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-orange-500" />
+            <span>BL #</span>
+            <Input
+              value={bl.numero}
+              onChange={(e) => onUpdate('numero', e.target.value)}
+              className="h-8 w-40 text-base font-semibold"
+              placeholder="Numéro du BL"
+            />
           </CardTitle>
           {canRemove && (
             <Button
