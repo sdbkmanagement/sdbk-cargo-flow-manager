@@ -4,21 +4,33 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   BarChart3, TrendingUp, Truck, Users, AlertTriangle, Wrench,
-  ShieldCheck, DollarSign, FileDown, Activity, FileText, Award
+  ShieldCheck, DollarSign, FileDown, Activity, FileText, Award, MessageSquare, Edit3
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { rapportsService, MonthlyReportData } from '@/services/rapportsService';
 import { RapportPdfExport } from './RapportPdfExport';
+import { generateAutoComments, SectionComments } from './autoComments';
 import { toast } from 'sonner';
 
 const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const COLORS = ['hsl(var(--primary))', 'hsl(var(--accent))', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 const formatCurrency = (n: number) => new Intl.NumberFormat('fr-GN', { style: 'currency', currency: 'GNF', maximumFractionDigits: 0 }).format(n);
-const formatNumber = (n: number) => new Intl.NumberFormat('fr-FR').format(Math.round(n));
+
+const SECTION_LABELS: Record<keyof SectionComments, string> = {
+  executive: 'Résumé Exécutif',
+  operations: 'Opérations',
+  fleet: 'Performance Flotte',
+  maintenance: 'Maintenance',
+  drivers: 'Chauffeurs',
+  financial: 'Finances',
+  hse: 'HSE',
+  conclusion: 'Conclusion',
+};
 
 export const RapportDashboard: React.FC = () => {
   const now = new Date();
@@ -26,12 +38,16 @@ export const RapportDashboard: React.FC = () => {
   const [year, setYear] = useState(now.getFullYear());
   const [data, setData] = useState<MonthlyReportData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [comments, setComments] = useState<SectionComments | null>(null);
+  const [editingSection, setEditingSection] = useState<keyof SectionComments | null>(null);
 
   const loadReport = async () => {
     setLoading(true);
     try {
       const report = await rapportsService.getMonthlyReport(month, year);
       setData(report);
+      setComments(generateAutoComments(report));
+      setEditingSection(null);
     } catch (err) {
       toast.error('Erreur lors du chargement du rapport');
       console.error(err);
@@ -43,6 +59,22 @@ export const RapportDashboard: React.FC = () => {
   useEffect(() => { loadReport(); }, [month, year]);
 
   const years = Array.from({ length: 5 }, (_, i) => now.getFullYear() - i);
+
+  const updateComment = (section: keyof SectionComments, value: string) => {
+    if (comments) {
+      setComments({ ...comments, [section]: value });
+    }
+  };
+
+  const regenerateComment = (section: keyof SectionComments) => {
+    if (data) {
+      const auto = generateAutoComments(data);
+      if (comments) {
+        setComments({ ...comments, [section]: auto[section] });
+      }
+    }
+    toast.success(`Commentaire "${SECTION_LABELS[section]}" régénéré`);
+  };
 
   if (loading) {
     return (
@@ -64,6 +96,37 @@ export const RapportDashboard: React.FC = () => {
     { name: 'Autres', value: data.operations.breakdown_autres },
   ].filter(d => d.value > 0) : [];
 
+  const CommentBlock: React.FC<{ section: keyof SectionComments }> = ({ section }) => {
+    if (!comments) return null;
+    const isEditing = editingSection === section;
+    return (
+      <div className="mt-3 p-3 rounded-lg bg-muted/50 border border-border">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <MessageSquare className="w-3 h-3" /> Commentaire — {SECTION_LABELS[section]}
+          </span>
+          <div className="flex gap-1">
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setEditingSection(isEditing ? null : section)}>
+              <Edit3 className="w-3 h-3 mr-1" /> {isEditing ? 'Fermer' : 'Modifier'}
+            </Button>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => regenerateComment(section)}>
+              🔄 Régénérer
+            </Button>
+          </div>
+        </div>
+        {isEditing ? (
+          <Textarea
+            value={comments[section]}
+            onChange={e => updateComment(section, e.target.value)}
+            className="text-sm min-h-[80px]"
+          />
+        ) : (
+          <p className="text-sm text-foreground/80 leading-relaxed">{comments[section]}</p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -82,10 +145,10 @@ export const RapportDashboard: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
-        {data && <RapportPdfExport data={data} />}
+        {data && comments && <RapportPdfExport data={data} comments={comments} />}
       </div>
 
-      {data && (
+      {data && comments && (
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -98,6 +161,9 @@ export const RapportDashboard: React.FC = () => {
             <KPICard icon={AlertTriangle} label="Incidents" value={String(data.executive.total_incidents)} color="text-amber-600" />
             <KPICard icon={ShieldCheck} label="Contrôles HSE" value={String(data.hse.total_controls)} color="text-emerald-600" />
           </div>
+
+          {/* Executive Comment */}
+          <CommentBlock section="executive" />
 
           {/* Alerts */}
           {data.alerts.length > 0 && (
@@ -125,7 +191,6 @@ export const RapportDashboard: React.FC = () => {
 
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Revenue Trend */}
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><TrendingUp className="w-5 h-5" /> Évolution CA (6 mois)</CardTitle></CardHeader>
               <CardContent>
@@ -141,7 +206,6 @@ export const RapportDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* BL par jour */}
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5" /> BL saisis par jour</CardTitle></CardHeader>
               <CardContent>
@@ -156,8 +220,13 @@ export const RapportDashboard: React.FC = () => {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Activity Breakdown */}
+          {/* Operations Comment */}
+          <CommentBlock section="operations" />
+
+          {/* More Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {pieData.length > 0 && (
               <Card>
                 <CardHeader><CardTitle className="text-lg">Répartition activité</CardTitle></CardHeader>
@@ -174,7 +243,6 @@ export const RapportDashboard: React.FC = () => {
               </Card>
             )}
 
-            {/* Maintenance by type */}
             {data.maintenance.by_type.length > 0 && (
               <Card>
                 <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Wrench className="w-5 h-5" /> Maintenance par type</CardTitle></CardHeader>
@@ -193,94 +261,55 @@ export const RapportDashboard: React.FC = () => {
             )}
           </div>
 
+          {/* Fleet Comment */}
+          <CommentBlock section="fleet" />
+
           {/* Tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Top 5 Vehicles */}
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Award className="w-5 h-5 text-yellow-500" /> Top 5 Véhicules</CardTitle></CardHeader>
               <CardContent>
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>#</TableHead>
-                      <TableHead>Véhicule</TableHead>
-                      <TableHead className="text-right">Missions/BL</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow><TableHead>#</TableHead><TableHead>Véhicule</TableHead><TableHead className="text-right">Missions/BL</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {data.fleet.top5_vehicles.map((v, i) => (
-                      <TableRow key={v.id}>
-                        <TableCell>{i + 1}</TableCell>
-                        <TableCell className="font-medium">{v.numero}</TableCell>
-                        <TableCell className="text-right">{v.missions}</TableCell>
-                      </TableRow>
+                      <TableRow key={v.id}><TableCell>{i + 1}</TableCell><TableCell className="font-medium">{v.numero}</TableCell><TableCell className="text-right">{v.missions}</TableCell></TableRow>
                     ))}
-                    {data.fleet.top5_vehicles.length === 0 && (
-                      <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">Aucune donnée</TableCell></TableRow>
-                    )}
+                    {data.fleet.top5_vehicles.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">Aucune donnée</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
 
-            {/* Top 5 Drivers */}
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Users className="w-5 h-5 text-blue-500" /> Top 5 Chauffeurs</CardTitle></CardHeader>
               <CardContent>
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>#</TableHead>
-                      <TableHead>Chauffeur</TableHead>
-                      <TableHead className="text-right">Missions</TableHead>
-                      <TableHead className="text-right">Score</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow><TableHead>#</TableHead><TableHead>Chauffeur</TableHead><TableHead className="text-right">Missions</TableHead><TableHead className="text-right">Score</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {data.drivers.top5.map((d, i) => (
-                      <TableRow key={d.id}>
-                        <TableCell>{i + 1}</TableCell>
-                        <TableCell className="font-medium">{d.nom} {d.prenom}</TableCell>
-                        <TableCell className="text-right">{d.missions}</TableCell>
-                        <TableCell className="text-right">
-                          <Badge variant={d.score >= 0 ? 'default' : 'destructive'}>{d.score}</Badge>
-                        </TableCell>
-                      </TableRow>
+                      <TableRow key={d.id}><TableCell>{i + 1}</TableCell><TableCell className="font-medium">{d.nom} {d.prenom}</TableCell><TableCell className="text-right">{d.missions}</TableCell><TableCell className="text-right"><Badge variant={d.score >= 0 ? 'default' : 'destructive'}>{d.score}</Badge></TableCell></TableRow>
                     ))}
-                    {data.drivers.top5.length === 0 && (
-                      <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Aucune donnée</TableCell></TableRow>
-                    )}
+                    {data.drivers.top5.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">Aucune donnée</TableCell></TableRow>}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
 
-            {/* Flop 5 Vehicles */}
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Truck className="w-5 h-5 text-red-500" /> Flop 5 Véhicules</CardTitle></CardHeader>
               <CardContent>
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>#</TableHead>
-                      <TableHead>Véhicule</TableHead>
-                      <TableHead className="text-right">Missions/BL</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  <TableHeader><TableRow><TableHead>#</TableHead><TableHead>Véhicule</TableHead><TableHead className="text-right">Missions/BL</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {data.fleet.flop5_vehicles.map((v, i) => (
-                      <TableRow key={v.id}>
-                        <TableCell>{i + 1}</TableCell>
-                        <TableCell className="font-medium">{v.numero}</TableCell>
-                        <TableCell className="text-right">{v.missions}</TableCell>
-                      </TableRow>
+                      <TableRow key={v.id}><TableCell>{i + 1}</TableCell><TableCell className="font-medium">{v.numero}</TableCell><TableCell className="text-right">{v.missions}</TableCell></TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
 
-            {/* HSE Summary */}
             <Card>
               <CardHeader><CardTitle className="text-lg flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-emerald-500" /> Bilan HSE</CardTitle></CardHeader>
               <CardContent className="space-y-4">
@@ -304,30 +333,44 @@ export const RapportDashboard: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Financial Summary */}
-            <Card className="lg:col-span-2">
-              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-500" /> Résumé Financier</CardTitle></CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                  <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 text-center">
-                    <div className="text-xs text-muted-foreground mb-1">Revenus</div>
-                    <div className="text-xl font-bold text-green-600">{formatCurrency(data.financial.revenue)}</div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 text-center">
-                    <div className="text-xs text-muted-foreground mb-1">Coûts maintenance</div>
-                    <div className="text-xl font-bold text-red-600">{formatCurrency(data.financial.maintenance_cost)}</div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-center">
-                    <div className="text-xs text-muted-foreground mb-1">Profit estimé</div>
-                    <div className={`text-xl font-bold ${data.financial.estimated_profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                      {formatCurrency(data.financial.estimated_profit)}
-                    </div>
+          {/* Section comments */}
+          <CommentBlock section="maintenance" />
+          <CommentBlock section="drivers" />
+
+          {/* Financial Summary */}
+          <Card>
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-500" /> Résumé Financier</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                <div className="p-4 rounded-lg bg-green-50 dark:bg-green-950/20 text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Revenus</div>
+                  <div className="text-xl font-bold text-green-600">{formatCurrency(data.financial.revenue)}</div>
+                </div>
+                <div className="p-4 rounded-lg bg-red-50 dark:bg-red-950/20 text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Coûts maintenance</div>
+                  <div className="text-xl font-bold text-red-600">{formatCurrency(data.financial.maintenance_cost)}</div>
+                </div>
+                <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/20 text-center">
+                  <div className="text-xs text-muted-foreground mb-1">Profit estimé</div>
+                  <div className={`text-xl font-bold ${data.financial.estimated_profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                    {formatCurrency(data.financial.estimated_profit)}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+          <CommentBlock section="financial" />
+          <CommentBlock section="hse" />
+
+          {/* Conclusion */}
+          <Card className="border-2 border-primary/20">
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><MessageSquare className="w-5 h-5" /> Conclusion du rapport</CardTitle></CardHeader>
+            <CardContent>
+              <CommentBlock section="conclusion" />
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
@@ -337,7 +380,7 @@ export const RapportDashboard: React.FC = () => {
 const KPICard: React.FC<{ icon: React.ElementType; label: string; value: string; color: string }> = ({ icon: Icon, label, value, color }) => (
   <Card className="hover:shadow-md transition-shadow">
     <CardContent className="p-4 flex items-center gap-3">
-      <div className={`p-2 rounded-lg bg-muted`}>
+      <div className="p-2 rounded-lg bg-muted">
         <Icon className={`w-5 h-5 ${color}`} />
       </div>
       <div>
