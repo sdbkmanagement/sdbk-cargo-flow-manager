@@ -263,7 +263,7 @@ export const MissionsHistoryExport = ({ missions, statusFilter }: MissionsHistor
           </div>
 
           <div>
-            <Label>Date de fin</Label>
+            <Label>Date de chargement - Fin</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left">
