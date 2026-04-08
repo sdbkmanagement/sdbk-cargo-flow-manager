@@ -21,6 +21,7 @@ import Clients from '@/pages/Clients';
 import Societe from '@/pages/Societe';
 import HSEQ from '@/pages/HSEQ';
 import Formations from '@/pages/Formations';
+import Rapports from '@/pages/Rapports';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 
@@ -165,6 +166,16 @@ function App() {
                   <AuthGuard>
                     <ModuleLayout title="Formations" subtitle="Formations et recyclage des chauffeurs">
                       <Formations />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/rapports" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Rapports" subtitle="Rapports mensuels de gestion">
+                      <Rapports />
                     </ModuleLayout>
                   </AuthGuard>
                 } 

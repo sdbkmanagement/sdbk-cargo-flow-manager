@@ -17,7 +17,8 @@ import {
   Building2,
   Briefcase,
   ShieldCheck,
-  GraduationCap
+  GraduationCap,
+  ClipboardList
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -202,6 +203,15 @@ export const ModuleHub: React.FC = () => {
       icon: ShieldCheck,
       route: '/hseq',
       gradient: 'from-green-500 to-emerald-600',
+      isNew: true
+    },
+    {
+      id: 'rapports',
+      title: 'Rapports',
+      description: 'Rapports mensuels de gestion et KPIs',
+      icon: ClipboardList,
+      route: '/rapports',
+      gradient: 'from-cyan-500 to-blue-600',
       isNew: true
     },
     {
