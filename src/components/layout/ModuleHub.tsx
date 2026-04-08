@@ -256,15 +256,25 @@ export const ModuleHub: React.FC = () => {
       }
     }
     
+    // Modules avec accès par rôle
+    const roleBasedModules: Record<string, string[]> = {
+      'societe': ['admin', 'direction', 'administratif'],
+      'formations': ['admin', 'hsecq', 'direction', 'transport', 'rh'],
+      'hseq': ['admin', 'hsecq', 'direction', 'transport'],
+      'rapports': ['admin', 'direction', 'directeur_exploitation'],
+    };
+
+    if (roleBasedModules[module.id]) {
+      const allowedRoles = roleBasedModules[module.id];
+      const hasRoleAccess = allowedRoles.some(role => 
+        user.roles?.includes(role) || user.role === role
+      );
+      if (hasRoleAccess) return true;
+    }
+
     // Vérification générale des permissions de modules
     const modulePermissions = user.module_permissions || [];
     const hasAccess = modulePermissions.includes(module.id);
-    
-    console.log(`🔍 Vérification permissions module ${module.id}:`, {
-      userEmail: user.email,
-      userPermissions: modulePermissions,
-      hasAccess: hasAccess
-    });
     
     return hasAccess;
   });
