@@ -11,9 +11,10 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Edit, Trash2, Phone, Mail } from 'lucide-react';
+import { Eye, Edit, Trash2, Phone, Mail, Upload, Download } from 'lucide-react';
 import { EmployeDetailDialog } from './EmployeDetailDialog';
-
+import { EmployeesImport } from './EmployeesImport';
+import { exportRHService } from '@/services/exportRHService';
 interface Employe {
   id: string;
   nom: string;
