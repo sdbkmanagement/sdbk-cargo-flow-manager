@@ -259,7 +259,7 @@ export const ModuleHub: React.FC = () => {
     // Modules avec accès par rôle
     const roleBasedModules: Record<string, string[]> = {
       'societe': ['admin', 'direction', 'administratif'],
-      'formations': ['admin', 'direction', 'transport', 'rh'],
+      'formations': ['admin', 'hsecq', 'direction', 'transport', 'rh'],
       'hseq': ['admin', 'hsecq', 'direction'],
       'rapports': ['admin', 'direction', 'directeur_exploitation'],
     };
