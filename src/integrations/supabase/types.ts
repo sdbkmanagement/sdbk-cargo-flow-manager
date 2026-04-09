@@ -67,6 +67,74 @@ export type Database = {
           },
         ]
       }
+      accidents_travail: {
+        Row: {
+          created_at: string | null
+          date_accident: string
+          date_reprise: string | null
+          declaration_cnss: boolean | null
+          description: string
+          employe_id: string
+          fichier_url: string | null
+          gravite: string | null
+          heure_accident: string | null
+          id: string
+          jours_arret: number | null
+          lieu: string | null
+          numero_declaration: string | null
+          statut: string | null
+          temoins: string | null
+          type_blessure: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_accident: string
+          date_reprise?: string | null
+          declaration_cnss?: boolean | null
+          description: string
+          employe_id: string
+          fichier_url?: string | null
+          gravite?: string | null
+          heure_accident?: string | null
+          id?: string
+          jours_arret?: number | null
+          lieu?: string | null
+          numero_declaration?: string | null
+          statut?: string | null
+          temoins?: string | null
+          type_blessure?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_accident?: string
+          date_reprise?: string | null
+          declaration_cnss?: boolean | null
+          description?: string
+          employe_id?: string
+          fichier_url?: string | null
+          gravite?: string | null
+          heure_accident?: string | null
+          id?: string
+          jours_arret?: number | null
+          lieu?: string | null
+          numero_declaration?: string | null
+          statut?: string | null
+          temoins?: string | null
+          type_blessure?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accidents_travail_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_audit_log: {
         Row: {
           action: string
@@ -344,6 +412,218 @@ export type Database = {
             columns: ["vehicule_id"]
             isOneToOne: false
             referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bulletins_paie: {
+        Row: {
+          autres_retenues: number | null
+          cotisation_cnss_employe: number | null
+          cotisation_cnss_employeur: number | null
+          created_at: string | null
+          date_paiement: string | null
+          date_validation: string | null
+          employe_id: string
+          id: string
+          irg: number | null
+          mode_paiement: string | null
+          net_a_payer: number
+          numero: string | null
+          periode_id: string
+          retenue_pret: number | null
+          salaire_base: number
+          salaire_brut: number
+          salaire_net: number
+          statut: string | null
+          total_indemnites: number | null
+          total_primes: number | null
+          total_retenues: number | null
+          updated_at: string | null
+          valide_par: string | null
+        }
+        Insert: {
+          autres_retenues?: number | null
+          cotisation_cnss_employe?: number | null
+          cotisation_cnss_employeur?: number | null
+          created_at?: string | null
+          date_paiement?: string | null
+          date_validation?: string | null
+          employe_id: string
+          id?: string
+          irg?: number | null
+          mode_paiement?: string | null
+          net_a_payer?: number
+          numero?: string | null
+          periode_id: string
+          retenue_pret?: number | null
+          salaire_base?: number
+          salaire_brut?: number
+          salaire_net?: number
+          statut?: string | null
+          total_indemnites?: number | null
+          total_primes?: number | null
+          total_retenues?: number | null
+          updated_at?: string | null
+          valide_par?: string | null
+        }
+        Update: {
+          autres_retenues?: number | null
+          cotisation_cnss_employe?: number | null
+          cotisation_cnss_employeur?: number | null
+          created_at?: string | null
+          date_paiement?: string | null
+          date_validation?: string | null
+          employe_id?: string
+          id?: string
+          irg?: number | null
+          mode_paiement?: string | null
+          net_a_payer?: number
+          numero?: string | null
+          periode_id?: string
+          retenue_pret?: number | null
+          salaire_base?: number
+          salaire_brut?: number
+          salaire_net?: number
+          statut?: string | null
+          total_indemnites?: number | null
+          total_primes?: number | null
+          total_retenues?: number | null
+          updated_at?: string | null
+          valide_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulletins_paie_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletins_paie_periode_id_fkey"
+            columns: ["periode_id"]
+            isOneToOne: false
+            referencedRelation: "periodes_paie"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bulletins_paie_lignes: {
+        Row: {
+          base: number | null
+          bulletin_id: string
+          created_at: string | null
+          id: string
+          libelle: string
+          montant_patronal: number | null
+          montant_salarial: number | null
+          ordre: number | null
+          rubrique_id: string | null
+          taux: number | null
+          type: string
+        }
+        Insert: {
+          base?: number | null
+          bulletin_id: string
+          created_at?: string | null
+          id?: string
+          libelle: string
+          montant_patronal?: number | null
+          montant_salarial?: number | null
+          ordre?: number | null
+          rubrique_id?: string | null
+          taux?: number | null
+          type: string
+        }
+        Update: {
+          base?: number | null
+          bulletin_id?: string
+          created_at?: string | null
+          id?: string
+          libelle?: string
+          montant_patronal?: number | null
+          montant_salarial?: number | null
+          ordre?: number | null
+          rubrique_id?: string | null
+          taux?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulletins_paie_lignes_bulletin_id_fkey"
+            columns: ["bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "bulletins_paie"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletins_paie_lignes_rubrique_id_fkey"
+            columns: ["rubrique_id"]
+            isOneToOne: false
+            referencedRelation: "rubriques_paie"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      carrieres: {
+        Row: {
+          ancien_poste: string | null
+          ancien_salaire: number | null
+          ancien_service: string | null
+          created_at: string | null
+          date_effet: string
+          decision_par: string | null
+          employe_id: string
+          fichier_url: string | null
+          id: string
+          motif: string | null
+          nouveau_poste: string | null
+          nouveau_salaire: number | null
+          nouveau_service: string | null
+          type_evenement: string
+          updated_at: string | null
+        }
+        Insert: {
+          ancien_poste?: string | null
+          ancien_salaire?: number | null
+          ancien_service?: string | null
+          created_at?: string | null
+          date_effet: string
+          decision_par?: string | null
+          employe_id: string
+          fichier_url?: string | null
+          id?: string
+          motif?: string | null
+          nouveau_poste?: string | null
+          nouveau_salaire?: number | null
+          nouveau_service?: string | null
+          type_evenement: string
+          updated_at?: string | null
+        }
+        Update: {
+          ancien_poste?: string | null
+          ancien_salaire?: number | null
+          ancien_service?: string | null
+          created_at?: string | null
+          date_effet?: string
+          decision_par?: string | null
+          employe_id?: string
+          fichier_url?: string | null
+          id?: string
+          motif?: string | null
+          nouveau_poste?: string | null
+          nouveau_salaire?: number | null
+          nouveau_service?: string | null
+          type_evenement?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "carrieres_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
             referencedColumns: ["id"]
           },
         ]
@@ -710,6 +990,210 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      cnss_declarations: {
+        Row: {
+          annee: number
+          cotisation_patronale: number | null
+          cotisation_salariale: number | null
+          created_at: string | null
+          date_declaration: string | null
+          date_paiement: string | null
+          id: string
+          masse_salariale: number | null
+          mois: number
+          nombre_employes: number | null
+          numero_bordereau: string | null
+          periode_id: string | null
+          statut: string | null
+          total_cotisation: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          annee: number
+          cotisation_patronale?: number | null
+          cotisation_salariale?: number | null
+          created_at?: string | null
+          date_declaration?: string | null
+          date_paiement?: string | null
+          id?: string
+          masse_salariale?: number | null
+          mois: number
+          nombre_employes?: number | null
+          numero_bordereau?: string | null
+          periode_id?: string | null
+          statut?: string | null
+          total_cotisation?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          annee?: number
+          cotisation_patronale?: number | null
+          cotisation_salariale?: number | null
+          created_at?: string | null
+          date_declaration?: string | null
+          date_paiement?: string | null
+          id?: string
+          masse_salariale?: number | null
+          mois?: number
+          nombre_employes?: number | null
+          numero_bordereau?: string | null
+          periode_id?: string | null
+          statut?: string | null
+          total_cotisation?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cnss_declarations_periode_id_fkey"
+            columns: ["periode_id"]
+            isOneToOne: false
+            referencedRelation: "periodes_paie"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      config_paie: {
+        Row: {
+          categorie: string | null
+          cle: string
+          description: string | null
+          id: string
+          updated_at: string | null
+          valeur: string
+        }
+        Insert: {
+          categorie?: string | null
+          cle: string
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+          valeur: string
+        }
+        Update: {
+          categorie?: string | null
+          cle?: string
+          description?: string | null
+          id?: string
+          updated_at?: string | null
+          valeur?: string
+        }
+        Relationships: []
+      }
+      conges: {
+        Row: {
+          approuve_par: string | null
+          commentaires: string | null
+          created_at: string | null
+          date_approbation: string | null
+          date_debut: string
+          date_fin: string
+          employe_id: string
+          id: string
+          motif: string | null
+          nombre_jours: number | null
+          statut: string | null
+          type_conge: string
+          updated_at: string | null
+        }
+        Insert: {
+          approuve_par?: string | null
+          commentaires?: string | null
+          created_at?: string | null
+          date_approbation?: string | null
+          date_debut: string
+          date_fin: string
+          employe_id: string
+          id?: string
+          motif?: string | null
+          nombre_jours?: number | null
+          statut?: string | null
+          type_conge: string
+          updated_at?: string | null
+        }
+        Update: {
+          approuve_par?: string | null
+          commentaires?: string | null
+          created_at?: string | null
+          date_approbation?: string | null
+          date_debut?: string
+          date_fin?: string
+          employe_id?: string
+          id?: string
+          motif?: string | null
+          nombre_jours?: number | null
+          statut?: string | null
+          type_conge?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conges_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contrats: {
+        Row: {
+          created_at: string | null
+          date_debut: string
+          date_fin: string | null
+          date_renouvellement: string | null
+          devise: string | null
+          duree_periode_essai: number | null
+          employe_id: string
+          fichier_url: string | null
+          id: string
+          motif_fin: string | null
+          salaire_base: number | null
+          statut: string | null
+          type_contrat: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_debut: string
+          date_fin?: string | null
+          date_renouvellement?: string | null
+          devise?: string | null
+          duree_periode_essai?: number | null
+          employe_id: string
+          fichier_url?: string | null
+          id?: string
+          motif_fin?: string | null
+          salaire_base?: number | null
+          statut?: string | null
+          type_contrat?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          date_renouvellement?: string | null
+          devise?: string | null
+          duree_periode_essai?: number | null
+          employe_id?: string
+          fichier_url?: string | null
+          id?: string
+          motif_fin?: string | null
+          salaire_base?: number | null
+          statut?: string | null
+          type_contrat?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrats_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       controles_hsse: {
         Row: {
@@ -1667,6 +2151,65 @@ export type Database = {
           },
         ]
       }
+      elements_salaire: {
+        Row: {
+          autres_primes: number | null
+          created_at: string | null
+          date_effet: string
+          devise: string | null
+          employe_id: string
+          id: string
+          indemnite_repas: number | null
+          prime_anciennete: number | null
+          prime_logement: number | null
+          prime_rendement: number | null
+          prime_risque: number | null
+          prime_transport: number | null
+          salaire_base: number
+          updated_at: string | null
+        }
+        Insert: {
+          autres_primes?: number | null
+          created_at?: string | null
+          date_effet: string
+          devise?: string | null
+          employe_id: string
+          id?: string
+          indemnite_repas?: number | null
+          prime_anciennete?: number | null
+          prime_logement?: number | null
+          prime_rendement?: number | null
+          prime_risque?: number | null
+          prime_transport?: number | null
+          salaire_base?: number
+          updated_at?: string | null
+        }
+        Update: {
+          autres_primes?: number | null
+          created_at?: string | null
+          date_effet?: string
+          devise?: string | null
+          employe_id?: string
+          id?: string
+          indemnite_repas?: number | null
+          prime_anciennete?: number | null
+          prime_logement?: number | null
+          prime_rendement?: number | null
+          prime_risque?: number | null
+          prime_transport?: number | null
+          salaire_base?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "elements_salaire_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employes: {
         Row: {
           age: number | null
@@ -1774,6 +2317,68 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      evaluations: {
+        Row: {
+          commentaires: string | null
+          created_at: string | null
+          date_evaluation: string
+          employe_id: string
+          evaluateur: string | null
+          id: string
+          note_globale: number | null
+          objectifs_atteints: string | null
+          objectifs_prochaine_periode: string | null
+          performance: string | null
+          periode: string
+          points_amelioration: string | null
+          points_forts: string | null
+          statut: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          commentaires?: string | null
+          created_at?: string | null
+          date_evaluation: string
+          employe_id: string
+          evaluateur?: string | null
+          id?: string
+          note_globale?: number | null
+          objectifs_atteints?: string | null
+          objectifs_prochaine_periode?: string | null
+          performance?: string | null
+          periode: string
+          points_amelioration?: string | null
+          points_forts?: string | null
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          commentaires?: string | null
+          created_at?: string | null
+          date_evaluation?: string
+          employe_id?: string
+          evaluateur?: string | null
+          id?: string
+          note_globale?: number | null
+          objectifs_atteints?: string | null
+          objectifs_prochaine_periode?: string | null
+          performance?: string | null
+          periode?: string
+          points_amelioration?: string | null
+          points_forts?: string | null
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       facture_lignes: {
         Row: {
@@ -2092,6 +2697,56 @@ export type Database = {
         }
         Relationships: []
       }
+      heures_supplementaires: {
+        Row: {
+          approuve_par: string | null
+          created_at: string | null
+          date_hs: string
+          employe_id: string
+          id: string
+          montant: number | null
+          motif: string | null
+          nombre_heures: number
+          statut: string | null
+          taux_majoration: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          approuve_par?: string | null
+          created_at?: string | null
+          date_hs: string
+          employe_id: string
+          id?: string
+          montant?: number | null
+          motif?: string | null
+          nombre_heures: number
+          statut?: string | null
+          taux_majoration?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          approuve_par?: string | null
+          created_at?: string | null
+          date_hs?: string
+          employe_id?: string
+          id?: string
+          montant?: number | null
+          motif?: string | null
+          nombre_heures?: number
+          statut?: string | null
+          taux_majoration?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "heures_supplementaires_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       historique_rh: {
         Row: {
           ancien_poste: string | null
@@ -2191,6 +2846,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      inspections_travail: {
+        Row: {
+          actions_correctives: string | null
+          created_at: string | null
+          date_inspection: string
+          date_limite_correction: string | null
+          id: string
+          inspecteur_nom: string | null
+          non_conformites: string | null
+          objet: string | null
+          observations: string | null
+          pv_url: string | null
+          statut: string | null
+          type_inspection: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actions_correctives?: string | null
+          created_at?: string | null
+          date_inspection: string
+          date_limite_correction?: string | null
+          id?: string
+          inspecteur_nom?: string | null
+          non_conformites?: string | null
+          objet?: string | null
+          observations?: string | null
+          pv_url?: string | null
+          statut?: string | null
+          type_inspection?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actions_correctives?: string | null
+          created_at?: string | null
+          date_inspection?: string
+          date_limite_correction?: string | null
+          id?: string
+          inspecteur_nom?: string | null
+          non_conformites?: string | null
+          objet?: string | null
+          observations?: string | null
+          pv_url?: string | null
+          statut?: string | null
+          type_inspection?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      jours_feries: {
+        Row: {
+          created_at: string | null
+          date_ferie: string
+          description: string | null
+          id: string
+          nom: string
+          recurrent: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_ferie: string
+          description?: string | null
+          id?: string
+          nom: string
+          recurrent?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          date_ferie?: string
+          description?: string | null
+          id?: string
+          nom?: string
+          recurrent?: boolean | null
+        }
+        Relationships: []
       }
       login_attempts: {
         Row: {
@@ -2666,6 +3396,222 @@ export type Database = {
           },
         ]
       }
+      notes_frais: {
+        Row: {
+          approuve_par: string | null
+          categorie: string
+          commentaires: string | null
+          created_at: string | null
+          date_approbation: string | null
+          date_note: string
+          date_remboursement: string | null
+          description: string
+          devise: string | null
+          employe_id: string
+          id: string
+          justificatif_url: string | null
+          montant: number
+          statut: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          approuve_par?: string | null
+          categorie: string
+          commentaires?: string | null
+          created_at?: string | null
+          date_approbation?: string | null
+          date_note: string
+          date_remboursement?: string | null
+          description: string
+          devise?: string | null
+          employe_id: string
+          id?: string
+          justificatif_url?: string | null
+          montant: number
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          approuve_par?: string | null
+          categorie?: string
+          commentaires?: string | null
+          created_at?: string | null
+          date_approbation?: string | null
+          date_note?: string
+          date_remboursement?: string | null
+          description?: string
+          devise?: string | null
+          employe_id?: string
+          id?: string
+          justificatif_url?: string | null
+          montant?: number
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_frais_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      periodes_paie: {
+        Row: {
+          annee: number
+          cloturee_par: string | null
+          created_at: string | null
+          date_cloture: string | null
+          date_debut: string
+          date_fin: string
+          id: string
+          mois: number
+          statut: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          annee: number
+          cloturee_par?: string | null
+          created_at?: string | null
+          date_cloture?: string | null
+          date_debut: string
+          date_fin: string
+          id?: string
+          mois: number
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          annee?: number
+          cloturee_par?: string | null
+          created_at?: string | null
+          date_cloture?: string | null
+          date_debut?: string
+          date_fin?: string
+          id?: string
+          mois?: number
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      pointages: {
+        Row: {
+          created_at: string | null
+          date_pointage: string
+          employe_id: string
+          heure_arrivee: string | null
+          heure_depart: string | null
+          heures_travaillees: number | null
+          id: string
+          motif_absence: string | null
+          retard_minutes: number | null
+          statut: string | null
+          updated_at: string | null
+          valide_par: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_pointage: string
+          employe_id: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          heures_travaillees?: number | null
+          id?: string
+          motif_absence?: string | null
+          retard_minutes?: number | null
+          statut?: string | null
+          updated_at?: string | null
+          valide_par?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_pointage?: string
+          employe_id?: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          heures_travaillees?: number | null
+          id?: string
+          motif_absence?: string | null
+          retard_minutes?: number | null
+          statut?: string | null
+          updated_at?: string | null
+          valide_par?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pointages_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prets: {
+        Row: {
+          approuve_par: string | null
+          created_at: string | null
+          date_debut: string
+          date_fin: string | null
+          echeances_payees: number | null
+          employe_id: string
+          id: string
+          montant_mensualite: number
+          montant_total: number
+          motif: string | null
+          nombre_echeances: number
+          solde_restant: number | null
+          statut: string | null
+          taux_interet: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          approuve_par?: string | null
+          created_at?: string | null
+          date_debut: string
+          date_fin?: string | null
+          echeances_payees?: number | null
+          employe_id: string
+          id?: string
+          montant_mensualite: number
+          montant_total: number
+          motif?: string | null
+          nombre_echeances: number
+          solde_restant?: number | null
+          statut?: string | null
+          taux_interet?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          approuve_par?: string | null
+          created_at?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          echeances_payees?: number | null
+          employe_id?: string
+          id?: string
+          montant_mensualite?: number
+          montant_total?: number
+          motif?: string | null
+          nombre_echeances?: number
+          solde_restant?: number | null
+          statut?: string | null
+          taux_interet?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prets_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rapports_services: {
         Row: {
           cout: number | null
@@ -2713,6 +3659,122 @@ export type Database = {
           },
         ]
       }
+      reclamations: {
+        Row: {
+          created_at: string | null
+          date_resolution: string | null
+          description: string
+          employe_id: string
+          id: string
+          objet: string
+          priorite: string | null
+          resolution: string | null
+          statut: string | null
+          traite_par: string | null
+          type_reclamation: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date_resolution?: string | null
+          description: string
+          employe_id: string
+          id?: string
+          objet: string
+          priorite?: string | null
+          resolution?: string | null
+          statut?: string | null
+          traite_par?: string | null
+          type_reclamation: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date_resolution?: string | null
+          description?: string
+          employe_id?: string
+          id?: string
+          objet?: string
+          priorite?: string | null
+          resolution?: string | null
+          statut?: string | null
+          traite_par?: string | null
+          type_reclamation?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reclamations_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recrutement: {
+        Row: {
+          candidat_email: string | null
+          candidat_nom: string | null
+          candidat_prenom: string | null
+          candidat_telephone: string | null
+          created_at: string | null
+          cv_url: string | null
+          date_candidature: string | null
+          date_entretien: string | null
+          etape: string | null
+          id: string
+          nombre_postes: number | null
+          notes: string | null
+          poste: string
+          recruteur: string | null
+          resultat: string | null
+          service: string | null
+          statut: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          candidat_email?: string | null
+          candidat_nom?: string | null
+          candidat_prenom?: string | null
+          candidat_telephone?: string | null
+          created_at?: string | null
+          cv_url?: string | null
+          date_candidature?: string | null
+          date_entretien?: string | null
+          etape?: string | null
+          id?: string
+          nombre_postes?: number | null
+          notes?: string | null
+          poste: string
+          recruteur?: string | null
+          resultat?: string | null
+          service?: string | null
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          candidat_email?: string | null
+          candidat_nom?: string | null
+          candidat_prenom?: string | null
+          candidat_telephone?: string | null
+          created_at?: string | null
+          cv_url?: string | null
+          date_candidature?: string | null
+          date_entretien?: string | null
+          etape?: string | null
+          id?: string
+          nombre_postes?: number | null
+          notes?: string | null
+          poste?: string
+          recruteur?: string | null
+          resultat?: string | null
+          service?: string | null
+          statut?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -2737,6 +3799,60 @@ export type Database = {
           permission?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      rubriques_paie: {
+        Row: {
+          actif: boolean | null
+          base_calcul: string | null
+          categorie: string | null
+          code: string
+          created_at: string | null
+          description: string | null
+          id: string
+          montant_fixe: number | null
+          nom: string
+          obligatoire: boolean | null
+          ordre: number | null
+          plafond: number | null
+          taux: number | null
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          actif?: boolean | null
+          base_calcul?: string | null
+          categorie?: string | null
+          code: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          montant_fixe?: number | null
+          nom: string
+          obligatoire?: boolean | null
+          ordre?: number | null
+          plafond?: number | null
+          taux?: number | null
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          actif?: boolean | null
+          base_calcul?: string | null
+          categorie?: string | null
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          montant_fixe?: number | null
+          nom?: string
+          obligatoire?: boolean | null
+          ordre?: number | null
+          plafond?: number | null
+          taux?: number | null
+          type?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2880,6 +3996,65 @@ export type Database = {
             columns: ["control_id"]
             isOneToOne: false
             referencedRelation: "safe_to_load_controls"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sanctions: {
+        Row: {
+          commentaires: string | null
+          created_at: string | null
+          date_debut: string | null
+          date_fin: string | null
+          date_sanction: string
+          decision_par: string | null
+          duree_jours: number | null
+          employe_id: string
+          fichier_url: string | null
+          id: string
+          motif: string
+          statut: string | null
+          type_sanction: string
+          updated_at: string | null
+        }
+        Insert: {
+          commentaires?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          date_sanction: string
+          decision_par?: string | null
+          duree_jours?: number | null
+          employe_id: string
+          fichier_url?: string | null
+          id?: string
+          motif: string
+          statut?: string | null
+          type_sanction: string
+          updated_at?: string | null
+        }
+        Update: {
+          commentaires?: string | null
+          created_at?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          date_sanction?: string
+          decision_par?: string | null
+          duree_jours?: number | null
+          employe_id?: string
+          fichier_url?: string | null
+          id?: string
+          motif?: string
+          statut?: string | null
+          type_sanction?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sanctions_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
             referencedColumns: ["id"]
           },
         ]
@@ -3595,6 +4770,62 @@ export type Database = {
             columns: ["chauffeur_assigne"]
             isOneToOne: false
             referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      visites_medicales: {
+        Row: {
+          certificat_url: string | null
+          created_at: string | null
+          date_prochaine: string | null
+          date_visite: string
+          employe_id: string
+          id: string
+          medecin: string | null
+          observations: string | null
+          restrictions: string | null
+          resultat: string | null
+          statut: string | null
+          type_visite: string
+          updated_at: string | null
+        }
+        Insert: {
+          certificat_url?: string | null
+          created_at?: string | null
+          date_prochaine?: string | null
+          date_visite: string
+          employe_id: string
+          id?: string
+          medecin?: string | null
+          observations?: string | null
+          restrictions?: string | null
+          resultat?: string | null
+          statut?: string | null
+          type_visite: string
+          updated_at?: string | null
+        }
+        Update: {
+          certificat_url?: string | null
+          created_at?: string | null
+          date_prochaine?: string | null
+          date_visite?: string
+          employe_id?: string
+          id?: string
+          medecin?: string | null
+          observations?: string | null
+          restrictions?: string | null
+          resultat?: string | null
+          statut?: string | null
+          type_visite?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visites_medicales_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
             referencedColumns: ["id"]
           },
         ]

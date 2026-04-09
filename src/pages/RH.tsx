@@ -1,263 +1,112 @@
-
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { 
-  Users, 
-  UserPlus, 
-  Calendar, 
-  GraduationCap, 
-  AlertTriangle,
-  FileText,
-  Search,
-  Download,
-  Upload
-} from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { EmployeForm } from '@/components/rh/EmployeForm';
+import { RHSidebar } from '@/components/rh/RHSidebar';
 import { EmployesList } from '@/components/rh/EmployesList';
+import { EmployeForm } from '@/components/rh/EmployeForm';
 import { AbsencesList } from '@/components/rh/AbsencesList';
-import { FormationsList } from '@/components/rh/FormationsList';
-import { AlertesRH } from '@/components/rh/AlertesRH';
 import { RHStats } from '@/components/rh/RHStats';
-import { EmployeesImport } from '@/components/rh/EmployeesImport';
-import { ExportButton } from '@/components/common/ExportButton';
-import { exportRHService } from '@/services/exportRHService';
-import { toast } from '@/hooks/use-toast';
+import { ContratsList } from '@/components/rh/contrats/ContratsList';
+import { CarrieresList } from '@/components/rh/carrieres/CarrieresList';
+import { SanctionsList } from '@/components/rh/sanctions/SanctionsList';
+import { AccidentsList } from '@/components/rh/accidents/AccidentsList';
+import { PointagesList } from '@/components/rh/temps/PointagesList';
+import { CongesList } from '@/components/rh/temps/CongesList';
+import { HeuresSupList } from '@/components/rh/temps/HeuresSupList';
+import { JoursFeriesList } from '@/components/rh/temps/JoursFeriesList';
+import { PaieDashboard } from '@/components/rh/paie/PaieDashboard';
+import { PeriodesPaieList } from '@/components/rh/paie/PeriodesPaieList';
+import { BulletinsPaieList } from '@/components/rh/paie/BulletinsPaieList';
+import { ElementsSalaireList } from '@/components/rh/paie/ElementsSalaireList';
+import { RubriquesPaieList } from '@/components/rh/paie/RubriquesPaieList';
+import { PretsList } from '@/components/rh/paie/PretsList';
+import { NotesFraisList } from '@/components/rh/paie/NotesFraisList';
+import { LivrePaie } from '@/components/rh/paie/LivrePaie';
+import { ConfigPaie } from '@/components/rh/paie/ConfigPaie';
+import { RecrutementList } from '@/components/rh/modules/RecrutementList';
+import { EvaluationsList } from '@/components/rh/modules/EvaluationsList';
+import { VisitesMedicalesList } from '@/components/rh/modules/VisitesMedicalesList';
+import { PlaceholderSection } from '@/components/rh/PlaceholderSection';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const RH = () => {
-  const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedService, setSelectedService] = useState('tous');
+  const [activeSection, setActiveSection] = useState('employes');
   const [showEmployeForm, setShowEmployeForm] = useState(false);
-  const [showImport, setShowImport] = useState(false);
 
-  // Fetch employés
-  const { data: employes, isLoading: employesLoading, refetch: refetchEmployes } = useQuery({
-    queryKey: ['employes', searchTerm, selectedService],
+  const { data: employes, isLoading, refetch } = useQuery({
+    queryKey: ['employes'],
     queryFn: async () => {
-      let query = supabase
-        .from('employes')
-        .select('*')
-        .order('nom', { ascending: true });
-
-      if (searchTerm) {
-        query = query.or(`nom.ilike.%${searchTerm}%,prenom.ilike.%${searchTerm}%,poste.ilike.%${searchTerm}%`);
-      }
-
-      if (selectedService !== 'tous') {
-        query = query.eq('service', selectedService);
-      }
-
-      const { data, error } = await query;
+      const { data, error } = await supabase.from('employes').select('*').order('nom');
       if (error) throw error;
       return data;
     }
   });
 
-  // Fetch alertes RH
-  const { data: alertes } = useQuery({
-    queryKey: ['alertes-rh'],
-    queryFn: async () => {
-      // Requête directe aux tables au lieu de la vue supprimée
-      const { data, error } = await supabase
-        .from('documents')
-        .select(`
-          id, 
-          entity_id, 
-          nom, 
-          type, 
-          date_expiration, 
-          entity_type,
-          chauffeurs!inner(nom, prenom)
-        `)
-        .eq('entity_type', 'chauffeur')
-        .not('date_expiration', 'is', null)
-        .lte('date_expiration', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
-        .order('date_expiration', { ascending: true });
-      
-      if (error) throw error;
-      
-      // Transformer en format Alerte attendu par AlertesRH
-      const alertesFormatted = (data || []).map(doc => ({
-        type_alerte: 'document_expiration',
-        employe_id: doc.entity_id || '',
-        nom_complet: doc.chauffeurs ? `${doc.chauffeurs.prenom} ${doc.chauffeurs.nom}` : 'Chauffeur inconnu',
-        poste: 'Chauffeur',
-        service: 'Transport',
-        priorite: 'critique' as const,
-        description: `Document ${doc.type} expire bientôt`,
-        date_creation: doc.date_expiration || '',
-        message: `Le document ${doc.nom} expire le ${new Date(doc.date_expiration).toLocaleDateString('fr-FR')}`,
-        date_echeance: doc.date_expiration
-      }));
-      
-      return alertesFormatted;
+  const renderContent = () => {
+    switch (activeSection) {
+      // GESTION
+      case 'employes':
+        return <EmployesList employes={employes || []} isLoading={isLoading} onRefresh={refetch} />;
+      case 'nouveau-employe':
+        return showEmployeForm ? (
+          <EmployeForm onClose={() => { setShowEmployeForm(false); setActiveSection('employes'); }} onSuccess={() => { setShowEmployeForm(false); refetch(); setActiveSection('employes'); }} />
+        ) : (
+          <div className="text-center py-8">
+            <button onClick={() => setShowEmployeForm(true)} className="px-4 py-2 bg-primary text-primary-foreground rounded-md">Créer un nouvel employé</button>
+          </div>
+        );
+      case 'contrats': return <ContratsList />;
+      case 'carrieres': return <CarrieresList />;
+      case 'documents-rh': return <PlaceholderSection title="Documents RH" description="Gestion documentaire des dossiers employés" />;
+      case 'sanctions': return <SanctionsList />;
+      case 'accidents': return <AccidentsList />;
+
+      // TEMPS DE TRAVAIL
+      case 'pointages': return <PointagesList />;
+      case 'conges': return <CongesList />;
+      case 'absences': return <AbsencesList />;
+      case 'heures-sup': return <HeuresSupList />;
+      case 'jours-feries': return <JoursFeriesList />;
+
+      // PAIE
+      case 'paie-dashboard': return <PaieDashboard />;
+      case 'periodes-paie': return <PeriodesPaieList />;
+      case 'bulletins': return <BulletinsPaieList />;
+      case 'elements-salaire': return <ElementsSalaireList />;
+      case 'rubriques-paie': return <RubriquesPaieList />;
+      case 'prets': return <PretsList />;
+      case 'notes-frais': return <NotesFraisList />;
+      case 'livre-paie': return <LivrePaie />;
+      case 'config-paie': return <ConfigPaie />;
+
+      // RAPPORTS RH
+      case 'statistiques': return <RHStats />;
+      case 'rapport-presence': return <PlaceholderSection title="Rapport de présence" description="Rapport de présence mensuel par service" />;
+      case 'rapport-hs': return <PlaceholderSection title="Heures supplémentaires" description="Rapport détaillé des heures supplémentaires" />;
+      case 'declarations': return <PlaceholderSection title="Déclarations" description="Déclarations sociales et fiscales" />;
+
+      // MODULES
+      case 'recrutement': return <RecrutementList />;
+      case 'evaluations': return <EvaluationsList />;
+      case 'reclamations': return <PlaceholderSection title="Réclamations" description="Gestion des réclamations des employés" />;
+      case 'medical': return <VisitesMedicalesList />;
+      case 'cnss': return <PlaceholderSection title="CNSS" description="Déclarations et suivi CNSS" />;
+      case 'inspections': return <PlaceholderSection title="Inspections du travail" description="Suivi des inspections du travail" />;
+
+      default: return <EmployesList employes={employes || []} isLoading={isLoading} onRefresh={refetch} />;
     }
-  });
-
-  const services = ['tous', 'Transport', 'Maintenance', 'HSEQ', 'Administration', 'Direction'];
-
-  const handleExportExcel = () => {
-    exportRHService.exportToExcel(employes || [], 'employes_rh');
   };
 
-  const handleExportCSV = () => {
-    exportRHService.exportToCSV(employes || [], 'employes_rh');
-  };
-
-  const handleImportSuccess = () => {
-    setShowImport(false);
-    queryClient.invalidateQueries({ queryKey: ['employes'] });
-  };
+  // Auto-open form for nouveau-employe
+  React.useEffect(() => {
+    if (activeSection === 'nouveau-employe') setShowEmployeForm(true);
+  }, [activeSection]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold">Ressources Humaines</h1>
-          <p className="text-muted-foreground">
-            Gestion du personnel et suivi administratif
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <ExportButton
-            onExportExcel={handleExportExcel}
-            onExportCSV={handleExportCSV}
-            disabled={!employes || employes.length === 0}
-          />
-          <Button variant="outline" onClick={() => setShowImport(true)}>
-            <Upload className="w-4 h-4 mr-2" />
-            Importer Excel
-          </Button>
-          <Button onClick={() => setShowEmployeForm(true)}>
-            <UserPlus className="w-4 h-4 mr-2" />
-            Nouveau Personnel
-          </Button>
-        </div>
+    <div className="flex h-[calc(100vh-120px)] -m-6">
+      <RHSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
+      <div className="flex-1 overflow-y-auto p-6">
+        {renderContent()}
       </div>
-
-      {/* Statistiques RH */}
-      <RHStats />
-
-      {/* Alertes RH */}
-      {alertes && alertes.length > 0 && (
-        <AlertesRH alertes={alertes} />
-      )}
-
-      <Tabs defaultValue="personnel" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="personnel" className="flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            Personnel
-          </TabsTrigger>
-          <TabsTrigger value="absences" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Absences
-          </TabsTrigger>
-          <TabsTrigger value="formations" className="flex items-center gap-2">
-            <GraduationCap className="w-4 h-4" />
-            Formations
-          </TabsTrigger>
-          <TabsTrigger value="historique" className="flex items-center gap-2">
-            <FileText className="w-4 h-4" />
-            Historique
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="personnel" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <div>
-                  <CardTitle>Liste du Personnel</CardTitle>
-                  <CardDescription>
-                    Gestion des fiches personnel et informations contractuelles
-                  </CardDescription>
-                </div>
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Rechercher..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64"
-                    />
-                  </div>
-                  <select
-                    value={selectedService}
-                    onChange={(e) => setSelectedService(e.target.value)}
-                    className="px-3 py-2 border rounded-md"
-                  >
-                    {services.map(service => (
-                      <option key={service} value={service}>
-                        {service === 'tous' ? 'Tous les services' : service}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <EmployesList 
-                employes={employes || []} 
-                isLoading={employesLoading}
-                onRefresh={refetchEmployes}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="absences">
-          <AbsencesList />
-        </TabsContent>
-
-        <TabsContent value="formations">
-          <FormationsList />
-        </TabsContent>
-
-        <TabsContent value="historique">
-          <Card>
-            <CardHeader>
-              <CardTitle>Historique RH</CardTitle>
-              <CardDescription>
-                Suivi des événements RH (embauches, changements de poste, etc.)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-center text-muted-foreground py-8">
-                Fonctionnalité d'historique en cours de développement
-              </p>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Formulaire d'ajout d'employé */}
-      {showEmployeForm && (
-        <EmployeForm 
-          onClose={() => setShowEmployeForm(false)}
-          onSuccess={() => {
-            setShowEmployeForm(false);
-            refetchEmployes();
-          }}
-        />
-      )}
-
-      <Dialog open={showImport} onOpenChange={setShowImport}>
-        <DialogContent className="max-w-lg">
-          <EmployeesImport
-            onClose={() => setShowImport(false)}
-            onSuccess={handleImportSuccess}
-          />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
