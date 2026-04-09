@@ -3025,6 +3025,94 @@ export type Database = {
         }
         Relationships: []
       }
+      tbm_presences: {
+        Row: {
+          chauffeur_id: string | null
+          created_at: string
+          date_presence: string | null
+          employe_id: string | null
+          id: string
+          present: boolean
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          chauffeur_id?: string | null
+          created_at?: string
+          date_presence?: string | null
+          employe_id?: string | null
+          id?: string
+          present?: boolean
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          chauffeur_id?: string | null
+          created_at?: string
+          date_presence?: string | null
+          employe_id?: string | null
+          id?: string
+          present?: boolean
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tbm_presences_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tbm_presences_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tbm_presences_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "tbm_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tbm_sessions: {
+        Row: {
+          annee: number
+          created_at: string
+          date_reunion: string | null
+          id: string
+          mois: number
+          numero_reunion: number
+          theme: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee: number
+          created_at?: string
+          date_reunion?: string | null
+          id?: string
+          mois: number
+          numero_reunion: number
+          theme?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee?: number
+          created_at?: string
+          date_reunion?: string | null
+          id?: string
+          mois?: number
+          numero_reunion?: number
+          theme?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       themes_formation: {
         Row: {
           actif: boolean
