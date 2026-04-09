@@ -317,7 +317,7 @@ export const rhService = {
           continue;
         }
 
-        const dateNaissance = g(['Date de naissance', 'date_naissance']);
+        const dateNaissance = parseDate(g(['Date de naissance', 'date_naissance']));
         let age: number | null = null;
         if (dateNaissance) {
           const birth = new Date(dateNaissance);
@@ -339,13 +339,13 @@ export const rhService = {
           poste: fonction,
           fonction,
           service,
-          date_embauche: g(['Date embauche', 'date_embauche']) || new Date().toISOString().split('T')[0],
+          date_embauche: parseDate(g(['Date embauche', 'date_embauche'])) || new Date().toISOString().split('T')[0],
           anciennete_transporteur: g(['Ancienneté transporteur', 'anciennete_transporteur']),
           type_contrat: g(['Type contrat', 'type_contrat']) || 'CDI',
           groupe_sanguin: g(['Groupe sanguin', 'groupe_sanguin']),
-          date_derniere_visite_medicale: g(['Date dernière visite médicale', 'date_derniere_visite_medicale']),
+          date_derniere_visite_medicale: parseDate(g(['Date dernière visite médicale', 'date_derniere_visite_medicale'])),
           statut_visite_medicale: g(['Statut visite médicale', 'statut_visite_medicale']) || 'a_faire',
-          date_prochaine_visite: g(['Date prochaine visite', 'date_prochaine_visite']),
+          date_prochaine_visite: parseDate(g(['Date prochaine visite', 'date_prochaine_visite'])),
           telephone: g(['Téléphone', 'telephone']),
           email: g(['Email', 'email']),
           nom_pere: g(['Nom du père', 'nom_pere']),
