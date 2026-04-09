@@ -72,6 +72,21 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
 
   return (
     <>
+      {showImport && (
+        <div className="mb-4">
+          <EmployeesImport onSuccess={() => { setShowImport(false); onRefresh(); }} onClose={() => setShowImport(false)} />
+        </div>
+      )}
+      <div className="flex justify-end gap-2 mb-4">
+        <Button variant="outline" size="sm" onClick={() => setShowImport(!showImport)}>
+          <Upload className="w-4 h-4 mr-2" />
+          Import Excel
+        </Button>
+        <Button variant="outline" size="sm" onClick={() => exportRHService.exportToExcel(employes)}>
+          <Download className="w-4 h-4 mr-2" />
+          Export Excel
+        </Button>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>
