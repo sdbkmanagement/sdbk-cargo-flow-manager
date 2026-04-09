@@ -25,7 +25,7 @@ export const TBMTab = () => {
     queryKey: ['tbm-sessions', mois, annee],
     queryFn: async () => {
       let sessions = await tbmService.getSessions(mois, annee);
-      if (sessions.length < 4) {
+      if (sessions.length < 5) {
         sessions = await tbmService.initSessions(mois, annee);
       }
       return sessions;
