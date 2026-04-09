@@ -276,12 +276,28 @@ export const rhService = {
     const errors: string[] = [];
     let imported = 0;
 
+    const parseDate = (val: any): string | null => {
+      if (!val) return null;
+      if (typeof val === 'number') {
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+        return date.toISOString().split('T')[0];
+      }
+      const s = String(val).trim();
+      const ddmmyyyy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+      if (ddmmyyyy) {
+        return `${ddmmyyyy[3]}-${ddmmyyyy[2].padStart(2, '0')}-${ddmmyyyy[1].padStart(2, '0')}`;
+      }
+      const iso = new Date(s);
+      if (!isNaN(iso.getTime())) return iso.toISOString().split('T')[0];
+      return null;
+    };
+
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const rows: any[] = XLSX.utils.sheet_to_json(worksheet);
+      const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
 
       if (rows.length === 0) {
         return { success: false, message: "Le fichier est vide", imported: 0, errors: ["Aucune donnée trouvée"] };
