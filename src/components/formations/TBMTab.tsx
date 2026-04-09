@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tbmService, Collaborateur, TbmPresence, TbmSession } from '@/services/tbmService';
-import { Calendar, Users, CheckCircle, Search, Loader2 } from 'lucide-react';
+import { Calendar, Users, CheckCircle, Search, Loader2, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -115,6 +116,43 @@ export const TBMTab = () => {
     return sessionIds.filter(sid => isPresent(sid, collab)).length;
   };
 
+  const exportToExcel = () => {
+    const moisNom = tbmService.getMoisNom(mois);
+    const buildRows = (collabs: Collaborateur[], label: string) => {
+      const rows: any[] = [];
+      rows.push([label]);
+      collabs.forEach((collab, idx) => {
+        const cumul = getCumulForCollab(collab);
+        const pct = sessions.length > 0 ? Math.round((cumul / sessions.length) * 100) : 0;
+        const row: any = {
+          'N°': String(idx + 1).padStart(2, '0'),
+          'Nom / Prénoms': `${collab.nom} ${collab.prenom}`,
+          'Statut': collab.type === 'employe' ? collab.poste || '-' : collab.vehicule_assigne || 'Réserve',
+        };
+        sessions.forEach(s => {
+          const present = isPresent(s.id, collab);
+          row[`R${s.numero_reunion} Présent`] = present ? 'Oui' : 'Non';
+          row[`R${s.numero_reunion} Date`] = present ? getDatePresence(s.id, collab) : '';
+        });
+        row['Cumul'] = cumul;
+        row['%'] = `${pct}%`;
+        rows.push(row);
+      });
+      return rows;
+    };
+
+    const allRows = [
+      ...buildRows(employesFiltered, 'Personnel'),
+      ...buildRows(chauffeursFiltered, 'Conducteurs'),
+    ];
+
+    const ws = XLSX.utils.json_to_sheet(allRows, { skipHeader: false });
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, `TBM ${moisNom} ${annee}`);
+    XLSX.writeFile(wb, `SUIVI_TBM_${moisNom}_${annee}.xlsx`);
+    toast.success(`Export TBM ${moisNom} ${annee} téléchargé`);
+  };
+
   const renderCollabRows = (collabs: Collaborateur[], label: string) => {
     if (collabs.length === 0) return null;
     return (
@@ -220,6 +258,9 @@ export const TBMTab = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <Button variant="outline" size="sm" onClick={exportToExcel}>
+                <Download className="h-4 w-4 mr-1" /> Exporter
+              </Button>
             </div>
           </div>
         </CardHeader>
