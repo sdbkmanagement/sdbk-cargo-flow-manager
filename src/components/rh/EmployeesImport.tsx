@@ -78,21 +78,20 @@ export const EmployeesImport: React.FC<EmployeesImportProps> = ({ onSuccess, onC
   };
 
   const handleDownloadTemplate = () => {
-    const headers = [
-      'Matricule', 'Immatricule CNSS', 'Nom', 'Prénom', 'Genre',
-      'Date de naissance', 'Lieu de naissance',
-      'Fonction', 'Date embauche', 'Ancienneté transporteur', 'Type contrat', 'Service',
-      'Groupe sanguin', 'Date dernière visite médicale', 'Statut visite médicale', 'Date prochaine visite',
-      'Téléphone', 'Email',
-      'Nom du père', 'Nom de la mère',
-      'Diplôme',
-      'Personne urgence', 'Téléphone urgence',
-      'Statut', 'Remarques'
+    const sections = [
+      { title: '1. Informations Administratives', fields: ['Matricule', 'Immatricule CNSS', 'Nom', 'Prénom', 'Genre', 'Date de naissance', 'Lieu de naissance'] },
+      { title: '2. Informations Professionnelles', fields: ['Fonction', 'Service', 'Date embauche', 'Ancienneté transporteur', 'Type contrat'] },
+      { title: '3. Informations Médicales', fields: ['Groupe sanguin', 'Date dernière visite médicale', 'Statut visite médicale', 'Date prochaine visite'] },
+      { title: '4. Coordonnées', fields: ['Téléphone', 'Email'] },
+      { title: '5. Situation Familiale', fields: ['Nom du père', 'Nom de la mère'] },
+      { title: '6. Formation & Qualification', fields: ['Diplôme'] },
+      { title: '7. Contact d\'Urgence', fields: ['Personne urgence', 'Téléphone urgence'] },
+      { title: '8. Statut', fields: ['Statut', 'Remarques'] },
     ];
+    const headers = sections.flatMap(s => s.fields);
     const exampleRow = [
-      'MAT-001', '', 'Diallo', 'Mamadou', 'Masculin',
-      '1990-05-15', 'Conakry',
-      'Chauffeur', '2025-01-15', '5 ans', 'CDI', 'Transport',
+      'MAT-001', '', 'Diallo', 'Mamadou', 'Masculin', '1990-05-15', 'Conakry',
+      'Chauffeur', 'Transport', '2025-01-15', '5 ans', 'CDI',
       'O+', '2025-06-01', 'a_jour', '2026-06-01',
       '+224 620 00 00 00', 'mamadou@example.com',
       'Diallo Ibrahima', 'Bah Fatoumata',
