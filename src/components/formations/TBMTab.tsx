@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tbmService, Collaborateur, TbmPresence, TbmSession } from '@/services/tbmService';
-import { Calendar, Users, CheckCircle, Search, Loader2 } from 'lucide-react';
+import { Calendar, Users, CheckCircle, Search, Loader2, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { toast } from 'sonner';
 
 const CURRENT_YEAR = new Date().getFullYear();
