@@ -80,7 +80,7 @@ export const tbmService = {
 
   async initSessions(mois: number, annee: number): Promise<TbmSession[]> {
     const sessions: TbmSession[] = [];
-    for (let r = 1; r <= 5; r++) {
+    for (let r = 1; r <= 4; r++) {
       const s = await this.upsertSession({ mois, annee, numero_reunion: r });
       sessions.push(s);
     }
@@ -157,7 +157,7 @@ export const tbmService = {
 
     return {
       totalPersonnes,
-      reunionsPlanifiees: 5,
+      reunionsPlanifiees: 4,
       reunionsRealisees,
       totalPresences,
       tauxParticipation,
