@@ -225,7 +225,7 @@ export const TBMTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Session themes */}
-          <div className={`grid grid-cols-1 md:grid-cols-${sessions.length} gap-3`}>
+          <div className={`grid grid-cols-1 gap-3 ${sessions.length === 5 ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
             {sessions.map(session => (
               <div key={session.id} className="border rounded-lg p-3 space-y-2">
                 <p className="font-medium text-sm">R{session.numero_reunion}</p>
