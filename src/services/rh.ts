@@ -276,19 +276,29 @@ export const rhService = {
     const errors: string[] = [];
     let imported = 0;
 
+    const excelSerialToDate = (serial: number): string => {
+      const date = new Date(Math.round((serial - 25569) * 86400 * 1000));
+      return date.toISOString().split('T')[0];
+    };
+
     const parseDate = (val: any): string | null => {
       if (!val) return null;
       if (typeof val === 'number') {
-        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
-        return date.toISOString().split('T')[0];
+        return excelSerialToDate(val);
       }
       const s = String(val).trim();
+      // Check if it's a numeric string (Excel serial number passed as string)
+      if (/^\d{4,5}$/.test(s)) {
+        return excelSerialToDate(Number(s));
+      }
       const ddmmyyyy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
       if (ddmmyyyy) {
         return `${ddmmyyyy[3]}-${ddmmyyyy[2].padStart(2, '0')}-${ddmmyyyy[1].padStart(2, '0')}`;
       }
-      const iso = new Date(s);
-      if (!isNaN(iso.getTime())) return iso.toISOString().split('T')[0];
+      const yyyymmdd = s.match(/^(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})$/);
+      if (yyyymmdd) {
+        return `${yyyymmdd[1]}-${yyyymmdd[2].padStart(2, '0')}-${yyyymmdd[3].padStart(2, '0')}`;
+      }
       return null;
     };
 
