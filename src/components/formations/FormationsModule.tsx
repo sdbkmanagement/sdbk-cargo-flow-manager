@@ -7,6 +7,7 @@ import { FormationsAlerts } from './FormationsAlerts';
 import { MatriceFormation } from './MatriceFormation';
 import { PlanningRecyclage } from './PlanningRecyclage';
 import { CompagnonnageTab } from './CompagnonnageTab';
+import { TBMTab } from './TBMTab';
 
 export const FormationsModule = () => {
   return (
@@ -19,8 +20,9 @@ export const FormationsModule = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap">
           <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="tbm">TBM</TabsTrigger>
           <TabsTrigger value="matrice">Matrice</TabsTrigger>
           <TabsTrigger value="planning">Planning</TabsTrigger>
           <TabsTrigger value="formations">Chauffeurs</TabsTrigger>
@@ -31,6 +33,9 @@ export const FormationsModule = () => {
 
         <TabsContent value="dashboard">
           <FormationsDashboard />
+        </TabsContent>
+        <TabsContent value="tbm">
+          <TBMTab />
         </TabsContent>
         <TabsContent value="matrice">
           <MatriceFormation />
