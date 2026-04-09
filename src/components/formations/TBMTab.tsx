@@ -258,6 +258,9 @@ export const TBMTab = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <Button variant="outline" size="sm" onClick={exportToExcel}>
+                <Download className="h-4 w-4 mr-1" /> Exporter
+              </Button>
             </div>
           </div>
         </CardHeader>
