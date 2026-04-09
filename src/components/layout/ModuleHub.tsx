@@ -260,7 +260,7 @@ export const ModuleHub: React.FC = () => {
     const roleBasedModules: Record<string, string[]> = {
       'societe': ['admin', 'direction', 'administratif'],
       'formations': ['admin', 'hsecq', 'direction', 'transport', 'rh'],
-      'hseq': ['admin', 'hsecq', 'direction', 'transport'],
+      'hseq': ['admin', 'hsecq', 'direction'],
       'rapports': ['admin', 'direction', 'directeur_exploitation'],
     };
 
