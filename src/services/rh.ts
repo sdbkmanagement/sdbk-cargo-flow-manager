@@ -289,27 +289,56 @@ export const rhService = {
 
       for (let i = 0; i < rows.length; i++) {
         const row = rows[i];
-        const nom = row['Nom'] || row['nom'];
-        const prenom = row['Prénom'] || row['prenom'];
-        const poste = row['Poste'] || row['poste'] || 'Non défini';
-        const service = row['Service'] || row['service'] || 'Non défini';
+        const g = (keys: string[]) => { for (const k of keys) { if (row[k] !== undefined && row[k] !== '') return String(row[k]); } return null; };
+        
+        const nom = g(['Nom', 'nom']);
+        const prenom = g(['Prénom', 'prenom']);
+        const fonction = g(['Fonction', 'fonction', 'Poste', 'poste']) || 'Non défini';
+        const service = g(['Service', 'service']) || 'Transport';
 
         if (!nom || !prenom) {
           errors.push(`Ligne ${i + 2}: Nom ou prénom manquant`);
           continue;
         }
 
+        const dateNaissance = g(['Date de naissance', 'date_naissance']);
+        let age: number | null = null;
+        if (dateNaissance) {
+          const birth = new Date(dateNaissance);
+          const today = new Date();
+          age = today.getFullYear() - birth.getFullYear();
+          const m = today.getMonth() - birth.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        }
+
         const { error } = await supabase.from('employes').insert({
+          matricule: g(['Matricule', 'matricule']),
+          immatricule_cnss: g(['Immatricule CNSS', 'immatricule_cnss']),
           nom,
           prenom,
-          poste,
+          genre: g(['Genre', 'genre']),
+          date_naissance: dateNaissance,
+          lieu_naissance: g(['Lieu de naissance', 'lieu_naissance']),
+          age,
+          poste: fonction,
+          fonction,
           service,
-          type_contrat: row['Type contrat'] || row['type_contrat'] || 'CDI',
-          statut: row['Statut'] || row['statut'] || 'actif',
-          telephone: row['Téléphone'] || row['telephone'] || null,
-          email: row['Email'] || row['email'] || null,
-          date_embauche: row['Date embauche'] || row['date_embauche'] || new Date().toISOString().split('T')[0],
-          remarques: row['Remarques'] || row['remarques'] || null,
+          date_embauche: g(['Date embauche', 'date_embauche']) || new Date().toISOString().split('T')[0],
+          anciennete_transporteur: g(['Ancienneté transporteur', 'anciennete_transporteur']),
+          type_contrat: g(['Type contrat', 'type_contrat']) || 'CDI',
+          groupe_sanguin: g(['Groupe sanguin', 'groupe_sanguin']),
+          date_derniere_visite_medicale: g(['Date dernière visite médicale', 'date_derniere_visite_medicale']),
+          statut_visite_medicale: g(['Statut visite médicale', 'statut_visite_medicale']) || 'a_faire',
+          date_prochaine_visite: g(['Date prochaine visite', 'date_prochaine_visite']),
+          telephone: g(['Téléphone', 'telephone']),
+          email: g(['Email', 'email']),
+          nom_pere: g(['Nom du père', 'nom_pere']),
+          nom_mere: g(['Nom de la mère', 'nom_mere']),
+          diplome: g(['Diplôme', 'diplome']),
+          personne_urgence: g(['Personne urgence', 'personne_urgence']),
+          telephone_urgence: g(['Téléphone urgence', 'telephone_urgence']),
+          statut: g(['Statut', 'statut']) || 'actif',
+          remarques: g(['Remarques', 'remarques']),
         });
 
         if (error) {
