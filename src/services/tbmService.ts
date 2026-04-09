@@ -78,9 +78,19 @@ export const tbmService = {
     }
   },
 
+  getMondaysInMonth(mois: number, annee: number): number {
+    let count = 0;
+    const daysInMonth = new Date(annee, mois, 0).getDate();
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (new Date(annee, mois - 1, d).getDay() === 1) count++;
+    }
+    return count;
+  },
+
   async initSessions(mois: number, annee: number): Promise<TbmSession[]> {
+    const nbReunions = this.getMondaysInMonth(mois, annee);
     const sessions: TbmSession[] = [];
-    for (let r = 1; r <= 4; r++) {
+    for (let r = 1; r <= nbReunions; r++) {
       const s = await this.upsertSession({ mois, annee, numero_reunion: r });
       sessions.push(s);
     }
@@ -157,7 +167,7 @@ export const tbmService = {
 
     return {
       totalPersonnes,
-      reunionsPlanifiees: 4,
+      reunionsPlanifiees: sessionIds.length,
       reunionsRealisees,
       totalPresences,
       tauxParticipation,
