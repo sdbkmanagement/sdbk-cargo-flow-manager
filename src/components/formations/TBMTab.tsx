@@ -25,7 +25,8 @@ export const TBMTab = () => {
     queryKey: ['tbm-sessions', mois, annee],
     queryFn: async () => {
       let sessions = await tbmService.getSessions(mois, annee);
-      if (sessions.length < 4) {
+      const nbLundis = tbmService.getMondaysInMonth(mois, annee);
+      if (sessions.length < nbLundis) {
         sessions = await tbmService.initSessions(mois, annee);
       }
       return sessions;
@@ -224,7 +225,7 @@ export const TBMTab = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Session themes */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className={`grid grid-cols-1 gap-3 ${sessions.length === 5 ? 'md:grid-cols-5' : 'md:grid-cols-4'}`}>
             {sessions.map(session => (
               <div key={session.id} className="border rounded-lg p-3 space-y-2">
                 <p className="font-medium text-sm">R{session.numero_reunion}</p>
