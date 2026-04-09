@@ -276,12 +276,28 @@ export const rhService = {
     const errors: string[] = [];
     let imported = 0;
 
+    const parseDate = (val: any): string | null => {
+      if (!val) return null;
+      if (typeof val === 'number') {
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+        return date.toISOString().split('T')[0];
+      }
+      const s = String(val).trim();
+      const ddmmyyyy = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+      if (ddmmyyyy) {
+        return `${ddmmyyyy[3]}-${ddmmyyyy[2].padStart(2, '0')}-${ddmmyyyy[1].padStart(2, '0')}`;
+      }
+      const iso = new Date(s);
+      if (!isNaN(iso.getTime())) return iso.toISOString().split('T')[0];
+      return null;
+    };
+
     try {
       const arrayBuffer = await file.arrayBuffer();
       const workbook = XLSX.read(arrayBuffer, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const rows: any[] = XLSX.utils.sheet_to_json(worksheet);
+      const rows: any[] = XLSX.utils.sheet_to_json(worksheet, { raw: true });
 
       if (rows.length === 0) {
         return { success: false, message: "Le fichier est vide", imported: 0, errors: ["Aucune donnée trouvée"] };
@@ -301,7 +317,7 @@ export const rhService = {
           continue;
         }
 
-        const dateNaissance = g(['Date de naissance', 'date_naissance']);
+        const dateNaissance = parseDate(g(['Date de naissance', 'date_naissance']));
         let age: number | null = null;
         if (dateNaissance) {
           const birth = new Date(dateNaissance);
@@ -323,13 +339,13 @@ export const rhService = {
           poste: fonction,
           fonction,
           service,
-          date_embauche: g(['Date embauche', 'date_embauche']) || new Date().toISOString().split('T')[0],
+          date_embauche: parseDate(g(['Date embauche', 'date_embauche'])) || new Date().toISOString().split('T')[0],
           anciennete_transporteur: g(['Ancienneté transporteur', 'anciennete_transporteur']),
           type_contrat: g(['Type contrat', 'type_contrat']) || 'CDI',
           groupe_sanguin: g(['Groupe sanguin', 'groupe_sanguin']),
-          date_derniere_visite_medicale: g(['Date dernière visite médicale', 'date_derniere_visite_medicale']),
+          date_derniere_visite_medicale: parseDate(g(['Date dernière visite médicale', 'date_derniere_visite_medicale'])),
           statut_visite_medicale: g(['Statut visite médicale', 'statut_visite_medicale']) || 'a_faire',
-          date_prochaine_visite: g(['Date prochaine visite', 'date_prochaine_visite']),
+          date_prochaine_visite: parseDate(g(['Date prochaine visite', 'date_prochaine_visite'])),
           telephone: g(['Téléphone', 'telephone']),
           email: g(['Email', 'email']),
           nom_pere: g(['Nom du père', 'nom_pere']),
