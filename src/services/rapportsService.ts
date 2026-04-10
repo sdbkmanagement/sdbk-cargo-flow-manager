@@ -244,7 +244,6 @@ export const rapportsService = {
       let y = year;
       while (m <= 0) { m += 12; y--; }
       const trendPeriod = `${y}${String(m).padStart(2, '0')}`;
-      const trendPeriod = `${y}${String(m).padStart(2, '0')}`;
       const { data } = await supabase.from('factures').select('montant_ht').like('numero', `FM${trendPeriod}%`);
       const rev = (data || []).reduce((s: number, f: any) => s + (Number(f.montant_ht) || 0), 0);
       const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
