@@ -4915,6 +4915,50 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_rh_employes: {
+        Args: never
+        Returns: {
+          age: number | null
+          anciennete_transporteur: string | null
+          created_at: string
+          date_derniere_visite_medicale: string | null
+          date_embauche: string
+          date_fin_contrat: string | null
+          date_naissance: string | null
+          date_prochaine_visite: string | null
+          diplome: string | null
+          email: string | null
+          fonction: string | null
+          genre: string | null
+          groupe_sanguin: string | null
+          id: string
+          immatricule_cnss: string | null
+          jours_restants_visite: number | null
+          lieu_naissance: string | null
+          matricule: string | null
+          nom: string
+          nom_mere: string | null
+          nom_pere: string | null
+          personne_urgence: string | null
+          photo_url: string | null
+          poste: string
+          prenom: string
+          remarques: string | null
+          service: string
+          statut: string
+          statut_visite_medicale: string | null
+          telephone: string | null
+          telephone_urgence: string | null
+          type_contrat: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "employes"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_module_permission: {
         Args: { module_name: string; user_id: string }
         Returns: boolean

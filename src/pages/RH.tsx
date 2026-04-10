@@ -26,7 +26,7 @@ import { EvaluationsList } from '@/components/rh/modules/EvaluationsList';
 import { VisitesMedicalesList } from '@/components/rh/modules/VisitesMedicalesList';
 import { PlaceholderSection } from '@/components/rh/PlaceholderSection';
 import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { rhService } from '@/services/rh';
 
 const RH = () => {
   const [activeSection, setActiveSection] = useState('employes');
@@ -34,11 +34,7 @@ const RH = () => {
 
   const { data: employes, isLoading, refetch } = useQuery({
     queryKey: ['employes'],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('employes').select('*').order('nom');
-      if (error) throw error;
-      return data;
-    }
+    queryFn: () => rhService.getEmployes()
   });
 
   const renderContent = () => {
