@@ -78,26 +78,29 @@ export interface AlerteRH {
 export const rhService = {
   // Employés
   async getEmployes(filters?: { service?: string; statut?: string; search?: string }) {
-    let query = supabase
-      .from('employes')
-      .select('*')
-      .order('nom', { ascending: true });
+    const { data, error } = await (supabase as any).rpc('get_rh_employes');
+    if (error) throw error;
+
+    let employes = (data || []) as Employe[];
 
     if (filters?.service && filters.service !== 'tous') {
-      query = query.eq('service', filters.service);
+      employes = employes.filter((employe) => employe.service === filters.service);
     }
 
     if (filters?.statut) {
-      query = query.eq('statut', filters.statut);
+      employes = employes.filter((employe) => employe.statut === filters.statut);
     }
 
     if (filters?.search) {
-      query = query.or(`nom.ilike.%${filters.search}%,prenom.ilike.%${filters.search}%,poste.ilike.%${filters.search}%`);
+      const search = filters.search.toLowerCase();
+      employes = employes.filter((employe) =>
+        [employe.nom, employe.prenom, employe.poste]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(search))
+      );
     }
 
-    const { data, error } = await query;
-    if (error) throw error;
-    return data as Employe[];
+    return employes;
   },
 
   async createEmploye(employe: Omit<Employe, 'id' | 'created_at' | 'updated_at'>) {
