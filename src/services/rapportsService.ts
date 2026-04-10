@@ -67,6 +67,12 @@ export const rapportsService = {
       ? `${year + 1}-01-01`
       : `${year}-${String(month + 1).padStart(2, '0')}-01`;
 
+    // Build facture period pattern: FM{YYYYMM}
+    const periodCode = `${year}${String(month).padStart(2, '0')}`;
+    const prevPeriodCode = month === 1
+      ? `${year - 1}12`
+      : `${year}${String(month - 1).padStart(2, '0')}`;
+
     // Fetch all data in parallel
     const [
       missionsRes,
@@ -77,8 +83,9 @@ export const rapportsService = {
       ncRes,
       controlesRes,
       controlesInopinesRes,
-      prevMonthBlRes,
       prevMonthMaintenanceRes,
+      facturesRes,
+      prevFacturesRes,
     ] = await Promise.all([
       supabase.from('missions').select('*').gte('created_at', startDate).lt('created_at', endDate),
       supabase.from('bons_livraison').select('*').gte('created_at', startDate).lt('created_at', endDate),
@@ -88,13 +95,13 @@ export const rapportsService = {
       supabase.from('non_conformites').select('*').gte('created_at', startDate).lt('created_at', endDate),
       supabase.from('controles_hsse').select('*').gte('created_at', startDate).lt('created_at', endDate),
       supabase.from('controles_inopines').select('*').gte('created_at', startDate).lt('created_at', endDate),
-      // Previous month for trends
-      supabase.from('bons_livraison').select('montant_total').gte('created_at',
-        month === 1 ? `${year - 1}-12-01` : `${year}-${String(month - 1).padStart(2, '0')}-01`
-      ).lt('created_at', startDate),
       supabase.from('diagnostics_maintenance').select('cout_reparation').gte('created_at',
         month === 1 ? `${year - 1}-12-01` : `${year}-${String(month - 1).padStart(2, '0')}-01`
       ).lt('created_at', startDate),
+      // Factures for current month (by numero pattern FM{YYYYMM})
+      supabase.from('factures').select('numero, montant_ht').like('numero', `FM${periodCode}%`),
+      // Factures for previous month
+      supabase.from('factures').select('numero, montant_ht').like('numero', `FM${prevPeriodCode}%`),
     ]);
 
     const missions = missionsRes.data || [];
@@ -105,11 +112,12 @@ export const rapportsService = {
     const ncs = ncRes.data || [];
     const controles = controlesRes.data || [];
     const controlesInopines = controlesInopinesRes.data || [];
-    const prevBls = prevMonthBlRes.data || [];
     const prevMaintenances = prevMonthMaintenanceRes.data || [];
+    const factures = facturesRes.data || [];
+    const prevFactures = prevFacturesRes.data || [];
 
-    // Executive Summary
-    const total_revenue = bls.reduce((s, bl) => s + (bl.montant_total || 0), 0);
+    // Executive Summary - CA based on generated invoices (montant_ht)
+    const total_revenue = factures.reduce((s: number, f: any) => s + (Number(f.montant_ht) || 0), 0);
     const active_vehicles = vehicules.filter(v => v.statut === 'disponible' || v.statut === 'en_mission').length;
     const total_vehicles = vehicules.length;
     const total_maintenance_cost = maintenances.reduce((s, m) => s + (m.cout_reparation || 0), 0);
