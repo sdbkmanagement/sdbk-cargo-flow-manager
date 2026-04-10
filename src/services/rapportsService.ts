@@ -190,7 +190,7 @@ export const rapportsService = {
     });
 
     // Financial
-    const prev_revenue = prevBls.reduce((s: number, bl: any) => s + (bl.montant_total || 0), 0);
+    const prev_revenue = prevFactures.reduce((s: number, f: any) => s + (Number(f.montant_ht) || 0), 0);
     const prev_maintenance = prevMaintenances.reduce((s: number, m: any) => s + (m.cout_reparation || 0), 0);
 
     // HSE
@@ -244,9 +244,9 @@ export const rapportsService = {
       let y = year;
       while (m <= 0) { m += 12; y--; }
       const mStart = `${y}-${String(m).padStart(2, '0')}-01`;
-      const mEnd = m === 12 ? `${y + 1}-01-01` : `${y}-${String(m + 1).padStart(2, '0')}-01`;
-      const { data } = await supabase.from('bons_livraison').select('montant_total').gte('created_at', mStart).lt('created_at', mEnd);
-      const rev = (data || []).reduce((s: number, bl: any) => s + (bl.montant_total || 0), 0);
+      const trendPeriod = `${y}${String(m).padStart(2, '0')}`;
+      const { data } = await supabase.from('factures').select('montant_ht').like('numero', `FM${trendPeriod}%`);
+      const rev = (data || []).reduce((s: number, f: any) => s + (Number(f.montant_ht) || 0), 0);
       const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
       revenueTrend.push({ month: `${monthNames[m - 1]} ${y}`, revenue: rev });
     }
