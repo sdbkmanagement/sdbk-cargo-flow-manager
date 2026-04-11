@@ -361,6 +361,37 @@ export const RapportDashboard: React.FC = () => {
                         ))}
                       </div>
                     )}
+                    {data.hse.nc_details.vehicules.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Véhicules concernés</p>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="text-[10px] px-2 py-1">N° NC</TableHead>
+                              <TableHead className="text-[10px] px-2 py-1">Citerne</TableHead>
+                              <TableHead className="text-[10px] px-2 py-1">Chauffeur</TableHead>
+                              <TableHead className="text-[10px] px-2 py-1">Type</TableHead>
+                              <TableHead className="text-[10px] px-2 py-1">Date</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {data.hse.nc_details.vehicules.map((v, i) => (
+                              <TableRow key={i}>
+                                <TableCell className="text-[10px] px-2 py-1">{v.numero_nc}</TableCell>
+                                <TableCell className="text-[10px] px-2 py-1 font-medium">{v.citerne}</TableCell>
+                                <TableCell className="text-[10px] px-2 py-1">{v.chauffeur}</TableCell>
+                                <TableCell className="text-[10px] px-2 py-1">
+                                  <Badge variant={v.type_nc === 'critique' ? 'destructive' : 'secondary'} className="text-[8px] px-1 py-0">
+                                    {v.type_nc}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-[10px] px-2 py-1">{v.date}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
