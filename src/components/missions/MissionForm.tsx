@@ -221,6 +221,29 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
     }
   }, [mission?.id, formData.type_transport, formData.vehicule_id, formData.chauffeur_id]);
 
+  const getDuplicateNumeros = (numeros: string[]) => {
+    const counts = new Map<string, string>();
+    const duplicates = new Set<string>();
+
+    numeros.forEach(numero => {
+      const trimmedNumero = numero.trim();
+      const normalizedNumero = trimmedNumero.toUpperCase();
+
+      if (!normalizedNumero) {
+        return;
+      }
+
+      if (counts.has(normalizedNumero)) {
+        duplicates.add(counts.get(normalizedNumero) || trimmedNumero);
+        return;
+      }
+
+      counts.set(normalizedNumero, trimmedNumero);
+    });
+
+    return Array.from(duplicates);
+  };
+
   // Mutation pour créer/modifier une mission
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -276,15 +299,19 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
       onSuccess();
     },
     onError: (error: any) => {
+      const isDuplicateBLNumber = error?.code === '23505' || error?.message?.includes('bons_livraison_numero_key');
+
       toast({
         title: 'Erreur',
-        description: error.message || 'Une erreur est survenue lors de la sauvegarde.',
+        description: isDuplicateBLNumber
+          ? 'Un ou plusieurs numéros de BL existent déjà. Vérifiez les numéros saisis avant de sauvegarder.'
+          : error.message || 'Une erreur est survenue lors de la sauvegarde.',
         variant: 'destructive'
       });
     }
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     console.log('📝 Tentative de soumission du formulaire:', {
@@ -368,6 +395,44 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
         toast({
           title: 'Erreur de validation',
           description: `${blsIncomplets.length} BL${blsIncomplets.length > 1 ? 's sont' : ' est'} incomplet${blsIncomplets.length > 1 ? 's' : ''}. Veuillez remplir tous les champs obligatoires.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const numerosBL = bls
+        .map(bl => bl.numero?.trim())
+        .filter((numero): numero is string => Boolean(numero));
+
+      const duplicateNumeros = getDuplicateNumeros(numerosBL);
+      if (duplicateNumeros.length > 0) {
+        toast({
+          title: 'Numéros de BL en doublon',
+          description: `Ces numéros sont saisis plusieurs fois dans le formulaire : ${duplicateNumeros.join(', ')}.`,
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      try {
+        const existingBLs = await bonsLivraisonService.getExistingByNumeros(numerosBL);
+        const conflictingNumeros = existingBLs
+          .filter(existingBL => !bls.some(bl => bl.id === existingBL.id))
+          .map(existingBL => existingBL.numero);
+
+        if (conflictingNumeros.length > 0) {
+          toast({
+            title: 'Numéro de BL déjà utilisé',
+            description: `Ces numéros existent déjà : ${conflictingNumeros.join(', ')}.`,
+            variant: 'destructive'
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification des numéros de BL:', error);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de vérifier les numéros de BL avant la sauvegarde.',
           variant: 'destructive'
         });
         return;

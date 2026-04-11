@@ -38,6 +38,11 @@ export const BLMultiplesForm = ({ bls, onBLsChange, vehiculeId, chauffeurId }: B
     // Formater le numéro comme "BL-[chiffres]"
     const numeroFormate = `BL-${numericValue}`;
 
+    if (bls.some(bl => bl.numero.trim().toUpperCase() === numeroFormate.toUpperCase())) {
+      setError('Ce numéro de BL a déjà été ajouté au formulaire');
+      return;
+    }
+
     const nouveauBL: BonLivraison = {
       numero: numeroFormate,
       destination: '',
