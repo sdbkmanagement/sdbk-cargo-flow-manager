@@ -1,0 +1,1 @@
+UPDATE bons_livraison SET destination = 'Maferinya', lieu_arrivee = 'Maferinya', updated_at = now() WHERE id = '1ecea931-09d7-4d23-92c4-46aecf708090';
