@@ -44,6 +44,32 @@ export const bonsLivraisonService = {
     }
   },
 
+  // Vérifier quels numéros de BL existent déjà
+  async getExistingByNumeros(numeros: string[]) {
+    try {
+      const numerosUniques = [...new Set(numeros.map(numero => numero.trim()).filter(Boolean))];
+
+      if (numerosUniques.length === 0) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('bons_livraison')
+        .select('id, numero')
+        .in('numero', numerosUniques);
+
+      if (error) {
+        console.error('Erreur lors de la vérification des numéros de BL:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Erreur générale lors de la vérification des numéros de BL:', error);
+      throw error;
+    }
+  },
+
   // Créer un bon de livraison
   async create(blData: Omit<BonLivraison, 'id' | 'created_at' | 'updated_at'>) {
     try {
