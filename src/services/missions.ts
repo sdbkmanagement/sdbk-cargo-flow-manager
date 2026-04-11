@@ -26,28 +26,50 @@ export const missionsService = {
     try {
       console.log('Chargement des missions...')
       
-      const { data, error } = await Promise.race([
-        supabase
-          .from('missions')
-          .select(`
-            *,
-            vehicule:vehicules(numero, marque, modele, immatriculation, remorque_immatriculation, tracteur_immatriculation),
-            chauffeur:chauffeurs(nom, prenom, telephone),
-            bons_livraison:bons_livraison(numero_tournee)
-          `)
-          .order('created_at', { ascending: false }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 10000)
-        )
-      ]) as any;
+      const selectQuery = `
+        *,
+        vehicule:vehicules(numero, marque, modele, immatriculation, remorque_immatriculation, tracteur_immatriculation),
+        chauffeur:chauffeurs(nom, prenom, telephone),
+        bons_livraison:bons_livraison(numero_tournee)
+      `;
 
-      if (error) {
-        console.error('Erreur missions:', error)
-        return []
+      // Fetch all missions with pagination to bypass the 1000-row limit
+      const allData: any[] = [];
+      const pageSize = 1000;
+      let page = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const from = page * pageSize;
+        const to = from + pageSize - 1;
+
+        const { data, error } = await Promise.race([
+          supabase
+            .from('missions')
+            .select(selectQuery)
+            .order('created_at', { ascending: false })
+            .range(from, to),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 15000)
+          )
+        ]) as any;
+
+        if (error) {
+          console.error('Erreur missions page', page, ':', error);
+          break;
+        }
+
+        if (data && data.length > 0) {
+          allData.push(...data);
+          hasMore = data.length === pageSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
       }
 
-      console.log('Missions chargées:', data?.length || 0)
-      return data || []
+      console.log('Missions chargées:', allData.length)
+      return allData;
     } catch (error) {
       console.error('Erreur générale missions:', error)
       return []
