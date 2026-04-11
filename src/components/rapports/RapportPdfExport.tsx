@@ -185,7 +185,7 @@ ${section('1. Résumé Exécutif', kpiRow([
 ]) + kpiRow([
   { label: 'Véhicules actifs', value: `${data.executive.active_vehicles}/${data.executive.total_vehicles}` },
   { label: 'Chauffeurs actifs', value: String(data.executive.total_drivers) },
-  { label: 'Incidents', value: String(data.executive.total_incidents) },
+  { label: 'Non-Conformités (NC)', value: String(data.executive.total_incidents) },
   { label: 'Coût maintenance', value: formatCurrency(data.executive.total_maintenance_cost) },
 ]), comments.executive)}
 
@@ -225,8 +225,8 @@ ${section('5. Performance Chauffeurs', `
   <h3 style="margin-bottom: 4px; font-size: 11px;">Top 5 Chauffeurs</h3>
   ${tableHtml(['#', 'Chauffeur', 'Missions', 'Score'], data.drivers.top5.map((d, i) => [String(i + 1), `${d.nom} ${d.prenom}`, String(d.missions), String(d.score)]))}
   ${data.drivers.worst_incidents.length > 0 ? `
-    <h3 style="margin: 8px 0 4px; font-size: 11px;">Chauffeurs avec incidents</h3>
-    ${tableHtml(['Chauffeur', 'Incidents'], data.drivers.worst_incidents.map(d => [`${d.nom} ${d.prenom}`, String(d.incidents)]))}
+    <h3 style="margin: 8px 0 4px; font-size: 11px;">Chauffeurs avec NC</h3>
+    ${tableHtml(['Chauffeur', 'NC'], data.drivers.worst_incidents.map(d => [`${d.nom} ${d.prenom}`, String(d.incidents)]))}
   ` : ''}
 `, comments.drivers)}
 
@@ -240,8 +240,19 @@ ${section('7. HSE', kpiRow([
   { label: 'Total contrôles', value: String(data.hse.total_controls) },
   { label: 'Conformes', value: String(data.hse.conformes) },
   { label: 'Non conformes', value: String(data.hse.non_conformes) },
-  { label: 'Non-conformités', value: String(data.hse.non_conformites) },
-]), comments.hse)}
+  { label: 'Non-Conformités (NC)', value: String(data.hse.non_conformites) },
+]) + (data.hse.non_conformites > 0 ? `
+  <h3 style="margin: 8px 0 4px; font-size: 11px;">Détail NC par gravité</h3>
+  ${tableHtml(['Gravité', 'Nombre'], [
+    ['Critiques', String(data.hse.nc_details.critiques)],
+    ['Majeures', String(data.hse.nc_details.majeures)],
+    ['Mineures', String(data.hse.nc_details.mineures)],
+  ])}
+  ${data.hse.nc_details.par_categorie.length > 0 ? `
+    <h3 style="margin: 8px 0 4px; font-size: 11px;">NC par catégorie</h3>
+    ${tableHtml(['Catégorie', 'Nombre'], data.hse.nc_details.par_categorie.map(c => [c.categorie.replace('Contrôle inopiné - ', ''), String(c.count)]))}
+  ` : ''}
+` : ''), comments.hse)}
 
 ${section('8. Alertes & Recommandations', alertsHtml)}
 

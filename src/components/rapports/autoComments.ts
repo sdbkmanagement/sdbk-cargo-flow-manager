@@ -29,7 +29,7 @@ export function generateAutoComments(data: MonthlyReportData): SectionComments {
   }
   execParts.push(`Le taux d'utilisation de la flotte est de ${data.executive.fleet_utilization_rate.toFixed(0)}% avec ${data.executive.active_vehicles} véhicules actifs sur ${data.executive.total_vehicles}.`);
   if (data.executive.total_incidents > 0) {
-    execParts.push(`${data.executive.total_incidents} incident(s) ont été signalés ce mois.`);
+    execParts.push(`${data.executive.total_incidents} non-conformité(s) (NC) ont été enregistrées ce mois.`);
   }
 
   // Operations
@@ -84,7 +84,7 @@ export function generateAutoComments(data: MonthlyReportData): SectionComments {
     driverParts.push(`Le chauffeur le plus performant est ${best.nom} ${best.prenom} avec ${best.missions} missions (score: ${best.score}).`);
   }
   if (data.drivers.worst_incidents.length > 0) {
-    driverParts.push(`${data.drivers.worst_incidents.length} chauffeur(s) ont été impliqués dans des incidents ce mois.`);
+    driverParts.push(`${data.drivers.worst_incidents.length} chauffeur(s) ont été associés à des non-conformités ce mois.`);
   }
 
   // Financial
