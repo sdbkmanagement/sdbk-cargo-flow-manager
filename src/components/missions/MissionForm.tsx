@@ -776,6 +776,83 @@ export const MissionForm = ({ mission, onSuccess, onCancel }: MissionFormProps) 
           </Card>
         </div>
 
+        {/* Récapitulatif des BL existants - affiché en mode édition */}
+        {mission?.id && bls.length > 0 && (
+          <Card className="border-2 border-blue-200">
+            <CardHeader className="bg-blue-50/50 border-b border-blue-100">
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-blue-600" />
+                Récapitulatif des Bons de Livraison ({bls.length} BL{bls.length > 1 ? 's' : ''})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b bg-muted/50">
+                    <tr>
+                      <th className="text-left p-3 font-semibold">N° BL</th>
+                      <th className="text-left p-3 font-semibold">N° Tournée</th>
+                      <th className="text-left p-3 font-semibold">Destination</th>
+                      <th className="text-left p-3 font-semibold">Produit</th>
+                      <th className="text-right p-3 font-semibold">Qté prévue</th>
+                      <th className="text-right p-3 font-semibold">Qté livrée</th>
+                      <th className="text-right p-3 font-semibold">Manquant</th>
+                      <th className="text-right p-3 font-semibold">Prix unit.</th>
+                      <th className="text-right p-3 font-semibold">Montant</th>
+                      <th className="text-left p-3 font-semibold">Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bls.map((bl, idx) => {
+                      const manquant = (bl.manquant_cuve || 0) + (bl.manquant_compteur || 0);
+                      return (
+                        <tr key={bl.id || idx} className="border-b hover:bg-muted/30">
+                          <td className="p-3 font-medium text-blue-700">{bl.numero}</td>
+                          <td className="p-3">{bl.numero_tournee || '-'}</td>
+                          <td className="p-3 max-w-[200px] whitespace-normal">{bl.lieu_arrivee || bl.destination || '-'}</td>
+                          <td className="p-3 capitalize">{bl.produit}</td>
+                          <td className="p-3 text-right">{bl.quantite_prevue?.toLocaleString('fr-FR')} L</td>
+                          <td className="p-3 text-right">{bl.quantite_livree ? `${bl.quantite_livree.toLocaleString('fr-FR')} L` : '-'}</td>
+                          <td className={`p-3 text-right ${manquant > 0 ? 'text-destructive font-medium' : ''}`}>
+                            {manquant > 0 ? `${manquant.toLocaleString('fr-FR')} L` : '-'}
+                          </td>
+                          <td className="p-3 text-right">{bl.prix_unitaire ? `${bl.prix_unitaire.toLocaleString('fr-FR')}` : '-'}</td>
+                          <td className="p-3 text-right font-medium">
+                            {bl.montant_total ? `${bl.montant_total.toLocaleString('fr-FR')} GNF` : '-'}
+                          </td>
+                          <td className="p-3">
+                            <Badge variant={
+                              bl.statut === 'livre' || bl.statut === 'termine' ? 'default' :
+                              bl.statut === 'en_route' ? 'secondary' : 'outline'
+                            } className="text-xs">
+                              {bl.statut?.replace('_', ' ').toUpperCase()}
+                            </Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                  <tfoot className="bg-muted/30 font-semibold">
+                    <tr>
+                      <td className="p-3" colSpan={4}>Total</td>
+                      <td className="p-3 text-right">{bls.reduce((s, b) => s + (b.quantite_prevue || 0), 0).toLocaleString('fr-FR')} L</td>
+                      <td className="p-3 text-right">{bls.reduce((s, b) => s + (b.quantite_livree || 0), 0).toLocaleString('fr-FR')} L</td>
+                      <td className="p-3 text-right text-destructive">
+                        {bls.reduce((s, b) => s + (b.manquant_cuve || 0) + (b.manquant_compteur || 0), 0).toLocaleString('fr-FR')} L
+                      </td>
+                      <td className="p-3"></td>
+                      <td className="p-3 text-right">
+                        {bls.reduce((s, b) => s + (b.montant_total || 0), 0).toLocaleString('fr-FR')} GNF
+                      </td>
+                      <td className="p-3"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Section BL pour les hydrocarbures - Visible uniquement si véhicule et chauffeur assignés */}
         {isHydrocarbures && formData.vehicule_id && formData.chauffeur_id && (
           <>
