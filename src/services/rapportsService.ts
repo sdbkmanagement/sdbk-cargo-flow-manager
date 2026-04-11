@@ -154,7 +154,7 @@ export const rapportsService = {
 
     const vehiclePerf = vehicules.map(v => ({
       id: v.id,
-      numero: v.numero || v.immatriculation || 'N/A',
+      numero: v.remorque_immatriculation || v.numero || v.immatriculation || 'N/A',
       missions: missionsByVehicle[v.id] || 0
     })).sort((a, b) => b.missions - a.missions);
 
