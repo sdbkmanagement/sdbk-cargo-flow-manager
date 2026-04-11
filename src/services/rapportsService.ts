@@ -60,6 +60,7 @@ export interface MonthlyReportData {
       majeures: number;
       mineures: number;
       par_categorie: { categorie: string; count: number }[];
+      vehicules: { numero_nc: string; citerne: string; chauffeur: string; categorie: string; type_nc: string; date: string }[];
     };
   };
   // Alerts
@@ -318,6 +319,18 @@ export const rapportsService = {
             }, {} as Record<string, number>)
           ).map(([categorie, count]) => ({ categorie, count: count as number }))
             .sort((a, b) => b.count - a.count),
+          vehicules: ncs.map((nc: any) => {
+            const veh = vehicules.find(v => v.id === nc.vehicule_id);
+            const chauf = chauffeurs.find(c => c.id === nc.chauffeur_id);
+            return {
+              numero_nc: nc.numero || '',
+              citerne: veh?.remorque_immatriculation || veh?.numero || veh?.immatriculation || 'N/A',
+              chauffeur: chauf ? `${chauf.nom} ${chauf.prenom}` : 'N/A',
+              categorie: (nc.categorie || '').replace('Contrôle inopiné - ', ''),
+              type_nc: nc.type_nc || '',
+              date: nc.date_detection ? new Date(nc.date_detection).toLocaleDateString('fr-FR') : '',
+            };
+          }),
         },
       },
       alerts,

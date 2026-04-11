@@ -252,6 +252,10 @@ ${section('7. HSE', kpiRow([
     <h3 style="margin: 8px 0 4px; font-size: 11px;">NC par catégorie</h3>
     ${tableHtml(['Catégorie', 'Nombre'], data.hse.nc_details.par_categorie.map(c => [c.categorie.replace('Contrôle inopiné - ', ''), String(c.count)]))}
   ` : ''}
+  ${data.hse.nc_details.vehicules.length > 0 ? `
+    <h3 style="margin: 8px 0 4px; font-size: 11px;">Véhicules concernés par les NC</h3>
+    ${tableHtml(['N° NC', 'Citerne', 'Chauffeur', 'Type', 'Date'], data.hse.nc_details.vehicules.map(v => [v.numero_nc, v.citerne, v.chauffeur, v.type_nc, v.date]))}
+  ` : ''}
 ` : ''), comments.hse)}
 
 ${section('8. Alertes & Recommandations', alertsHtml)}
