@@ -6,17 +6,34 @@ export const bonsLivraisonService = {
   // Récupérer tous les bons de livraison
   async getAll() {
     try {
-      const { data, error } = await supabase
-        .from('bons_livraison')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const PAGE_SIZE = 1000;
+      let allData: any[] = [];
+      let page = 0;
+      let hasMore = true;
 
-      if (error) {
-        console.error('Erreur lors du chargement des BL:', error);
-        throw error;
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('bons_livraison')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+        if (error) {
+          console.error('Erreur lors du chargement des BL:', error);
+          throw error;
+        }
+
+        if (data && data.length > 0) {
+          allData = [...allData, ...data];
+          hasMore = data.length === PAGE_SIZE;
+          page++;
+        } else {
+          hasMore = false;
+        }
       }
 
-      return data || [];
+      console.log(`BL chargés: ${allData.length}`);
+      return allData;
     } catch (error) {
       console.error('Erreur générale BL:', error);
       throw error;
