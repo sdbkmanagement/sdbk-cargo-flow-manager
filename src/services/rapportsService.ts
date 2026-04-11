@@ -55,6 +55,12 @@ export interface MonthlyReportData {
     conformes: number;
     non_conformes: number;
     non_conformites: number;
+    nc_details: {
+      critiques: number;
+      majeures: number;
+      mineures: number;
+      par_categorie: { categorie: string; count: number }[];
+    };
   };
   // Alerts
   alerts: { type: 'warning' | 'danger' | 'info'; message: string; recommendation: string }[];
@@ -261,7 +267,7 @@ export const rapportsService = {
         total_bl: bls.length,
         fleet_utilization_rate: utilizationRate,
         fleet_availability_rate: total_vehicles > 0 ? ((vehicules.filter(v => v.statut === 'disponible').length) / total_vehicles) * 100 : 0,
-        total_incidents: ncs.length,
+        total_incidents: ncs.length, // NC count
         total_maintenance_cost,
         active_vehicles,
         total_vehicles,
@@ -300,6 +306,19 @@ export const rapportsService = {
         conformes,
         non_conformes: nonConformes,
         non_conformites: ncs.length,
+        nc_details: {
+          critiques: ncs.filter((nc: any) => nc.type_nc === 'critique').length,
+          majeures: ncs.filter((nc: any) => nc.type_nc === 'majeure').length,
+          mineures: ncs.filter((nc: any) => nc.type_nc === 'mineure').length,
+          par_categorie: Object.entries(
+            ncs.reduce((acc: Record<string, number>, nc: any) => {
+              const cat = nc.categorie || 'Non catégorisé';
+              acc[cat] = (acc[cat] || 0) + 1;
+              return acc;
+            }, {} as Record<string, number>)
+          ).map(([categorie, count]) => ({ categorie, count: count as number }))
+            .sort((a, b) => b.count - a.count),
+        },
       },
       alerts,
     };

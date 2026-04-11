@@ -158,7 +158,7 @@ export const RapportDashboard: React.FC = () => {
             <KPICard icon={Activity} label="Missions" value={String(data.executive.total_missions)} color="text-orange-600" />
             <KPICard icon={Users} label="Chauffeurs actifs" value={String(data.executive.total_drivers)} color="text-cyan-600" />
             <KPICard icon={Wrench} label="Coût maintenance" value={formatCurrency(data.executive.total_maintenance_cost)} color="text-red-600" />
-            <KPICard icon={AlertTriangle} label="Incidents" value={String(data.executive.total_incidents)} color="text-amber-600" />
+            <KPICard icon={AlertTriangle} label="Non-Conformités (NC)" value={String(data.executive.total_incidents)} color="text-amber-600" />
             <KPICard icon={ShieldCheck} label="Contrôles HSE" value={String(data.hse.total_controls)} color="text-emerald-600" />
           </div>
 
@@ -328,9 +328,41 @@ export const RapportDashboard: React.FC = () => {
                   </div>
                   <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-center">
                     <div className="text-2xl font-bold text-amber-600">{data.hse.non_conformites}</div>
-                    <div className="text-xs text-muted-foreground">Non-conformités</div>
+                    <div className="text-xs text-muted-foreground">Non-Conformités (NC)</div>
                   </div>
                 </div>
+
+                {/* Détail des NC */}
+                {data.hse.non_conformites > 0 && (
+                  <div className="border-t pt-3 space-y-3">
+                    <p className="text-sm font-medium text-muted-foreground">Détail des Non-Conformités</p>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/20 text-center">
+                        <div className="text-lg font-bold text-red-600">{data.hse.nc_details.critiques}</div>
+                        <div className="text-[10px] text-muted-foreground">Critiques</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-orange-50 dark:bg-orange-950/20 text-center">
+                        <div className="text-lg font-bold text-orange-600">{data.hse.nc_details.majeures}</div>
+                        <div className="text-[10px] text-muted-foreground">Majeures</div>
+                      </div>
+                      <div className="p-2 rounded-lg bg-yellow-50 dark:bg-yellow-950/20 text-center">
+                        <div className="text-lg font-bold text-yellow-600">{data.hse.nc_details.mineures}</div>
+                        <div className="text-[10px] text-muted-foreground">Mineures</div>
+                      </div>
+                    </div>
+                    {data.hse.nc_details.par_categorie.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground">Par catégorie</p>
+                        {data.hse.nc_details.par_categorie.map((cat, i) => (
+                          <div key={i} className="flex justify-between items-center text-xs px-2 py-1 rounded bg-muted/50">
+                            <span className="truncate mr-2">{cat.categorie.replace('Contrôle inopiné - ', '')}</span>
+                            <span className="font-semibold">{cat.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
