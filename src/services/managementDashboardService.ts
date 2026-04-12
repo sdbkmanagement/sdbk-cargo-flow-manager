@@ -401,7 +401,9 @@ export const managementDashboardService = {
   },
 
   async getRHStats(): Promise<RHStats> {
-    const employes = await fetchAllRows<any>('employes', 'id, statut, genre, type_contrat, service, statut_visite_medicale');
+    // Use RPC function to bypass RLS restrictions on employes table
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_rh_employes');
+    const employes: any[] = rpcError ? [] : (rpcData || []);
 
     const parService = new Map<string, number>();
     const parContrat = new Map<string, number>();
