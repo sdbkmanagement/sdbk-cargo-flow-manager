@@ -11,7 +11,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Edit, Trash2, Phone, Mail, Upload, Download } from 'lucide-react';
+import { Eye, Edit, Phone, Mail, Upload, Download } from 'lucide-react';
 import { EmployeDetailDialog } from './EmployeDetailDialog';
 import { EmployeesImport } from './EmployeesImport';
 import { exportRHService } from '@/services/exportRHService';
@@ -163,7 +163,7 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
                     size="sm" 
                     variant="ghost"
                     title="Voir le dossier"
-                    onClick={() => { setEditMode(false); setSelectedEmploye(employe); }}
+                    onClick={() => setSelectedEmploye(employe)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
@@ -171,7 +171,7 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
                     size="sm" 
                     variant="ghost"
                     title="Modifier"
-                    onClick={() => { setEditMode(true); setSelectedEmploye(employe); }}
+                    onClick={() => setSelectedEmploye(employe)}
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
