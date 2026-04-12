@@ -1,10 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Save } from 'lucide-react';
+import { Save, Camera, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -53,6 +54,41 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string>(employe?.photo_url || '');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('Veuillez sélectionner une image');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('L\'image ne doit pas dépasser 5 Mo');
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const fileName = `employes/photo_${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file, { upsert: true });
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage
+        .from('documents')
+        .getPublicUrl(fileName);
+      setPhotoUrl(urlData.publicUrl);
+      toast.success('Photo téléchargée');
+    } catch (error) {
+      console.error('Erreur upload photo:', error);
+      toast.error('Erreur lors du téléchargement de la photo');
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
 
   const handleChange = (field: string, value: string) => {
     setFormData(prev => {
@@ -77,8 +113,9 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     try {
       const payload = {
         ...formData,
-        poste: formData.fonction, // keep poste in sync
+        poste: formData.fonction,
         age: formData.age ? parseInt(formData.age) : null,
+        photo_url: photoUrl || null,
       };
 
       if (employe?.id) {
@@ -132,6 +169,39 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Photo de l'employé */}
+          <div className="flex items-center gap-4">
+            <Avatar className="w-20 h-20 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <AvatarImage src={photoUrl} />
+              <AvatarFallback className="text-xl bg-muted">
+                {formData.nom?.[0] || ''}{formData.prenom?.[0] || ''}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploadingPhoto}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploadingPhoto ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Chargement...</>
+                ) : (
+                  <><Camera className="w-4 h-4 mr-2" /> {photoUrl ? 'Changer la photo' : 'Ajouter une photo'}</>
+                )}
+              </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+              <p className="text-xs text-muted-foreground mt-1">JPG, PNG — max 5 Mo</p>
+            </div>
+          </div>
+
           {/* 1. Informations Administratives */}
           <div>
             <SectionTitle>🔹 1. Informations Administratives</SectionTitle>
