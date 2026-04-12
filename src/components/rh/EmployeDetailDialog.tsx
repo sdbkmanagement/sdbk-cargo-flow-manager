@@ -16,6 +16,7 @@ import {
   Clock,
   User
 } from 'lucide-react';
+import { EmployeForm } from './EmployeForm';
 
 interface EmployeDetailDialogProps {
   employe: any;
@@ -24,6 +25,7 @@ interface EmployeDetailDialogProps {
 }
 
 export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDetailDialogProps) => {
+  const [showEditForm, setShowEditForm] = useState(false);
   const getStatutColor = (statut: string) => {
     switch (statut) {
       case 'actif': return 'bg-green-500';
@@ -43,12 +45,13 @@ export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDeta
   };
 
   return (
+    <>
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center justify-between">
             <DialogTitle>Fiche Personnel</DialogTitle>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => setShowEditForm(true)}>
               <Edit className="w-4 h-4 mr-2" />
               Modifier
             </Button>
@@ -211,5 +214,18 @@ export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDeta
         </div>
       </DialogContent>
     </Dialog>
+
+    {showEditForm && (
+      <EmployeForm
+        employe={employe}
+        onClose={() => setShowEditForm(false)}
+        onSuccess={() => {
+          setShowEditForm(false);
+          onRefresh();
+          onClose();
+        }}
+      />
+    )}
+    </>
   );
 };
