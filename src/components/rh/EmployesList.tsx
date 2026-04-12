@@ -11,7 +11,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Edit, Trash2, Phone, Mail, Upload, Download } from 'lucide-react';
+import { Eye, Edit, Phone, Mail, Upload, Download } from 'lucide-react';
 import { EmployeDetailDialog } from './EmployeDetailDialog';
 import { EmployeesImport } from './EmployeesImport';
 import { exportRHService } from '@/services/exportRHService';
@@ -142,13 +142,17 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
               <TableCell>
                 <div className="flex gap-2">
                   {employe.telephone && (
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                      <Phone className="h-4 w-4" />
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
+                      <a href={`tel:${employe.telephone}`} title={employe.telephone}>
+                        <Phone className="h-4 w-4" />
+                      </a>
                     </Button>
                   )}
                   {employe.email && (
-                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
-                      <Mail className="h-4 w-4" />
+                    <Button size="sm" variant="ghost" className="h-8 w-8 p-0" asChild>
+                      <a href={`mailto:${employe.email}`} title={employe.email}>
+                        <Mail className="h-4 w-4" />
+                      </a>
                     </Button>
                   )}
                 </div>
@@ -158,15 +162,18 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
                   <Button 
                     size="sm" 
                     variant="ghost"
+                    title="Voir le dossier"
                     onClick={() => setSelectedEmploye(employe)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost">
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    title="Modifier"
+                    onClick={() => setSelectedEmploye(employe)}
+                  >
                     <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="ghost" className="text-red-600">
-                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </TableCell>
