@@ -113,8 +113,9 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     try {
       const payload = {
         ...formData,
-        poste: formData.fonction, // keep poste in sync
+        poste: formData.fonction,
         age: formData.age ? parseInt(formData.age) : null,
+        photo_url: photoUrl || null,
       };
 
       if (employe?.id) {
