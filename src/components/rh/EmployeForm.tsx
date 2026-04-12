@@ -53,6 +53,7 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     remarques: employe?.remarques || '',
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string>(employe?.photo_url || '');
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
