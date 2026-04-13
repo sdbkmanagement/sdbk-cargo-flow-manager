@@ -1,0 +1,1 @@
+UPDATE bons_livraison SET prix_unitaire = 1297.62, montant_total = 1297.62 * quantite_prevue, updated_at = now() WHERE numero = 'BL-3022536087';
