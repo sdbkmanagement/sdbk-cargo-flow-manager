@@ -58,7 +58,7 @@ export const statsService = {
         chauffeurs: chauffeursResult.count || 0,
         missionsEnCours,
         missionsEnAttente,
-        employes: employesResult.count || 0,
+        employes: (typeof employesResult.data === 'number' ? employesResult.data : 0),
         validationsEnAttente: validationStats?.en_validation || 0
       };
 
