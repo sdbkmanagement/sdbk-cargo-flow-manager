@@ -44,7 +44,7 @@ export const statsService = {
         supabase.from('vehicules').select('id', { count: 'exact' }).limit(1),
         supabase.from('chauffeurs').select('id', { count: 'exact' }).limit(1),
         supabase.from('missions').select('id, statut', { count: 'exact' }),
-        supabase.from('employes').select('id', { count: 'exact' }).limit(1),
+        supabase.rpc('count_employes'),
         validationService.getStatistiquesGlobales()
       ]);
 

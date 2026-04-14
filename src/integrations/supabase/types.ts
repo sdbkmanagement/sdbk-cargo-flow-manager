@@ -4864,6 +4864,7 @@ export type Database = {
           vehicule_disponible: boolean
         }[]
       }
+      count_employes: { Args: never; Returns: number }
       create_conversation_with_participants: {
         Args: {
           p_is_group?: boolean
