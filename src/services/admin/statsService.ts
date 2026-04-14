@@ -142,11 +142,11 @@ export const statsService = {
       ]);
 
       const factures = facturesResult.data || [];
-      const facturesPayees = factures.filter(f => f.statut === 'payee').length;
+      const facturesPayees = factures.filter(f => f.statut === 'paye' || f.statut === 'payee').length;
       const facturesEnAttente = factures.filter(f => f.statut === 'en_attente' && f.numero?.startsWith('FM')).length;
       const facturesMensuelles = factures.filter(f => f.numero?.startsWith('FM')).length;
       const chiffreAffaires = factures
-        .filter(f => f.statut === 'payee')
+        .filter(f => f.statut === 'paye' || f.statut === 'payee')
         .reduce((sum, f) => sum + (f.montant_ttc || 0), 0);
       const caEnAttente = factures
         .filter(f => f.statut === 'en_attente' && f.numero?.startsWith('FM'))
