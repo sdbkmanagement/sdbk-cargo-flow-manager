@@ -95,6 +95,7 @@ export const rapportsService = {
       prevFacturesRes,
     ] = await Promise.all([
       supabase.from('missions').select('*').gte('created_at', startDate).lt('created_at', endDate),
+      // Also fetch missions linked to BLs of the period (for accurate invoiced mission count)
       supabase.from('bons_livraison').select('*').gte('date_chargement_reelle', startDate).lt('date_chargement_reelle', endDate),
       supabase.from('vehicules').select('*'),
       supabase.from('chauffeurs').select('*'),
@@ -264,7 +265,7 @@ export const rapportsService = {
       year,
       executive: {
         total_revenue,
-        total_missions: missions.length,
+        total_missions: new Set(bls.map(bl => bl.mission_id).filter(Boolean)).size,
         total_bl: bls.length,
         fleet_utilization_rate: utilizationRate,
         fleet_availability_rate: total_vehicles > 0 ? ((vehicules.filter(v => v.statut === 'disponible').length) / total_vehicles) * 100 : 0,
