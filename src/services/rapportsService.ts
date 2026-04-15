@@ -95,7 +95,7 @@ export const rapportsService = {
       prevFacturesRes,
     ] = await Promise.all([
       supabase.from('missions').select('*').gte('created_at', startDate).lt('created_at', endDate),
-      supabase.from('bons_livraison').select('*').gte('created_at', startDate).lt('created_at', endDate),
+      supabase.from('bons_livraison').select('*').gte('date_chargement_reelle', startDate).lt('date_chargement_reelle', endDate),
       supabase.from('vehicules').select('*'),
       supabase.from('chauffeurs').select('*'),
       supabase.from('diagnostics_maintenance').select('*').gte('created_at', startDate).lt('created_at', endDate),
