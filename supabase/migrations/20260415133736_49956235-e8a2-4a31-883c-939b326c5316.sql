@@ -1,0 +1,1 @@
+UPDATE tarifs_hydrocarbures SET tarif_au_litre = 99.93, updated_at = now() WHERE id = '4a09df82-4627-4ab6-9ffd-dbbfd657419b';
