@@ -246,30 +246,21 @@ export const missionsService = {
   // Récupérer les statistiques des missions
   async getStats() {
     try {
-      const { data: missions, error } = await Promise.race([
-        supabase.from('missions').select('statut, type_transport, volume_poids, created_at'),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 5000)
-        )
-      ]) as any;
-
-      if (error) {
-        console.error('Erreur stats missions:', error)
-        return {
-          total: 0,
-          en_attente: 0,
-          en_cours: 0,
-          terminees: 0,
-          annulees: 0
-        }
-      }
+      // Use count queries to avoid the 1000-row limit
+      const [totalRes, enAttenteRes, enCoursRes, termineesRes, annuleesRes] = await Promise.all([
+        supabase.from('missions').select('*', { count: 'exact', head: true }),
+        supabase.from('missions').select('*', { count: 'exact', head: true }).eq('statut', 'en_attente'),
+        supabase.from('missions').select('*', { count: 'exact', head: true }).eq('statut', 'en_cours'),
+        supabase.from('missions').select('*', { count: 'exact', head: true }).eq('statut', 'terminee'),
+        supabase.from('missions').select('*', { count: 'exact', head: true }).eq('statut', 'annulee'),
+      ]);
 
       const stats = {
-        total: missions?.length || 0,
-        en_attente: missions?.filter(m => m.statut === 'en_attente').length || 0,
-        en_cours: missions?.filter(m => m.statut === 'en_cours').length || 0,
-        terminees: missions?.filter(m => m.statut === 'terminee').length || 0,
-        annulees: missions?.filter(m => m.statut === 'annulee').length || 0
+        total: totalRes.count || 0,
+        en_attente: enAttenteRes.count || 0,
+        en_cours: enCoursRes.count || 0,
+        terminees: termineesRes.count || 0,
+        annulees: annuleesRes.count || 0
       };
 
       return stats;
