@@ -95,6 +95,7 @@ export const rapportsService = {
       prevFacturesRes,
     ] = await Promise.all([
       supabase.from('missions').select('*').gte('created_at', startDate).lt('created_at', endDate),
+      // Also fetch missions linked to BLs of the period (for accurate invoiced mission count)
       supabase.from('bons_livraison').select('*').gte('date_chargement_reelle', startDate).lt('date_chargement_reelle', endDate),
       supabase.from('vehicules').select('*'),
       supabase.from('chauffeurs').select('*'),
