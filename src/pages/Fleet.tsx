@@ -77,23 +77,40 @@ const Fleet = () => {
       <FleetStats stats={stats} />
 
       <Tabs defaultValue="list" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="list">Liste des véhicules</TabsTrigger>
-          <TabsTrigger value="diagnostic">Diagnostic de synchronisation</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="list">
+            Flotte active ({activeVehicles.length})
+          </TabsTrigger>
+          <TabsTrigger value="inactive">
+            Sortis de la flotte ({stats.inactifs})
+          </TabsTrigger>
+          <TabsTrigger value="diagnostic">Diagnostic</TabsTrigger>
         </TabsList>
 
         <TabsContent value="list" className="space-y-4">
           <VehicleListTab
-            vehicles={vehicles}
+            vehicles={activeVehicles}
             onEdit={handleEditVehicle}
             onDelete={async (id: string) => {
-              // Implémenter la logique de suppression ici
               console.log(`Suppression du véhicule avec l'ID: ${id}`);
-              await refetch(); // Refresh vehicle list after deletion
+              await refetch();
             }}
             onViewDocuments={handleViewDocuments}
             onDeactivate={setVehicleToDeactivate}
             onFilteredVehiclesChange={setFilteredVehiclesForExport}
+          />
+        </TabsContent>
+
+        <TabsContent value="inactive" className="space-y-4">
+          <VehicleListTab
+            vehicles={inactiveVehicles}
+            onEdit={handleEditVehicle}
+            onDelete={async (id: string) => {
+              console.log(`Suppression du véhicule avec l'ID: ${id}`);
+              await refetch();
+            }}
+            onViewDocuments={handleViewDocuments}
+            onDeactivate={setVehicleToDeactivate}
           />
         </TabsContent>
 
