@@ -306,6 +306,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
             <VehicleRemorqueInfo 
               register={form.register}
               errors={form.formState.errors}
+              typeTransport={form.watch('type_transport')}
             />
           )}
 
