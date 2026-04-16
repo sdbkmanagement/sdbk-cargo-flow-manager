@@ -247,12 +247,15 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
       
       await documentsSimpleService.delete(documentId);
       
-      toast({
-        title: "Succès",
-        description: "Document supprimé avec succès",
-      });
-      
+      // Reload first, then show toast to avoid DOM conflicts
       await loadDocuments();
+      
+      setTimeout(() => {
+        toast({
+          title: "Succès",
+          description: "Document supprimé avec succès",
+        });
+      }, 100);
       
     } catch (error) {
       console.error('Erreur lors de la suppression:', error);
