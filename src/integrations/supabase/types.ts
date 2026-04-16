@@ -4626,6 +4626,7 @@ export type Database = {
       }
       vehicules: {
         Row: {
+          actif: boolean
           associe_id: string | null
           base: string | null
           capacite_max: number | null
@@ -4634,6 +4635,7 @@ export type Database = {
           consommation_moyenne: number | null
           created_at: string
           date_fabrication: string | null
+          date_sortie_flotte: string | null
           derniere_maintenance: string | null
           id: string
           immatriculation: string | null
@@ -4641,6 +4643,7 @@ export type Database = {
           kilometrage: number | null
           marque: string | null
           modele: string | null
+          motif_sortie_flotte: string | null
           numero: string
           numero_chassis: string | null
           prochaine_maintenance: string | null
@@ -4670,6 +4673,7 @@ export type Database = {
           volume_tonnes: number | null
         }
         Insert: {
+          actif?: boolean
           associe_id?: string | null
           base?: string | null
           capacite_max?: number | null
@@ -4678,6 +4682,7 @@ export type Database = {
           consommation_moyenne?: number | null
           created_at?: string
           date_fabrication?: string | null
+          date_sortie_flotte?: string | null
           derniere_maintenance?: string | null
           id?: string
           immatriculation?: string | null
@@ -4685,6 +4690,7 @@ export type Database = {
           kilometrage?: number | null
           marque?: string | null
           modele?: string | null
+          motif_sortie_flotte?: string | null
           numero: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null
@@ -4714,6 +4720,7 @@ export type Database = {
           volume_tonnes?: number | null
         }
         Update: {
+          actif?: boolean
           associe_id?: string | null
           base?: string | null
           capacite_max?: number | null
@@ -4722,6 +4729,7 @@ export type Database = {
           consommation_moyenne?: number | null
           created_at?: string
           date_fabrication?: string | null
+          date_sortie_flotte?: string | null
           derniere_maintenance?: string | null
           id?: string
           immatriculation?: string | null
@@ -4729,6 +4737,7 @@ export type Database = {
           kilometrage?: number | null
           marque?: string | null
           modele?: string | null
+          motif_sortie_flotte?: string | null
           numero?: string
           numero_chassis?: string | null
           prochaine_maintenance?: string | null
