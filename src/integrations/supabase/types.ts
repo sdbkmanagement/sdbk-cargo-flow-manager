@@ -2554,6 +2554,7 @@ export type Database = {
           date_recyclage: string | null
           formateur_nom: string | null
           id: string
+          note_obtenue: number | null
           signature_chauffeur: string | null
           signature_formateur: string | null
           statut: string
@@ -2568,6 +2569,7 @@ export type Database = {
           date_recyclage?: string | null
           formateur_nom?: string | null
           id?: string
+          note_obtenue?: number | null
           signature_chauffeur?: string | null
           signature_formateur?: string | null
           statut?: string
@@ -2582,6 +2584,7 @@ export type Database = {
           date_recyclage?: string | null
           formateur_nom?: string | null
           id?: string
+          note_obtenue?: number | null
           signature_chauffeur?: string | null
           signature_formateur?: string | null
           statut?: string
