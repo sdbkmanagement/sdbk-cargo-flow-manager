@@ -25,6 +25,7 @@ export const FormationFormDialog = ({ open, onOpenChange, formation, preselected
   const [dateFormation, setDateFormation] = useState('');
   const [formateurNom, setFormateurNom] = useState('');
   const [commentaire, setCommentaire] = useState('');
+  const [noteObtenue, setNoteObtenue] = useState<string>('');
   const [signatureChauffeur, setSignatureChauffeur] = useState('');
   const [signatureFormateur, setSignatureFormateur] = useState('');
   const [chauffeurSearch, setChauffeurSearch] = useState('');
@@ -49,6 +50,7 @@ export const FormationFormDialog = ({ open, onOpenChange, formation, preselected
       setDateFormation(formation.date_formation);
       setFormateurNom(formation.formateur_nom || '');
       setCommentaire(formation.commentaire || '');
+      setNoteObtenue(formation.note_obtenue != null ? String(formation.note_obtenue) : '');
       setSignatureChauffeur(formation.signature_chauffeur || '');
       setSignatureFormateur(formation.signature_formateur || '');
     } else {
@@ -57,6 +59,7 @@ export const FormationFormDialog = ({ open, onOpenChange, formation, preselected
       setDateFormation(new Date().toISOString().split('T')[0]);
       setFormateurNom('');
       setCommentaire('');
+      setNoteObtenue('');
       setSignatureChauffeur('');
       setSignatureFormateur('');
     }
@@ -103,6 +106,7 @@ export const FormationFormDialog = ({ open, onOpenChange, formation, preselected
       signature_chauffeur: signatureChauffeur || null,
       signature_formateur: signatureFormateur || null,
       commentaire: commentaire || null,
+      note_obtenue: noteObtenue ? parseFloat(noteObtenue) : null,
     };
 
     if (formation) {
@@ -222,10 +226,24 @@ export const FormationFormDialog = ({ open, onOpenChange, formation, preselected
             </div>
           </div>
 
-          {/* Commentaire */}
-          <div className="space-y-2">
-            <Label>Commentaire</Label>
-            <Textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} placeholder="Observations..." />
+          {/* Note et Commentaire */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Note obtenue (%)</Label>
+              <Input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={noteObtenue}
+                onChange={e => setNoteObtenue(e.target.value)}
+                placeholder="Ex: 85"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Commentaire</Label>
+              <Textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} placeholder="Observations..." rows={2} />
+            </div>
           </div>
 
           {/* Signatures */}
