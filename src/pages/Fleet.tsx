@@ -42,6 +42,7 @@ const Fleet = () => {
 
   // Calculer les statistiques à partir des véhicules actifs uniquement
   const activeVehicles = React.useMemo(() => vehicles.filter(v => v.actif !== false), [vehicles]);
+  const inactiveVehicles = React.useMemo(() => vehicles.filter(v => v.actif === false), [vehicles]);
   
   const stats = React.useMemo(() => {
     const total = activeVehicles.length;
