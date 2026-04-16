@@ -196,12 +196,7 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
 
       console.log('=== UPLOAD TERMINÉ AVEC SUCCÈS ===');
 
-      toast({
-        title: "Succès",
-        description: url ? "Document téléchargé et enregistré avec succès" : "Informations du document enregistrées avec succès",
-      });
-
-      // Reset form
+      // Reset form and close BEFORE showing toast to avoid DOM conflicts
       setNewDocument({
         nom: '',
         type: '',
@@ -210,9 +205,15 @@ export const DocumentManagerVehicule = ({ vehiculeId, vehiculeNumero }: Document
         file: null
       });
       setShowUploadForm(false);
-      
-      // Reload documents
-      await loadDocuments();
+
+      // Delay toast and reload to let React finish DOM cleanup
+      setTimeout(async () => {
+        toast({
+          title: "Succès",
+          description: url ? "Document téléchargé et enregistré avec succès" : "Informations du document enregistrées avec succès",
+        });
+        await loadDocuments();
+      }, 100);
       
     } catch (error: any) {
       console.error('=== ERREUR UPLOAD DOCUMENT ===');
