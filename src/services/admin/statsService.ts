@@ -41,7 +41,7 @@ export const statsService = {
         employesResult,
         validationStats
       ] = await Promise.all([
-        supabase.from('vehicules').select('id', { count: 'exact' }).limit(1),
+        supabase.from('vehicules').select('id', { count: 'exact' }).neq('actif', false).limit(1),
         supabase.from('chauffeurs').select('id', { count: 'exact' }).limit(1),
         supabase.from('missions').select('id, statut', { count: 'exact' }),
         supabase.rpc('count_employes'),
