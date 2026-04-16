@@ -25,7 +25,7 @@ export const FormationsModule = () => {
           <TabsTrigger value="tbm">TBM</TabsTrigger>
           <TabsTrigger value="matrice">Matrice</TabsTrigger>
           <TabsTrigger value="planning">Planning</TabsTrigger>
-          <TabsTrigger value="formations">Chauffeurs</TabsTrigger>
+          <TabsTrigger value="formations">Suivi Recyclage</TabsTrigger>
           <TabsTrigger value="themes">Thèmes</TabsTrigger>
           <TabsTrigger value="alertes">Alertes</TabsTrigger>
           <TabsTrigger value="compagnonnage">Compagnonnage</TabsTrigger>
