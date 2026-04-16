@@ -47,6 +47,10 @@ export interface Vehicule {
   remorque_volume_litres?: number;
   remorque_annee_fabrication?: number;
   remorque_date_mise_circulation?: string;
+  // Sortie de flotte
+  actif?: boolean;
+  date_sortie_flotte?: string;
+  motif_sortie_flotte?: string;
 }
 
 export interface FleetStatsData {
