@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,9 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle, AlertTriangle, XCircle, Eraser } from 'lucide-react';
 import { formationsService, ThemeFormation, Formation } from '@/services/formationsService';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/hooks/use-toast';
 
 interface BulkFormationDialogProps {
@@ -26,6 +26,9 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
   const [commentaire, setCommentaire] = useState('');
   const [selectedThemes, setSelectedThemes] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [signatureData, setSignatureData] = useState('');
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const drawingRef = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -33,17 +36,83 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
       setFormateurNom('');
       setCommentaire('');
       setSelectedThemes(new Set());
+      setSignatureData('');
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const onDown = (e: MouseEvent | TouchEvent) => {
+        drawingRef.current = true;
+        ctx.beginPath();
+        const rect = canvas.getBoundingClientRect();
+        const pos = 'touches' in e ? e.touches[0] : e;
+        ctx.moveTo(pos.clientX - rect.left, pos.clientY - rect.top);
+      };
+      const onUp = () => { drawingRef.current = false; };
+      const onMove = (e: MouseEvent | TouchEvent) => {
+        if (!drawingRef.current) return;
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const pos = 'touches' in e ? e.touches[0] : e;
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+        ctx.lineTo(pos.clientX - rect.left, pos.clientY - rect.top);
+        ctx.stroke();
+      };
+
+      canvas.addEventListener('mousedown', onDown);
+      canvas.addEventListener('mouseup', onUp);
+      canvas.addEventListener('mouseleave', onUp);
+      canvas.addEventListener('mousemove', onMove);
+      canvas.addEventListener('touchstart', onDown, { passive: false });
+      canvas.addEventListener('touchend', onUp);
+      canvas.addEventListener('touchmove', onMove, { passive: false });
+
+      return () => {
+        canvas.removeEventListener('mousedown', onDown);
+        canvas.removeEventListener('mouseup', onUp);
+        canvas.removeEventListener('mouseleave', onUp);
+        canvas.removeEventListener('mousemove', onMove);
+        canvas.removeEventListener('touchstart', onDown);
+        canvas.removeEventListener('touchend', onUp);
+        canvas.removeEventListener('touchmove', onMove);
+      };
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setSignatureData('');
+  };
+
+  const getSignature = (): string => {
+    const canvas = canvasRef.current;
+    if (!canvas) return '';
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return '';
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    const hasContent = pixels.some((_, i) => i % 4 === 3 && pixels[i] > 0);
+    return hasContent ? canvas.toDataURL('image/png') : '';
+  };
 
   const toggleTheme = (themeId: string) => {
     setSelectedThemes(prev => {
       const next = new Set(prev);
-      if (next.has(themeId)) {
-        next.delete(themeId);
-      } else {
-        next.add(themeId);
-      }
+      if (next.has(themeId)) next.delete(themeId);
+      else next.add(themeId);
       return next;
     });
   };
@@ -67,6 +136,7 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
 
     setIsSubmitting(true);
     try {
+      const sig = getSignature();
       const promises = Array.from(selectedThemes).map(themeId =>
         formationsService.create({
           chauffeur_id: chauffeur.id,
@@ -74,6 +144,7 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
           date_formation: dateFormation,
           formateur_nom: formateurNom || undefined,
           commentaire: commentaire || undefined,
+          signature_chauffeur: sig || undefined,
         })
       );
       await Promise.all(promises);
@@ -109,7 +180,6 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Date et formateur — saisis une seule fois */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Date de formation *</Label>
@@ -126,6 +196,23 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
             <Textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} placeholder="Observations..." rows={2} />
           </div>
 
+          {/* Signature chauffeur (optionnelle) */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <Label>Signature chauffeur <span className="text-xs text-muted-foreground">(optionnel)</span></Label>
+              <Button type="button" variant="ghost" size="sm" onClick={clearCanvas}>
+                <Eraser className="w-3 h-3 mr-1" /> Effacer
+              </Button>
+            </div>
+            <canvas
+              ref={canvasRef}
+              width={400}
+              height={100}
+              className="border rounded cursor-crosshair w-full bg-background"
+              style={{ touchAction: 'none' }}
+            />
+          </div>
+
           {/* Sélection des thèmes */}
           <div className="space-y-2">
             <div className="flex justify-between items-center">
@@ -136,7 +223,7 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
               </div>
             </div>
 
-            <div className="border rounded-lg divide-y max-h-[300px] overflow-y-auto">
+            <div className="border rounded-lg divide-y max-h-[250px] overflow-y-auto">
               {themes.map(theme => {
                 const existing = existingFormations.get(theme.id);
                 const alreadyDone = !!existing;
