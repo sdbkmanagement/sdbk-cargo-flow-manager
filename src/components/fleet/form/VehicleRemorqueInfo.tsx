@@ -8,9 +8,13 @@ import { Container, AlertCircle } from 'lucide-react';
 interface VehicleRemorqueInfoProps {
   register: UseFormRegister<any>;
   errors: FieldErrors<any>;
+  typeTransport?: string;
 }
 
-export const VehicleRemorqueInfo = ({ register, errors }: VehicleRemorqueInfoProps) => {
+export const VehicleRemorqueInfo = ({ register, errors, typeTransport }: VehicleRemorqueInfoProps) => {
+  const isMarchandise = typeTransport === 'marchandise';
+  const volumeLabel = isMarchandise ? 'Poids en tonnes' : 'Volume en litres';
+  const volumePlaceholder = isMarchandise ? 'Ex: 20, 30' : 'Ex: 25000, 40000';
   return (
     <Card>
       <CardHeader>
@@ -21,20 +25,20 @@ export const VehicleRemorqueInfo = ({ register, errors }: VehicleRemorqueInfoPro
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Volume en litres */}
+          {/* Volume / Poids */}
           <div className="space-y-2">
             <Label htmlFor="remorque_volume_litres" className="text-sm font-medium flex items-center gap-1">
-              Volume en litres
+              {volumeLabel}
               <AlertCircle className="h-4 w-4 text-destructive" />
             </Label>
             <Input
               id="remorque_volume_litres"
               type="number"
               {...register('remorque_volume_litres', { 
-                required: 'Le volume de la remorque est requis',
-                min: { value: 1, message: 'Le volume doit être supérieur à 0' }
+                required: isMarchandise ? 'Le poids est requis' : 'Le volume de la remorque est requis',
+                min: { value: 1, message: 'La valeur doit être supérieure à 0' }
               })}
-              placeholder="Ex: 25000, 40000"
+              placeholder={volumePlaceholder}
               step="0.01"
             />
             {errors.remorque_volume_litres && (
