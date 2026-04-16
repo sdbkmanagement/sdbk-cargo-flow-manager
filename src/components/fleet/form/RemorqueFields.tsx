@@ -7,9 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 interface RemorqueFieldsProps {
   register: UseFormRegister<any>;
   errors: FieldErrors<any>;
+  typeTransport?: string;
 }
 
-export const RemorqueFields = ({ register, errors }: RemorqueFieldsProps) => {
+export const RemorqueFields = ({ register, errors, typeTransport }: RemorqueFieldsProps) => {
+  const isMarchandise = typeTransport === 'marchandise';
+  const volumeLabel = isMarchandise ? 'Poids en tonnes *' : 'Volume en litres *';
+  const volumePlaceholder = isMarchandise ? 'Ex: 20' : 'Ex: 25000';
   return (
     <Card>
       <CardHeader>
@@ -34,14 +38,14 @@ export const RemorqueFields = ({ register, errors }: RemorqueFieldsProps) => {
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="remorque_volume_litres">Volume en litres *</Label>
+            <Label htmlFor="remorque_volume_litres">{volumeLabel}</Label>
             <Input
               id="remorque_volume_litres"
               type="number"
               {...register('remorque_volume_litres', { 
-                required: 'Le volume de la remorque est requis' 
+                required: isMarchandise ? 'Le poids est requis' : 'Le volume de la remorque est requis' 
               })}
-              placeholder="Ex: 25000"
+              placeholder={volumePlaceholder}
               step="0.01"
             />
             {errors.remorque_volume_litres && (
