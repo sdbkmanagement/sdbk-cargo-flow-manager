@@ -24,6 +24,7 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
   const [dateFormation, setDateFormation] = useState('');
   const [formateurNom, setFormateurNom] = useState('');
   const [commentaire, setCommentaire] = useState('');
+  const [noteObtenue, setNoteObtenue] = useState<string>('');
   const [selectedThemes, setSelectedThemes] = useState<Set<string>>(new Set());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signatureData, setSignatureData] = useState('');
@@ -35,6 +36,7 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
       setDateFormation(new Date().toISOString().split('T')[0]);
       setFormateurNom('');
       setCommentaire('');
+      setNoteObtenue('');
       setSelectedThemes(new Set());
       setSignatureData('');
     }
@@ -144,6 +146,7 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
           date_formation: dateFormation,
           formateur_nom: formateurNom || undefined,
           commentaire: commentaire || undefined,
+          note_obtenue: noteObtenue ? parseFloat(noteObtenue) : undefined,
           signature_chauffeur: sig || undefined,
         })
       );
@@ -191,9 +194,15 @@ export const BulkFormationDialog = ({ open, onOpenChange, chauffeur, themes, exi
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Commentaire</Label>
-            <Textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} placeholder="Observations..." rows={2} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Note obtenue (%)</Label>
+              <Input type="number" min="0" max="100" step="1" value={noteObtenue} onChange={e => setNoteObtenue(e.target.value)} placeholder="Ex: 85" />
+            </div>
+            <div className="space-y-2">
+              <Label>Commentaire</Label>
+              <Textarea value={commentaire} onChange={e => setCommentaire(e.target.value)} placeholder="Observations..." rows={2} />
+            </div>
           </div>
 
           {/* Signature chauffeur (optionnelle) */}

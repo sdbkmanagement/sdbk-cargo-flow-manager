@@ -21,6 +21,7 @@ export interface Formation {
   signature_chauffeur: string | null;
   signature_formateur: string | null;
   commentaire: string | null;
+  note_obtenue: number | null;
   statut: 'valide' | 'a_renouveler' | 'expire';
   created_at: string;
   updated_at: string;
@@ -105,6 +106,7 @@ export const formationsService = {
     signature_chauffeur?: string;
     signature_formateur?: string;
     commentaire?: string;
+    note_obtenue?: number;
   }): Promise<Formation> {
     const { data, error } = await supabase
       .from('formations' as any)

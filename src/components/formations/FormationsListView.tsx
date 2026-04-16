@@ -210,6 +210,11 @@ export const FormationsListView = () => {
                                       {new Date(formation.date_formation).toLocaleDateString('fr-FR')}
                                     </span>
                                   )}
+                                  {formation.note_obtenue != null && (
+                                    <span className="text-[10px] font-semibold text-primary">
+                                      {formation.note_obtenue}%
+                                    </span>
+                                  )}
                                 </>
                               ) : (
                                 <div className="flex flex-col items-center gap-1 opacity-40 hover:opacity-70 transition-opacity">

@@ -1,0 +1,1 @@
+ALTER TABLE public.formations ADD COLUMN IF NOT EXISTS note_obtenue numeric CHECK (note_obtenue >= 0 AND note_obtenue <= 100);
