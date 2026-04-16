@@ -4,6 +4,7 @@ import { VehicleForm } from '@/components/fleet/VehicleForm';
 import { VehicleListTab } from '@/components/fleet/VehicleListTab';
 import { FleetStats } from '@/components/fleet/FleetStats';
 import { VehicleDetailDialog } from '@/components/fleet/VehicleDetailDialog';
+import { VehicleDeactivateDialog } from '@/components/fleet/VehicleDeactivateDialog';
 import { useVehicles } from '@/hooks/useVehicles';
 import { FleetHeader } from '@/components/fleet/FleetHeader';
 import { VehicleSyncDiagnostic } from '@/components/fleet/VehicleSyncDiagnostic';
@@ -17,6 +18,7 @@ const Fleet = () => {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null);
   const [selectedVehicleForDetails, setSelectedVehicleForDetails] = useState<Vehicule | null>(null);
   const [filteredVehiclesForExport, setFilteredVehiclesForExport] = useState<Vehicule[]>([]);
+  const [vehicleToDeactivate, setVehicleToDeactivate] = useState<Vehicule | null>(null);
 
   // Synchroniser les véhicules filtrés avec les véhicules initiaux
   useEffect(() => {
@@ -86,6 +88,7 @@ const Fleet = () => {
               await refetch(); // Refresh vehicle list after deletion
             }}
             onViewDocuments={handleViewDocuments}
+            onDeactivate={setVehicleToDeactivate}
             onFilteredVehiclesChange={setFilteredVehiclesForExport}
           />
         </TabsContent>
@@ -117,6 +120,13 @@ const Fleet = () => {
             setSelectedVehicleForDetails(null);
           }
         }}
+      />
+
+      <VehicleDeactivateDialog
+        vehicule={vehicleToDeactivate}
+        open={!!vehicleToDeactivate}
+        onOpenChange={(open) => { if (!open) setVehicleToDeactivate(null); }}
+        onSuccess={() => { setVehicleToDeactivate(null); refetch(); }}
       />
     </div>
   );

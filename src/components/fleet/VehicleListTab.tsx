@@ -11,10 +11,11 @@ interface VehicleListTabProps {
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onViewDocuments: (vehicle: Vehicule) => void;
+  onDeactivate?: (vehicle: Vehicule) => void;
   onFilteredVehiclesChange?: (vehicles: Vehicule[]) => void;
 }
 
-export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments, onFilteredVehiclesChange }: VehicleListTabProps) => {
+export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments, onDeactivate, onFilteredVehiclesChange }: VehicleListTabProps) => {
   const {
     filters,
     updateFilter,
@@ -53,6 +54,7 @@ export const VehicleListTab = ({ vehicles, onEdit, onDelete, onViewDocuments, on
         onEdit={(vehicle) => onEdit(vehicle.id)}
         onDelete={onDelete}
         onViewDocuments={onViewDocuments}
+        onDeactivate={onDeactivate}
       />
     </div>
   );

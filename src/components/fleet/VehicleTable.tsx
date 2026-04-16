@@ -3,7 +3,7 @@ import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Eye, FileText, Wrench, Trash2 } from 'lucide-react';
+import { Edit, Eye, FileText, Wrench, Trash2, Power } from 'lucide-react';
 import type { Vehicule } from '@/services/vehicules';
 
 interface VehicleTableProps {
@@ -13,6 +13,7 @@ interface VehicleTableProps {
   onViewDocuments?: (vehicule: Vehicule) => void;
   onViewMaintenance?: (vehicule: Vehicule) => void;
   onViewPostMissionWorkflow?: (vehicule: Vehicule) => void;
+  onDeactivate?: (vehicule: Vehicule) => void;
 }
 
 export const VehicleTable = ({ 
@@ -21,7 +22,8 @@ export const VehicleTable = ({
   onDelete, 
   onViewDocuments, 
   onViewMaintenance,
-  onViewPostMissionWorkflow 
+  onViewPostMissionWorkflow,
+  onDeactivate
 }: VehicleTableProps) => {
   const getStatusBadge = (statut: string) => {
     const statusConfig = {
@@ -94,9 +96,12 @@ export const VehicleTable = ({
             </TableRow>
           ) : (
             vehicles.map((vehicle) => (
-              <TableRow key={vehicle.id}>
+              <TableRow key={vehicle.id} className={vehicle.actif === false ? 'opacity-50 bg-muted/30' : ''}>
                 <TableCell className="font-medium">
                   {getMainImmatriculation(vehicle)}
+                  {vehicle.actif === false && (
+                    <Badge variant="outline" className="ml-2 text-xs border-red-300 text-red-600">Inactif</Badge>
+                  )}
                 </TableCell>
                 <TableCell>{vehicle.type_vehicule}</TableCell>
                 <TableCell>
@@ -146,11 +151,22 @@ export const VehicleTable = ({
                         <Eye className="h-4 w-4" />
                       </Button>
                     )}
+                    {onDeactivate && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDeactivate(vehicle)}
+                        className={`h-8 w-8 p-0 ${vehicle.actif === false ? 'text-green-600 hover:text-green-700' : 'text-orange-600 hover:text-orange-700'}`}
+                        title={vehicle.actif === false ? 'Réintégrer' : 'Sortir de la flotte'}
+                      >
+                        <Power className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => onDelete(vehicle.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      className="h-8 w-8 p-0 text-destructive hover:text-destructive"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
