@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Truck, CheckCircle, Wrench, Clock, AlertTriangle } from 'lucide-react';
+import { Truck, CheckCircle, Wrench, Clock, AlertTriangle, PowerOff } from 'lucide-react';
 
 interface FleetStatsProps {
   stats: {
@@ -11,6 +11,7 @@ interface FleetStatsProps {
     maintenance: number;
     validation_requise: number;
     alertes?: number;
+    inactifs?: number;
   };
 }
 
@@ -57,11 +58,18 @@ export const FleetStats = ({ stats }: FleetStatsProps) => {
       icon: AlertTriangle,
       color: 'text-red-600',
       bgColor: 'bg-red-50'
+    },
+    {
+      title: 'Inactifs',
+      value: stats.inactifs || 0,
+      icon: PowerOff,
+      color: 'text-gray-600',
+      bgColor: 'bg-gray-50'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
       {statCards.map((stat, index) => (
         <Card key={index}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

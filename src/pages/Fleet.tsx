@@ -40,14 +40,17 @@ const Fleet = () => {
     setSelectedVehicleForDetails(vehicle);
   }, []);
 
-  // Calculer les statistiques à partir des véhicules
+  // Calculer les statistiques à partir des véhicules actifs uniquement
+  const activeVehicles = React.useMemo(() => vehicles.filter(v => v.actif !== false), [vehicles]);
+  
   const stats = React.useMemo(() => {
-    const total = vehicles.length;
-    const disponibles = vehicles.filter(v => v.statut === 'disponible').length;
-    const en_mission = vehicles.filter(v => v.statut === 'en_mission').length;
-    const maintenance = vehicles.filter(v => v.statut === 'maintenance').length;
-    const validation_requise = vehicles.filter(v => v.statut === 'validation_requise').length;
-    const alertes = vehicles.filter(v => v.validation_requise === true).length;
+    const total = activeVehicles.length;
+    const disponibles = activeVehicles.filter(v => v.statut === 'disponible').length;
+    const en_mission = activeVehicles.filter(v => v.statut === 'en_mission').length;
+    const maintenance = activeVehicles.filter(v => v.statut === 'maintenance').length;
+    const validation_requise = activeVehicles.filter(v => v.statut === 'validation_requise').length;
+    const alertes = activeVehicles.filter(v => v.validation_requise === true).length;
+    const inactifs = vehicles.filter(v => v.actif === false).length;
 
     return {
       total,
@@ -55,7 +58,8 @@ const Fleet = () => {
       en_mission,
       maintenance,
       validation_requise,
-      alertes
+      alertes,
+      inactifs
     };
   }, [vehicles]);
 
