@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, CheckCircle, AlertTriangle, XCircle, Plus } from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Search, CheckCircle, AlertTriangle, XCircle, Plus, ClipboardList } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { formationsService, Formation } from '@/services/formationsService';
 import { chauffeursService } from '@/services/chauffeurs';
 import { FormationFormDialog } from './FormationFormDialog';
+import { BulkFormationDialog } from './BulkFormationDialog';
 import { toast } from '@/hooks/use-toast';
 
 const statutConfig = {
@@ -23,7 +24,8 @@ export const FormationsListView = () => {
   const [editFormation, setEditFormation] = useState<any>(null);
   const [preselectedChauffeur, setPreselectedChauffeur] = useState<string>('');
   const [preselectedTheme, setPreselectedTheme] = useState<string>('');
-  const queryClient = useQueryClient();
+  const [bulkChauffeur, setBulkChauffeur] = useState<any>(null);
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
 
   const { data: chauffeurs = [], isLoading: loadingChauffeurs } = useQuery({
     queryKey: ['chauffeurs'],
@@ -64,17 +66,23 @@ export const FormationsListView = () => {
   const handleCellClick = (chauffeurId: string, themeId: string) => {
     const existing = formationMap.get(chauffeurId)?.get(themeId);
     if (existing) {
-      // Edit existing formation
       setEditFormation(existing);
       setPreselectedChauffeur('');
       setPreselectedTheme('');
+      setShowForm(true);
     } else {
-      // Create new formation with preselected values
-      setEditFormation(null);
-      setPreselectedChauffeur(chauffeurId);
-      setPreselectedTheme(themeId);
+      // Open bulk dialog for this chauffeur instead of single theme
+      const chauffeur = chauffeurs.find(c => c.id === chauffeurId);
+      if (chauffeur) {
+        setBulkChauffeur(chauffeur);
+        setShowBulkDialog(true);
+      }
     }
-    setShowForm(true);
+  };
+
+  const handleBulkClick = (chauffeur: any) => {
+    setBulkChauffeur(chauffeur);
+    setShowBulkDialog(true);
   };
 
   const getStatutIcon = (statut: string) => {
@@ -101,14 +109,14 @@ export const FormationsListView = () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Formations par chauffeur</CardTitle>
+            <CardTitle>Suivi Recyclage par chauffeur</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Cochez les formations effectuées pour chaque chauffeur
+              Cliquez sur un chauffeur pour enregistrer ses formations (même formateur et date pour tous les thèmes)
             </p>
           </div>
           <Button onClick={() => { setEditFormation(null); setPreselectedChauffeur(''); setPreselectedTheme(''); setShowForm(true); }}>
             <Plus className="w-4 h-4 mr-2" />
-            Nouvelle formation
+            Saisie individuelle
           </Button>
         </div>
       </CardHeader>
@@ -150,6 +158,7 @@ export const FormationsListView = () => {
                     </th>
                   ))}
                   <th className="text-center p-3 font-medium min-w-[100px]">Conformité</th>
+                  <th className="text-center p-3 font-medium min-w-[80px]">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -217,6 +226,16 @@ export const FormationsListView = () => {
                           {conformite}%
                         </Badge>
                       </td>
+                      <td className="p-3 text-center">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleBulkClick(chauffeur)}
+                          title="Enregistrer plusieurs formations"
+                        >
+                          <ClipboardList className="w-4 h-4" />
+                        </Button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -232,6 +251,14 @@ export const FormationsListView = () => {
         formation={editFormation}
         preselectedChauffeurId={preselectedChauffeur}
         preselectedThemeId={preselectedTheme}
+      />
+
+      <BulkFormationDialog
+        open={showBulkDialog}
+        onOpenChange={setShowBulkDialog}
+        chauffeur={bulkChauffeur}
+        themes={themes}
+        existingFormations={formationMap.get(bulkChauffeur?.id) || new Map()}
       />
     </Card>
   );
