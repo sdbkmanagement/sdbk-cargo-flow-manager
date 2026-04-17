@@ -44,7 +44,7 @@ export const VehicleFiltersAdvanced = ({
       },
       categorie: {
         hydrocarbures: 'Hydrocarbures',
-        marchandise: 'Bauxite'
+        marchandise: 'Marchandises'
       },
       validationRequise: {
         oui: 'Validation requise',
@@ -106,7 +106,7 @@ export const VehicleFiltersAdvanced = ({
             <SelectContent>
               <SelectItem value="all">Toutes les catégories</SelectItem>
               <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
-              <SelectItem value="marchandise">Bauxite</SelectItem>
+              <SelectItem value="marchandise">Marchandises</SelectItem>
             </SelectContent>
           </Select>
         </div>

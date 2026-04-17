@@ -106,7 +106,7 @@ export const VehicleTable = ({
                 <TableCell>{vehicle.type_vehicule}</TableCell>
                 <TableCell>
                   <Badge variant="outline">
-                    {vehicle.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Bauxite'}
+                    {vehicle.type_transport === 'hydrocarbures' ? 'Hydrocarbures' : 'Marchandises'}
                   </Badge>
                 </TableCell>
                 <TableCell>{getStatusBadge(vehicle.statut)}</TableCell>
