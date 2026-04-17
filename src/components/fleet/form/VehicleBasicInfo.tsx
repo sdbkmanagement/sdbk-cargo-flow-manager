@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings, AlertCircle } from 'lucide-react';
 import { getNextSequentialNumber } from '@/services/vehiculeNumbering';
+import { VehiclePhotoUpload } from './VehiclePhotoUpload';
 
 interface VehicleBasicInfoProps {
   register: UseFormRegister<any>;
@@ -206,6 +207,13 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue, isEditing 
             </div>
           )}
         </div>
+
+        {/* Photo du véhicule */}
+        <VehiclePhotoUpload
+          value={watch('photo_url')}
+          onChange={(url) => setValue('photo_url', url)}
+          vehicleNumero={watch('numero')}
+        />
       </CardContent>
     </Card>
   );

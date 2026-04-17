@@ -68,6 +68,19 @@ export const VehicleDetailDialog = ({ vehicule, open, onOpenChange }: VehicleDet
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* Photo */}
+          {vehicule.photo_url && (
+            <Card>
+              <CardContent className="pt-6 flex justify-center">
+                <img
+                  src={vehicule.photo_url}
+                  alt={`Véhicule ${vehicule.numero}`}
+                  className="max-h-72 rounded-md border border-border object-cover"
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Informations générales */}
           <Card>
             <CardHeader>

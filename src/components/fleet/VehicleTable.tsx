@@ -79,6 +79,7 @@ export const VehicleTable = ({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-16">Photo</TableHead>
             <TableHead>Immatriculation</TableHead>
             <TableHead>Type</TableHead>
             <TableHead>Transport</TableHead>
@@ -90,13 +91,24 @@ export const VehicleTable = ({
         <TableBody>
           {vehicles.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+              <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                 Aucun véhicule trouvé
               </TableCell>
             </TableRow>
           ) : (
             vehicles.map((vehicle) => (
               <TableRow key={vehicle.id} className={vehicle.actif === false ? 'opacity-50 bg-muted/30' : ''}>
+                <TableCell>
+                  {vehicle.photo_url ? (
+                    <img
+                      src={vehicle.photo_url}
+                      alt={vehicle.numero}
+                      className="h-10 w-14 object-cover rounded border border-border"
+                    />
+                  ) : (
+                    <div className="h-10 w-14 bg-muted rounded border border-border flex items-center justify-center text-muted-foreground text-xs">—</div>
+                  )}
+                </TableCell>
                 <TableCell className="font-medium">
                   {getMainImmatriculation(vehicle)}
                   {vehicle.actif === false && (
