@@ -51,6 +51,8 @@ export interface Vehicule {
   actif?: boolean;
   date_sortie_flotte?: string;
   motif_sortie_flotte?: string;
+  // Photo du véhicule
+  photo_url?: string;
 }
 
 export interface FleetStatsData {
