@@ -4649,6 +4649,7 @@ export type Database = {
           motif_sortie_flotte: string | null
           numero: string
           numero_chassis: string | null
+          photo_url: string | null
           prochaine_maintenance: string | null
           proprietaire_nom: string | null
           proprietaire_prenom: string | null
@@ -4696,6 +4697,7 @@ export type Database = {
           motif_sortie_flotte?: string | null
           numero: string
           numero_chassis?: string | null
+          photo_url?: string | null
           prochaine_maintenance?: string | null
           proprietaire_nom?: string | null
           proprietaire_prenom?: string | null
@@ -4743,6 +4745,7 @@ export type Database = {
           motif_sortie_flotte?: string | null
           numero?: string
           numero_chassis?: string | null
+          photo_url?: string | null
           prochaine_maintenance?: string | null
           proprietaire_nom?: string | null
           proprietaire_prenom?: string | null
