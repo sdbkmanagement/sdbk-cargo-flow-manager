@@ -233,11 +233,11 @@ export const SocieteDocumentForm: React.FC<SocieteDocumentFormProps> = ({
       });
 
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur enregistrement:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'enregistrer le document',
+        description: error?.message || 'Impossible d\'enregistrer le document',
         variant: 'destructive'
       });
     } finally {
