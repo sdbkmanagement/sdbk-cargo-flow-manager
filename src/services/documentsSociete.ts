@@ -201,26 +201,30 @@ export const documentsSocieteService = {
   },
 
   async createDocument(document: { nom: string; type_document: string } & Partial<DocumentSociete>, userId?: string): Promise<DocumentSociete> {
+    const emptyToNull = (v?: string) => (v && v.trim() !== '' ? v : null);
     const { data, error } = await supabase
       .from('documents_societe')
       .insert([{
         nom: document.nom,
         type_document: document.type_document,
-        societe_id: document.societe_id,
-        categorie_id: document.categorie_id,
-        description: document.description,
-        date_delivrance: document.date_delivrance,
-        date_expiration: document.date_expiration,
-        autorite_emettrice: document.autorite_emettrice,
-        numero_reference: document.numero_reference,
-        commentaires: document.commentaires,
+        societe_id: emptyToNull(document.societe_id),
+        categorie_id: emptyToNull(document.categorie_id),
+        description: emptyToNull(document.description),
+        date_delivrance: emptyToNull(document.date_delivrance),
+        date_expiration: emptyToNull(document.date_expiration),
+        autorite_emettrice: emptyToNull(document.autorite_emettrice),
+        numero_reference: emptyToNull(document.numero_reference),
+        commentaires: emptyToNull(document.commentaires),
         created_by: userId,
         updated_by: userId
       }])
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Erreur createDocument:', error);
+      throw error;
+    }
 
     // Log audit
     await this.logAudit('creation', data.id, document.societe_id, { nom: document.nom }, userId);
@@ -247,10 +251,19 @@ export const documentsSocieteService = {
         }]);
     }
 
+    const emptyToNull = (v?: string) => (v && v.trim() !== '' ? v : null);
+    const cleaned: any = { ...document };
+    ['societe_id', 'categorie_id', 'date_delivrance', 'date_expiration', 'description', 'autorite_emettrice', 'numero_reference', 'commentaires']
+      .forEach(k => { if (k in cleaned) cleaned[k] = emptyToNull(cleaned[k]); });
+    // Remove relation objects that aren't real columns
+    delete cleaned.societe;
+    delete cleaned.categorie;
+    delete cleaned.fichiers;
+
     const { data, error } = await supabase
       .from('documents_societe')
       .update({
-        ...document,
+        ...cleaned,
         updated_by: userId,
         version_actuelle: (oldDoc?.version_actuelle || 1) + 1
       })
@@ -258,7 +271,10 @@ export const documentsSocieteService = {
       .select()
       .single();
     
-    if (error) throw error;
+    if (error) {
+      console.error('Erreur updateDocument:', error);
+      throw error;
+    }
 
     // Log audit
     await this.logAudit('modification', id, document.societe_id, { nom: document.nom, motif }, userId);
