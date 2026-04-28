@@ -49,7 +49,8 @@ const Fleet = () => {
     const disponibles = activeVehicles.filter(v => v.statut === 'disponible').length;
     const en_mission = activeVehicles.filter(v => v.statut === 'en_mission').length;
     const maintenance = activeVehicles.filter(v => v.statut === 'maintenance').length;
-    const validation_requise = activeVehicles.filter(v => v.statut === 'validation_requise').length;
+    const validation_requise = activeVehicles.filter(v => v.statut === 'validation_requise' || v.statut === 'en_validation').length;
+    const hors_service = activeVehicles.filter(v => v.statut === 'hors_service').length;
     const alertes = activeVehicles.filter(v => v.validation_requise === true).length;
     const inactifs = vehicles.filter(v => v.actif === false).length;
 
@@ -59,6 +60,7 @@ const Fleet = () => {
       en_mission,
       maintenance,
       validation_requise,
+      hors_service,
       alertes,
       inactifs
     };
