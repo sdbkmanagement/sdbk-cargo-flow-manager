@@ -14,7 +14,8 @@ import {
   FileText, 
   Download,
   ExternalLink,
-  History
+  History,
+  Archive
 } from 'lucide-react';
 import { documentsSocieteService, DocumentSociete, DocumentSocieteCategorie } from '@/services/documentsSociete';
 import { toast } from '@/hooks/use-toast';
@@ -118,7 +119,20 @@ export const SocieteDocumentsList: React.FC<SocieteDocumentsListProps> = ({ onEd
     }
   };
 
+  const handleArchive = async (doc: DocumentSociete) => {
+    try {
+      await documentsSocieteService.updateDocument(doc.id, { statut: 'archive' }, undefined, 'Archivage manuel');
+      toast({ title: 'Document archivé', description: `"${doc.nom}" a été déplacé vers les archives` });
+      loadData();
+      onRefresh();
+    } catch (error: any) {
+      toast({ title: 'Erreur', description: error?.message || "Impossible d'archiver", variant: 'destructive' });
+    }
+  };
+
   const filteredDocuments = documents.filter(doc => {
+    // Exclure les documents archivés de la liste principale
+    if (doc.statut === 'archive') return false;
     const matchSearch = doc.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
                         doc.type_document.toLowerCase().includes(searchTerm.toLowerCase());
     const matchCategorie = categorieFilter === 'all' || doc.categorie_id === categorieFilter;
@@ -179,7 +193,6 @@ export const SocieteDocumentsList: React.FC<SocieteDocumentsListProps> = ({ onEd
                 <SelectItem value="valide">Valide</SelectItem>
                 <SelectItem value="expire">Expiré</SelectItem>
                 <SelectItem value="en_renouvellement">En renouvellement</SelectItem>
-                <SelectItem value="archive">Archivé</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -268,6 +281,14 @@ export const SocieteDocumentsList: React.FC<SocieteDocumentsListProps> = ({ onEd
                             title="Modifier"
                           >
                             <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleArchive(doc)}
+                            title="Archiver (document expiré ou renouvelé)"
+                          >
+                            <Archive className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
