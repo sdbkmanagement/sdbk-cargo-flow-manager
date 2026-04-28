@@ -5,12 +5,14 @@ import { SocieteDocumentForm } from '@/components/societe/SocieteDocumentForm';
 import { SocieteAlertsDashboard } from '@/components/societe/SocieteAlertsDashboard';
 import { SocieteAuditLog } from '@/components/societe/SocieteAuditLog';
 import { SocieteStats } from '@/components/societe/SocieteStats';
+import { SocieteArchivesList } from '@/components/societe/SocieteArchivesList';
 import { 
   FileText, 
   AlertTriangle, 
   History, 
   PlusCircle,
-  BarChart3
+  BarChart3,
+  Archive
 } from 'lucide-react';
 
 const Societe: React.FC = () => {
@@ -47,7 +49,7 @@ const Societe: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
           <TabsTrigger value="documents" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Documents</span>
@@ -55,6 +57,10 @@ const Societe: React.FC = () => {
           <TabsTrigger value="alertes" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             <span className="hidden sm:inline">Alertes</span>
+          </TabsTrigger>
+          <TabsTrigger value="archives" className="flex items-center gap-2">
+            <Archive className="h-4 w-4" />
+            <span className="hidden sm:inline">Archives</span>
           </TabsTrigger>
           <TabsTrigger value="audit" className="flex items-center gap-2">
             <History className="h-4 w-4" />
@@ -76,6 +82,13 @@ const Societe: React.FC = () => {
 
         <TabsContent value="alertes" className="mt-6">
           <SocieteAlertsDashboard key={`alerts-${refreshKey}`} />
+        </TabsContent>
+
+        <TabsContent value="archives" className="mt-6">
+          <SocieteArchivesList
+            key={`archives-${refreshKey}`}
+            onRefresh={() => setRefreshKey(prev => prev + 1)}
+          />
         </TabsContent>
 
         <TabsContent value="audit" className="mt-6">
