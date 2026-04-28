@@ -4644,6 +4644,7 @@ export type Database = {
           immatriculation: string | null
           integration: string | null
           kilometrage: number | null
+          lot: string | null
           marque: string | null
           modele: string | null
           motif_sortie_flotte: string | null
@@ -4692,6 +4693,7 @@ export type Database = {
           immatriculation?: string | null
           integration?: string | null
           kilometrage?: number | null
+          lot?: string | null
           marque?: string | null
           modele?: string | null
           motif_sortie_flotte?: string | null
@@ -4740,6 +4742,7 @@ export type Database = {
           immatriculation?: string | null
           integration?: string | null
           kilometrage?: number | null
+          lot?: string | null
           marque?: string | null
           modele?: string | null
           motif_sortie_flotte?: string | null

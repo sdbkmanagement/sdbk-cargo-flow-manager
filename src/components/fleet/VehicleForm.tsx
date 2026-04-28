@@ -60,6 +60,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
       numero_chassis: vehicule?.numero_chassis || '',
       date_fabrication: vehicule?.date_fabrication || '',
       photo_url: vehicule?.photo_url || '',
+      lot: vehicule?.lot || '',
     }
   });
 
@@ -102,6 +103,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         numero_chassis: data.type_vehicule === 'porteur' ? data.numero_chassis : null,
         date_fabrication: data.type_vehicule === 'porteur' && data.date_fabrication ? data.date_fabrication : null,
         photo_url: data.photo_url || null,
+        lot: data.type_transport === 'hydrocarbures' && data.lot ? data.lot : null,
       };
 
       const vehicleResult = await vehiculesService.create(cleanedData);
@@ -161,6 +163,7 @@ export const VehicleForm = ({ vehicule, onSuccess }: VehicleFormProps) => {
         numero_chassis: data.type_vehicule === 'porteur' ? data.numero_chassis : null,
         date_fabrication: data.type_vehicule === 'porteur' && data.date_fabrication ? data.date_fabrication : null,
         photo_url: data.photo_url || null,
+        lot: data.type_transport === 'hydrocarbures' && data.lot ? data.lot : null,
       };
 
       const result = await vehiculesService.update(id, cleanedData);

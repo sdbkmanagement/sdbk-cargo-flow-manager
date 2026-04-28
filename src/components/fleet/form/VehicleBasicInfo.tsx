@@ -107,20 +107,40 @@ export const VehicleBasicInfo = ({ register, errors, watch, setValue, isEditing 
         </div>
 
         {/* Type de transport */}
-        <div className="space-y-2">
-          <Label htmlFor="type_transport" className="text-sm font-medium">Type de transport</Label>
-          <Select 
-            value={watch('type_transport') || 'hydrocarbures'} 
-            onValueChange={(value) => setValue('type_transport', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner le type de transport" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
-              <SelectItem value="marchandise">Marchandise</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="type_transport" className="text-sm font-medium">Type de transport</Label>
+            <Select 
+              value={watch('type_transport') || 'hydrocarbures'} 
+              onValueChange={(value) => setValue('type_transport', value)}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner le type de transport" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hydrocarbures">Hydrocarbures</SelectItem>
+                <SelectItem value="marchandise">Marchandise</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {watch('type_transport') === 'hydrocarbures' && (
+            <div className="space-y-2">
+              <Label htmlFor="lot" className="text-sm font-medium">Lot d'affectation</Label>
+              <Select 
+                value={watch('lot') || ''} 
+                onValueChange={(value) => setValue('lot', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner le lot" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lot1_total_energie">Lot 1 - Total Energie Marketing</SelectItem>
+                  <SelectItem value="lot2_total_mining">Lot 2 - Total Mining</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Informations du propriétaire */}

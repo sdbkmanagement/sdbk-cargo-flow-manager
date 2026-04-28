@@ -53,6 +53,8 @@ export interface Vehicule {
   motif_sortie_flotte?: string;
   // Photo du véhicule
   photo_url?: string;
+  // Lot d'affectation (pour hydrocarbures)
+  lot?: string;
 }
 
 export interface FleetStatsData {
