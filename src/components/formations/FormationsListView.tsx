@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, CheckCircle, AlertTriangle, XCircle, Plus, ClipboardList } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formationsService, Formation } from '@/services/formationsService';
 import { chauffeursService } from '@/services/chauffeurs';
 import { FormationFormDialog } from './FormationFormDialog';
@@ -26,7 +26,25 @@ export const FormationsListView = () => {
   const [preselectedTheme, setPreselectedTheme] = useState<string>('');
   const [bulkChauffeur, setBulkChauffeur] = useState<any>(null);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [noteEdits, setNoteEdits] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
 
+  const updateNoteMutation = useMutation({
+    mutationFn: async ({ chauffeurId, note }: { chauffeurId: string; note: number | null }) => {
+      const chauffeurFormations = Array.from(formationMap.get(chauffeurId)?.values() || []);
+      if (chauffeurFormations.length === 0) {
+        throw new Error('Aucune formation enregistrée pour ce chauffeur');
+      }
+      await Promise.all(
+        chauffeurFormations.map(f => formationsService.update(f.id, { note_obtenue: note as any }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      toast({ title: 'Note globale enregistrée' });
+    },
+    onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
+  });
   const { data: chauffeurs = [], isLoading: loadingChauffeurs } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll,
@@ -158,6 +176,7 @@ export const FormationsListView = () => {
                     </th>
                   ))}
                   <th className="text-center p-3 font-medium min-w-[100px]">Conformité</th>
+                  <th className="text-center p-3 font-medium min-w-[140px]">Note globale (%)</th>
                   <th className="text-center p-3 font-medium min-w-[80px]">Action</th>
                 </tr>
               </thead>
@@ -210,11 +229,6 @@ export const FormationsListView = () => {
                                       {new Date(formation.date_formation).toLocaleDateString('fr-FR')}
                                     </span>
                                   )}
-                                  {formation.note_obtenue != null && (
-                                    <span className="text-[10px] font-semibold text-primary">
-                                      {formation.note_obtenue}%
-                                    </span>
-                                  )}
                                 </>
                               ) : (
                                 <div className="flex flex-col items-center gap-1 opacity-40 hover:opacity-70 transition-opacity">
@@ -230,6 +244,40 @@ export const FormationsListView = () => {
                         <Badge className={`${conformiteColor} border-0`}>
                           {conformite}%
                         </Badge>
+                      </td>
+                      <td className="p-3 text-center">
+                        {(() => {
+                          const chauffeurFormations = Array.from(formationMap.get(chauffeur.id)?.values() || []);
+                          const notes = chauffeurFormations.map(f => f.note_obtenue).filter(n => n != null) as number[];
+                          const avg = notes.length > 0 ? Math.round(notes.reduce((a, b) => a + b, 0) / notes.length) : null;
+                          const editValue = noteEdits[chauffeur.id] ?? (avg != null ? String(avg) : '');
+                          const hasFormations = chauffeurFormations.length > 0;
+                          return (
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              placeholder={hasFormations ? '—' : 'N/A'}
+                              value={editValue}
+                              disabled={!hasFormations || updateNoteMutation.isPending}
+                              onChange={e => setNoteEdits(prev => ({ ...prev, [chauffeur.id]: e.target.value }))}
+                              onBlur={() => {
+                                const raw = noteEdits[chauffeur.id];
+                                if (raw === undefined) return;
+                                const parsed = raw === '' ? null : parseFloat(raw);
+                                if (parsed !== null && (isNaN(parsed) || parsed < 0 || parsed > 100)) {
+                                  toast({ title: 'Note invalide (0-100)', variant: 'destructive' });
+                                  return;
+                                }
+                                if (parsed === avg) return;
+                                updateNoteMutation.mutate({ chauffeurId: chauffeur.id, note: parsed });
+                                setNoteEdits(prev => { const n = { ...prev }; delete n[chauffeur.id]; return n; });
+                              }}
+                              className="h-8 w-20 mx-auto text-center text-xs"
+                            />
+                          );
+                        })()}
                       </td>
                       <td className="p-3 text-center">
                         <Button
