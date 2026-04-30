@@ -246,6 +246,40 @@ export const FormationsListView = () => {
                         </Badge>
                       </td>
                       <td className="p-3 text-center">
+                        {(() => {
+                          const chauffeurFormations = Array.from(formationMap.get(chauffeur.id)?.values() || []);
+                          const notes = chauffeurFormations.map(f => f.note_obtenue).filter(n => n != null) as number[];
+                          const avg = notes.length > 0 ? Math.round(notes.reduce((a, b) => a + b, 0) / notes.length) : null;
+                          const editValue = noteEdits[chauffeur.id] ?? (avg != null ? String(avg) : '');
+                          const hasFormations = chauffeurFormations.length > 0;
+                          return (
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="1"
+                              placeholder={hasFormations ? '—' : 'N/A'}
+                              value={editValue}
+                              disabled={!hasFormations || updateNoteMutation.isPending}
+                              onChange={e => setNoteEdits(prev => ({ ...prev, [chauffeur.id]: e.target.value }))}
+                              onBlur={() => {
+                                const raw = noteEdits[chauffeur.id];
+                                if (raw === undefined) return;
+                                const parsed = raw === '' ? null : parseFloat(raw);
+                                if (parsed !== null && (isNaN(parsed) || parsed < 0 || parsed > 100)) {
+                                  toast({ title: 'Note invalide (0-100)', variant: 'destructive' });
+                                  return;
+                                }
+                                if (parsed === avg) return;
+                                updateNoteMutation.mutate({ chauffeurId: chauffeur.id, note: parsed });
+                                setNoteEdits(prev => { const n = { ...prev }; delete n[chauffeur.id]; return n; });
+                              }}
+                              className="h-8 w-20 mx-auto text-center text-xs"
+                            />
+                          );
+                        })()}
+                      </td>
+                      <td className="p-3 text-center">
                         <Button
                           variant="outline"
                           size="sm"
