@@ -26,7 +26,25 @@ export const FormationsListView = () => {
   const [preselectedTheme, setPreselectedTheme] = useState<string>('');
   const [bulkChauffeur, setBulkChauffeur] = useState<any>(null);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [noteEdits, setNoteEdits] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
 
+  const updateNoteMutation = useMutation({
+    mutationFn: async ({ chauffeurId, note }: { chauffeurId: string; note: number | null }) => {
+      const chauffeurFormations = Array.from(formationMap.get(chauffeurId)?.values() || []);
+      if (chauffeurFormations.length === 0) {
+        throw new Error('Aucune formation enregistrée pour ce chauffeur');
+      }
+      await Promise.all(
+        chauffeurFormations.map(f => formationsService.update(f.id, { note_obtenue: note as any }))
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      toast({ title: 'Note globale enregistrée' });
+    },
+    onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' }),
+  });
   const { data: chauffeurs = [], isLoading: loadingChauffeurs } = useQuery({
     queryKey: ['chauffeurs'],
     queryFn: chauffeursService.getAll,
