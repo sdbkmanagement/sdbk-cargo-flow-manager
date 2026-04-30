@@ -176,6 +176,7 @@ export const FormationsListView = () => {
                     </th>
                   ))}
                   <th className="text-center p-3 font-medium min-w-[100px]">Conformité</th>
+                  <th className="text-center p-3 font-medium min-w-[140px]">Note globale (%)</th>
                   <th className="text-center p-3 font-medium min-w-[80px]">Action</th>
                 </tr>
               </thead>
