@@ -492,23 +492,6 @@ const RankingConducteurs: React.FC<{
   );
 };
 
-const RankingColumn: React.FC<{
-  title: string;
-  subtitle: string;
-  rows: { cid: string; name: string; manquantTotal: number; violC: number; distance: number; nbBL: number }[];
-  metric: (r: any) => string;
-  medalColors: string[];
-}> = ({ title, subtitle, rows, metric, medalColors }) => (
-  <Card>
-    <CardHeader className="pb-2">
-      <CardTitle className="text-base">{title}</CardTitle>
-      <p className="text-xs text-muted-foreground">{subtitle}</p>
-    </CardHeader>
-    <CardContent>
-      {rows.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>}
-    </div>
-  );
-};
 
 const RankingColumn: React.FC<{
   title: string;
