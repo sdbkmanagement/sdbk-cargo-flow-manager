@@ -461,4 +461,173 @@ const TempsDialog: React.FC<{
   );
 };
 
+const MOIS_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+const TempsConduiteTab: React.FC<{
+  chauffeurs: any[];
+  chauffeurMap: Map<string, string>;
+  temps: any[];
+  userId?: string;
+  onChange: () => void;
+}> = ({ chauffeurs, chauffeurMap, temps, userId, onChange }) => {
+  const [selectedChauffeur, setSelectedChauffeur] = useState<string>('');
+  const [annee, setAnnee] = useState<number>(new Date().getFullYear());
+
+  const sorted = useMemo(() => [...chauffeurs].sort((a: any, b: any) =>
+    `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`)), [chauffeurs]);
+
+  const tempsChauffeur = useMemo(() => {
+    if (!selectedChauffeur) return [];
+    return temps
+      .filter(t => t.chauffeur_id === selectedChauffeur && new Date(t.date_jour).getFullYear() === annee)
+      .sort((a, b) => a.date_jour.localeCompare(b.date_jour));
+  }, [temps, selectedChauffeur, annee]);
+
+  const synthese = useMemo(() => {
+    const mois = Array.from({ length: 12 }, () => ({ distance: 0, temps: 0, saisies: 0 }));
+    tempsChauffeur.forEach(t => {
+      const m = new Date(t.date_jour).getMonth();
+      mois[m].distance += Number(t.distance_km || 0);
+      mois[m].temps += Number(t.temps_conduite_h || 0);
+      mois[m].saisies += 1;
+    });
+    const cumulD = mois.reduce((s, m) => s + m.distance, 0);
+    const cumulT = mois.reduce((s, m) => s + m.temps, 0);
+    const cumulS = mois.reduce((s, m) => s + m.saisies, 0);
+    return { mois, cumulD, cumulT, cumulS };
+  }, [tempsChauffeur]);
+
+  const anneesDispo = useMemo(() => {
+    const ys = new Set<number>([new Date().getFullYear()]);
+    temps.forEach(t => ys.add(new Date(t.date_jour).getFullYear()));
+    return [...ys].sort((a, b) => b - a);
+  }, [temps]);
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Suivi temps de travail – Sélection</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3 items-end">
+          <div className="min-w-[260px]">
+            <Label>Chauffeur *</Label>
+            <Select value={selectedChauffeur} onValueChange={setSelectedChauffeur}>
+              <SelectTrigger><SelectValue placeholder="Sélectionner un chauffeur..." /></SelectTrigger>
+              <SelectContent>
+                {sorted.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} {c.prenom}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Année</Label>
+            <Select value={String(annee)} onValueChange={v => setAnnee(parseInt(v))}>
+              <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {anneesDispo.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedChauffeur && (
+            <TempsDialog
+              chauffeurs={chauffeurs}
+              userId={userId}
+              onSaved={onChange}
+              preselectedChauffeurId={selectedChauffeur}
+              triggerLabel="Nouvelle saisie"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {!selectedChauffeur ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">
+          Sélectionnez un chauffeur pour afficher la synthèse mensuelle et le cumul annuel.
+        </CardContent></Card>
+      ) : (
+        <>
+          {/* SYNTHESE MENSUELLE + CUMUL ANNUEL */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Synthèse {annee} – {chauffeurMap.get(selectedChauffeur)}</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mois</TableHead>
+                    <TableHead className="text-right">Distance (km)</TableHead>
+                    <TableHead className="text-right">Temps travail (h)</TableHead>
+                    <TableHead className="text-right">Saisies</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {synthese.mois.map((m, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium">{MOIS_LABELS[i]}</TableCell>
+                      <TableCell className="text-right">{m.distance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                      <TableCell className="text-right">{m.temps.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                      <TableCell className="text-right">{m.saisies}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/50 font-bold">
+                    <TableCell>Cumul annuel {annee}</TableCell>
+                    <TableCell className="text-right">{synthese.cumulD.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-right">{synthese.cumulT.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-right">{synthese.cumulS}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* DETAIL DES SAISIES */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Détail des saisies ({tempsChauffeur.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Distance (km)</TableHead>
+                    <TableHead className="text-right">Temps (h)</TableHead>
+                    <TableHead className="text-right">Continu max (h)</TableHead>
+                    <TableHead>Commentaire</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tempsChauffeur.map(t => (
+                    <TableRow key={t.id}>
+                      <TableCell className="whitespace-nowrap">{format(new Date(t.date_jour), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell className="text-right">{Number(t.distance_km).toLocaleString('fr-FR')}</TableCell>
+                      <TableCell className="text-right">{Number(t.temps_conduite_h).toLocaleString('fr-FR')}</TableCell>
+                      <TableCell className="text-right">{Number(t.temps_continu_max_h ?? 0).toLocaleString('fr-FR')}</TableCell>
+                      <TableCell className="max-w-[260px] truncate">{t.commentaire || '—'}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" onClick={async () => {
+                          if (confirm('Supprimer cette saisie ?')) {
+                            await obcService.deleteTemps(t.id);
+                            toast.success('Supprimée');
+                            onChange();
+                          }
+                        }}><Trash2 className="h-4 w-4" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {tempsChauffeur.length === 0 && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune saisie pour {annee}</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+};
+
 export default OBC;
