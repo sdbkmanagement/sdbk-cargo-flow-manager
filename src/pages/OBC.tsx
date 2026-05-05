@@ -375,12 +375,10 @@ const RankingConducteurs: React.FC<{
     [...rows].sort((a, b) => b.distance - a.distance || b.nbBL - a.nbBL),
     [rows]);
 
-  // Classement combiné (3 critères) - tous les chauffeurs actifs
+  // Classement combiné (3 critères) - TOUS les chauffeurs (même sans activité sur la période)
   const rankCombined = useMemo(() => {
-    // Inclure tous les chauffeurs ayant au moins une saisie (BL, violation ou km)
-    const actifs = rows.filter(r => r.nbBL > 0 || r.violC > 0 || r.distance > 0 || r.manquantTotal > 0);
-    const maxDist = Math.max(1, ...actifs.map(r => r.distance));
-    return actifs
+    const maxDist = Math.max(1, ...rows.map(r => r.distance));
+    return rows
       .map(r => {
         // 3 critères uniquement : 0 manquant (40), 0 violation (40), distance max (20)
         const sManquant = r.manquantTotal === 0 ? 40 : Math.max(0, 40 - r.manquantTotal * 2);
