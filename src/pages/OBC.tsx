@@ -237,7 +237,7 @@ const OBC: React.FC = () => {
 
         {/* RANKING */}
         <TabsContent value="ranking">
-          <RankingConducteurs chauffeurs={chauffeurs} chauffeurMap={chauffeurMap} violations={violations} bls={bls} />
+          <RankingConducteurs chauffeurs={chauffeurs} chauffeurMap={chauffeurMap} violations={violations} bls={bls} temps={temps} />
         </TabsContent>
 
         {/* ALERTES */}
