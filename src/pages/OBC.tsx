@@ -376,16 +376,26 @@ const ViolationDialog: React.FC<{ chauffeurs: any[]; userId?: string; onCreated:
   );
 };
 
-const TempsDialog: React.FC<{ chauffeurs: any[]; userId?: string; onSaved: () => void }> = ({ chauffeurs, userId, onSaved }) => {
+const TempsDialog: React.FC<{
+  chauffeurs: any[];
+  userId?: string;
+  onSaved: () => void;
+  preselectedChauffeurId?: string;
+  triggerLabel?: string;
+}> = ({ chauffeurs, userId, onSaved, preselectedChauffeurId, triggerLabel }) => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    chauffeur_id: '',
+    chauffeur_id: preselectedChauffeurId || '',
     date_jour: new Date().toISOString().slice(0, 10),
     distance_km: 0,
     temps_conduite_h: 0,
     temps_continu_max_h: 0,
+    commentaire: '',
   });
   const [loading, setLoading] = useState(false);
+  React.useEffect(() => {
+    if (preselectedChauffeurId) setForm(f => ({ ...f, chauffeur_id: preselectedChauffeurId }));
+  }, [preselectedChauffeurId]);
 
   const submit = async () => {
     if (!form.chauffeur_id) { toast.error('Sélectionnez un chauffeur'); return; }
