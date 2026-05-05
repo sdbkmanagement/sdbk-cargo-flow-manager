@@ -190,30 +190,18 @@ const OBC: React.FC = () => {
         {/* POINTS */}
         <TabsContent value="points">
           <Card>
-            <CardHeader><CardTitle>Points par chauffeur</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Matrice des points par chauffeur</CardTitle></CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Chauffeur</TableHead>
-                    <TableHead>Points</TableHead>
-                    <TableHead>Statut</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {chauffeurs.map((c: any) => {
-                    const p = pointsMap.get(c.id) ?? 12;
-                    const variant = p === 0 ? 'destructive' : p <= 3 ? 'destructive' : p <= 6 ? 'secondary' : 'default';
-                    return (
-                      <TableRow key={c.id}>
-                        <TableCell>{c.prenom} {c.nom}</TableCell>
-                        <TableCell><Badge variant={variant as any}>{p} / 12</Badge></TableCell>
-                        <TableCell>{p === 0 ? <Badge variant="destructive">BLOQUÉ</Badge> : p <= 3 ? <Badge variant="secondary">À risque</Badge> : <Badge>OK</Badge>}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <PointsMatrix
+                chauffeurs={chauffeurs}
+                violations={violations}
+                pointsMap={pointsMap}
+                userId={user?.id}
+                onChange={() => {
+                  qc.invalidateQueries({ queryKey: ['obc-violations'] });
+                  qc.invalidateQueries({ queryKey: ['obc-points'] });
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1084,6 +1072,178 @@ const ViolationsMatrix: React.FC<{
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogCtx(null)}>Annuler</Button>
             <Button onClick={confirmDialog}>Valider</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+const PointsMatrix: React.FC<{
+  chauffeurs: any[];
+  violations: any[];
+  pointsMap: Map<string, number>;
+  userId?: string;
+  onChange: () => void;
+}> = ({ chauffeurs, violations, pointsMap, userId, onChange }) => {
+  const [search, setSearch] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [target, setTarget] = useState<{ id: string; label: string } | null>(null);
+  const [form, setForm] = useState({
+    date: new Date().toISOString().slice(0, 10),
+    type: 'survitesse' as ObcViolationType,
+    points_retires: 1,
+    commentaire: '',
+  });
+
+  // Cumul des points retirés à partir des violations enregistrées
+  const retiresMap = useMemo(() => {
+    const m = new Map<string, number>();
+    violations.forEach(v => {
+      m.set(v.chauffeur_id, (m.get(v.chauffeur_id) || 0) + Number(v.points_retires || 0));
+    });
+    return m;
+  }, [violations]);
+
+  const filtered = chauffeurs.filter((c: any) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return `${c.prenom} ${c.nom}`.toLowerCase().includes(s) || (c.matricule || '').toLowerCase().includes(s);
+  });
+
+  const openFor = (c: any) => {
+    setTarget({ id: c.id, label: `${c.prenom} ${c.nom}` });
+    setForm({
+      date: new Date().toISOString().slice(0, 10),
+      type: 'survitesse',
+      points_retires: 1,
+      commentaire: '',
+    });
+    setOpen(true);
+  };
+
+  const save = async () => {
+    if (!target) return;
+    setSaving(true);
+    try {
+      await obcService.createViolation({
+        chauffeur_id: target.id,
+        date_violation: new Date(`${form.date}T08:00:00`).toISOString(),
+        type_violation: form.type,
+        points_retires: Number(form.points_retires) || 0,
+        commentaire: form.commentaire || null,
+        mesures_prises: null,
+        preuve_url: null,
+        created_by: userId,
+      } as any);
+      toast.success('Points enregistrés');
+      setOpen(false);
+      onChange();
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input
+          placeholder="Rechercher un chauffeur..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-[260px]"
+        />
+        <div className="flex-1" />
+        <p className="text-xs text-muted-foreground">Capital initial : 12 points</p>
+      </div>
+
+      <div className="overflow-x-auto border rounded-lg">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="text-left p-2 font-medium min-w-[200px]">Chauffeur</th>
+              <th className="text-center p-2 font-medium">Capital</th>
+              <th className="text-center p-2 font-medium">Total retirés</th>
+              <th className="text-center p-2 font-medium">Solde restant</th>
+              <th className="text-center p-2 font-medium">Statut</th>
+              <th className="text-center p-2 font-medium">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((c: any) => {
+              const solde = pointsMap.get(c.id) ?? 12;
+              const retires = retiresMap.get(c.id) || 0;
+              const variant = solde === 0 ? 'destructive' : solde <= 3 ? 'destructive' : solde <= 6 ? 'secondary' : 'default';
+              return (
+                <tr key={c.id} className="border-b hover:bg-muted/20 transition-colors">
+                  <td className="p-2">
+                    <p className="font-medium text-xs">{c.prenom} {c.nom}</p>
+                    {c.matricule && <p className="text-[10px] text-muted-foreground">{c.matricule}</p>}
+                  </td>
+                  <td className="p-2 text-center">12</td>
+                  <td className="p-2 text-center">
+                    {retires > 0 ? <Badge variant="destructive">-{retires}</Badge> : <span className="text-muted-foreground">0</span>}
+                  </td>
+                  <td className="p-2 text-center">
+                    <Badge variant={variant as any}>{solde} / 12</Badge>
+                  </td>
+                  <td className="p-2 text-center">
+                    {solde === 0 ? <Badge variant="destructive">BLOQUÉ</Badge>
+                      : solde <= 3 ? <Badge variant="secondary">À risque</Badge>
+                      : <Badge>OK</Badge>}
+                  </td>
+                  <td className="p-2 text-center">
+                    <Button size="sm" variant="outline" onClick={() => openFor(c)}>
+                      <Plus className="h-3 w-3 mr-1" /> Retirer
+                    </Button>
+                  </td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="text-center text-muted-foreground py-8">Aucun chauffeur</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Retirer des points{target ? ` – ${target.label}` : ''}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Type de violation</Label>
+              <Select value={form.type} onValueChange={(v) => setForm(f => ({ ...f, type: v as ObcViolationType }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(OBC_VIOLATION_LABELS) as ObcViolationType[]).map(k => (
+                    <SelectItem key={k} value={k}>{OBC_VIOLATION_LABELS[k]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Date</Label>
+              <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Nombre de points retirés</Label>
+              <Input type="number" min={0} max={12} value={form.points_retires}
+                onChange={e => setForm(f => ({ ...f, points_retires: Number(e.target.value) }))} />
+            </div>
+            <div>
+              <Label>Commentaire</Label>
+              <Textarea value={form.commentaire} onChange={e => setForm(f => ({ ...f, commentaire: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+            <Button onClick={save} disabled={saving}>{saving ? 'Enregistrement…' : 'Enregistrer'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
