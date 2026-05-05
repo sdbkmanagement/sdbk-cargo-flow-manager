@@ -375,6 +375,24 @@ const RankingConducteurs: React.FC<{
     [...rows].sort((a, b) => b.distance - a.distance || b.nbBL - a.nbBL).slice(0, 10),
     [rows]);
 
+  // Classement combiné (3 critères)
+  const rankCombined = useMemo(() => {
+    const actifs = rows.filter(r => r.nbBL > 0);
+    const maxBL = Math.max(1, ...actifs.map(r => r.nbBL));
+    const maxDist = Math.max(1, ...actifs.map(r => r.distance));
+    return actifs
+      .map(r => {
+        const sManquant = r.manquantTotal === 0 ? 35 : Math.max(0, 35 - r.manquantTotal * 2);
+        const sViolation = r.violC === 0 ? 35 : Math.max(0, 35 - r.violC * 5);
+        const sDistance = (r.distance / maxDist) * 20;
+        const sActivity = (r.nbBL / maxBL) * 10;
+        const score = sManquant + sViolation + sDistance + sActivity;
+        return { ...r, score: Math.round(score * 10) / 10 };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+  }, [rows]);
+
   const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
 
   const periodLabel: Record<RankingPeriod, string> = {
@@ -437,9 +455,43 @@ const RankingConducteurs: React.FC<{
           medalColors={medalColors}
         />
       </div>
+
+      <Card className="border-yellow-500/30">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-yellow-500" />
+            Classement combiné (3 critères)
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Score sur 100 — Manquant=0 (35 pts) · Violation=0 (35 pts) · Distance (20 pts) · Activité BL (10 pts)
+          </p>
+        </CardHeader>
+        <CardContent>
+          {rankCombined.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>}
+          <div className="space-y-2">
+            {rankCombined.map((r, i) => (
+              <div key={r.cid} className="flex items-center gap-3 p-2 rounded-md border bg-card hover:bg-muted/30 transition">
+                <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold">
+                  {i < 3 ? <Medal className={`h-4 w-4 ${medalColors[i]}`} /> : i + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{r.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {r.nbBL} BL · Manq: {r.manquantTotal} · Viol: {r.violC} · {r.distance.toLocaleString('fr-FR')} km
+                  </p>
+                </div>
+                <Badge className="font-bold whitespace-nowrap bg-yellow-500/15 text-yellow-700 hover:bg-yellow-500/20 border-yellow-500/30">
+                  {r.score} / 100
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
 
 const RankingColumn: React.FC<{
   title: string;
