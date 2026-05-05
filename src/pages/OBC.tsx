@@ -500,8 +500,16 @@ const RankingConducteurs: React.FC<{
               <Label>Date de référence</Label>
               <Input type="date" value={refDate} onChange={(e) => setRefDate(e.target.value)} className="w-44" />
             </div>
-            <div className="text-sm text-muted-foreground ml-auto">
+            <div className="text-sm text-muted-foreground">
               {periodLabel[period]} : {format(range.start, 'dd/MM/yyyy')} → {format(range.end, 'dd/MM/yyyy')}
+            </div>
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={exportExcel} className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" /> Excel
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
+                <FileText className="h-4 w-4" /> PDF
+              </Button>
             </div>
           </div>
         </CardContent>
