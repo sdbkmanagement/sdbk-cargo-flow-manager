@@ -98,6 +98,24 @@ const OBC: React.FC = () => {
               }} />
             </CardHeader>
             <CardContent className="space-y-4">
+              <Tabs defaultValue="matrice" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="matrice">Matrice</TabsTrigger>
+                  <TabsTrigger value="liste">Liste</TabsTrigger>
+                </TabsList>
+                <TabsContent value="matrice" className="pt-4">
+                  <ViolationsMatrix
+                    chauffeurs={chauffeurs}
+                    violations={violations}
+                    userId={user?.id}
+                    onChange={() => {
+                      qc.invalidateQueries({ queryKey: ['obc-violations'] });
+                      qc.invalidateQueries({ queryKey: ['obc-points'] });
+                      qc.invalidateQueries({ queryKey: ['obc-alertes'] });
+                    }}
+                  />
+                </TabsContent>
+                <TabsContent value="liste" className="space-y-4 pt-4">
               <div className="flex flex-wrap gap-2">
                 <Select value={fChauffeur} onValueChange={setFChauffeur}>
                   <SelectTrigger className="w-[220px]"><SelectValue placeholder="Chauffeur" /></SelectTrigger>
