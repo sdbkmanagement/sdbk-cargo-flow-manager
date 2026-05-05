@@ -200,50 +200,17 @@ const OBC: React.FC = () => {
 
         {/* TEMPS */}
         <TabsContent value="temps" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Temps de conduite</CardTitle>
-              <TempsDialog chauffeurs={chauffeurs} userId={user?.id} onSaved={() => {
-                qc.invalidateQueries({ queryKey: ['obc-temps'] });
-                qc.invalidateQueries({ queryKey: ['obc-violations'] });
-                qc.invalidateQueries({ queryKey: ['obc-alertes'] });
-              }} />
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Chauffeur</TableHead>
-                    <TableHead>Distance (km)</TableHead>
-                    <TableHead>Temps (h)</TableHead>
-                    <TableHead>Continu max (h)</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {temps.map(t => (
-                    <TableRow key={t.id}>
-                      <TableCell>{format(new Date(t.date_jour), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell>{chauffeurMap.get(t.chauffeur_id) || '—'}</TableCell>
-                      <TableCell>{t.distance_km}</TableCell>
-                      <TableCell>{t.temps_conduite_h}</TableCell>
-                      <TableCell>{t.temps_continu_max_h ?? 0}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={async () => {
-                          if (confirm('Supprimer ?')) {
-                            await obcService.deleteTemps(t.id);
-                            qc.invalidateQueries({ queryKey: ['obc-temps'] });
-                          }
-                        }}><Trash2 className="h-4 w-4" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {temps.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune saisie</TableCell></TableRow>}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <TempsConduiteTab
+            chauffeurs={chauffeurs}
+            chauffeurMap={chauffeurMap}
+            temps={temps}
+            userId={user?.id}
+            onChange={() => {
+              qc.invalidateQueries({ queryKey: ['obc-temps'] });
+              qc.invalidateQueries({ queryKey: ['obc-violations'] });
+              qc.invalidateQueries({ queryKey: ['obc-alertes'] });
+            }}
+          />
         </TabsContent>
 
         {/* ALERTES */}
