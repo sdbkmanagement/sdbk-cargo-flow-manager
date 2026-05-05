@@ -401,10 +401,10 @@ const TempsDialog: React.FC<{
     if (!form.chauffeur_id) { toast.error('Sélectionnez un chauffeur'); return; }
     setLoading(true);
     try {
-      await obcService.upsertTemps({ ...form, created_by: userId } as any);
+      await obcService.insertTemps({ ...form, created_by: userId } as any);
       toast.success('Saisie enregistrée');
       setOpen(false);
-      setForm({ ...form, chauffeur_id: '', distance_km: 0, temps_conduite_h: 0, temps_continu_max_h: 0 });
+      setForm({ ...form, distance_km: 0, temps_conduite_h: 0, temps_continu_max_h: 0, commentaire: '' });
       onSaved();
     } catch (e: any) {
       toast.error(e.message || 'Erreur');
