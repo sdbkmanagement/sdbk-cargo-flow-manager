@@ -28,6 +28,7 @@ const OBC: React.FC = () => {
   const { data: temps = [] } = useQuery({ queryKey: ['obc-temps'], queryFn: () => obcService.listTemps() });
   const { data: alertes = [] } = useQuery({ queryKey: ['obc-alertes'], queryFn: () => obcService.listAlertes() });
   const { data: config = [] } = useQuery({ queryKey: ['obc-config'], queryFn: () => obcService.getConfig() });
+  const { data: bls = [] } = useQuery({ queryKey: ['bons-livraison-obc'], queryFn: () => bonsLivraisonService.getAll() });
 
   const chauffeurMap = useMemo(() => {
     const m = new Map<string, string>();
