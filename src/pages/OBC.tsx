@@ -874,6 +874,14 @@ const TempsConduiteMatrix: React.FC<{
   );
 };
 
+interface PendingEntry {
+  date: string;
+  points_retires: number;
+  commentaire: string;
+  preuve_url?: string | null;
+  preuveFile?: File | null;
+}
+
 const ViolationsMatrix: React.FC<{
   chauffeurs: any[];
   violations: any[];
@@ -882,12 +890,14 @@ const ViolationsMatrix: React.FC<{
 }> = ({ chauffeurs, violations, userId, onChange }) => {
   const [search, setSearch] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [pending, setPending] = useState<Record<string, Set<ObcViolationType>>>({});
+  // pending: chauffeur_id -> type -> entry
+  const [pending, setPending] = useState<Record<string, Partial<Record<ObcViolationType, PendingEntry>>>>({});
   const [saving, setSaving] = useState(false);
+  const [dialogCtx, setDialogCtx] = useState<{ chauffeurId: string; chauffeurLabel: string; type: ObcViolationType } | null>(null);
+  const [form, setForm] = useState<PendingEntry>({ date, points_retires: 1, commentaire: '', preuveFile: null });
 
   const types = Object.keys(OBC_VIOLATION_LABELS) as ObcViolationType[];
 
-  // Map des violations existantes pour la date sélectionnée: chauffeur_id -> Set<type>
   const existing = useMemo(() => {
     const m = new Map<string, Set<ObcViolationType>>();
     violations.forEach(v => {
@@ -905,40 +915,67 @@ const ViolationsMatrix: React.FC<{
     return `${c.prenom} ${c.nom}`.toLowerCase().includes(s) || (c.matricule || '').toLowerCase().includes(s);
   });
 
-  const toggle = (chauffeurId: string, type: ObcViolationType) => {
-    if (existing.get(chauffeurId)?.has(type)) return; // déjà enregistré
-    setPending(prev => {
-      const next = { ...prev };
-      const set = new Set(next[chauffeurId] || []);
-      if (set.has(type)) set.delete(type); else set.add(type);
-      next[chauffeurId] = set;
-      return next;
-    });
+  const openDialog = (c: any, type: ObcViolationType) => {
+    if (existing.get(c.id)?.has(type)) return;
+    const current = pending[c.id]?.[type];
+    setForm(current || { date, points_retires: 1, commentaire: '', preuveFile: null });
+    setDialogCtx({ chauffeurId: c.id, chauffeurLabel: `${c.prenom} ${c.nom}`, type });
+  };
+
+  const toggle = (c: any, type: ObcViolationType) => {
+    if (existing.get(c.id)?.has(type)) return;
+    if (pending[c.id]?.[type]) {
+      setPending(prev => {
+        const next = { ...prev };
+        const sub = { ...(next[c.id] || {}) };
+        delete sub[type];
+        if (Object.keys(sub).length === 0) delete next[c.id]; else next[c.id] = sub;
+        return next;
+      });
+    } else {
+      openDialog(c, type);
+    }
+  };
+
+  const confirmDialog = () => {
+    if (!dialogCtx) return;
+    setPending(prev => ({
+      ...prev,
+      [dialogCtx.chauffeurId]: { ...(prev[dialogCtx.chauffeurId] || {}), [dialogCtx.type]: { ...form } },
+    }));
+    setDialogCtx(null);
   };
 
   const isChecked = (chauffeurId: string, type: ObcViolationType) =>
-    existing.get(chauffeurId)?.has(type) || pending[chauffeurId]?.has(type) || false;
+    existing.get(chauffeurId)?.has(type) || !!pending[chauffeurId]?.[type];
 
-  const totalPending = Object.values(pending).reduce((acc, s) => acc + s.size, 0);
+  const totalPending = Object.values(pending).reduce((acc, sub) => acc + Object.keys(sub).length, 0);
 
   const save = async () => {
     if (totalPending === 0) { toast.info('Aucune sélection'); return; }
     setSaving(true);
     try {
-      const dateIso = new Date(`${date}T08:00:00`).toISOString();
       const ops: Promise<any>[] = [];
-      Object.entries(pending).forEach(([chauffeurId, set]) => {
-        set.forEach(type => {
-          ops.push(obcService.createViolation({
-            chauffeur_id: chauffeurId,
-            date_violation: dateIso,
-            type_violation: type,
-            points_retires: 1,
-            commentaire: null,
-            mesures_prises: null,
-            preuve_url: null,
-            created_by: userId,
-          } as any));
+      Object.entries(pending).forEach(([chauffeurId, sub]) => {
+        Object.entries(sub).forEach(([type, entry]) => {
+          if (!entry) return;
+          ops.push((async () => {
+            let preuve_url: string | null = entry.preuve_url || null;
+            if (entry.preuveFile) {
+              try { preuve_url = await obcService.uploadPreuve(entry.preuveFile, chauffeurId); } catch {}
+            }
+            const dateIso = new Date(`${entry.date}T08:00:00`).toISOString();
+            return obcService.createViolation({
+              chauffeur_id: chauffeurId,
+              date_violation: dateIso,
+              type_violation: type as ObcViolationType,
+              points_retires: Number(entry.points_retires) || 1,
+              commentaire: entry.commentaire || null,
+              mesures_prises: null,
+              preuve_url,
+              created_by: userId,
+            } as any);
+          })());
         });
       });
       await Promise.all(ops);
@@ -978,7 +1015,7 @@ const ViolationsMatrix: React.FC<{
           </thead>
           <tbody>
             {filtered.map((c: any) => {
-              const total = (existing.get(c.id)?.size || 0) + (pending[c.id]?.size || 0);
+              const total = (existing.get(c.id)?.size || 0) + Object.keys(pending[c.id] || {}).length;
               return (
                 <tr key={c.id} className="border-b hover:bg-muted/20 transition-colors">
                   <td className="p-2 sticky left-0 bg-background">
@@ -994,9 +1031,9 @@ const ViolationsMatrix: React.FC<{
                           type="checkbox"
                           checked={checked}
                           disabled={already}
-                          onChange={() => toggle(c.id, t)}
+                          onChange={() => toggle(c, t)}
                           className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                          title={already ? 'Déjà enregistrée' : ''}
+                          title={already ? 'Déjà enregistrée' : 'Cliquer pour saisir les détails'}
                         />
                       </td>
                     );
@@ -1016,6 +1053,40 @@ const ViolationsMatrix: React.FC<{
       <p className="text-xs text-muted-foreground">
         Cochez les violations constatées pour chaque chauffeur à la date sélectionnée, puis cliquez sur « Enregistrer la sélection ». Les cases grisées sont déjà enregistrées.
       </p>
+
+      <Dialog open={!!dialogCtx} onOpenChange={(o) => !o && setDialogCtx(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogCtx ? `${OBC_VIOLATION_LABELS[dialogCtx.type]} – ${dialogCtx.chauffeurLabel}` : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Date</Label>
+              <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Points retirés</Label>
+              <Input type="number" min={0} value={form.points_retires}
+                onChange={e => setForm(f => ({ ...f, points_retires: Number(e.target.value) }))} />
+            </div>
+            <div>
+              <Label>Commentaire</Label>
+              <Textarea value={form.commentaire} onChange={e => setForm(f => ({ ...f, commentaire: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Preuve (optionnel)</Label>
+              <Input type="file" accept="image/*,application/pdf"
+                onChange={e => setForm(f => ({ ...f, preuveFile: e.target.files?.[0] || null }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogCtx(null)}>Annuler</Button>
+            <Button onClick={confirmDialog}>Valider</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
