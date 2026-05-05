@@ -415,7 +415,7 @@ const TempsDialog: React.FC<{
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Nouvelle saisie</Button></DialogTrigger>
+      <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{triggerLabel || 'Nouvelle saisie'}</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Temps de conduite journalier</DialogTitle></DialogHeader>
         <div className="space-y-3">
