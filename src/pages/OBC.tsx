@@ -904,14 +904,12 @@ const ViolationsMatrix: React.FC<{
   });
 
   const openDialog = (c: any, type: ObcViolationType) => {
-    if (existing.get(c.id)?.has(type)) return;
     const current = pending[c.id]?.[type];
     setForm(current || { date, points_retires: 0, commentaire: '', preuveFile: null });
     setDialogCtx({ chauffeurId: c.id, chauffeurLabel: `${c.prenom} ${c.nom}`, type });
   };
 
   const toggle = (c: any, type: ObcViolationType) => {
-    if (existing.get(c.id)?.has(type)) return;
     if (pending[c.id]?.[type]) {
       setPending(prev => {
         const next = { ...prev };
