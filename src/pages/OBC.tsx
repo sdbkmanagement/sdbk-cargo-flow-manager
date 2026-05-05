@@ -1015,7 +1015,7 @@ const ViolationsMatrix: React.FC<{
           </thead>
           <tbody>
             {filtered.map((c: any) => {
-              const total = (existing.get(c.id)?.size || 0) + (pending[c.id]?.size || 0);
+              const total = (existing.get(c.id)?.size || 0) + Object.keys(pending[c.id] || {}).length;
               return (
                 <tr key={c.id} className="border-b hover:bg-muted/20 transition-colors">
                   <td className="p-2 sticky left-0 bg-background">
@@ -1031,9 +1031,9 @@ const ViolationsMatrix: React.FC<{
                           type="checkbox"
                           checked={checked}
                           disabled={already}
-                          onChange={() => toggle(c.id, t)}
+                          onChange={() => toggle(c, t)}
                           className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                          title={already ? 'Déjà enregistrée' : ''}
+                          title={already ? 'Déjà enregistrée' : 'Cliquer pour saisir les détails'}
                         />
                       </td>
                     );
