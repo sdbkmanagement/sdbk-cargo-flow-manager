@@ -312,7 +312,7 @@ const ViolationDialog: React.FC<{ chauffeurs: any[]; userId?: string; onCreated:
     type_violation: 'survitesse' as ObcViolationType,
     commentaire: '',
     mesures_prises: '',
-    points_retires: 1,
+    points_retires: 0,
   });
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -882,7 +882,7 @@ const ViolationsMatrix: React.FC<{
   const [pending, setPending] = useState<Record<string, Partial<Record<ObcViolationType, PendingEntry>>>>({});
   const [saving, setSaving] = useState(false);
   const [dialogCtx, setDialogCtx] = useState<{ chauffeurId: string; chauffeurLabel: string; type: ObcViolationType } | null>(null);
-  const [form, setForm] = useState<PendingEntry>({ date, points_retires: 1, commentaire: '', preuveFile: null });
+  const [form, setForm] = useState<PendingEntry>({ date, points_retires: 0, commentaire: '', preuveFile: null });
 
   const types = Object.keys(OBC_VIOLATION_LABELS) as ObcViolationType[];
 
@@ -906,7 +906,7 @@ const ViolationsMatrix: React.FC<{
   const openDialog = (c: any, type: ObcViolationType) => {
     if (existing.get(c.id)?.has(type)) return;
     const current = pending[c.id]?.[type];
-    setForm(current || { date, points_retires: 1, commentaire: '', preuveFile: null });
+    setForm(current || { date, points_retires: 0, commentaire: '', preuveFile: null });
     setDialogCtx({ chauffeurId: c.id, chauffeurLabel: `${c.prenom} ${c.nom}`, type });
   };
 
@@ -1093,7 +1093,7 @@ const PointsMatrix: React.FC<{
   const [form, setForm] = useState({
     date: new Date().toISOString().slice(0, 10),
     type: 'survitesse' as ObcViolationType,
-    points_retires: 1,
+    points_retires: 0,
     commentaire: '',
   });
 
@@ -1117,7 +1117,7 @@ const PointsMatrix: React.FC<{
     setForm({
       date: new Date().toISOString().slice(0, 10),
       type: 'survitesse',
-      points_retires: 1,
+      points_retires: 0,
       commentaire: '',
     });
     setOpen(true);
