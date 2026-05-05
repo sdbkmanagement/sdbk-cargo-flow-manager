@@ -200,6 +200,17 @@ const OBC: React.FC = () => {
 
         {/* TEMPS */}
         <TabsContent value="temps" className="space-y-4">
+          <TempsConduiteMatrix
+            chauffeurs={chauffeurs}
+            chauffeurMap={chauffeurMap}
+            temps={temps}
+            userId={user?.id}
+            onChange={() => {
+              qc.invalidateQueries({ queryKey: ['obc-temps'] });
+              qc.invalidateQueries({ queryKey: ['obc-violations'] });
+              qc.invalidateQueries({ queryKey: ['obc-alertes'] });
+            }}
+          />
           <TempsConduiteTab
             chauffeurs={chauffeurs}
             chauffeurMap={chauffeurMap}
@@ -627,6 +638,219 @@ const TempsConduiteTab: React.FC<{
         </>
       )}
     </div>
+  );
+};
+
+// =============================================================
+// MATRICE DE SAISIE: chauffeurs en lignes, jours du mois en colonnes
+// =============================================================
+const TempsConduiteMatrix: React.FC<{
+  chauffeurs: any[];
+  chauffeurMap: Map<string, string>;
+  temps: any[];
+  userId?: string;
+  onChange: () => void;
+}> = ({ chauffeurs, temps, userId, onChange }) => {
+  const today = new Date();
+  const [annee, setAnnee] = useState<number>(today.getFullYear());
+  const [mois, setMois] = useState<number>(today.getMonth()); // 0-11
+  const [search, setSearch] = useState('');
+  const [editing, setEditing] = useState<{ chauffeurId: string; date: string } | null>(null);
+  const [editValues, setEditValues] = useState({ distance_km: 0, temps_conduite_h: 0, commentaire: '' });
+  const [saving, setSaving] = useState(false);
+
+  const sortedChauffeurs = useMemo(() => {
+    const list = [...chauffeurs].sort((a: any, b: any) =>
+      `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`));
+    if (!search.trim()) return list;
+    const q = search.toLowerCase();
+    return list.filter((c: any) => `${c.nom} ${c.prenom} ${c.matricule || ''}`.toLowerCase().includes(q));
+  }, [chauffeurs, search]);
+
+  const nbJours = new Date(annee, mois + 1, 0).getDate();
+  const jours = Array.from({ length: nbJours }, (_, i) => i + 1);
+
+  // Index: chauffeur_id -> date_jour (YYYY-MM-DD) -> { h, km, n }
+  const grid = useMemo(() => {
+    const m = new Map<string, Map<string, { h: number; km: number; n: number }>>();
+    temps.forEach(t => {
+      const d = new Date(t.date_jour);
+      if (d.getFullYear() !== annee || d.getMonth() !== mois) return;
+      const key = t.date_jour.slice(0, 10);
+      if (!m.has(t.chauffeur_id)) m.set(t.chauffeur_id, new Map());
+      const sub = m.get(t.chauffeur_id)!;
+      const cur = sub.get(key) || { h: 0, km: 0, n: 0 };
+      cur.h += Number(t.temps_conduite_h || 0);
+      cur.km += Number(t.distance_km || 0);
+      cur.n += 1;
+      sub.set(key, cur);
+    });
+    return m;
+  }, [temps, annee, mois]);
+
+  const totauxChauffeurMois = (chauffeurId: string) => {
+    const sub = grid.get(chauffeurId);
+    if (!sub) return { h: 0, km: 0 };
+    let h = 0, km = 0;
+    sub.forEach(v => { h += v.h; km += v.km; });
+    return { h, km };
+  };
+
+  const dateKey = (j: number) => `${annee}-${String(mois + 1).padStart(2, '0')}-${String(j).padStart(2, '0')}`;
+
+  const openCell = (chauffeurId: string, j: number) => {
+    setEditing({ chauffeurId, date: dateKey(j) });
+    setEditValues({ distance_km: 0, temps_conduite_h: 0, commentaire: '' });
+  };
+
+  const saveCell = async () => {
+    if (!editing) return;
+    if (editValues.temps_conduite_h <= 0 && editValues.distance_km <= 0) {
+      toast.error('Saisir au moins distance ou temps');
+      return;
+    }
+    setSaving(true);
+    try {
+      await obcService.insertTemps({
+        chauffeur_id: editing.chauffeurId,
+        date_jour: editing.date,
+        distance_km: editValues.distance_km,
+        temps_conduite_h: editValues.temps_conduite_h,
+        temps_continu_max_h: 0,
+        commentaire: editValues.commentaire,
+        created_by: userId,
+      } as any);
+      toast.success('Saisie ajoutée');
+      setEditing(null);
+      onChange();
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const moisLabels = MOIS_LABELS;
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3">
+        <CardTitle>Matrice de saisie – {moisLabels[mois]} {annee}</CardTitle>
+        <div className="flex flex-wrap gap-2 items-center">
+          <Select value={String(mois)} onValueChange={v => setMois(parseInt(v))}>
+            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {moisLabels.map((label, i) => <SelectItem key={i} value={String(i)}>{label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={String(annee)} onValueChange={v => setAnnee(parseInt(v))}>
+            <SelectTrigger className="w-[100px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {[today.getFullYear() - 1, today.getFullYear(), today.getFullYear() + 1].map(y =>
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Input placeholder="Rechercher chauffeur…" value={search} onChange={e => setSearch(e.target.value)} className="w-[200px]" />
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p className="text-xs text-muted-foreground mb-2">
+          Cliquez une cellule pour saisir les heures et kilomètres du jour. Plusieurs saisies par jour autorisées (cumul automatique).
+        </p>
+        <div className="overflow-auto border rounded-lg max-h-[70vh]">
+          <table className="text-xs border-collapse">
+            <thead className="sticky top-0 z-10 bg-background">
+              <tr>
+                <th className="sticky left-0 z-20 bg-background border-b border-r px-2 py-2 text-left min-w-[180px]">Chauffeur</th>
+                {jours.map(j => {
+                  const d = new Date(annee, mois, j);
+                  const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                  return (
+                    <th key={j} className={`border-b border-r px-1 py-2 text-center w-[42px] ${isWeekend ? 'bg-muted/40' : ''}`}>
+                      {j}
+                    </th>
+                  );
+                })}
+                <th className="sticky right-0 z-20 bg-muted/60 border-b border-l px-2 py-2 text-right min-w-[80px]">Total h</th>
+                <th className="sticky right-0 z-20 bg-muted/60 border-b border-l px-2 py-2 text-right min-w-[80px]">Total km</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedChauffeurs.map((c: any) => {
+                const sub = grid.get(c.id);
+                const tot = totauxChauffeurMois(c.id);
+                return (
+                  <tr key={c.id} className="hover:bg-muted/30">
+                    <td className="sticky left-0 bg-background border-b border-r px-2 py-1 font-medium whitespace-nowrap">
+                      {c.nom} {c.prenom}
+                      {c.matricule && <span className="text-muted-foreground ml-1">({c.matricule})</span>}
+                    </td>
+                    {jours.map(j => {
+                      const v = sub?.get(dateKey(j));
+                      const d = new Date(annee, mois, j);
+                      const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+                      const danger = v && v.h > 10;
+                      return (
+                        <td
+                          key={j}
+                          onClick={() => openCell(c.id, j)}
+                          title={v ? `${v.h}h / ${v.km}km (${v.n} saisie${v.n > 1 ? 's' : ''})` : 'Aucune saisie'}
+                          className={`border-b border-r text-center cursor-pointer hover:bg-primary/10 ${isWeekend ? 'bg-muted/30' : ''} ${danger ? 'bg-destructive/20 text-destructive font-semibold' : v ? 'bg-primary/5 font-medium' : ''}`}
+                        >
+                          {v ? v.h.toFixed(1) : ''}
+                        </td>
+                      );
+                    })}
+                    <td className="sticky right-0 bg-muted/60 border-b border-l px-2 py-1 text-right font-bold">{tot.h.toFixed(1)}</td>
+                    <td className="sticky right-0 bg-muted/60 border-b border-l px-2 py-1 text-right font-bold">{tot.km.toFixed(0)}</td>
+                  </tr>
+                );
+              })}
+              {sortedChauffeurs.length === 0 && (
+                <tr><td colSpan={jours.length + 3} className="text-center text-muted-foreground py-8">Aucun chauffeur</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+
+      {/* Dialog de saisie inline */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Saisie – {editing && format(new Date(editing.date), 'dd/MM/yyyy')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="text-sm text-muted-foreground">
+              {editing && chauffeurs.find((c: any) => c.id === editing.chauffeurId)?.nom} {editing && chauffeurs.find((c: any) => c.id === editing.chauffeurId)?.prenom}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <Label>Temps (h)</Label>
+                <Input type="number" step="0.1" min={0} value={editValues.temps_conduite_h}
+                  onChange={e => setEditValues({ ...editValues, temps_conduite_h: parseFloat(e.target.value) || 0 })} />
+              </div>
+              <div>
+                <Label>Distance (km)</Label>
+                <Input type="number" min={0} value={editValues.distance_km}
+                  onChange={e => setEditValues({ ...editValues, distance_km: parseFloat(e.target.value) || 0 })} />
+              </div>
+            </div>
+            <div>
+              <Label>Commentaire</Label>
+              <Textarea rows={2} value={editValues.commentaire}
+                onChange={e => setEditValues({ ...editValues, commentaire: e.target.value })} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setEditing(null)}>Annuler</Button>
+            <Button onClick={saveCell} disabled={saving}>{saving ? 'Enregistrement…' : 'Ajouter'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };
 
