@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as SettingsIcon, Trophy, Medal } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as SettingsIcon, Trophy, Medal, FileSpreadsheet, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { bonsLivraisonService } from '@/services/bonsLivraison';
 
@@ -366,16 +366,16 @@ const RankingConducteurs: React.FC<{
   }, [chauffeurs, bls, violations, temps, range]);
 
   const rankZeroManquant = useMemo(() =>
-    [...rows].filter(r => r.manquantTotal === 0 && r.nbBL > 0).sort((a, b) => b.nbBL - a.nbBL).slice(0, 10),
+    [...rows].filter(r => r.manquantTotal === 0 && r.nbBL > 0).sort((a, b) => b.nbBL - a.nbBL),
     [rows]);
   const rankZeroViolation = useMemo(() =>
-    [...rows].filter(r => r.violC === 0 && r.nbBL > 0).sort((a, b) => b.nbBL - a.nbBL).slice(0, 10),
+    [...rows].filter(r => r.violC === 0 && r.nbBL > 0).sort((a, b) => b.nbBL - a.nbBL),
     [rows]);
   const rankDistance = useMemo(() =>
-    [...rows].sort((a, b) => b.distance - a.distance || b.nbBL - a.nbBL).slice(0, 10),
+    [...rows].sort((a, b) => b.distance - a.distance || b.nbBL - a.nbBL),
     [rows]);
 
-  // Classement combiné (3 critères)
+  // Classement combiné (3 critères) - tous les chauffeurs actifs
   const rankCombined = useMemo(() => {
     const actifs = rows.filter(r => r.nbBL > 0);
     const maxBL = Math.max(1, ...actifs.map(r => r.nbBL));
@@ -389,9 +389,84 @@ const RankingConducteurs: React.FC<{
         const score = sManquant + sViolation + sDistance + sActivity;
         return { ...r, score: Math.round(score * 10) / 10 };
       })
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10);
+      .sort((a, b) => b.score - a.score);
   }, [rows]);
+
+  const periodLabelShort: Record<RankingPeriod, string> = {
+    jour: 'Jour', semaine: 'Semaine', mois: 'Mois', trimestre: 'Trimestre', semestre: 'Semestre', annuelle: 'Année',
+  };
+
+  const exportExcel = async () => {
+    const XLSX = await import('xlsx');
+    const wb = XLSX.utils.book_new();
+    const headerInfo = `${periodLabelShort[period]} : ${format(range.start, 'dd/MM/yyyy')} → ${format(range.end, 'dd/MM/yyyy')}`;
+    const combined = rankCombined.map((r, i) => ({
+      Rang: i + 1, Chauffeur: r.name, 'Nb BL': r.nbBL, 'Manquant total': r.manquantTotal,
+      Violations: r.violC, 'Distance (km)': r.distance, 'Score / 100': r.score,
+    }));
+    const ws1 = XLSX.utils.json_to_sheet(combined);
+    XLSX.utils.sheet_add_aoa(ws1, [[`Classement combiné — ${headerInfo}`]], { origin: 'A1' });
+    XLSX.utils.sheet_add_json(ws1, combined, { origin: 'A3' });
+    XLSX.utils.book_append_sheet(wb, ws1, 'Classement combiné');
+
+    const mkSheet = (data: any[], titre: string) => {
+      const rowsX = data.map((r, i) => ({
+        Rang: i + 1, Chauffeur: r.name, 'Nb BL': r.nbBL, 'Manquant total': r.manquantTotal,
+        Violations: r.violC, 'Distance (km)': r.distance,
+      }));
+      const ws = XLSX.utils.json_to_sheet([]);
+      XLSX.utils.sheet_add_aoa(ws, [[`${titre} — ${headerInfo}`]], { origin: 'A1' });
+      XLSX.utils.sheet_add_json(ws, rowsX, { origin: 'A3' });
+      return ws;
+    };
+    XLSX.utils.book_append_sheet(wb, mkSheet(rankZeroManquant, 'Manquant citerne = 0'), 'Manquant=0');
+    XLSX.utils.book_append_sheet(wb, mkSheet(rankZeroViolation, 'Violation = 0'), 'Violation=0');
+    XLSX.utils.book_append_sheet(wb, mkSheet(rankDistance, 'Distance parcourue'), 'Distance');
+    XLSX.writeFile(wb, `ranking_chauffeurs_${period}_${format(range.start, 'yyyyMMdd')}.xlsx`);
+    toast.success('Export Excel généré');
+  };
+
+  const exportPDF = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    const autoTable = (await import('jspdf-autotable')).default;
+    const doc = new jsPDF('p', 'mm', 'a4');
+    const headerInfo = `${periodLabelShort[period]} : ${format(range.start, 'dd/MM/yyyy')} → ${format(range.end, 'dd/MM/yyyy')}`;
+    doc.setFontSize(14);
+    doc.text('Ranking Conducteurs', 14, 15);
+    doc.setFontSize(10);
+    doc.text(headerInfo, 14, 22);
+
+    autoTable(doc, {
+      startY: 28,
+      head: [['#', 'Chauffeur', 'Nb BL', 'Manquant', 'Viol.', 'Distance (km)', 'Score/100']],
+      body: rankCombined.map((r, i) => [i + 1, r.name, r.nbBL, r.manquantTotal, r.violC, r.distance.toLocaleString('fr-FR'), r.score]),
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [234, 179, 8] },
+      didDrawPage: () => {
+        doc.setFontSize(11);
+        doc.text('Classement combiné (3 critères)', 14, 28 - 2);
+      },
+    });
+
+    const addSection = (titre: string, data: any[], metricLabel: string, metricFn: (r: any) => any) => {
+      doc.addPage();
+      doc.setFontSize(14); doc.text(titre, 14, 15);
+      doc.setFontSize(10); doc.text(headerInfo, 14, 22);
+      autoTable(doc, {
+        startY: 28,
+        head: [['#', 'Chauffeur', 'Nb BL', metricLabel]],
+        body: data.map((r, i) => [i + 1, r.name, r.nbBL, metricFn(r)]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [59, 130, 246] },
+      });
+    };
+    addSection('Manquant citerne = 0', rankZeroManquant, 'Manquant', (r) => r.manquantTotal);
+    addSection('Violation = 0', rankZeroViolation, 'Violations', (r) => r.violC);
+    addSection('Plus grande distance parcourue', rankDistance, 'Distance (km)', (r) => r.distance.toLocaleString('fr-FR'));
+
+    doc.save(`ranking_chauffeurs_${period}_${format(range.start, 'yyyyMMdd')}.pdf`);
+    toast.success('Export PDF généré');
+  };
 
   const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
 
@@ -425,8 +500,16 @@ const RankingConducteurs: React.FC<{
               <Label>Date de référence</Label>
               <Input type="date" value={refDate} onChange={(e) => setRefDate(e.target.value)} className="w-44" />
             </div>
-            <div className="text-sm text-muted-foreground ml-auto">
+            <div className="text-sm text-muted-foreground">
               {periodLabel[period]} : {format(range.start, 'dd/MM/yyyy')} → {format(range.end, 'dd/MM/yyyy')}
+            </div>
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" size="sm" onClick={exportExcel} className="gap-2">
+                <FileSpreadsheet className="h-4 w-4" /> Excel
+              </Button>
+              <Button variant="outline" size="sm" onClick={exportPDF} className="gap-2">
+                <FileText className="h-4 w-4" /> PDF
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -468,7 +551,7 @@ const RankingConducteurs: React.FC<{
         </CardHeader>
         <CardContent>
           {rankCombined.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>}
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
             {rankCombined.map((r, i) => (
               <div key={r.cid} className="flex items-center gap-3 p-2 rounded-md border bg-card hover:bg-muted/30 transition">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold">
@@ -507,10 +590,10 @@ const RankingColumn: React.FC<{
     </CardHeader>
     <CardContent>
       {rows.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>}
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
         {rows.map((r, i) => (
           <div key={r.cid} className="flex items-center gap-3 p-2 rounded-md border bg-card hover:bg-muted/30 transition">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold shrink-0">
               {i < 3 ? <Medal className={`h-4 w-4 ${medalColors[i]}`} /> : i + 1}
             </div>
             <div className="flex-1 min-w-0">
