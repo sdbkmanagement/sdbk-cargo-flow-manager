@@ -446,7 +446,11 @@ const TempsDialog: React.FC<{
               <Input type="number" step="0.1" min={0} value={form.temps_continu_max_h} onChange={e => setForm({ ...form, temps_continu_max_h: parseFloat(e.target.value) || 0 })} />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Les dépassements (10h, 2h30, 56h sur 7j) génèrent automatiquement violations et alertes.</p>
+          <div>
+            <Label>Commentaire</Label>
+            <Textarea rows={2} value={form.commentaire} onChange={e => setForm({ ...form, commentaire: e.target.value })} />
+          </div>
+          <p className="text-xs text-muted-foreground">Plusieurs saisies par jour autorisées. Les dépassements (10h, 2h30, 56h sur 7j) génèrent automatiquement violations et alertes.</p>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Annuler</Button>
