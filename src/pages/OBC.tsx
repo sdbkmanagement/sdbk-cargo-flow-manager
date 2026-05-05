@@ -551,7 +551,7 @@ const RankingConducteurs: React.FC<{
         </CardHeader>
         <CardContent>
           {rankCombined.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>}
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
             {rankCombined.map((r, i) => (
               <div key={r.cid} className="flex items-center gap-3 p-2 rounded-md border bg-card hover:bg-muted/30 transition">
                 <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold">
