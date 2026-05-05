@@ -3461,6 +3461,276 @@ export type Database = {
           },
         ]
       }
+      obc_alertes: {
+        Row: {
+          chauffeur_id: string | null
+          created_at: string
+          id: string
+          lu: boolean
+          message: string
+          niveau: string
+          type_alerte: string
+          violation_id: string | null
+        }
+        Insert: {
+          chauffeur_id?: string | null
+          created_at?: string
+          id?: string
+          lu?: boolean
+          message: string
+          niveau?: string
+          type_alerte: string
+          violation_id?: string | null
+        }
+        Update: {
+          chauffeur_id?: string | null
+          created_at?: string
+          id?: string
+          lu?: boolean
+          message?: string
+          niveau?: string
+          type_alerte?: string
+          violation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obc_alertes_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obc_alertes_violation_id_fkey"
+            columns: ["violation_id"]
+            isOneToOne: false
+            referencedRelation: "obc_violations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obc_chauffeur_points: {
+        Row: {
+          chauffeur_id: string
+          points_actuels: number
+          updated_at: string
+        }
+        Insert: {
+          chauffeur_id: string
+          points_actuels?: number
+          updated_at?: string
+        }
+        Update: {
+          chauffeur_id?: string
+          points_actuels?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obc_chauffeur_points_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: true
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obc_config: {
+        Row: {
+          cle: string
+          description: string | null
+          id: string
+          updated_at: string
+          valeur: number
+        }
+        Insert: {
+          cle: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          valeur: number
+        }
+        Update: {
+          cle?: string
+          description?: string | null
+          id?: string
+          updated_at?: string
+          valeur?: number
+        }
+        Relationships: []
+      }
+      obc_points_historique: {
+        Row: {
+          chauffeur_id: string
+          created_at: string
+          created_by: string | null
+          delta: number
+          id: string
+          motif: string | null
+          points_apres: number
+          points_avant: number
+          violation_id: string | null
+        }
+        Insert: {
+          chauffeur_id: string
+          created_at?: string
+          created_by?: string | null
+          delta: number
+          id?: string
+          motif?: string | null
+          points_apres: number
+          points_avant: number
+          violation_id?: string | null
+        }
+        Update: {
+          chauffeur_id?: string
+          created_at?: string
+          created_by?: string | null
+          delta?: number
+          id?: string
+          motif?: string | null
+          points_apres?: number
+          points_avant?: number
+          violation_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obc_points_historique_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obc_points_historique_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obc_points_historique_violation_id_fkey"
+            columns: ["violation_id"]
+            isOneToOne: false
+            referencedRelation: "obc_violations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obc_temps_conduite: {
+        Row: {
+          chauffeur_id: string
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          date_jour: string
+          distance_km: number
+          id: string
+          temps_conduite_h: number
+          temps_continu_max_h: number | null
+          updated_at: string
+        }
+        Insert: {
+          chauffeur_id: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_jour: string
+          distance_km?: number
+          id?: string
+          temps_conduite_h?: number
+          temps_continu_max_h?: number | null
+          updated_at?: string
+        }
+        Update: {
+          chauffeur_id?: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_jour?: string
+          distance_km?: number
+          id?: string
+          temps_conduite_h?: number
+          temps_continu_max_h?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obc_temps_conduite_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obc_temps_conduite_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      obc_violations: {
+        Row: {
+          auto_generee: boolean
+          chauffeur_id: string
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          date_violation: string
+          id: string
+          mesures_prises: string | null
+          points_retires: number
+          preuve_url: string | null
+          type_violation: Database["public"]["Enums"]["obc_violation_type"]
+          updated_at: string
+        }
+        Insert: {
+          auto_generee?: boolean
+          chauffeur_id: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_violation?: string
+          id?: string
+          mesures_prises?: string | null
+          points_retires?: number
+          preuve_url?: string | null
+          type_violation: Database["public"]["Enums"]["obc_violation_type"]
+          updated_at?: string
+        }
+        Update: {
+          auto_generee?: boolean
+          chauffeur_id?: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_violation?: string
+          id?: string
+          mesures_prises?: string | null
+          points_retires?: number
+          preuve_url?: string | null
+          type_violation?: Database["public"]["Enums"]["obc_violation_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "obc_violations_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "obc_violations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       periodes_paie: {
         Row: {
           annee: number
@@ -4982,6 +5252,7 @@ export type Database = {
         Args: { module_name: string; user_id: string }
         Returns: boolean
       }
+      has_obc_access: { Args: { _user_id: string }; Returns: boolean }
       has_valid_safe_to_load: {
         Args: { p_vehicule_id: string }
         Returns: boolean
@@ -5023,6 +5294,15 @@ export type Database = {
         | "missions"
         | "billing"
         | "dashboard"
+      obc_violation_type:
+        | "survitesse"
+        | "freinage_excessif"
+        | "acceleration_excessive"
+        | "conduite_nuit"
+        | "conduite_journaliere"
+        | "conduite_continue"
+        | "conduite_hebdomadaire"
+        | "anomalie_obc"
       user_role:
         | "admin"
         | "transport"
@@ -5176,6 +5456,16 @@ export const Constants = {
         "missions",
         "billing",
         "dashboard",
+      ],
+      obc_violation_type: [
+        "survitesse",
+        "freinage_excessif",
+        "acceleration_excessive",
+        "conduite_nuit",
+        "conduite_journaliere",
+        "conduite_continue",
+        "conduite_hebdomadaire",
+        "anomalie_obc",
       ],
       user_role: [
         "admin",

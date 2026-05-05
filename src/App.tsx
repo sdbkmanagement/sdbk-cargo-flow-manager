@@ -22,6 +22,7 @@ import Societe from '@/pages/Societe';
 import HSEQ from '@/pages/HSEQ';
 import Formations from '@/pages/Formations';
 import Rapports from '@/pages/Rapports';
+import OBC from '@/pages/OBC';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 
@@ -176,6 +177,16 @@ function App() {
                   <AuthGuard>
                     <ModuleLayout title="Rapports" subtitle="Rapports mensuels de gestion">
                       <Rapports />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/obc" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="OBC" subtitle="On Board Control – violations, points, temps de conduite">
+                      <OBC />
                     </ModuleLayout>
                   </AuthGuard>
                 } 
