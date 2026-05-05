@@ -1053,6 +1053,40 @@ const ViolationsMatrix: React.FC<{
       <p className="text-xs text-muted-foreground">
         Cochez les violations constatées pour chaque chauffeur à la date sélectionnée, puis cliquez sur « Enregistrer la sélection ». Les cases grisées sont déjà enregistrées.
       </p>
+
+      <Dialog open={!!dialogCtx} onOpenChange={(o) => !o && setDialogCtx(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {dialogCtx ? `${OBC_VIOLATION_LABELS[dialogCtx.type]} – ${dialogCtx.chauffeurLabel}` : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label>Date</Label>
+              <Input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Points retirés</Label>
+              <Input type="number" min={0} value={form.points_retires}
+                onChange={e => setForm(f => ({ ...f, points_retires: Number(e.target.value) }))} />
+            </div>
+            <div>
+              <Label>Commentaire</Label>
+              <Textarea value={form.commentaire} onChange={e => setForm(f => ({ ...f, commentaire: e.target.value }))} />
+            </div>
+            <div>
+              <Label>Preuve (optionnel)</Label>
+              <Input type="file" accept="image/*,application/pdf"
+                onChange={e => setForm(f => ({ ...f, preuveFile: e.target.files?.[0] || null }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogCtx(null)}>Annuler</Button>
+            <Button onClick={confirmDialog}>Valider</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
