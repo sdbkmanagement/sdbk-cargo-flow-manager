@@ -1013,14 +1013,16 @@ const ViolationsMatrix: React.FC<{
                     const checked = isChecked(c.id, t);
                     return (
                       <td key={t} className="p-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={already}
-                          onChange={() => toggle(c, t)}
-                          className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                          title={already ? 'Déjà enregistrée' : 'Cliquer pour saisir les détails'}
-                        />
+                        <div className="flex items-center justify-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggle(c, t)}
+                            className="h-4 w-4 cursor-pointer"
+                            title={already ? 'Déjà enregistrée — cocher pour en ajouter une autre ce jour' : 'Cliquer pour saisir les détails'}
+                          />
+                          {already && <span className="text-[9px] text-muted-foreground" title="Déjà enregistrée ce jour">✓</span>}
+                        </div>
                       </td>
                     );
                   })}
