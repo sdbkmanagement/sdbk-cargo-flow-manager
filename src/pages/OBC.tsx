@@ -590,10 +590,10 @@ const RankingColumn: React.FC<{
     </CardHeader>
     <CardContent>
       {rows.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>}
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
         {rows.map((r, i) => (
           <div key={r.cid} className="flex items-center gap-3 p-2 rounded-md border bg-card hover:bg-muted/30 transition">
-            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold shrink-0">
               {i < 3 ? <Medal className={`h-4 w-4 ${medalColors[i]}`} /> : i + 1}
             </div>
             <div className="flex-1 min-w-0">
