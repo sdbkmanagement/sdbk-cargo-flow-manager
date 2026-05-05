@@ -300,6 +300,175 @@ const OBC: React.FC = () => {
   );
 };
 
+type RankingPeriod = 'jour' | 'semaine' | 'mois' | 'trimestre' | 'semestre' | 'annuelle';
+
+const RankingConducteurs: React.FC<{
+  chauffeurs: any[];
+  chauffeurMap: Map<string, string>;
+  violations: any[];
+  bls: any[];
+}> = ({ chauffeurs, violations, bls }) => {
+  const [period, setPeriod] = useState<RankingPeriod>('mois');
+  const [refDate, setRefDate] = useState<string>(new Date().toISOString().slice(0, 10));
+
+  const range = useMemo(() => {
+    const ref = new Date(refDate);
+    const start = new Date(ref);
+    const end = new Date(ref);
+    switch (period) {
+      case 'jour':
+        start.setHours(0, 0, 0, 0); end.setHours(23, 59, 59, 999); break;
+      case 'semaine': {
+        const day = (ref.getDay() + 6) % 7;
+        start.setDate(ref.getDate() - day); start.setHours(0, 0, 0, 0);
+        end.setTime(start.getTime()); end.setDate(start.getDate() + 6); end.setHours(23, 59, 59, 999);
+        break;
+      }
+      case 'mois':
+        start.setDate(1); start.setHours(0, 0, 0, 0);
+        end.setMonth(start.getMonth() + 1, 0); end.setHours(23, 59, 59, 999); break;
+      case 'trimestre': {
+        const q = Math.floor(ref.getMonth() / 3);
+        start.setMonth(q * 3, 1); start.setHours(0, 0, 0, 0);
+        end.setMonth(q * 3 + 3, 0); end.setHours(23, 59, 59, 999); break;
+      }
+      case 'semestre': {
+        const s = ref.getMonth() < 6 ? 0 : 6;
+        start.setMonth(s, 1); start.setHours(0, 0, 0, 0);
+        end.setMonth(s + 6, 0); end.setHours(23, 59, 59, 999); break;
+      }
+      case 'annuelle':
+        start.setMonth(0, 1); start.setHours(0, 0, 0, 0);
+        end.setMonth(11, 31); end.setHours(23, 59, 59, 999); break;
+    }
+    return { start, end };
+  }, [period, refDate]);
+
+  const inRange = (d: string | Date) => {
+    if (!d) return false;
+    const t = new Date(d).getTime();
+    return t >= range.start.getTime() && t <= range.end.getTime();
+  };
+
+  const rows = useMemo(() => {
+    return chauffeurs.map((c: any) => {
+      const cid = c.id;
+      const name = `${c.prenom || ''} ${c.nom || ''}`.trim();
+      const blsC = bls.filter((b: any) => b.chauffeur_id === cid && b.date_chargement_reelle && inRange(b.date_chargement_reelle));
+      const manquantTotal = blsC.reduce((s: number, b: any) => s + (Number(b.manquant_total) || 0), 0);
+      const violC = violations.filter((v: any) => v.chauffeur_id === cid && inRange(v.date_violation)).length;
+      const distance = blsC.reduce((s: number, b: any) => s + (Number(b.distance_km) || 0), 0);
+      return { cid, name, manquantTotal, violC, distance, nbBL: blsC.length };
+    }).filter(r => r.name);
+  }, [chauffeurs, bls, violations, range]);
+
+  const rankZeroManquant = useMemo(() =>
+    [...rows].filter(r => r.manquantTotal === 0 && r.nbBL > 0).sort((a, b) => b.nbBL - a.nbBL).slice(0, 10),
+    [rows]);
+  const rankZeroViolation = useMemo(() =>
+    [...rows].filter(r => r.violC === 0 && r.nbBL > 0).sort((a, b) => b.nbBL - a.nbBL).slice(0, 10),
+    [rows]);
+  const rankDistance = useMemo(() =>
+    [...rows].sort((a, b) => b.distance - a.distance || b.nbBL - a.nbBL).slice(0, 10),
+    [rows]);
+
+  const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
+
+  const periodLabel: Record<RankingPeriod, string> = {
+    jour: 'Jour', semaine: 'Semaine', mois: 'Mois', trimestre: 'Trimestre', semestre: 'Semestre', annuelle: 'Année',
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><Trophy className="h-5 w-5 text-yellow-500" />Ranking Conducteurs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <Label>Période</Label>
+              <Select value={period} onValueChange={(v) => setPeriod(v as RankingPeriod)}>
+                <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="jour">Jour</SelectItem>
+                  <SelectItem value="semaine">Semaine</SelectItem>
+                  <SelectItem value="mois">Mois</SelectItem>
+                  <SelectItem value="trimestre">Trimestre</SelectItem>
+                  <SelectItem value="semestre">Semestre</SelectItem>
+                  <SelectItem value="annuelle">Annuelle</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Date de référence</Label>
+              <Input type="date" value={refDate} onChange={(e) => setRefDate(e.target.value)} className="w-44" />
+            </div>
+            <div className="text-sm text-muted-foreground ml-auto">
+              {periodLabel[period]} : {format(range.start, 'dd/MM/yyyy')} → {format(range.end, 'dd/MM/yyyy')}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <RankingColumn
+          title="Manquant citerne = 0"
+          subtitle="Chauffeurs sans manquant (triés par nb de BL)"
+          rows={rankZeroManquant}
+          metric={(r) => `${r.nbBL} BL`}
+          medalColors={medalColors}
+        />
+        <RankingColumn
+          title="Violation = 0"
+          subtitle="Chauffeurs sans violation (triés par nb de BL)"
+          rows={rankZeroViolation}
+          metric={(r) => `${r.nbBL} BL`}
+          medalColors={medalColors}
+        />
+        <RankingColumn
+          title="Plus grande distance"
+          subtitle="Cumul km parcourus sur la période"
+          rows={rankDistance}
+          metric={(r) => `${r.distance.toLocaleString('fr-FR')} km`}
+          medalColors={medalColors}
+        />
+      </div>
+    </div>
+  );
+};
+
+const RankingColumn: React.FC<{
+  title: string;
+  subtitle: string;
+  rows: { cid: string; name: string; manquantTotal: number; violC: number; distance: number; nbBL: number }[];
+  metric: (r: any) => string;
+  medalColors: string[];
+}> = ({ title, subtitle, rows, metric, medalColors }) => (
+  <Card>
+    <CardHeader className="pb-2">
+      <CardTitle className="text-base">{title}</CardTitle>
+      <p className="text-xs text-muted-foreground">{subtitle}</p>
+    </CardHeader>
+    <CardContent>
+      {rows.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">Aucune donnée</p>}
+      <div className="space-y-2">
+        {rows.map((r, i) => (
+          <div key={r.cid} className="flex items-center gap-3 p-2 rounded-md border bg-card hover:bg-muted/30 transition">
+            <div className="flex items-center justify-center w-7 h-7 rounded-full bg-muted text-xs font-bold">
+              {i < 3 ? <Medal className={`h-4 w-4 ${medalColors[i]}`} /> : i + 1}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{r.name}</p>
+            </div>
+            <Badge variant="secondary" className="font-semibold whitespace-nowrap">{metric(r)}</Badge>
+          </div>
+        ))}
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const KpiCard: React.FC<{ title: string; value: number; icon: React.ReactNode; variant?: 'warning' | 'danger' }> = ({ title, value, icon, variant }) => (
   <Card>
     <CardContent className="p-4 flex items-center justify-between">
