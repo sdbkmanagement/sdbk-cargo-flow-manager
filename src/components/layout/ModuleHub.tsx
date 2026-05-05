@@ -18,7 +18,8 @@ import {
   Briefcase,
   ShieldCheck,
   GraduationCap,
-  ClipboardList
+  ClipboardList,
+  Activity
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -215,6 +216,15 @@ export const ModuleHub: React.FC = () => {
       isNew: true
     },
     {
+      id: 'obc',
+      title: 'OBC',
+      description: 'On Board Control – violations, points, temps de conduite',
+      icon: Activity,
+      route: '/obc',
+      gradient: 'from-orange-500 to-red-600',
+      isNew: true
+    },
+    {
       id: 'admin',
       title: 'Administration',
       description: 'Utilisateurs, rôles et paramètres',
@@ -262,6 +272,7 @@ export const ModuleHub: React.FC = () => {
       'formations': ['admin', 'hsecq', 'direction', 'transport', 'rh'],
       'hseq': ['admin', 'hsecq', 'direction'],
       'rapports': ['admin', 'direction', 'directeur_exploitation'],
+      'obc': ['admin', 'obc', 'hsecq', 'direction', 'directeur_exploitation'],
     };
 
     if (roleBasedModules[module.id]) {
