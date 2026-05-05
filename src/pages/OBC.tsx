@@ -375,6 +375,24 @@ const RankingConducteurs: React.FC<{
     [...rows].sort((a, b) => b.distance - a.distance || b.nbBL - a.nbBL).slice(0, 10),
     [rows]);
 
+  // Classement combiné (3 critères)
+  const rankCombined = useMemo(() => {
+    const actifs = rows.filter(r => r.nbBL > 0);
+    const maxBL = Math.max(1, ...actifs.map(r => r.nbBL));
+    const maxDist = Math.max(1, ...actifs.map(r => r.distance));
+    return actifs
+      .map(r => {
+        const sManquant = r.manquantTotal === 0 ? 35 : Math.max(0, 35 - r.manquantTotal * 2);
+        const sViolation = r.violC === 0 ? 35 : Math.max(0, 35 - r.violC * 5);
+        const sDistance = (r.distance / maxDist) * 20;
+        const sActivity = (r.nbBL / maxBL) * 10;
+        const score = sManquant + sViolation + sDistance + sActivity;
+        return { ...r, score: Math.round(score * 10) / 10 };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10);
+  }, [rows]);
+
   const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
 
   const periodLabel: Record<RankingPeriod, string> = {
