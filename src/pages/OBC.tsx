@@ -98,6 +98,24 @@ const OBC: React.FC = () => {
               }} />
             </CardHeader>
             <CardContent className="space-y-4">
+              <Tabs defaultValue="matrice" className="w-full">
+                <TabsList>
+                  <TabsTrigger value="matrice">Matrice</TabsTrigger>
+                  <TabsTrigger value="liste">Liste</TabsTrigger>
+                </TabsList>
+                <TabsContent value="matrice" className="pt-4">
+                  <ViolationsMatrix
+                    chauffeurs={chauffeurs}
+                    violations={violations}
+                    userId={user?.id}
+                    onChange={() => {
+                      qc.invalidateQueries({ queryKey: ['obc-violations'] });
+                      qc.invalidateQueries({ queryKey: ['obc-points'] });
+                      qc.invalidateQueries({ queryKey: ['obc-alertes'] });
+                    }}
+                  />
+                </TabsContent>
+                <TabsContent value="liste" className="space-y-4 pt-4">
               <div className="flex flex-wrap gap-2">
                 <Select value={fChauffeur} onValueChange={setFChauffeur}>
                   <SelectTrigger className="w-[220px]"><SelectValue placeholder="Chauffeur" /></SelectTrigger>
@@ -163,6 +181,8 @@ const OBC: React.FC = () => {
                   </TableBody>
                 </Table>
               </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </TabsContent>
@@ -854,4 +874,151 @@ const TempsConduiteMatrix: React.FC<{
   );
 };
 
+const ViolationsMatrix: React.FC<{
+  chauffeurs: any[];
+  violations: any[];
+  userId?: string;
+  onChange: () => void;
+}> = ({ chauffeurs, violations, userId, onChange }) => {
+  const [search, setSearch] = useState('');
+  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [pending, setPending] = useState<Record<string, Set<ObcViolationType>>>({});
+  const [saving, setSaving] = useState(false);
+
+  const types = Object.keys(OBC_VIOLATION_LABELS) as ObcViolationType[];
+
+  // Map des violations existantes pour la date sélectionnée: chauffeur_id -> Set<type>
+  const existing = useMemo(() => {
+    const m = new Map<string, Set<ObcViolationType>>();
+    violations.forEach(v => {
+      if (v.date_violation.slice(0, 10) === date) {
+        if (!m.has(v.chauffeur_id)) m.set(v.chauffeur_id, new Set());
+        m.get(v.chauffeur_id)!.add(v.type_violation);
+      }
+    });
+    return m;
+  }, [violations, date]);
+
+  const filtered = chauffeurs.filter((c: any) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return `${c.prenom} ${c.nom}`.toLowerCase().includes(s) || (c.matricule || '').toLowerCase().includes(s);
+  });
+
+  const toggle = (chauffeurId: string, type: ObcViolationType) => {
+    if (existing.get(chauffeurId)?.has(type)) return; // déjà enregistré
+    setPending(prev => {
+      const next = { ...prev };
+      const set = new Set(next[chauffeurId] || []);
+      if (set.has(type)) set.delete(type); else set.add(type);
+      next[chauffeurId] = set;
+      return next;
+    });
+  };
+
+  const isChecked = (chauffeurId: string, type: ObcViolationType) =>
+    existing.get(chauffeurId)?.has(type) || pending[chauffeurId]?.has(type) || false;
+
+  const totalPending = Object.values(pending).reduce((acc, s) => acc + s.size, 0);
+
+  const save = async () => {
+    if (totalPending === 0) { toast.info('Aucune sélection'); return; }
+    setSaving(true);
+    try {
+      const dateIso = new Date(`${date}T08:00:00`).toISOString();
+      const ops: Promise<any>[] = [];
+      Object.entries(pending).forEach(([chauffeurId, set]) => {
+        set.forEach(type => {
+          ops.push(obcService.createViolation({
+            chauffeur_id: chauffeurId,
+            date_violation: dateIso,
+            type_violation: type,
+            points_retires: 1,
+            commentaire: null,
+            mesures_prises: null,
+            preuve_url: null,
+            created_by: userId,
+          } as any));
+        });
+      });
+      await Promise.all(ops);
+      toast.success(`${totalPending} violation(s) enregistrée(s)`);
+      setPending({});
+      onChange();
+    } catch (e: any) {
+      toast.error(e.message || 'Erreur');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2 items-center">
+        <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-[180px]" />
+        <Input placeholder="Rechercher un chauffeur..." value={search} onChange={e => setSearch(e.target.value)} className="w-[260px]" />
+        <div className="flex-1" />
+        <Badge variant="secondary">{totalPending} sélection(s)</Badge>
+        <Button onClick={save} disabled={saving || totalPending === 0}>
+          {saving ? 'Enregistrement…' : 'Enregistrer la sélection'}
+        </Button>
+      </div>
+      <div className="overflow-x-auto border rounded-lg">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/30">
+              <th className="text-left p-2 font-medium sticky left-0 bg-muted/30 min-w-[200px]">Chauffeur</th>
+              {types.map(t => (
+                <th key={t} className="text-center p-2 font-medium min-w-[110px]">
+                  <span className="text-[10px] leading-tight block">{OBC_VIOLATION_LABELS[t]}</span>
+                </th>
+              ))}
+              <th className="text-center p-2 font-medium min-w-[60px]">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map((c: any) => {
+              const total = (existing.get(c.id)?.size || 0) + (pending[c.id]?.size || 0);
+              return (
+                <tr key={c.id} className="border-b hover:bg-muted/20 transition-colors">
+                  <td className="p-2 sticky left-0 bg-background">
+                    <p className="font-medium text-xs">{c.prenom} {c.nom}</p>
+                    {c.matricule && <p className="text-[10px] text-muted-foreground">{c.matricule}</p>}
+                  </td>
+                  {types.map(t => {
+                    const already = existing.get(c.id)?.has(t) || false;
+                    const checked = isChecked(c.id, t);
+                    return (
+                      <td key={t} className="p-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          disabled={already}
+                          onChange={() => toggle(c.id, t)}
+                          className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                          title={already ? 'Déjà enregistrée' : ''}
+                        />
+                      </td>
+                    );
+                  })}
+                  <td className="p-2 text-center">
+                    {total > 0 && <Badge variant={total >= 3 ? 'destructive' : 'secondary'}>{total}</Badge>}
+                  </td>
+                </tr>
+              );
+            })}
+            {filtered.length === 0 && (
+              <tr><td colSpan={types.length + 2} className="text-center text-muted-foreground py-8">Aucun chauffeur</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Cochez les violations constatées pour chaque chauffeur à la date sélectionnée, puis cliquez sur « Enregistrer la sélection ». Les cases grisées sont déjà enregistrées.
+      </p>
+    </div>
+  );
+};
+
 export default OBC;
+
