@@ -80,10 +80,11 @@ const OBC: React.FC = () => {
       </div>
 
       <Tabs defaultValue="violations" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
           <TabsTrigger value="violations">Violations</TabsTrigger>
           <TabsTrigger value="points">Points</TabsTrigger>
           <TabsTrigger value="temps">Temps de conduite</TabsTrigger>
+          <TabsTrigger value="ranking">Ranking</TabsTrigger>
           <TabsTrigger value="alertes">Alertes</TabsTrigger>
           <TabsTrigger value="config"><SettingsIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
