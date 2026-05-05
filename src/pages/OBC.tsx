@@ -200,6 +200,17 @@ const OBC: React.FC = () => {
 
         {/* TEMPS */}
         <TabsContent value="temps" className="space-y-4">
+          <TempsConduiteMatrix
+            chauffeurs={chauffeurs}
+            chauffeurMap={chauffeurMap}
+            temps={temps}
+            userId={user?.id}
+            onChange={() => {
+              qc.invalidateQueries({ queryKey: ['obc-temps'] });
+              qc.invalidateQueries({ queryKey: ['obc-violations'] });
+              qc.invalidateQueries({ queryKey: ['obc-alertes'] });
+            }}
+          />
           <TempsConduiteTab
             chauffeurs={chauffeurs}
             chauffeurMap={chauffeurMap}
