@@ -1039,7 +1039,7 @@ const ViolationsMatrix: React.FC<{
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Cochez les violations constatées pour chaque chauffeur à la date sélectionnée, puis cliquez sur « Enregistrer la sélection ». Les cases grisées sont déjà enregistrées.
+        Cochez les violations constatées pour chaque chauffeur à la date sélectionnée, puis cliquez sur « Enregistrer la sélection ». Une coche ✓ indique qu'une violation du même type existe déjà ce jour — vous pouvez en ajouter une autre.
       </p>
 
       <Dialog open={!!dialogCtx} onOpenChange={(o) => !o && setDialogCtx(null)}>
