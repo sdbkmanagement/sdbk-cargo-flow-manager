@@ -1183,17 +1183,28 @@ const PointsMatrix: React.FC<{
                     <p className="font-medium text-xs">{c.prenom} {c.nom}</p>
                     {c.matricule && <p className="text-[10px] text-muted-foreground">{c.matricule}</p>}
                   </td>
-                  <td className="p-2 text-center">12</td>
+                  <td className="p-2 text-center font-semibold text-foreground">12</td>
                   <td className="p-2 text-center">
-                    {retires > 0 ? <Badge variant="destructive">-{retires}</Badge> : <span className="text-muted-foreground">0</span>}
+                    {retires > 0
+                      ? <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-destructive/10 text-destructive font-semibold text-xs">-{retires}</span>
+                      : <span className="font-semibold text-foreground">0</span>}
                   </td>
                   <td className="p-2 text-center">
-                    <Badge variant={variant as any}>{solde} / 12</Badge>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-md font-semibold text-xs ${
+                      solde === 0 ? 'bg-destructive/15 text-destructive'
+                      : solde <= 3 ? 'bg-destructive/10 text-destructive'
+                      : solde <= 6 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400'
+                      : 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400'
+                    }`}>{solde} / 12</span>
                   </td>
                   <td className="p-2 text-center">
-                    {solde === 0 ? <Badge variant="destructive">BLOQUÉ</Badge>
-                      : solde <= 3 ? <Badge variant="secondary">À risque</Badge>
-                      : <Badge>OK</Badge>}
+                    {solde === 0
+                      ? <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-destructive text-destructive-foreground font-semibold text-xs">BLOQUÉ</span>
+                      : solde <= 3
+                        ? <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-destructive/10 text-destructive font-semibold text-xs">À risque</span>
+                        : solde <= 6
+                          ? <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-700 dark:text-amber-400 font-semibold text-xs">Vigilance</span>
+                          : <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-semibold text-xs">OK</span>}
                   </td>
                   <td className="p-2 text-center">
                     <Button size="sm" variant="outline" onClick={() => openFor(c)}>
