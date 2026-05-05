@@ -19,7 +19,8 @@ import {
   Briefcase,
   ShieldCheck,
   GraduationCap,
-  ClipboardList
+  ClipboardList,
+  Activity
 } from 'lucide-react';
 
 interface ModernSidebarProps {
@@ -92,6 +93,13 @@ const menuItems = [
     icon: ShieldCheck,
     module: 'hseq',
     allowedRoles: ['admin', 'hsecq', 'direction', 'transport']
+  },
+  {
+    path: '/obc',
+    label: 'OBC',
+    icon: Activity,
+    module: 'obc',
+    allowedRoles: ['admin', 'obc', 'hsecq', 'direction', 'directeur_exploitation']
   },
   {
     path: '/rapports',
