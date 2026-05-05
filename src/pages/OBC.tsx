@@ -904,14 +904,12 @@ const ViolationsMatrix: React.FC<{
   });
 
   const openDialog = (c: any, type: ObcViolationType) => {
-    if (existing.get(c.id)?.has(type)) return;
     const current = pending[c.id]?.[type];
     setForm(current || { date, points_retires: 0, commentaire: '', preuveFile: null });
     setDialogCtx({ chauffeurId: c.id, chauffeurLabel: `${c.prenom} ${c.nom}`, type });
   };
 
   const toggle = (c: any, type: ObcViolationType) => {
-    if (existing.get(c.id)?.has(type)) return;
     if (pending[c.id]?.[type]) {
       setPending(prev => {
         const next = { ...prev };
@@ -1015,14 +1013,16 @@ const ViolationsMatrix: React.FC<{
                     const checked = isChecked(c.id, t);
                     return (
                       <td key={t} className="p-2 text-center">
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          disabled={already}
-                          onChange={() => toggle(c, t)}
-                          className="h-4 w-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-                          title={already ? 'Déjà enregistrée' : 'Cliquer pour saisir les détails'}
-                        />
+                        <div className="flex items-center justify-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggle(c, t)}
+                            className="h-4 w-4 cursor-pointer"
+                            title={already ? 'Déjà enregistrée — cocher pour en ajouter une autre ce jour' : 'Cliquer pour saisir les détails'}
+                          />
+                          {already && <span className="text-[9px] text-muted-foreground" title="Déjà enregistrée ce jour">✓</span>}
+                        </div>
                       </td>
                     );
                   })}
@@ -1039,7 +1039,7 @@ const ViolationsMatrix: React.FC<{
         </table>
       </div>
       <p className="text-xs text-muted-foreground">
-        Cochez les violations constatées pour chaque chauffeur à la date sélectionnée, puis cliquez sur « Enregistrer la sélection ». Les cases grisées sont déjà enregistrées.
+        Cochez les violations constatées pour chaque chauffeur à la date sélectionnée, puis cliquez sur « Enregistrer la sélection ». Une coche ✓ indique qu'une violation du même type existe déjà ce jour — vous pouvez en ajouter une autre.
       </p>
 
       <Dialog open={!!dialogCtx} onOpenChange={(o) => !o && setDialogCtx(null)}>
