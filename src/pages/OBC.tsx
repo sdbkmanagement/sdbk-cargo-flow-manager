@@ -181,6 +181,8 @@ const OBC: React.FC = () => {
                   </TableBody>
                 </Table>
               </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         </TabsContent>
