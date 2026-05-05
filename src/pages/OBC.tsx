@@ -307,7 +307,8 @@ const RankingConducteurs: React.FC<{
   chauffeurMap: Map<string, string>;
   violations: any[];
   bls: any[];
-}> = ({ chauffeurs, violations, bls }) => {
+  temps: any[];
+}> = ({ chauffeurs, violations, bls, temps }) => {
   const [period, setPeriod] = useState<RankingPeriod>('mois');
   const [refDate, setRefDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
@@ -357,10 +358,12 @@ const RankingConducteurs: React.FC<{
       const blsC = bls.filter((b: any) => b.chauffeur_id === cid && b.date_chargement_reelle && inRange(b.date_chargement_reelle));
       const manquantTotal = blsC.reduce((s: number, b: any) => s + (Number(b.manquant_total) || 0), 0);
       const violC = violations.filter((v: any) => v.chauffeur_id === cid && inRange(v.date_violation)).length;
-      const distance = blsC.reduce((s: number, b: any) => s + (Number(b.distance_km) || 0), 0);
+      const distance = temps
+        .filter((t: any) => t.chauffeur_id === cid && t.date_jour && inRange(t.date_jour))
+        .reduce((s: number, t: any) => s + (Number(t.distance_km) || 0), 0);
       return { cid, name, manquantTotal, violC, distance, nbBL: blsC.length };
     }).filter(r => r.name);
-  }, [chauffeurs, bls, violations, range]);
+  }, [chauffeurs, bls, violations, temps, range]);
 
   const rankZeroManquant = useMemo(() =>
     [...rows].filter(r => r.manquantTotal === 0 && r.nbBL > 0).sort((a, b) => b.nbBL - a.nbBL).slice(0, 10),
