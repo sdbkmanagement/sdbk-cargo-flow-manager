@@ -121,14 +121,18 @@ export const obcService = {
     return (data || []) as ObcTempsConduite[];
   },
 
-  async upsertTemps(payload: Omit<ObcTempsConduite, 'id'>) {
+  async insertTemps(payload: Omit<ObcTempsConduite, 'id'>) {
     const { data, error } = await (supabase as any)
       .from('obc_temps_conduite')
-      .upsert(payload, { onConflict: 'chauffeur_id,date_jour' })
+      .insert(payload)
       .select()
       .single();
     if (error) throw error;
     return data as ObcTempsConduite;
+  },
+  // Conserver pour compat
+  async upsertTemps(payload: Omit<ObcTempsConduite, 'id'>) {
+    return this.insertTemps(payload);
   },
 
   async deleteTemps(id: string) {

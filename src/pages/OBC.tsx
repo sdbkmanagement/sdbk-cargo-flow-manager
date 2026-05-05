@@ -200,50 +200,17 @@ const OBC: React.FC = () => {
 
         {/* TEMPS */}
         <TabsContent value="temps" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Temps de conduite</CardTitle>
-              <TempsDialog chauffeurs={chauffeurs} userId={user?.id} onSaved={() => {
-                qc.invalidateQueries({ queryKey: ['obc-temps'] });
-                qc.invalidateQueries({ queryKey: ['obc-violations'] });
-                qc.invalidateQueries({ queryKey: ['obc-alertes'] });
-              }} />
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Chauffeur</TableHead>
-                    <TableHead>Distance (km)</TableHead>
-                    <TableHead>Temps (h)</TableHead>
-                    <TableHead>Continu max (h)</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {temps.map(t => (
-                    <TableRow key={t.id}>
-                      <TableCell>{format(new Date(t.date_jour), 'dd/MM/yyyy')}</TableCell>
-                      <TableCell>{chauffeurMap.get(t.chauffeur_id) || '—'}</TableCell>
-                      <TableCell>{t.distance_km}</TableCell>
-                      <TableCell>{t.temps_conduite_h}</TableCell>
-                      <TableCell>{t.temps_continu_max_h ?? 0}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" onClick={async () => {
-                          if (confirm('Supprimer ?')) {
-                            await obcService.deleteTemps(t.id);
-                            qc.invalidateQueries({ queryKey: ['obc-temps'] });
-                          }
-                        }}><Trash2 className="h-4 w-4" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {temps.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune saisie</TableCell></TableRow>}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <TempsConduiteTab
+            chauffeurs={chauffeurs}
+            chauffeurMap={chauffeurMap}
+            temps={temps}
+            userId={user?.id}
+            onChange={() => {
+              qc.invalidateQueries({ queryKey: ['obc-temps'] });
+              qc.invalidateQueries({ queryKey: ['obc-violations'] });
+              qc.invalidateQueries({ queryKey: ['obc-alertes'] });
+            }}
+          />
         </TabsContent>
 
         {/* ALERTES */}
@@ -409,25 +376,35 @@ const ViolationDialog: React.FC<{ chauffeurs: any[]; userId?: string; onCreated:
   );
 };
 
-const TempsDialog: React.FC<{ chauffeurs: any[]; userId?: string; onSaved: () => void }> = ({ chauffeurs, userId, onSaved }) => {
+const TempsDialog: React.FC<{
+  chauffeurs: any[];
+  userId?: string;
+  onSaved: () => void;
+  preselectedChauffeurId?: string;
+  triggerLabel?: string;
+}> = ({ chauffeurs, userId, onSaved, preselectedChauffeurId, triggerLabel }) => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
-    chauffeur_id: '',
+    chauffeur_id: preselectedChauffeurId || '',
     date_jour: new Date().toISOString().slice(0, 10),
     distance_km: 0,
     temps_conduite_h: 0,
     temps_continu_max_h: 0,
+    commentaire: '',
   });
   const [loading, setLoading] = useState(false);
+  React.useEffect(() => {
+    if (preselectedChauffeurId) setForm(f => ({ ...f, chauffeur_id: preselectedChauffeurId }));
+  }, [preselectedChauffeurId]);
 
   const submit = async () => {
     if (!form.chauffeur_id) { toast.error('Sélectionnez un chauffeur'); return; }
     setLoading(true);
     try {
-      await obcService.upsertTemps({ ...form, created_by: userId } as any);
+      await obcService.insertTemps({ ...form, created_by: userId } as any);
       toast.success('Saisie enregistrée');
       setOpen(false);
-      setForm({ ...form, chauffeur_id: '', distance_km: 0, temps_conduite_h: 0, temps_continu_max_h: 0 });
+      setForm({ ...form, distance_km: 0, temps_conduite_h: 0, temps_continu_max_h: 0, commentaire: '' });
       onSaved();
     } catch (e: any) {
       toast.error(e.message || 'Erreur');
@@ -438,7 +415,7 @@ const TempsDialog: React.FC<{ chauffeurs: any[]; userId?: string; onSaved: () =>
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Nouvelle saisie</Button></DialogTrigger>
+      <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />{triggerLabel || 'Nouvelle saisie'}</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Temps de conduite journalier</DialogTitle></DialogHeader>
         <div className="space-y-3">
@@ -469,7 +446,11 @@ const TempsDialog: React.FC<{ chauffeurs: any[]; userId?: string; onSaved: () =>
               <Input type="number" step="0.1" min={0} value={form.temps_continu_max_h} onChange={e => setForm({ ...form, temps_continu_max_h: parseFloat(e.target.value) || 0 })} />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Les dépassements (10h, 2h30, 56h sur 7j) génèrent automatiquement violations et alertes.</p>
+          <div>
+            <Label>Commentaire</Label>
+            <Textarea rows={2} value={form.commentaire} onChange={e => setForm({ ...form, commentaire: e.target.value })} />
+          </div>
+          <p className="text-xs text-muted-foreground">Plusieurs saisies par jour autorisées. Les dépassements (10h, 2h30, 56h sur 7j) génèrent automatiquement violations et alertes.</p>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>Annuler</Button>
@@ -477,6 +458,175 @@ const TempsDialog: React.FC<{ chauffeurs: any[]; userId?: string; onSaved: () =>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+};
+
+const MOIS_LABELS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+const TempsConduiteTab: React.FC<{
+  chauffeurs: any[];
+  chauffeurMap: Map<string, string>;
+  temps: any[];
+  userId?: string;
+  onChange: () => void;
+}> = ({ chauffeurs, chauffeurMap, temps, userId, onChange }) => {
+  const [selectedChauffeur, setSelectedChauffeur] = useState<string>('');
+  const [annee, setAnnee] = useState<number>(new Date().getFullYear());
+
+  const sorted = useMemo(() => [...chauffeurs].sort((a: any, b: any) =>
+    `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`)), [chauffeurs]);
+
+  const tempsChauffeur = useMemo(() => {
+    if (!selectedChauffeur) return [];
+    return temps
+      .filter(t => t.chauffeur_id === selectedChauffeur && new Date(t.date_jour).getFullYear() === annee)
+      .sort((a, b) => a.date_jour.localeCompare(b.date_jour));
+  }, [temps, selectedChauffeur, annee]);
+
+  const synthese = useMemo(() => {
+    const mois = Array.from({ length: 12 }, () => ({ distance: 0, temps: 0, saisies: 0 }));
+    tempsChauffeur.forEach(t => {
+      const m = new Date(t.date_jour).getMonth();
+      mois[m].distance += Number(t.distance_km || 0);
+      mois[m].temps += Number(t.temps_conduite_h || 0);
+      mois[m].saisies += 1;
+    });
+    const cumulD = mois.reduce((s, m) => s + m.distance, 0);
+    const cumulT = mois.reduce((s, m) => s + m.temps, 0);
+    const cumulS = mois.reduce((s, m) => s + m.saisies, 0);
+    return { mois, cumulD, cumulT, cumulS };
+  }, [tempsChauffeur]);
+
+  const anneesDispo = useMemo(() => {
+    const ys = new Set<number>([new Date().getFullYear()]);
+    temps.forEach(t => ys.add(new Date(t.date_jour).getFullYear()));
+    return [...ys].sort((a, b) => b - a);
+  }, [temps]);
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Suivi temps de travail – Sélection</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-3 items-end">
+          <div className="min-w-[260px]">
+            <Label>Chauffeur *</Label>
+            <Select value={selectedChauffeur} onValueChange={setSelectedChauffeur}>
+              <SelectTrigger><SelectValue placeholder="Sélectionner un chauffeur..." /></SelectTrigger>
+              <SelectContent>
+                {sorted.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nom} {c.prenom}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>Année</Label>
+            <Select value={String(annee)} onValueChange={v => setAnnee(parseInt(v))}>
+              <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {anneesDispo.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {selectedChauffeur && (
+            <TempsDialog
+              chauffeurs={chauffeurs}
+              userId={userId}
+              onSaved={onChange}
+              preselectedChauffeurId={selectedChauffeur}
+              triggerLabel="Nouvelle saisie"
+            />
+          )}
+        </CardContent>
+      </Card>
+
+      {!selectedChauffeur ? (
+        <Card><CardContent className="py-12 text-center text-muted-foreground">
+          Sélectionnez un chauffeur pour afficher la synthèse mensuelle et le cumul annuel.
+        </CardContent></Card>
+      ) : (
+        <>
+          {/* SYNTHESE MENSUELLE + CUMUL ANNUEL */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Synthèse {annee} – {chauffeurMap.get(selectedChauffeur)}</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Mois</TableHead>
+                    <TableHead className="text-right">Distance (km)</TableHead>
+                    <TableHead className="text-right">Temps travail (h)</TableHead>
+                    <TableHead className="text-right">Saisies</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {synthese.mois.map((m, i) => (
+                    <TableRow key={i}>
+                      <TableCell className="font-medium">{MOIS_LABELS[i]}</TableCell>
+                      <TableCell className="text-right">{m.distance.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                      <TableCell className="text-right">{m.temps.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                      <TableCell className="text-right">{m.saisies}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="bg-muted/50 font-bold">
+                    <TableCell>Cumul annuel {annee}</TableCell>
+                    <TableCell className="text-right">{synthese.cumulD.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-right">{synthese.cumulT.toLocaleString('fr-FR', { maximumFractionDigits: 2 })}</TableCell>
+                    <TableCell className="text-right">{synthese.cumulS}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* DETAIL DES SAISIES */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Détail des saisies ({tempsChauffeur.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Distance (km)</TableHead>
+                    <TableHead className="text-right">Temps (h)</TableHead>
+                    <TableHead className="text-right">Continu max (h)</TableHead>
+                    <TableHead>Commentaire</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {tempsChauffeur.map(t => (
+                    <TableRow key={t.id}>
+                      <TableCell className="whitespace-nowrap">{format(new Date(t.date_jour), 'dd/MM/yyyy')}</TableCell>
+                      <TableCell className="text-right">{Number(t.distance_km).toLocaleString('fr-FR')}</TableCell>
+                      <TableCell className="text-right">{Number(t.temps_conduite_h).toLocaleString('fr-FR')}</TableCell>
+                      <TableCell className="text-right">{Number(t.temps_continu_max_h ?? 0).toLocaleString('fr-FR')}</TableCell>
+                      <TableCell className="max-w-[260px] truncate">{t.commentaire || '—'}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" onClick={async () => {
+                          if (confirm('Supprimer cette saisie ?')) {
+                            await obcService.deleteTemps(t.id);
+                            toast.success('Supprimée');
+                            onChange();
+                          }
+                        }}><Trash2 className="h-4 w-4" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {tempsChauffeur.length === 0 && (
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune saisie pour {annee}</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
   );
 };
 
