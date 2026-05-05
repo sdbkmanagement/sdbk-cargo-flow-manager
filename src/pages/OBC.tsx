@@ -190,30 +190,18 @@ const OBC: React.FC = () => {
         {/* POINTS */}
         <TabsContent value="points">
           <Card>
-            <CardHeader><CardTitle>Points par chauffeur</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Matrice des points par chauffeur</CardTitle></CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Chauffeur</TableHead>
-                    <TableHead>Points</TableHead>
-                    <TableHead>Statut</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {chauffeurs.map((c: any) => {
-                    const p = pointsMap.get(c.id) ?? 12;
-                    const variant = p === 0 ? 'destructive' : p <= 3 ? 'destructive' : p <= 6 ? 'secondary' : 'default';
-                    return (
-                      <TableRow key={c.id}>
-                        <TableCell>{c.prenom} {c.nom}</TableCell>
-                        <TableCell><Badge variant={variant as any}>{p} / 12</Badge></TableCell>
-                        <TableCell>{p === 0 ? <Badge variant="destructive">BLOQUÉ</Badge> : p <= 3 ? <Badge variant="secondary">À risque</Badge> : <Badge>OK</Badge>}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+              <PointsMatrix
+                chauffeurs={chauffeurs}
+                violations={violations}
+                pointsMap={pointsMap}
+                userId={user?.id}
+                onChange={() => {
+                  qc.invalidateQueries({ queryKey: ['obc-violations'] });
+                  qc.invalidateQueries({ queryKey: ['obc-points'] });
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
