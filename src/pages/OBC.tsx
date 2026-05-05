@@ -14,8 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as SettingsIcon } from 'lucide-react';
+import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as SettingsIcon, Trophy, Medal } from 'lucide-react';
 import { format } from 'date-fns';
+import { bonsLivraisonService } from '@/services/bonsLivraison';
 
 const OBC: React.FC = () => {
   const { user } = useAuth();
