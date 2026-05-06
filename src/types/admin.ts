@@ -81,12 +81,20 @@ export const ROLES: string[] = [
 ];
 
 export const MODULE_PERMISSIONS: string[] = [
+  'dashboard',
   'fleet',
-  'drivers',
-  'rh',
   'missions',
+  'drivers',
   'billing',
-  'dashboard'
+  'validations',
+  'rh',
+  'hseq',
+  'obc',
+  'formations',
+  'maintenance',
+  'clients',
+  'societe',
+  'rapports'
 ];
 
 export const PERMISSIONS: string[] = [
