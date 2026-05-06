@@ -49,12 +49,20 @@ export interface LoginAttempt {
 }
 
 export const MODULES = [
+  'dashboard',
   'fleet',
-  'missions', 
+  'missions',
   'drivers',
   'billing',
   'validations',
   'rh',
+  'hseq',
+  'obc',
+  'formations',
+  'maintenance',
+  'clients',
+  'societe',
+  'rapports',
   'admin'
 ] as const;
 
@@ -105,14 +113,21 @@ export const ROLE_LABELS: Record<string, string> = {
 };
 
 export const MODULE_LABELS: Record<string, string> = {
+  dashboard: 'Dashboard',
   fleet: 'Flotte',
   missions: 'Missions',
   drivers: 'Chauffeurs',
   billing: 'Facturation',
   validations: 'Validations',
   rh: 'Ressources Humaines',
-  admin: 'Administration',
-  dashboard: 'Dashboard'
+  hseq: 'HSEQ',
+  obc: 'OBC',
+  formations: 'Formations',
+  maintenance: 'Maintenance',
+  clients: 'Clients',
+  societe: 'Société',
+  rapports: 'Rapports',
+  admin: 'Administration'
 };
 
 export const PERMISSION_LABELS: Record<string, string> = {
