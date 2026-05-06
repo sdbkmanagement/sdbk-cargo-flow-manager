@@ -49,12 +49,20 @@ export interface LoginAttempt {
 }
 
 export const MODULES = [
+  'dashboard',
   'fleet',
-  'missions', 
+  'missions',
   'drivers',
   'billing',
   'validations',
   'rh',
+  'hseq',
+  'obc',
+  'formations',
+  'maintenance',
+  'clients',
+  'societe',
+  'rapports',
   'admin'
 ] as const;
 
