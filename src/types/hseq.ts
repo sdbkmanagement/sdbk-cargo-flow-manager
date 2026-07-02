@@ -89,6 +89,7 @@ export interface NonConformite {
     id: string;
     numero: string;
     immatriculation: string;
+    remorque_immatriculation?: string;
   };
   chauffeur?: {
     id: string;
