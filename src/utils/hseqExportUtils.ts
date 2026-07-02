@@ -32,7 +32,8 @@ export const exportSTLControlsToExcel = (controls: SafeToLoadControl[], filename
   ws['!cols'] = [
     { wch: 18 }, // Date
     { wch: 12 }, // Véhicule
-    { wch: 15 }, // Immatriculation
+    { wch: 16 }, // Tracteur
+    { wch: 16 }, // Citerne
     { wch: 25 }, // Chauffeur
     { wch: 15 }, // Statut
     { wch: 10 }, // Bloquant
