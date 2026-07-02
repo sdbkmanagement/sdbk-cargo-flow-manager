@@ -24,7 +24,7 @@ export const hseqService = {
       .from('safe_to_load_controls')
       .select(`
         *,
-        vehicule:vehicules(id, numero, immatriculation),
+        vehicule:vehicules(id, numero, immatriculation, remorque_immatriculation),
         chauffeur:chauffeurs(id, nom, prenom),
         controleur:users!controleur_id(id, first_name, last_name),
         items:safe_to_load_items(*)
@@ -57,7 +57,7 @@ export const hseqService = {
       .from('safe_to_load_controls')
       .select(`
         *,
-        vehicule:vehicules(id, numero, immatriculation),
+        vehicule:vehicules(id, numero, immatriculation, remorque_immatriculation),
         chauffeur:chauffeurs(id, nom, prenom),
         controleur:users!controleur_id(id, first_name, last_name),
         items:safe_to_load_items(*)
@@ -197,7 +197,7 @@ export const hseqService = {
       .from('non_conformites')
       .select(`
         *,
-        vehicule:vehicules(id, numero, immatriculation),
+        vehicule:vehicules(id, numero, immatriculation, remorque_immatriculation),
         chauffeur:chauffeurs(id, nom, prenom)
       `)
       .order('date_detection', { ascending: false });
@@ -222,7 +222,7 @@ export const hseqService = {
       .from('non_conformites')
       .select(`
         *,
-        vehicule:vehicules(id, numero, immatriculation),
+        vehicule:vehicules(id, numero, immatriculation, remorque_immatriculation),
         chauffeur:chauffeurs(id, nom, prenom)
       `)
       .eq('id', id)
