@@ -120,6 +120,8 @@ export const exportHSEQStatsToExcel = (stats: HSEQStats, controls: SafeToLoadCon
     const controlsData = controls.map(c => ({
       'Date': format(new Date(c.date_controle), 'dd/MM/yyyy HH:mm'),
       'Véhicule': c.vehicule?.numero || '',
+      'Immat. Tracteur': c.vehicule?.immatriculation || '',
+      'Immat. Citerne': c.vehicule?.remorque_immatriculation || '',
       'Chauffeur': c.chauffeur ? `${c.chauffeur.prenom} ${c.chauffeur.nom}` : '',
       'Statut': c.statut.toUpperCase(),
       'Bloquant': c.is_blocking ? 'OUI' : 'NON',
