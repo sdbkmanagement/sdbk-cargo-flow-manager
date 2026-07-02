@@ -32,6 +32,7 @@ export interface SafeToLoadControl {
     id: string;
     numero: string;
     immatriculation: string;
+    remorque_immatriculation?: string;
   };
   chauffeur?: {
     id: string;
