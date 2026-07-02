@@ -29,6 +29,7 @@ export interface ControleInopine {
     id: string;
     numero: string;
     immatriculation: string;
+    remorque_immatriculation?: string;
   };
   chauffeur?: {
     id: string;
