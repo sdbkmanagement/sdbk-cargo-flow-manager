@@ -11,7 +11,8 @@ export const exportSTLControlsToExcel = (controls: SafeToLoadControl[], filename
   const data = controls.map(control => ({
     'Date contrôle': format(new Date(control.date_controle), 'dd/MM/yyyy HH:mm', { locale: fr }),
     'Véhicule': control.vehicule?.numero || '',
-    'Immatriculation': control.vehicule?.immatriculation || '',
+    'Immat. Tracteur': control.vehicule?.immatriculation || '',
+    'Immat. Citerne': control.vehicule?.remorque_immatriculation || '',
     'Chauffeur': control.chauffeur ? `${control.chauffeur.prenom} ${control.chauffeur.nom}` : '',
     'Statut': control.statut.toUpperCase(),
     'Bloquant': control.is_blocking ? 'OUI' : 'NON',
