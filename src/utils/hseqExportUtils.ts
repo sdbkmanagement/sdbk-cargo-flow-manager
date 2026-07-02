@@ -11,7 +11,8 @@ export const exportSTLControlsToExcel = (controls: SafeToLoadControl[], filename
   const data = controls.map(control => ({
     'Date contrôle': format(new Date(control.date_controle), 'dd/MM/yyyy HH:mm', { locale: fr }),
     'Véhicule': control.vehicule?.numero || '',
-    'Immatriculation': control.vehicule?.immatriculation || '',
+    'Immat. Tracteur': control.vehicule?.immatriculation || '',
+    'Immat. Citerne': control.vehicule?.remorque_immatriculation || '',
     'Chauffeur': control.chauffeur ? `${control.chauffeur.prenom} ${control.chauffeur.nom}` : '',
     'Statut': control.statut.toUpperCase(),
     'Bloquant': control.is_blocking ? 'OUI' : 'NON',
@@ -31,7 +32,8 @@ export const exportSTLControlsToExcel = (controls: SafeToLoadControl[], filename
   ws['!cols'] = [
     { wch: 18 }, // Date
     { wch: 12 }, // Véhicule
-    { wch: 15 }, // Immatriculation
+    { wch: 16 }, // Tracteur
+    { wch: 16 }, // Citerne
     { wch: 25 }, // Chauffeur
     { wch: 15 }, // Statut
     { wch: 10 }, // Bloquant
@@ -118,6 +120,8 @@ export const exportHSEQStatsToExcel = (stats: HSEQStats, controls: SafeToLoadCon
     const controlsData = controls.map(c => ({
       'Date': format(new Date(c.date_controle), 'dd/MM/yyyy HH:mm'),
       'Véhicule': c.vehicule?.numero || '',
+      'Immat. Tracteur': c.vehicule?.immatriculation || '',
+      'Immat. Citerne': c.vehicule?.remorque_immatriculation || '',
       'Chauffeur': c.chauffeur ? `${c.chauffeur.prenom} ${c.chauffeur.nom}` : '',
       'Statut': c.statut.toUpperCase(),
       'Bloquant': c.is_blocking ? 'OUI' : 'NON',
@@ -342,7 +346,15 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
       <div class="info-grid">
         <div class="info-box">
           <div class="info-label">Véhicule</div>
-          <div class="info-value">${control.vehicule?.numero || 'N/A'} - ${control.vehicule?.immatriculation || ''}</div>
+          <div class="info-value">${control.vehicule?.numero || 'N/A'}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Immat. Tracteur</div>
+          <div class="info-value">${control.vehicule?.immatriculation || 'N/A'}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Immat. Citerne</div>
+          <div class="info-value">${control.vehicule?.remorque_immatriculation || 'N/A'}</div>
         </div>
         <div class="info-box">
           <div class="info-label">Chauffeur</div>
@@ -560,7 +572,15 @@ export const generateNCReportPDF = (nc: NonConformite) => {
         ${nc.vehicule ? `
           <div class="info-row">
             <span class="info-label">Véhicule:</span>
-            <span class="info-value">${nc.vehicule.numero} - ${nc.vehicule.immatriculation}</span>
+            <span class="info-value">${nc.vehicule.numero}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Immat. Tracteur:</span>
+            <span class="info-value">${nc.vehicule.immatriculation || '—'}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Immat. Citerne:</span>
+            <span class="info-value">${nc.vehicule.remorque_immatriculation || '—'}</span>
           </div>
         ` : ''}
         ${nc.chauffeur ? `
