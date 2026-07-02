@@ -344,7 +344,15 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
       <div class="info-grid">
         <div class="info-box">
           <div class="info-label">Véhicule</div>
-          <div class="info-value">${control.vehicule?.numero || 'N/A'} - ${control.vehicule?.immatriculation || ''}</div>
+          <div class="info-value">${control.vehicule?.numero || 'N/A'}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Immat. Tracteur</div>
+          <div class="info-value">${control.vehicule?.immatriculation || 'N/A'}</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Immat. Citerne</div>
+          <div class="info-value">${control.vehicule?.remorque_immatriculation || 'N/A'}</div>
         </div>
         <div class="info-box">
           <div class="info-label">Chauffeur</div>
