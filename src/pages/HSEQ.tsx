@@ -548,8 +548,8 @@ const HSEQ: React.FC = () => {
                       <div>
                         <p className="font-medium">{control.vehicule?.numero}</p>
                         <p className="text-xs text-muted-foreground">
-                          Tracteur: <span className="font-medium text-foreground">{control.vehicule?.immatriculation || '—'}</span>
-                          {' · '}Citerne: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
+                          Plaque d'immatriculation tracteur: <span className="font-medium text-foreground">{control.vehicule?.immatriculation || '—'}</span>
+                          {' · '}Plaque d'immatriculation remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {control.chauffeur?.prenom} {control.chauffeur?.nom}
@@ -630,8 +630,8 @@ const HSEQ: React.FC = () => {
                           <Badge variant="outline" className="text-xs">INOPINÉ</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Tracteur: <span className="font-medium text-foreground">{control.vehicule?.immatriculation || '—'}</span>
-                          {' · '}Citerne: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
+                          Plaque d'immatriculation tracteur: <span className="font-medium text-foreground">{control.vehicule?.immatriculation || '—'}</span>
+                          {' · '}Plaque d'immatriculation remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {control.chauffeur?.prenom} {control.chauffeur?.nom}
