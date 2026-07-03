@@ -11,8 +11,8 @@ export const exportSTLControlsToExcel = (controls: SafeToLoadControl[], filename
   const data = controls.map(control => ({
     'Date contrôle': format(new Date(control.date_controle), 'dd/MM/yyyy HH:mm', { locale: fr }),
     'Véhicule': control.vehicule?.numero || '',
-    'Plaque d'immatriculation tracteur': control.vehicule?.immatriculation || '',
-    'Plaque d'immatriculation remorque': control.vehicule?.remorque_immatriculation || '',
+    "Plaque d'immatriculation tracteur": control.vehicule?.immatriculation || '',
+    "Plaque d'immatriculation remorque": control.vehicule?.remorque_immatriculation || '',
     'Chauffeur': control.chauffeur ? `${control.chauffeur.prenom} ${control.chauffeur.nom}` : '',
     'Statut': control.statut.toUpperCase(),
     'Bloquant': control.is_blocking ? 'OUI' : 'NON',
@@ -120,8 +120,8 @@ export const exportHSEQStatsToExcel = (stats: HSEQStats, controls: SafeToLoadCon
     const controlsData = controls.map(c => ({
       'Date': format(new Date(c.date_controle), 'dd/MM/yyyy HH:mm'),
       'Véhicule': c.vehicule?.numero || '',
-      'Plaque d'immatriculation tracteur': c.vehicule?.immatriculation || '',
-      'Plaque d'immatriculation remorque': c.vehicule?.remorque_immatriculation || '',
+      "Plaque d'immatriculation tracteur": c.vehicule?.immatriculation || '',
+      "Plaque d'immatriculation remorque": c.vehicule?.remorque_immatriculation || '',
       'Chauffeur': c.chauffeur ? `${c.chauffeur.prenom} ${c.chauffeur.nom}` : '',
       'Statut': c.statut.toUpperCase(),
       'Bloquant': c.is_blocking ? 'OUI' : 'NON',
