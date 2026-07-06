@@ -251,8 +251,13 @@ export const ModuleHub: React.FC = () => {
       return true;
     }
 
-    // Dashboard visible uniquement pour les admins
+    // Dashboard visible pour les admins et les utilisateurs "dashboard_viewer"
     if (module.id === 'dashboard') {
+      const isDashboardViewer = user.roles?.includes('dashboard_viewer') || user.role === 'dashboard_viewer';
+      if (isDashboardViewer) {
+        console.log(`✅ Utilisateur dashboard_viewer - accès accordé au module dashboard`);
+        return true;
+      }
       console.log(`🔍 Vérification accès dashboard - Admin: false`);
       return false;
     }
