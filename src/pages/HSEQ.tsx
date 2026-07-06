@@ -443,7 +443,9 @@ const HSEQ: React.FC = () => {
                   <div key={control.id} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
                       <Truck className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{control.vehicule?.numero}</span>
+                      <span className="font-medium">
+                        {control.vehicule?.immatriculation || '—'} / {control.vehicule?.remorque_immatriculation || '—'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
