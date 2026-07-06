@@ -1,0 +1,1 @@
+CREATE POLICY "OBC peut voir les chauffeurs" ON public.chauffeurs FOR SELECT USING (current_user_has_role('obc'::user_role));
