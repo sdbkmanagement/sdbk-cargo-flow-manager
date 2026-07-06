@@ -31,7 +31,8 @@ export interface SafeToLoadControl {
   vehicule?: {
     id: string;
     numero: string;
-    immatriculation: string;
+    immatriculation?: string;
+    tracteur_immatriculation?: string;
     remorque_immatriculation?: string;
   };
   chauffeur?: {
