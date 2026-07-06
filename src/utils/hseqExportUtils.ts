@@ -11,7 +11,7 @@ export const exportSTLControlsToExcel = (controls: SafeToLoadControl[], filename
   const data = controls.map(control => ({
     'Date contrôle': format(new Date(control.date_controle), 'dd/MM/yyyy HH:mm', { locale: fr }),
     'Véhicule': control.vehicule?.numero || '',
-    "Plaque d'immatriculation tracteur": control.vehicule?.immatriculation || '',
+    "Plaque d'immatriculation tracteur": control.vehicule?.tracteur_immatriculation || control.vehicule?.immatriculation || '',
     "Plaque d'immatriculation remorque": control.vehicule?.remorque_immatriculation || '',
     'Chauffeur': control.chauffeur ? `${control.chauffeur.prenom} ${control.chauffeur.nom}` : '',
     'Statut': control.statut.toUpperCase(),
@@ -120,7 +120,7 @@ export const exportHSEQStatsToExcel = (stats: HSEQStats, controls: SafeToLoadCon
     const controlsData = controls.map(c => ({
       'Date': format(new Date(c.date_controle), 'dd/MM/yyyy HH:mm'),
       'Véhicule': c.vehicule?.numero || '',
-      "Plaque d'immatriculation tracteur": c.vehicule?.immatriculation || '',
+      "Plaque d'immatriculation tracteur": c.vehicule?.tracteur_immatriculation || c.vehicule?.immatriculation || '',
       "Plaque d'immatriculation remorque": c.vehicule?.remorque_immatriculation || '',
       'Chauffeur': c.chauffeur ? `${c.chauffeur.prenom} ${c.chauffeur.nom}` : '',
       'Statut': c.statut.toUpperCase(),
@@ -346,7 +346,7 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
       <div class="info-grid">
         <div class="info-box">
           <div class="info-label">Plaque d'immatriculation tracteur</div>
-          <div class="info-value">${control.vehicule?.immatriculation || 'N/A'}</div>
+          <div class="info-value">${control.vehicule?.tracteur_immatriculation || control.vehicule?.immatriculation || 'N/A'}</div>
         </div>
         <div class="info-box">
           <div class="info-label">Plaque d'immatriculation remorque</div>
@@ -569,7 +569,7 @@ export const generateNCReportPDF = (nc: NonConformite) => {
         ${nc.vehicule ? `
           <div class="info-row">
             <span class="info-label">Plaque d'immatriculation tracteur:</span>
-            <span class="info-value">${nc.vehicule.immatriculation || '—'}</span>
+            <span class="info-value">${nc.vehicule.tracteur_immatriculation || nc.vehicule.immatriculation || '—'}</span>
           </div>
           <div class="info-row">
             <span class="info-label">Plaque d'immatriculation remorque:</span>
