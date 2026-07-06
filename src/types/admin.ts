@@ -118,7 +118,8 @@ export const ROLE_LABELS: Record<string, string> = {
   direction: 'Direction',
   admin: 'Admin Système',
   transitaire: 'Transitaire',
-  directeur_exploitation: 'Directeur d\'Exploitation'
+  directeur_exploitation: 'Directeur d\'Exploitation',
+  dashboard_viewer: 'Consultation Dashboard'
 };
 
 export const MODULE_LABELS: Record<string, string> = {
