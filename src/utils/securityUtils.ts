@@ -27,7 +27,7 @@ export const generateSecurePassword = (length: number = 16): string => {
 export const validateRoles = (roles: string[]): boolean => {
   const validRoles = [
     'admin', 'transport', 'maintenance', 'administratif', 'hsecq', 
-    'obc', 'rh', 'facturation', 'direction', 'transitaire', 'directeur_exploitation'
+    'obc', 'rh', 'facturation', 'direction', 'transitaire', 'directeur_exploitation', 'dashboard_viewer'
   ];
   return roles.every(role => validRoles.includes(role));
 };
