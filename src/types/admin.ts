@@ -1,7 +1,7 @@
 
 import { Database } from '@/integrations/supabase/types';
 
-export type AppRole = 'maintenance' | 'administratif' | 'hsecq' | 'obc' | 'transport' | 'rh' | 'facturation' | 'direction' | 'admin' | 'transitaire' | 'directeur_exploitation';
+export type AppRole = 'maintenance' | 'administratif' | 'hsecq' | 'obc' | 'transport' | 'rh' | 'facturation' | 'direction' | 'admin' | 'transitaire' | 'directeur_exploitation' | 'dashboard_viewer';
 export type AppPermission = 'read' | 'write' | 'delete' | 'validate' | 'export' | 'admin';
 export type ModulePermission = 'fleet' | 'drivers' | 'rh' | 'missions' | 'billing' | 'dashboard';
 
@@ -77,7 +77,8 @@ export const ROLES: string[] = [
   'direction',
   'admin',
   'transitaire',
-  'directeur_exploitation'
+  'directeur_exploitation',
+  'dashboard_viewer'
 ];
 
 export const MODULE_PERMISSIONS: string[] = [
@@ -117,7 +118,8 @@ export const ROLE_LABELS: Record<string, string> = {
   direction: 'Direction',
   admin: 'Admin Système',
   transitaire: 'Transitaire',
-  directeur_exploitation: 'Directeur d\'Exploitation'
+  directeur_exploitation: 'Directeur d\'Exploitation',
+  dashboard_viewer: 'Consultation Dashboard'
 };
 
 export const MODULE_LABELS: Record<string, string> = {
