@@ -629,12 +629,11 @@ const HSEQ: React.FC = () => {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium">{control.vehicule?.numero}</p>
+                          <p className="font-medium">Tracteur: {control.vehicule?.immatriculation || '—'}</p>
                           <Badge variant="outline" className="text-xs">INOPINÉ</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Plaque d'immatriculation tracteur: <span className="font-medium text-foreground">{control.vehicule?.immatriculation || '—'}</span>
-                          {' · '}Plaque d'immatriculation remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
+                          Remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {control.chauffeur?.prenom} {control.chauffeur?.nom}
