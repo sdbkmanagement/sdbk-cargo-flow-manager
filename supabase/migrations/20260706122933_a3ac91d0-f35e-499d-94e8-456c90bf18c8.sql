@@ -1,0 +1,1 @@
+CREATE POLICY "Dashboard viewer peut lire validation_workflows" ON public.validation_workflows FOR SELECT USING (current_user_has_role('dashboard_viewer'::user_role));
