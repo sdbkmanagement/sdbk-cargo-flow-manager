@@ -77,7 +77,8 @@ export const ROLES: string[] = [
   'direction',
   'admin',
   'transitaire',
-  'directeur_exploitation'
+  'directeur_exploitation',
+  'dashboard_viewer'
 ];
 
 export const MODULE_PERMISSIONS: string[] = [
