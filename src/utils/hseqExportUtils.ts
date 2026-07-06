@@ -326,7 +326,7 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
         <div class="logo-section">
           <img src="/templates/sdbk-logo.jpg" alt="SDBK" style="height: 50px;" onerror="this.style.display='none'">
           <div>
-            <div class="company-name">SDBK CARGO</div>
+            <div class="company-name">SDBK - AMS</div>
             <div style="color: #6b7280;">Transport & Logistique</div>
           </div>
         </div>
@@ -344,10 +344,6 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
       </div>
 
       <div class="info-grid">
-        <div class="info-box">
-          <div class="info-label">Véhicule</div>
-          <div class="info-value">${control.vehicule?.numero || 'N/A'}</div>
-        </div>
         <div class="info-box">
           <div class="info-label">Plaque d'immatriculation tracteur</div>
           <div class="info-value">${control.vehicule?.immatriculation || 'N/A'}</div>
@@ -369,6 +365,7 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
           <div class="info-value">${control.latitude && control.longitude ? `${control.latitude.toFixed(4)}, ${control.longitude.toFixed(4)}` : 'Non disponible'}</div>
         </div>
       </div>
+
 
       ${Object.entries(itemsByCategory).map(([category, items]) => `
         <div class="category-title">${category}</div>
