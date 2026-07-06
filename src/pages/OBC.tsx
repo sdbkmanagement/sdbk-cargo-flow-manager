@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as SettingsIcon, Trophy, Medal, FileSpreadsheet, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { bonsLivraisonService } from '@/services/bonsLivraison';
+import { ChauffeurCombobox } from '@/components/obc/ChauffeurCombobox';
 
 const OBC: React.FC = () => {
   const { user } = useAuth();
@@ -662,12 +663,7 @@ const ViolationDialog: React.FC<{ chauffeurs: any[]; userId?: string; onCreated:
         <div className="space-y-3">
           <div>
             <Label>Chauffeur *</Label>
-            <Select value={form.chauffeur_id} onValueChange={v => setForm({ ...form, chauffeur_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-              <SelectContent>
-                {chauffeurs.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.prenom} {c.nom}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <ChauffeurCombobox chauffeurs={chauffeurs} value={form.chauffeur_id} onChange={v => setForm({ ...form, chauffeur_id: v })} />
           </div>
           <div>
             <Label>Date / heure *</Label>
@@ -753,12 +749,7 @@ const TempsDialog: React.FC<{
         <div className="space-y-3">
           <div>
             <Label>Chauffeur *</Label>
-            <Select value={form.chauffeur_id} onValueChange={v => setForm({ ...form, chauffeur_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-              <SelectContent>
-                {chauffeurs.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.prenom} {c.nom}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <ChauffeurCombobox chauffeurs={chauffeurs} value={form.chauffeur_id} onChange={v => setForm({ ...form, chauffeur_id: v })} />
           </div>
           <div>
             <Label>Date *</Label>
