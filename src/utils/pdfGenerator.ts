@@ -508,7 +508,7 @@ export const generateQuotePDF = (quote: any) => {
     <body>
         <div class="header">
             <div class="company-info">
-                <div class="company-name">SDBK CARGO</div>
+                <div class="company-name">SDBK - AMS</div>
                 <div>Transport et Logistique</div>
                 <div>Conakry, Guinée</div>
                 <div>Tél: +224 XXX XXX XXX</div>
@@ -559,7 +559,7 @@ export const generateQuotePDF = (quote: any) => {
 
         <div class="footer">
             <p><strong>Ce devis est valable ${Math.ceil((new Date(quote.date_validite).getTime() - new Date(quote.date_creation).getTime()) / (1000 * 60 * 60 * 24))} jours à compter de sa date d'émission.</strong></p>
-            <p>SDBK CARGO - RC: XXXXX - NIF: XXXXX</p>
+            <p>SDBK - AMS - RC: XXXXX - NIF: XXXXX</p>
         </div>
     </body>
     </html>

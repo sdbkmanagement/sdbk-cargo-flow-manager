@@ -430,7 +430,7 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
       </div>
 
       <div class="footer">
-        <p>Document généré automatiquement par SDBK CARGO - Module HSEQ</p>
+        <p>Document généré automatiquement par SDBK - AMS - Module HSEQ</p>
         <p>* Points critiques bloquants pour l'autorisation de chargement</p>
       </div>
 
@@ -626,7 +626,7 @@ export const generateNCReportPDF = (nc: NonConformite) => {
       ` : ''}
 
       <div class="footer">
-        <p>Document généré par SDBK CARGO - Module HSEQ</p>
+        <p>Document généré par SDBK - AMS - Module HSEQ</p>
         <p>Généré le ${format(new Date(), 'PPPp', { locale: fr })}</p>
       </div>
 
