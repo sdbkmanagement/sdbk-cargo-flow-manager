@@ -146,8 +146,8 @@ export const managementDashboardService = {
       fetchAllRows<any>('chauffeurs', 'id, statut'),
       fetchAllRows<any>('missions', 'id, statut'),
       fetchAllRows<any>('factures', 'id, montant_ttc, statut, numero'),
-      fetchAllRows<any>('bons_livraison', 'id, montant_total, date_chargement_reelle', q => q.gte('date_chargement_reelle', debutMoisActuel)),
-      fetchAllRows<any>('bons_livraison', 'id, montant_total, date_chargement_reelle', q => q.gte('date_chargement_reelle', debutMoisPrecedent).lt('date_chargement_reelle', finMoisPrecedent)),
+      fetchAllRows<any>('bons_livraison', 'id, montant_total, created_at', q => q.gte('created_at', debutMoisActuel)),
+      fetchAllRows<any>('bons_livraison', 'id, montant_total, created_at', q => q.gte('created_at', debutMoisPrecedent).lt('created_at', finMoisPrecedent)),
       fetchAllRows<any>('diagnostics_maintenance', 'id, statut, cout_reparation'),
       fetchAllRows<any>('non_conformites', 'id, statut', q => q.neq('statut', 'cloturee')),
       supabase.from('bons_livraison').select('id', { count: 'exact' }).limit(1)
