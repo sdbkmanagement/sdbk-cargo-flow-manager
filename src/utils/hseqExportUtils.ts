@@ -568,10 +568,6 @@ export const generateNCReportPDF = (nc: NonConformite) => {
         </div>
         ${nc.vehicule ? `
           <div class="info-row">
-            <span class="info-label">Véhicule:</span>
-            <span class="info-value">${nc.vehicule.numero}</span>
-          </div>
-          <div class="info-row">
             <span class="info-label">Plaque d'immatriculation tracteur:</span>
             <span class="info-value">${nc.vehicule.immatriculation || '—'}</span>
           </div>
