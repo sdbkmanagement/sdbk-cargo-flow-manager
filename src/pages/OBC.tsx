@@ -749,12 +749,7 @@ const TempsDialog: React.FC<{
         <div className="space-y-3">
           <div>
             <Label>Chauffeur *</Label>
-            <Select value={form.chauffeur_id} onValueChange={v => setForm({ ...form, chauffeur_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-              <SelectContent>
-                {chauffeurs.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.prenom} {c.nom}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <ChauffeurCombobox chauffeurs={chauffeurs} value={form.chauffeur_id} onChange={v => setForm({ ...form, chauffeur_id: v })} />
           </div>
           <div>
             <Label>Date *</Label>
