@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as SettingsIcon, Trophy, Medal, FileSpreadsheet, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { bonsLivraisonService } from '@/services/bonsLivraison';
+import { ChauffeurCombobox } from '@/components/obc/ChauffeurCombobox';
 
 const OBC: React.FC = () => {
   const { user } = useAuth();
