@@ -326,7 +326,7 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
         <div class="logo-section">
           <img src="/templates/sdbk-logo.jpg" alt="SDBK" style="height: 50px;" onerror="this.style.display='none'">
           <div>
-            <div class="company-name">SDBK CARGO</div>
+            <div class="company-name">SDBK - AMS</div>
             <div style="color: #6b7280;">Transport & Logistique</div>
           </div>
         </div>
@@ -344,10 +344,6 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
       </div>
 
       <div class="info-grid">
-        <div class="info-box">
-          <div class="info-label">Véhicule</div>
-          <div class="info-value">${control.vehicule?.numero || 'N/A'}</div>
-        </div>
         <div class="info-box">
           <div class="info-label">Plaque d'immatriculation tracteur</div>
           <div class="info-value">${control.vehicule?.immatriculation || 'N/A'}</div>
@@ -369,6 +365,7 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
           <div class="info-value">${control.latitude && control.longitude ? `${control.latitude.toFixed(4)}, ${control.longitude.toFixed(4)}` : 'Non disponible'}</div>
         </div>
       </div>
+
 
       ${Object.entries(itemsByCategory).map(([category, items]) => `
         <div class="category-title">${category}</div>
@@ -433,7 +430,7 @@ export const generateSTLReportPDF = (control: SafeToLoadControl) => {
       </div>
 
       <div class="footer">
-        <p>Document généré automatiquement par SDBK CARGO - Module HSEQ</p>
+        <p>Document généré automatiquement par SDBK - AMS - Module HSEQ</p>
         <p>* Points critiques bloquants pour l'autorisation de chargement</p>
       </div>
 
@@ -571,10 +568,6 @@ export const generateNCReportPDF = (nc: NonConformite) => {
         </div>
         ${nc.vehicule ? `
           <div class="info-row">
-            <span class="info-label">Véhicule:</span>
-            <span class="info-value">${nc.vehicule.numero}</span>
-          </div>
-          <div class="info-row">
             <span class="info-label">Plaque d'immatriculation tracteur:</span>
             <span class="info-value">${nc.vehicule.immatriculation || '—'}</span>
           </div>
@@ -633,7 +626,7 @@ export const generateNCReportPDF = (nc: NonConformite) => {
       ` : ''}
 
       <div class="footer">
-        <p>Document généré par SDBK CARGO - Module HSEQ</p>
+        <p>Document généré par SDBK - AMS - Module HSEQ</p>
         <p>Généré le ${format(new Date(), 'PPPp', { locale: fr })}</p>
       </div>
 

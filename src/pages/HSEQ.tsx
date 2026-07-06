@@ -443,7 +443,9 @@ const HSEQ: React.FC = () => {
                   <div key={control.id} className="flex items-center justify-between p-2 border rounded">
                     <div className="flex items-center gap-2">
                       <Truck className="h-4 w-4 text-muted-foreground" />
-                      <span className="font-medium">{control.vehicule?.numero}</span>
+                      <span className="font-medium">
+                        {control.vehicule?.immatriculation || '—'} / {control.vehicule?.remorque_immatriculation || '—'}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">
@@ -546,10 +548,11 @@ const HSEQ: React.FC = () => {
                   <div key={control.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-4">
                       <div>
-                        <p className="font-medium">{control.vehicule?.numero}</p>
+                        <p className="font-medium">
+                          Tracteur: {control.vehicule?.immatriculation || '—'}
+                        </p>
                         <p className="text-xs text-muted-foreground">
-                          Plaque d'immatriculation tracteur: <span className="font-medium text-foreground">{control.vehicule?.immatriculation || '—'}</span>
-                          {' · '}Plaque d'immatriculation remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
+                          Remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {control.chauffeur?.prenom} {control.chauffeur?.nom}
@@ -626,12 +629,11 @@ const HSEQ: React.FC = () => {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium">{control.vehicule?.numero}</p>
+                          <p className="font-medium">Tracteur: {control.vehicule?.immatriculation || '—'}</p>
                           <Badge variant="outline" className="text-xs">INOPINÉ</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Plaque d'immatriculation tracteur: <span className="font-medium text-foreground">{control.vehicule?.immatriculation || '—'}</span>
-                          {' · '}Plaque d'immatriculation remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
+                          Remorque: <span className="font-medium text-foreground">{control.vehicule?.remorque_immatriculation || '—'}</span>
                         </p>
                         <p className="text-sm text-muted-foreground">
                           {control.chauffeur?.prenom} {control.chauffeur?.nom}

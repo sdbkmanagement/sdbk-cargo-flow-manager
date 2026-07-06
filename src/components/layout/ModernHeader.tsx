@@ -95,7 +95,10 @@ export const ModernHeader: React.FC<ModernHeaderProps> = ({
             className="flex items-center space-x-3 cursor-pointer group"
             onClick={() => navigate('/')}
           >
-            <img src="/images/logo-sdbk.png" alt="SDBK" className="h-10 object-contain group-hover:scale-105 transition-transform duration-200" />
+            <div className="flex flex-col leading-tight group-hover:scale-105 transition-transform duration-200">
+              <span className="text-xl font-bold text-gray-900 tracking-tight">SDBK - AMS</span>
+              <span className="text-[11px] text-gray-500">Transport &amp; Logistique</span>
+            </div>
           </div>
 
           {/* Navigation rapide */}
