@@ -287,6 +287,30 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
                   {typesContrat.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
+              <div>
+                <Label htmlFor="departement">Département</Label>
+                <Input id="departement" value={formData.departement} onChange={e => handleChange('departement', e.target.value)} placeholder="ex: Exploitation" />
+              </div>
+              <div>
+                <Label htmlFor="site">Site / Lieu de travail</Label>
+                <Input id="site" value={formData.site} onChange={e => handleChange('site', e.target.value)} placeholder="ex: Conakry" />
+              </div>
+              <div>
+                <Label htmlFor="societe">Société</Label>
+                <Input id="societe" value={formData.societe} onChange={e => handleChange('societe', e.target.value)} placeholder="ex: SDBK - AMS" />
+              </div>
+              <div>
+                <Label htmlFor="date_fin_essai">Fin période d'essai</Label>
+                <Input id="date_fin_essai" type="date" value={formData.date_fin_essai} onChange={e => handleChange('date_fin_essai', e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="date_fin_contrat">Fin de contrat</Label>
+                <Input id="date_fin_contrat" type="date" value={formData.date_fin_contrat} onChange={e => handleChange('date_fin_contrat', e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="salaire_base">Salaire de base (GNF)</Label>
+                <Input id="salaire_base" type="number" value={formData.salaire_base} onChange={e => handleChange('salaire_base', e.target.value)} />
+              </div>
             </div>
           </div>
 
