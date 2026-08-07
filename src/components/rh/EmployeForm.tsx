@@ -123,6 +123,13 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
         ...formData,
         poste: formData.fonction,
         age: formData.age ? parseInt(formData.age) : null,
+        salaire_base: formData.salaire_base ? Number(formData.salaire_base) : null,
+        nombre_enfants: formData.nombre_enfants ? parseInt(formData.nombre_enfants) : null,
+        date_fin_essai: formData.date_fin_essai || null,
+        date_fin_contrat: formData.date_fin_contrat || null,
+        date_naissance: formData.date_naissance || null,
+        date_derniere_visite_medicale: formData.date_derniere_visite_medicale || null,
+        date_prochaine_visite: formData.date_prochaine_visite || null,
         photo_url: photoUrl || null,
       };
 
