@@ -362,6 +362,20 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
             <SectionTitle>🔹 5. Situation Familiale</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
+                <Label htmlFor="situation_familiale">Situation familiale</Label>
+                <select id="situation_familiale" value={formData.situation_familiale} onChange={e => handleChange('situation_familiale', e.target.value)} className="w-full h-10 px-3 border border-input rounded-md bg-background text-sm">
+                  <option value="">-- Sélectionner --</option>
+                  <option value="celibataire">Célibataire</option>
+                  <option value="marie">Marié(e)</option>
+                  <option value="divorce">Divorcé(e)</option>
+                  <option value="veuf">Veuf(ve)</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="nombre_enfants">Nombre d'enfants</Label>
+                <Input id="nombre_enfants" type="number" min={0} value={formData.nombre_enfants} onChange={e => handleChange('nombre_enfants', e.target.value)} />
+              </div>
+              <div>
                 <Label htmlFor="nom_pere">Nom du père</Label>
                 <Input id="nom_pere" value={formData.nom_pere} onChange={e => handleChange('nom_pere', e.target.value)} />
               </div>
