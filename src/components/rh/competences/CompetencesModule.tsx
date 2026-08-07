@@ -15,7 +15,7 @@ import { rhService } from '@/services/rh';
 
 const NIVEAUX = [
   { v: 1, label: 'Débutant' },
-  { v: 2, label: '基 Intermédiaire'.replace('基 ', '') },
+  { v: 2, label: 'Intermédiaire' },
   { v: 3, label: 'Confirmé' },
   { v: 4, label: 'Avancé' },
   { v: 5, label: 'Expert' },
