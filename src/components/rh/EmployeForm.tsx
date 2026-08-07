@@ -32,6 +32,12 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     anciennete_transporteur: employe?.anciennete_transporteur || '',
     type_contrat: employe?.type_contrat || 'CDI',
     service: employe?.service || 'Transport',
+    departement: employe?.departement || '',
+    site: employe?.site || '',
+    societe: employe?.societe || '',
+    date_fin_essai: employe?.date_fin_essai || '',
+    date_fin_contrat: employe?.date_fin_contrat || '',
+    salaire_base: employe?.salaire_base != null ? String(employe.salaire_base) : '',
     // 3. Informations Médicales
     groupe_sanguin: employe?.groupe_sanguin || '',
     date_derniere_visite_medicale: employe?.date_derniere_visite_medicale || '',
@@ -43,6 +49,8 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     // 5. Situation Familiale
     nom_mere: employe?.nom_mere || '',
     nom_pere: employe?.nom_pere || '',
+    situation_familiale: employe?.situation_familiale || '',
+    nombre_enfants: employe?.nombre_enfants != null ? String(employe.nombre_enfants) : '',
     // 6. Formation & Qualification
     diplome: employe?.diplome || '',
     // 7. Contact d'Urgence
