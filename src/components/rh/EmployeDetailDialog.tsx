@@ -17,6 +17,48 @@ import {
   User
 } from 'lucide-react';
 import { EmployeForm } from './EmployeForm';
+import { DocumentsRHList } from './documents/DocumentsRHList';
+import { PerformanceModule } from './performance/PerformanceModule';
+import { CompetencesModule } from './competences/CompetencesModule';
+import { FormationRHModule } from './formation/FormationRHModule';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+
+const EmployeAbsences = ({ employeId }: { employeId: string }) => {
+  const { data } = useQuery({
+    queryKey: ['employe-absences', employeId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from('absences')
+        .select('*')
+        .eq('employe_id', employeId)
+        .order('date_debut', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  return (
+    <Card>
+      <CardHeader><CardTitle>Absences & congés</CardTitle></CardHeader>
+      <CardContent className="space-y-2">
+        {((data || []) as any[]).length === 0 && (
+          <p className="text-center text-muted-foreground py-8">Aucune absence enregistrée</p>
+        )}
+        {((data || []) as any[]).map((a) => (
+          <div key={a.id} className="flex items-center justify-between border rounded-md px-3 py-2 text-sm">
+            <span className="font-medium capitalize">{a.type_absence?.replace(/_/g, ' ')}</span>
+            <span className="text-muted-foreground">
+              {a.date_debut ? new Date(a.date_debut).toLocaleDateString('fr-FR') : '—'}
+              {a.date_fin ? ` → ${new Date(a.date_fin).toLocaleDateString('fr-FR')}` : ''}
+            </span>
+            <Badge variant={a.statut === 'approuve' ? 'default' : 'secondary'}>{a.statut || '—'}</Badge>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
 
 interface EmployeDetailDialogProps {
   employe: any;
