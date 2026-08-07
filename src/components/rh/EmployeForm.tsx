@@ -32,6 +32,12 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     anciennete_transporteur: employe?.anciennete_transporteur || '',
     type_contrat: employe?.type_contrat || 'CDI',
     service: employe?.service || 'Transport',
+    departement: employe?.departement || '',
+    site: employe?.site || '',
+    societe: employe?.societe || '',
+    date_fin_essai: employe?.date_fin_essai || '',
+    date_fin_contrat: employe?.date_fin_contrat || '',
+    salaire_base: employe?.salaire_base != null ? String(employe.salaire_base) : '',
     // 3. Informations Médicales
     groupe_sanguin: employe?.groupe_sanguin || '',
     date_derniere_visite_medicale: employe?.date_derniere_visite_medicale || '',
@@ -43,6 +49,8 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     // 5. Situation Familiale
     nom_mere: employe?.nom_mere || '',
     nom_pere: employe?.nom_pere || '',
+    situation_familiale: employe?.situation_familiale || '',
+    nombre_enfants: employe?.nombre_enfants != null ? String(employe.nombre_enfants) : '',
     // 6. Formation & Qualification
     diplome: employe?.diplome || '',
     // 7. Contact d'Urgence
@@ -115,6 +123,13 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
         ...formData,
         poste: formData.fonction,
         age: formData.age ? parseInt(formData.age) : null,
+        salaire_base: formData.salaire_base ? Number(formData.salaire_base) : null,
+        nombre_enfants: formData.nombre_enfants ? parseInt(formData.nombre_enfants) : null,
+        date_fin_essai: formData.date_fin_essai || null,
+        date_fin_contrat: formData.date_fin_contrat || null,
+        date_naissance: formData.date_naissance || null,
+        date_derniere_visite_medicale: formData.date_derniere_visite_medicale || null,
+        date_prochaine_visite: formData.date_prochaine_visite || null,
         photo_url: photoUrl || null,
       };
 
@@ -272,6 +287,30 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
                   {typesContrat.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
+              <div>
+                <Label htmlFor="departement">Département</Label>
+                <Input id="departement" value={formData.departement} onChange={e => handleChange('departement', e.target.value)} placeholder="ex: Exploitation" />
+              </div>
+              <div>
+                <Label htmlFor="site">Site / Lieu de travail</Label>
+                <Input id="site" value={formData.site} onChange={e => handleChange('site', e.target.value)} placeholder="ex: Conakry" />
+              </div>
+              <div>
+                <Label htmlFor="societe">Société</Label>
+                <Input id="societe" value={formData.societe} onChange={e => handleChange('societe', e.target.value)} placeholder="ex: SDBK - AMS" />
+              </div>
+              <div>
+                <Label htmlFor="date_fin_essai">Fin période d'essai</Label>
+                <Input id="date_fin_essai" type="date" value={formData.date_fin_essai} onChange={e => handleChange('date_fin_essai', e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="date_fin_contrat">Fin de contrat</Label>
+                <Input id="date_fin_contrat" type="date" value={formData.date_fin_contrat} onChange={e => handleChange('date_fin_contrat', e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="salaire_base">Salaire de base (GNF)</Label>
+                <Input id="salaire_base" type="number" value={formData.salaire_base} onChange={e => handleChange('salaire_base', e.target.value)} />
+              </div>
             </div>
           </div>
 
@@ -322,6 +361,20 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
           <div>
             <SectionTitle>🔹 5. Situation Familiale</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="situation_familiale">Situation familiale</Label>
+                <select id="situation_familiale" value={formData.situation_familiale} onChange={e => handleChange('situation_familiale', e.target.value)} className="w-full h-10 px-3 border border-input rounded-md bg-background text-sm">
+                  <option value="">-- Sélectionner --</option>
+                  <option value="celibataire">Célibataire</option>
+                  <option value="marie">Marié(e)</option>
+                  <option value="divorce">Divorcé(e)</option>
+                  <option value="veuf">Veuf(ve)</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="nombre_enfants">Nombre d'enfants</Label>
+                <Input id="nombre_enfants" type="number" min={0} value={formData.nombre_enfants} onChange={e => handleChange('nombre_enfants', e.target.value)} />
+              </div>
               <div>
                 <Label htmlFor="nom_pere">Nom du père</Label>
                 <Input id="nom_pere" value={formData.nom_pere} onChange={e => handleChange('nom_pere', e.target.value)} />

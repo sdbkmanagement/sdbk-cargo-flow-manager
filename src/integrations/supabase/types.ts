@@ -225,6 +225,39 @@ export type Database = {
           },
         ]
       }
+      alertes_rh_config: {
+        Row: {
+          actif: boolean
+          categorie: string
+          created_at: string
+          delai_jours: number
+          id: string
+          libelle: string
+          type_alerte: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie: string
+          created_at?: string
+          delai_jours?: number
+          id?: string
+          libelle: string
+          type_alerte: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          categorie?: string
+          created_at?: string
+          delai_jours?: number
+          id?: string
+          libelle?: string
+          type_alerte?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       associes: {
         Row: {
           adresse: string | null
@@ -1053,6 +1086,93 @@ export type Database = {
           },
         ]
       }
+      competences: {
+        Row: {
+          categorie: string
+          created_at: string
+          description: string | null
+          id: string
+          libelle: string
+          niveau_requis: number | null
+          updated_at: string
+        }
+        Insert: {
+          categorie?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          libelle: string
+          niveau_requis?: number | null
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          libelle?: string
+          niveau_requis?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      competences_employes: {
+        Row: {
+          annees_experience: number | null
+          certifie: boolean
+          commentaire: string | null
+          competence_id: string
+          created_at: string
+          date_evaluation: string | null
+          employe_id: string
+          id: string
+          niveau: number
+          potentiel: number | null
+          updated_at: string
+        }
+        Insert: {
+          annees_experience?: number | null
+          certifie?: boolean
+          commentaire?: string | null
+          competence_id: string
+          created_at?: string
+          date_evaluation?: string | null
+          employe_id: string
+          id?: string
+          niveau?: number
+          potentiel?: number | null
+          updated_at?: string
+        }
+        Update: {
+          annees_experience?: number | null
+          certifie?: boolean
+          commentaire?: string | null
+          competence_id?: string
+          created_at?: string
+          date_evaluation?: string | null
+          employe_id?: string
+          id?: string
+          niveau?: number
+          potentiel?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competences_employes_competence_id_fkey"
+            columns: ["competence_id"]
+            isOneToOne: false
+            referencedRelation: "competences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competences_employes_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       config_paie: {
         Row: {
           categorie: string | null
@@ -1798,6 +1918,62 @@ export type Database = {
           },
         ]
       }
+      documents_rh: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          date_emission: string | null
+          date_expiration: string | null
+          employe_id: string
+          fichier_nom: string | null
+          fichier_url: string | null
+          id: string
+          numero_document: string | null
+          statut: string
+          type_document: string
+          updated_at: string
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_emission?: string | null
+          date_expiration?: string | null
+          employe_id: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          id?: string
+          numero_document?: string | null
+          statut?: string
+          type_document: string
+          updated_at?: string
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_emission?: string | null
+          date_expiration?: string | null
+          employe_id?: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          id?: string
+          numero_document?: string | null
+          statut?: string
+          type_document?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_rh_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents_societe: {
         Row: {
           alerte_15j_envoyee: boolean | null
@@ -2151,6 +2327,47 @@ export type Database = {
           },
         ]
       }
+      droits_conges: {
+        Row: {
+          annee: number
+          commentaire: string | null
+          created_at: string
+          employe_id: string
+          id: string
+          jours_acquis: number
+          jours_consommes: number
+          updated_at: string
+        }
+        Insert: {
+          annee: number
+          commentaire?: string | null
+          created_at?: string
+          employe_id: string
+          id?: string
+          jours_acquis?: number
+          jours_consommes?: number
+          updated_at?: string
+        }
+        Update: {
+          annee?: number
+          commentaire?: string | null
+          created_at?: string
+          employe_id?: string
+          id?: string
+          jours_acquis?: number
+          jours_consommes?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "droits_conges_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       elements_salaire: {
         Row: {
           autres_primes: number | null
@@ -2212,14 +2429,17 @@ export type Database = {
       }
       employes: {
         Row: {
+          adresse: string | null
           age: number | null
           anciennete_transporteur: string | null
           created_at: string
           date_derniere_visite_medicale: string | null
           date_embauche: string
           date_fin_contrat: string | null
+          date_fin_essai: string | null
           date_naissance: string | null
           date_prochaine_visite: string | null
+          departement: string | null
           diplome: string | null
           email: string | null
           fonction: string | null
@@ -2228,17 +2448,25 @@ export type Database = {
           id: string
           immatricule_cnss: string | null
           jours_restants_visite: number | null
+          lien_urgence: string | null
           lieu_naissance: string | null
           matricule: string | null
+          nationalite: string | null
           nom: string
           nom_mere: string | null
           nom_pere: string | null
+          nombre_enfants: number | null
           personne_urgence: string | null
           photo_url: string | null
           poste: string
           prenom: string
           remarques: string | null
+          responsable_id: string | null
+          salaire_base: number | null
           service: string
+          site: string | null
+          situation_familiale: string | null
+          societe: string | null
           statut: string
           statut_visite_medicale: string | null
           telephone: string | null
@@ -2247,14 +2475,17 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          adresse?: string | null
           age?: number | null
           anciennete_transporteur?: string | null
           created_at?: string
           date_derniere_visite_medicale?: string | null
           date_embauche: string
           date_fin_contrat?: string | null
+          date_fin_essai?: string | null
           date_naissance?: string | null
           date_prochaine_visite?: string | null
+          departement?: string | null
           diplome?: string | null
           email?: string | null
           fonction?: string | null
@@ -2263,17 +2494,25 @@ export type Database = {
           id?: string
           immatricule_cnss?: string | null
           jours_restants_visite?: number | null
+          lien_urgence?: string | null
           lieu_naissance?: string | null
           matricule?: string | null
+          nationalite?: string | null
           nom: string
           nom_mere?: string | null
           nom_pere?: string | null
+          nombre_enfants?: number | null
           personne_urgence?: string | null
           photo_url?: string | null
           poste: string
           prenom: string
           remarques?: string | null
+          responsable_id?: string | null
+          salaire_base?: number | null
           service: string
+          site?: string | null
+          situation_familiale?: string | null
+          societe?: string | null
           statut?: string
           statut_visite_medicale?: string | null
           telephone?: string | null
@@ -2282,14 +2521,17 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          adresse?: string | null
           age?: number | null
           anciennete_transporteur?: string | null
           created_at?: string
           date_derniere_visite_medicale?: string | null
           date_embauche?: string
           date_fin_contrat?: string | null
+          date_fin_essai?: string | null
           date_naissance?: string | null
           date_prochaine_visite?: string | null
+          departement?: string | null
           diplome?: string | null
           email?: string | null
           fonction?: string | null
@@ -2298,17 +2540,25 @@ export type Database = {
           id?: string
           immatricule_cnss?: string | null
           jours_restants_visite?: number | null
+          lien_urgence?: string | null
           lieu_naissance?: string | null
           matricule?: string | null
+          nationalite?: string | null
           nom?: string
           nom_mere?: string | null
           nom_pere?: string | null
+          nombre_enfants?: number | null
           personne_urgence?: string | null
           photo_url?: string | null
           poste?: string
           prenom?: string
           remarques?: string | null
+          responsable_id?: string | null
+          salaire_base?: number | null
           service?: string
+          site?: string | null
+          situation_familiale?: string | null
+          societe?: string | null
           statut?: string
           statut_visite_medicale?: string | null
           telephone?: string | null
@@ -2316,7 +2566,15 @@ export type Database = {
           type_contrat?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "employes_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       evaluations: {
         Row: {
@@ -3727,6 +3985,87 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      objectifs: {
+        Row: {
+          avancement: number | null
+          created_at: string
+          date_debut: string | null
+          date_echeance: string | null
+          departement: string | null
+          description: string | null
+          employe_id: string | null
+          id: string
+          intitule: string
+          kpi: string | null
+          perimetre: string
+          ponderation: number | null
+          responsable_id: string | null
+          service: string | null
+          statut: string
+          unite: string | null
+          updated_at: string
+          valeur_actuelle: number | null
+          valeur_cible: number | null
+        }
+        Insert: {
+          avancement?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_echeance?: string | null
+          departement?: string | null
+          description?: string | null
+          employe_id?: string | null
+          id?: string
+          intitule: string
+          kpi?: string | null
+          perimetre?: string
+          ponderation?: number | null
+          responsable_id?: string | null
+          service?: string | null
+          statut?: string
+          unite?: string | null
+          updated_at?: string
+          valeur_actuelle?: number | null
+          valeur_cible?: number | null
+        }
+        Update: {
+          avancement?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_echeance?: string | null
+          departement?: string | null
+          description?: string | null
+          employe_id?: string | null
+          id?: string
+          intitule?: string
+          kpi?: string | null
+          perimetre?: string
+          ponderation?: number | null
+          responsable_id?: string | null
+          service?: string | null
+          statut?: string
+          unite?: string | null
+          updated_at?: string
+          valeur_actuelle?: number | null
+          valeur_cible?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "objectifs_employe_id_fkey"
+            columns: ["employe_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "objectifs_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "employes"
             referencedColumns: ["id"]
           },
         ]
@@ -5180,6 +5519,20 @@ export type Database = {
         Returns: boolean
       }
       current_user_is_admin: { Args: never; Returns: boolean }
+      get_alertes_rh: {
+        Args: never
+        Returns: {
+          categorie: string
+          date_echeance: string
+          employe_id: string
+          jours_restants: number
+          message: string
+          nom_complet: string
+          priorite: string
+          service: string
+          type_alerte: string
+        }[]
+      }
       get_my_conversation_ids: { Args: never; Returns: string[] }
       get_or_sync_user_by_auth: {
         Args: never
@@ -5204,17 +5557,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      get_rh_dashboard_stats: { Args: never; Returns: Json }
       get_rh_employes: {
         Args: never
         Returns: {
+          adresse: string | null
           age: number | null
           anciennete_transporteur: string | null
           created_at: string
           date_derniere_visite_medicale: string | null
           date_embauche: string
           date_fin_contrat: string | null
+          date_fin_essai: string | null
           date_naissance: string | null
           date_prochaine_visite: string | null
+          departement: string | null
           diplome: string | null
           email: string | null
           fonction: string | null
@@ -5223,17 +5580,25 @@ export type Database = {
           id: string
           immatricule_cnss: string | null
           jours_restants_visite: number | null
+          lien_urgence: string | null
           lieu_naissance: string | null
           matricule: string | null
+          nationalite: string | null
           nom: string
           nom_mere: string | null
           nom_pere: string | null
+          nombre_enfants: number | null
           personne_urgence: string | null
           photo_url: string | null
           poste: string
           prenom: string
           remarques: string | null
+          responsable_id: string | null
+          salaire_base: number | null
           service: string
+          site: string | null
+          situation_familiale: string | null
+          societe: string | null
           statut: string
           statut_visite_medicale: string | null
           telephone: string | null
