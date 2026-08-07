@@ -182,7 +182,7 @@ export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDeta
                       { l: 'Matricule', v: employe.matricule },
                       { l: 'Département', v: employe.departement },
                       { l: 'Site / Lieu de travail', v: employe.site },
-                      { l: 'Responsable hiérarchique', v: employe.responsable_hierarchique },
+                      { l: 'Responsable hiérarchique', v: employe.responsable_id },
                       { l: 'Société', v: employe.societe },
                       { l: 'Situation familiale', v: employe.situation_familiale },
                       { l: 'Nombre d’enfants', v: employe.nombre_enfants },
