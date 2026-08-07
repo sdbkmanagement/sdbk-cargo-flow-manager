@@ -120,48 +120,44 @@ export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDeta
 
           {/* Onglets pour les détails */}
           <Tabs defaultValue="informations" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="informations">
-                <User className="w-4 h-4 mr-2" />
-                Informations
-              </TabsTrigger>
-              <TabsTrigger value="absences">
-                <Calendar className="w-4 h-4 mr-2" />
-                Absences
-              </TabsTrigger>
-              <TabsTrigger value="formations">
-                <GraduationCap className="w-4 h-4 mr-2" />
-                Formations
-              </TabsTrigger>
-              <TabsTrigger value="historique">
-                <Clock className="w-4 h-4 mr-2" />
-                Historique
-              </TabsTrigger>
+            <TabsList className="flex flex-wrap h-auto">
+              <TabsTrigger value="informations"><User className="w-4 h-4 mr-2" />Informations</TabsTrigger>
+              <TabsTrigger value="documents"><FileText className="w-4 h-4 mr-2" />Documents</TabsTrigger>
+              <TabsTrigger value="absences"><Calendar className="w-4 h-4 mr-2" />Absences</TabsTrigger>
+              <TabsTrigger value="performance"><Clock className="w-4 h-4 mr-2" />Performance</TabsTrigger>
+              <TabsTrigger value="competences">Compétences</TabsTrigger>
+              <TabsTrigger value="formations"><GraduationCap className="w-4 h-4 mr-2" />Formations</TabsTrigger>
             </TabsList>
 
             <TabsContent value="informations" className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle>Informations contractuelles</CardTitle>
+                  <CardTitle>Informations administratives & contractuelles</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date d'embauche</p>
-                      <p className="font-medium">
-                        {new Date(employe.date_embauche).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                    {employe.date_fin_contrat && (
-                      <div>
-                        <p className="text-sm text-muted-foreground">Fin de contrat</p>
-                        <p className="font-medium">
-                          {new Date(employe.date_fin_contrat).toLocaleDateString('fr-FR')}
-                        </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    {[
+                      { l: 'Matricule', v: employe.matricule },
+                      { l: 'Département', v: employe.departement },
+                      { l: 'Site / Lieu de travail', v: employe.site },
+                      { l: 'Responsable hiérarchique', v: employe.responsable_hierarchique },
+                      { l: 'Société', v: employe.societe },
+                      { l: 'Situation familiale', v: employe.situation_familiale },
+                      { l: 'Nombre d’enfants', v: employe.nombre_enfants },
+                      { l: 'Date de naissance', v: employe.date_naissance ? new Date(employe.date_naissance).toLocaleDateString('fr-FR') : null },
+                      { l: 'N° CNSS', v: employe.numero_cnss },
+                      { l: 'Date d’embauche', v: employe.date_embauche ? new Date(employe.date_embauche).toLocaleDateString('fr-FR') : null },
+                      { l: 'Fin période d’essai', v: employe.date_fin_essai ? new Date(employe.date_fin_essai).toLocaleDateString('fr-FR') : null },
+                      { l: 'Fin de contrat', v: employe.date_fin_contrat ? new Date(employe.date_fin_contrat).toLocaleDateString('fr-FR') : null },
+                      { l: 'Salaire de base', v: employe.salaire_base ? `${Number(employe.salaire_base).toLocaleString('fr-FR')} GNF` : null },
+                    ].map((f) => (
+                      <div key={f.l}>
+                        <p className="text-muted-foreground">{f.l}</p>
+                        <p className="font-medium">{f.v ?? '—'}</p>
                       </div>
-                    )}
+                    ))}
                   </div>
-                  
+
                   {employe.remarques && (
                     <div>
                       <p className="text-sm text-muted-foreground">Remarques</p>
@@ -172,43 +168,24 @@ export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDeta
               </Card>
             </TabsContent>
 
+            <TabsContent value="documents">
+              <DocumentsRHList employeId={employe.id} compact />
+            </TabsContent>
+
             <TabsContent value="absences">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Absences récentes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center text-muted-foreground py-8">
-                    Aucune absence enregistrée
-                  </p>
-                </CardContent>
-              </Card>
+              <EmployeAbsences employeId={employe.id} />
+            </TabsContent>
+
+            <TabsContent value="performance">
+              <PerformanceModule employeId={employe.id} />
+            </TabsContent>
+
+            <TabsContent value="competences">
+              <CompetencesModule employeId={employe.id} />
             </TabsContent>
 
             <TabsContent value="formations">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Formations suivies</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center text-muted-foreground py-8">
-                    Aucune formation enregistrée
-                  </p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="historique">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Historique RH</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-center text-muted-foreground py-8">
-                    Historique en cours de chargement...
-                  </p>
-                </CardContent>
-              </Card>
+              <FormationRHModule employeId={employe.id} />
             </TabsContent>
           </Tabs>
         </div>
