@@ -2958,6 +2958,1089 @@ export type Database = {
         }
         Relationships: []
       }
+      gmao_alertes: {
+        Row: {
+          contrat_id: string | null
+          created_at: string
+          date_echeance: string | null
+          equipement_id: string | null
+          id: string
+          message: string | null
+          niveau: string
+          ot_id: string | null
+          piece_id: string | null
+          plan_id: string | null
+          titre: string
+          traitee: boolean
+          type_alerte: string
+          updated_at: string
+        }
+        Insert: {
+          contrat_id?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          equipement_id?: string | null
+          id?: string
+          message?: string | null
+          niveau?: string
+          ot_id?: string | null
+          piece_id?: string | null
+          plan_id?: string | null
+          titre: string
+          traitee?: boolean
+          type_alerte: string
+          updated_at?: string
+        }
+        Update: {
+          contrat_id?: string | null
+          created_at?: string
+          date_echeance?: string | null
+          equipement_id?: string | null
+          id?: string
+          message?: string | null
+          niveau?: string
+          ot_id?: string | null
+          piece_id?: string | null
+          plan_id?: string | null
+          titre?: string
+          traitee?: boolean
+          type_alerte?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_alertes_contrat_id_fkey"
+            columns: ["contrat_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_contrats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_alertes_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_alertes_ot_id_fkey"
+            columns: ["ot_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_ordres_travail"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_alertes_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_pieces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_alertes_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_plans_maintenance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_categories_equipement: {
+        Row: {
+          actif: boolean
+          created_at: string
+          description: string | null
+          id: string
+          libelle: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          libelle: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          description?: string | null
+          id?: string
+          libelle?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gmao_checklist_items: {
+        Row: {
+          checklist_id: string
+          created_at: string
+          id: string
+          libelle: string
+          obligatoire: boolean
+          ordre: number
+          updated_at: string
+        }
+        Insert: {
+          checklist_id: string
+          created_at?: string
+          id?: string
+          libelle: string
+          obligatoire?: boolean
+          ordre?: number
+          updated_at?: string
+        }
+        Update: {
+          checklist_id?: string
+          created_at?: string
+          id?: string
+          libelle?: string
+          obligatoire?: boolean
+          ordre?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_checklists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_checklists: {
+        Row: {
+          actif: boolean
+          categorie_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          libelle: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          libelle: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          categorie_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          libelle?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_checklists_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_categories_equipement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_contrats: {
+        Row: {
+          alerte_avant_jours: number | null
+          created_at: string
+          date_debut: string | null
+          date_fin: string | null
+          document_url: string | null
+          equipement_id: string | null
+          fournisseur_id: string | null
+          id: string
+          montant: number | null
+          objet: string
+          reference: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          alerte_avant_jours?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          document_url?: string | null
+          equipement_id?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          montant?: number | null
+          objet: string
+          reference?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          alerte_avant_jours?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          document_url?: string | null
+          equipement_id?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          montant?: number | null
+          objet?: string
+          reference?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_contrats_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_contrats_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_demandes_intervention: {
+        Row: {
+          created_at: string
+          date_demande: string
+          date_traitement: string | null
+          demandeur_id: string | null
+          demandeur_nom: string | null
+          description: string | null
+          equipement_id: string | null
+          id: string
+          motif_rejet: string | null
+          numero: string | null
+          priorite: string
+          source_nc_id: string | null
+          statut: string
+          titre: string
+          updated_at: string
+          vehicule_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_demande?: string
+          date_traitement?: string | null
+          demandeur_id?: string | null
+          demandeur_nom?: string | null
+          description?: string | null
+          equipement_id?: string | null
+          id?: string
+          motif_rejet?: string | null
+          numero?: string | null
+          priorite?: string
+          source_nc_id?: string | null
+          statut?: string
+          titre: string
+          updated_at?: string
+          vehicule_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_demande?: string
+          date_traitement?: string | null
+          demandeur_id?: string | null
+          demandeur_nom?: string | null
+          description?: string | null
+          equipement_id?: string | null
+          id?: string
+          motif_rejet?: string | null
+          numero?: string | null
+          priorite?: string
+          source_nc_id?: string | null
+          statut?: string
+          titre?: string
+          updated_at?: string
+          vehicule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_demandes_intervention_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_equipements: {
+        Row: {
+          actif: boolean
+          categorie_id: string | null
+          code: string
+          compteur_heures: number | null
+          compteur_km: number | null
+          created_at: string
+          criticite: string
+          date_mise_service: string | null
+          departement: string | null
+          designation: string
+          id: string
+          marque: string | null
+          modele: string | null
+          numero_serie: string | null
+          observations: string | null
+          photo_url: string | null
+          site: string | null
+          statut: string
+          updated_at: string
+          valeur_acquisition: number | null
+          vehicule_id: string | null
+        }
+        Insert: {
+          actif?: boolean
+          categorie_id?: string | null
+          code: string
+          compteur_heures?: number | null
+          compteur_km?: number | null
+          created_at?: string
+          criticite?: string
+          date_mise_service?: string | null
+          departement?: string | null
+          designation: string
+          id?: string
+          marque?: string | null
+          modele?: string | null
+          numero_serie?: string | null
+          observations?: string | null
+          photo_url?: string | null
+          site?: string | null
+          statut?: string
+          updated_at?: string
+          valeur_acquisition?: number | null
+          vehicule_id?: string | null
+        }
+        Update: {
+          actif?: boolean
+          categorie_id?: string | null
+          code?: string
+          compteur_heures?: number | null
+          compteur_km?: number | null
+          created_at?: string
+          criticite?: string
+          date_mise_service?: string | null
+          departement?: string | null
+          designation?: string
+          id?: string
+          marque?: string | null
+          modele?: string | null
+          numero_serie?: string | null
+          observations?: string | null
+          photo_url?: string | null
+          site?: string | null
+          statut?: string
+          updated_at?: string
+          valeur_acquisition?: number | null
+          vehicule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_equipements_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_categories_equipement"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_fournisseurs: {
+        Row: {
+          actif: boolean
+          adresse: string | null
+          contact_nom: string | null
+          created_at: string
+          email: string | null
+          id: string
+          nom: string
+          notes: string | null
+          specialites: string[] | null
+          telephone: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          adresse?: string | null
+          contact_nom?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom: string
+          notes?: string | null
+          specialites?: string[] | null
+          telephone?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          adresse?: string | null
+          contact_nom?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          notes?: string | null
+          specialites?: string[] | null
+          telephone?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      gmao_historique_equipement: {
+        Row: {
+          ancien_statut: string | null
+          created_at: string
+          date_evenement: string
+          description: string | null
+          equipement_id: string
+          id: string
+          nouveau_statut: string | null
+          type_evenement: string
+          utilisateur_nom: string | null
+        }
+        Insert: {
+          ancien_statut?: string | null
+          created_at?: string
+          date_evenement?: string
+          description?: string | null
+          equipement_id: string
+          id?: string
+          nouveau_statut?: string | null
+          type_evenement: string
+          utilisateur_nom?: string | null
+        }
+        Update: {
+          ancien_statut?: string | null
+          created_at?: string
+          date_evenement?: string
+          description?: string | null
+          equipement_id?: string
+          id?: string
+          nouveau_statut?: string | null
+          type_evenement?: string
+          utilisateur_nom?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_historique_equipement_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_mouvements_stock: {
+        Row: {
+          created_at: string
+          date_mouvement: string
+          id: string
+          motif: string | null
+          ot_id: string | null
+          piece_id: string
+          quantite: number
+          type_mouvement: string
+          utilisateur_nom: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_mouvement?: string
+          id?: string
+          motif?: string | null
+          ot_id?: string | null
+          piece_id: string
+          quantite: number
+          type_mouvement: string
+          utilisateur_nom?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_mouvement?: string
+          id?: string
+          motif?: string | null
+          ot_id?: string | null
+          piece_id?: string
+          quantite?: number
+          type_mouvement?: string
+          utilisateur_nom?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_mouvements_stock_ot_id_fkey"
+            columns: ["ot_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_ordres_travail"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_mouvements_stock_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_ordres_travail: {
+        Row: {
+          checklist_id: string | null
+          cloture: boolean
+          cloture_par: string | null
+          cout_autres: number
+          cout_main_oeuvre: number
+          cout_pieces: number
+          cout_prestation: number
+          cout_total: number
+          created_at: string
+          date_cloture: string | null
+          date_debut: string | null
+          date_fin: string | null
+          date_planifiee: string | null
+          demande_id: string | null
+          description: string | null
+          diagnostic: string | null
+          duree_immobilisation_heures: number | null
+          equipement_id: string | null
+          fournisseur_id: string | null
+          id: string
+          numero: string | null
+          plan_id: string | null
+          priorite: string
+          statut: string
+          titre: string
+          travaux_realises: string | null
+          type_maintenance: string
+          updated_at: string
+        }
+        Insert: {
+          checklist_id?: string | null
+          cloture?: boolean
+          cloture_par?: string | null
+          cout_autres?: number
+          cout_main_oeuvre?: number
+          cout_pieces?: number
+          cout_prestation?: number
+          cout_total?: number
+          created_at?: string
+          date_cloture?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          date_planifiee?: string | null
+          demande_id?: string | null
+          description?: string | null
+          diagnostic?: string | null
+          duree_immobilisation_heures?: number | null
+          equipement_id?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          numero?: string | null
+          plan_id?: string | null
+          priorite?: string
+          statut?: string
+          titre: string
+          travaux_realises?: string | null
+          type_maintenance?: string
+          updated_at?: string
+        }
+        Update: {
+          checklist_id?: string | null
+          cloture?: boolean
+          cloture_par?: string | null
+          cout_autres?: number
+          cout_main_oeuvre?: number
+          cout_pieces?: number
+          cout_prestation?: number
+          cout_total?: number
+          created_at?: string
+          date_cloture?: string | null
+          date_debut?: string | null
+          date_fin?: string | null
+          date_planifiee?: string | null
+          demande_id?: string | null
+          description?: string | null
+          diagnostic?: string | null
+          duree_immobilisation_heures?: number | null
+          equipement_id?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          numero?: string | null
+          plan_id?: string | null
+          priorite?: string
+          statut?: string
+          titre?: string
+          travaux_realises?: string | null
+          type_maintenance?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_ordres_travail_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_ordres_travail_demande_id_fkey"
+            columns: ["demande_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_demandes_intervention"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_ordres_travail_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_ordres_travail_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_fournisseurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_ordres_travail_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_plans_maintenance"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_ot_checklist_resultats: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          id: string
+          item_id: string | null
+          libelle: string
+          ot_id: string
+          photo_url: string | null
+          resultat: string
+          updated_at: string
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          libelle: string
+          ot_id: string
+          photo_url?: string | null
+          resultat?: string
+          updated_at?: string
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          id?: string
+          item_id?: string | null
+          libelle?: string
+          ot_id?: string
+          photo_url?: string | null
+          resultat?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_ot_checklist_resultats_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_checklist_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_ot_checklist_resultats_ot_id_fkey"
+            columns: ["ot_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_ordres_travail"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_ot_pieces: {
+        Row: {
+          created_at: string
+          id: string
+          montant: number
+          ot_id: string
+          piece_id: string
+          prix_unitaire: number
+          quantite: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          montant?: number
+          ot_id: string
+          piece_id: string
+          prix_unitaire?: number
+          quantite?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          montant?: number
+          ot_id?: string
+          piece_id?: string
+          prix_unitaire?: number
+          quantite?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_ot_pieces_ot_id_fkey"
+            columns: ["ot_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_ordres_travail"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_ot_pieces_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_ot_taches: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          fait: boolean
+          id: string
+          libelle: string
+          ordre: number
+          ot_id: string
+          updated_at: string
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          fait?: boolean
+          id?: string
+          libelle: string
+          ordre?: number
+          ot_id: string
+          updated_at?: string
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          fait?: boolean
+          id?: string
+          libelle?: string
+          ordre?: number
+          ot_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_ot_taches_ot_id_fkey"
+            columns: ["ot_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_ordres_travail"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_ot_techniciens: {
+        Row: {
+          created_at: string
+          heures: number
+          id: string
+          ot_id: string
+          role: string | null
+          technicien_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          heures?: number
+          id?: string
+          ot_id: string
+          role?: string | null
+          technicien_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          heures?: number
+          id?: string
+          ot_id?: string
+          role?: string | null
+          technicien_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_ot_techniciens_ot_id_fkey"
+            columns: ["ot_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_ordres_travail"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_ot_techniciens_technicien_id_fkey"
+            columns: ["technicien_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_techniciens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_pieces: {
+        Row: {
+          actif: boolean
+          categorie: string | null
+          created_at: string
+          designation: string
+          emplacement: string | null
+          fournisseur_id: string | null
+          id: string
+          prix_unitaire: number
+          quantite_stock: number
+          reference: string
+          seuil_mini: number
+          unite: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          categorie?: string | null
+          created_at?: string
+          designation: string
+          emplacement?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          prix_unitaire?: number
+          quantite_stock?: number
+          reference: string
+          seuil_mini?: number
+          unite?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          categorie?: string | null
+          created_at?: string
+          designation?: string
+          emplacement?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          prix_unitaire?: number
+          quantite_stock?: number
+          reference?: string
+          seuil_mini?: number
+          unite?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_pieces_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_pieces_jointes: {
+        Row: {
+          created_at: string
+          entite: string
+          entite_id: string
+          id: string
+          nom: string
+          taille: number | null
+          type_fichier: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          entite: string
+          entite_id: string
+          id?: string
+          nom: string
+          taille?: number | null
+          type_fichier?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          entite?: string
+          entite_id?: string
+          id?: string
+          nom?: string
+          taille?: number | null
+          type_fichier?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
+      gmao_plans_maintenance: {
+        Row: {
+          actif: boolean
+          alerte_avant_jours: number | null
+          categorie_id: string | null
+          checklist_id: string | null
+          cout_estime: number | null
+          created_at: string
+          dernier_compteur_heures: number | null
+          dernier_compteur_km: number | null
+          derniere_execution: string | null
+          description: string | null
+          duree_estimee_heures: number | null
+          equipement_id: string | null
+          id: string
+          libelle: string
+          periodicite_heures: number | null
+          periodicite_jours: number | null
+          periodicite_km: number | null
+          prochain_km: number | null
+          prochaine_echeance: string | null
+          prochaines_heures: number | null
+          type_declencheur: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          alerte_avant_jours?: number | null
+          categorie_id?: string | null
+          checklist_id?: string | null
+          cout_estime?: number | null
+          created_at?: string
+          dernier_compteur_heures?: number | null
+          dernier_compteur_km?: number | null
+          derniere_execution?: string | null
+          description?: string | null
+          duree_estimee_heures?: number | null
+          equipement_id?: string | null
+          id?: string
+          libelle: string
+          periodicite_heures?: number | null
+          periodicite_jours?: number | null
+          periodicite_km?: number | null
+          prochain_km?: number | null
+          prochaine_echeance?: string | null
+          prochaines_heures?: number | null
+          type_declencheur?: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          alerte_avant_jours?: number | null
+          categorie_id?: string | null
+          checklist_id?: string | null
+          cout_estime?: number | null
+          created_at?: string
+          dernier_compteur_heures?: number | null
+          dernier_compteur_km?: number | null
+          derniere_execution?: string | null
+          description?: string | null
+          duree_estimee_heures?: number | null
+          equipement_id?: string | null
+          id?: string
+          libelle?: string
+          periodicite_heures?: number | null
+          periodicite_jours?: number | null
+          periodicite_km?: number | null
+          prochain_km?: number | null
+          prochaine_echeance?: string | null
+          prochaines_heures?: number | null
+          type_declencheur?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gmao_plans_maintenance_categorie_id_fkey"
+            columns: ["categorie_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_categories_equipement"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_plans_maintenance_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gmao_plans_maintenance_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gmao_techniciens: {
+        Row: {
+          actif: boolean
+          cout_horaire: number | null
+          created_at: string
+          disponible: boolean
+          email: string | null
+          employe_id: string | null
+          id: string
+          nom: string
+          prenom: string | null
+          specialites: string[] | null
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          cout_horaire?: number | null
+          created_at?: string
+          disponible?: boolean
+          email?: string | null
+          employe_id?: string | null
+          id?: string
+          nom: string
+          prenom?: string | null
+          specialites?: string[] | null
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          cout_horaire?: number | null
+          created_at?: string
+          disponible?: boolean
+          email?: string | null
+          employe_id?: string | null
+          id?: string
+          nom?: string
+          prenom?: string | null
+          specialites?: string[] | null
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       heures_supplementaires: {
         Row: {
           approuve_par: string | null

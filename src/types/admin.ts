@@ -60,6 +60,7 @@ export const MODULES = [
   'obc',
   'formations',
   'maintenance',
+  'gmao',
   'clients',
   'societe',
   'rapports',
@@ -93,6 +94,7 @@ export const MODULE_PERMISSIONS: string[] = [
   'obc',
   'formations',
   'maintenance',
+  'gmao',
   'clients',
   'societe',
   'rapports'
@@ -109,6 +111,7 @@ export const PERMISSIONS: string[] = [
 
 export const ROLE_LABELS: Record<string, string> = {
   maintenance: 'Maintenance',
+  gmao: 'Maintenance / GMAO',
   administratif: 'Administratif',
   hseq: 'HSEQ',
   obc: 'OBC (Opérations)',
@@ -134,6 +137,7 @@ export const MODULE_LABELS: Record<string, string> = {
   obc: 'OBC',
   formations: 'Formations',
   maintenance: 'Maintenance',
+  gmao: 'Maintenance / GMAO',
   clients: 'Clients',
   societe: 'Société',
   rapports: 'Rapports',

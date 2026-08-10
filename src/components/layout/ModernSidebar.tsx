@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   GraduationCap,
   ClipboardList,
-  Activity
+  Activity,
+  Wrench
 } from 'lucide-react';
 
 interface ModernSidebarProps {
@@ -93,6 +94,13 @@ const menuItems = [
     icon: ShieldCheck,
     module: 'hseq',
     allowedRoles: ['admin', 'hsecq', 'direction', 'transport']
+  },
+  {
+    path: '/gmao',
+    label: 'Maintenance / GMAO',
+    icon: Wrench,
+    module: 'gmao',
+    allowedRoles: ['admin', 'maintenance', 'direction', 'directeur_exploitation', 'transport', 'hsecq']
   },
   {
     path: '/obc',

@@ -34,7 +34,8 @@ export const validateRoles = (roles: string[]): boolean => {
 
 export const validateModulePermissions = (permissions: string[]): boolean => {
   const validModules = [
-    'fleet', 'drivers', 'rh', 'missions', 'billing', 'dashboard', 'validations', 'admin'
+    'fleet', 'drivers', 'rh', 'missions', 'billing', 'dashboard', 'validations', 'admin',
+    'hseq', 'obc', 'formations', 'maintenance', 'gmao', 'clients', 'societe', 'rapports'
   ];
   return permissions.every(permission => validModules.includes(permission));
 };
