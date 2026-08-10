@@ -23,6 +23,7 @@ import HSEQ from '@/pages/HSEQ';
 import Formations from '@/pages/Formations';
 import Rapports from '@/pages/Rapports';
 import OBC from '@/pages/OBC';
+import GMAO from '@/pages/GMAO';
 import NotFound from '@/pages/NotFound';
 import Auth from '@/pages/Auth';
 
@@ -187,6 +188,16 @@ function App() {
                   <AuthGuard>
                     <ModuleLayout title="OBC" subtitle="On Board Control – violations, points, temps de conduite">
                       <OBC />
+                    </ModuleLayout>
+                  </AuthGuard>
+                } 
+              />
+              <Route 
+                path="/gmao" 
+                element={
+                  <AuthGuard>
+                    <ModuleLayout title="Maintenance / GMAO" subtitle="Équipements, préventif, interventions et pièces">
+                      <GMAO />
                     </ModuleLayout>
                   </AuthGuard>
                 } 
