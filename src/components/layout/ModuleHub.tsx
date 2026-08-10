@@ -19,7 +19,8 @@ import {
   ShieldCheck,
   GraduationCap,
   ClipboardList,
-  Activity
+  Activity,
+  Wrench
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -225,6 +226,15 @@ export const ModuleHub: React.FC = () => {
       isNew: true
     },
     {
+      id: 'gmao',
+      title: 'Maintenance / GMAO',
+      description: 'Équipements, préventif, interventions et pièces',
+      icon: Wrench,
+      route: '/gmao',
+      gradient: 'from-sky-600 to-indigo-700',
+      isNew: true
+    },
+    {
       id: 'admin',
       title: 'Administration',
       description: 'Utilisateurs, rôles et paramètres',
@@ -278,6 +288,7 @@ export const ModuleHub: React.FC = () => {
       'hseq': ['admin', 'hsecq', 'direction'],
       'rapports': ['admin', 'direction', 'directeur_exploitation'],
       'obc': ['admin', 'obc', 'hsecq', 'direction', 'directeur_exploitation'],
+      'gmao': ['admin', 'maintenance', 'direction', 'directeur_exploitation', 'transport', 'hsecq'],
     };
 
     if (roleBasedModules[module.id]) {
