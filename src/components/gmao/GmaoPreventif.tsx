@@ -155,9 +155,11 @@ export const GmaoPreventif: React.FC = () => {
                   <TableCell>{nomEquipement(p.equipement_id)}</TableCell>
                   <TableCell>{DECLENCHEURS.find((d) => d.value === p.type_declencheur)?.label || p.type_declencheur}</TableCell>
                   <TableCell>
-                    {p.prochaine_echeance
-                      ? <Badge variant={echu ? 'destructive' : 'secondary'}>{new Date(p.prochaine_echeance).toLocaleDateString('fr-FR')}</Badge>
-                      : '—'}
+                    {p.type_declencheur === 'km'
+                      ? (p.prochain_km ? <Badge variant="secondary">{Number(p.prochain_km).toLocaleString('fr-FR')} km</Badge> : '—')
+                      : p.prochaine_echeance
+                        ? <Badge variant={echu ? 'destructive' : 'secondary'}>{new Date(p.prochaine_echeance).toLocaleDateString('fr-FR')}</Badge>
+                        : '—'}
                   </TableCell>
                   <TableCell>
                     <Button size="sm" variant="outline" onClick={() => genererOT(p)}>Générer un OT</Button>
