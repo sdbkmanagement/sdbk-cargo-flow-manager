@@ -1,93 +1,248 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { gmaoService } from '@/services/gmao';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
-  Wrench, AlertTriangle, ClipboardList, Package, Gauge, TrendingUp
-} from 'lucide-react';
-import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+  LineChart, Line, Legend, PieChart, Pie, Cell,
 } from 'recharts';
+import {
+  Truck, CheckCircle2, Wrench, AlertOctagon, ClipboardList, Clock,
+  CalendarClock, Coins, Bell, ChevronRight,
+} from 'lucide-react';
+import { useGmao } from './GmaoContext';
+import { fmtMontant, fmtNombre, KpiCard, libelle, moisCle, STATUTS_OT } from './gmaoUi';
+import { cn } from '@/lib/utils';
+
+const COULEURS = ['hsl(var(--primary))', 'hsl(var(--info))', 'hsl(var(--warning))', 'hsl(var(--success))', 'hsl(var(--destructive))'];
 
 export const GmaoDashboard: React.FC = () => {
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { chargement, equipements, ots, plans, alertes, statsParEquipement, allerA, libelleEquipement } = useGmao();
 
-  useEffect(() => {
-    let actif = true;
-    const load = async () => {
-      try {
-        const d = await gmaoService.getDashboard();
-        if (actif) setData(d);
-      } catch (e) {
-        console.error('Erreur dashboard GMAO', e);
-      } finally {
-        if (actif) setLoading(false);
-      }
+  const kpis = useMemo(() => {
+    const maintenant = Date.now();
+    const debutMois = new Date();
+    debutMois.setDate(1);
+    debutMois.setHours(0, 0, 0, 0);
+
+    const ouverts = ots.filter((o) => !o.cloture);
+    const coutMois = ots
+      .filter((o) => {
+        const d = o.date_fin || o.date_debut || o.date_planifiee || o.created_at;
+        return d && new Date(d) >= debutMois;
+      })
+      .reduce((s, o) => s + Number(o.cout_total || 0), 0);
+
+    return {
+      total: equipements.length,
+      disponibles: equipements.filter((e) => e.statut === 'operationnel').length,
+      enMaintenance: equipements.filter((e) => e.statut === 'en_maintenance').length,
+      immobilises: equipements.filter((e) => e.statut === 'immobilise' || e.statut === 'hors_service').length,
+      enCours: ouverts.filter((o) => o.statut === 'en_cours' || o.statut === 'attente_piece').length,
+      enRetard: ouverts.filter((o) => o.date_planifiee && new Date(o.date_planifiee).getTime() < maintenant).length,
+      preventifsAVenir: plans.filter((p) => {
+        if (!p.prochaine_echeance) return false;
+        const ecart = (new Date(p.prochaine_echeance).getTime() - maintenant) / (24 * 3600 * 1000);
+        return ecart >= 0 && ecart <= 30;
+      }).length,
+      coutMois,
     };
-    load();
-    const i = setInterval(load, 60000);
-    return () => { actif = false; clearInterval(i); };
-  }, []);
+  }, [equipements, ots, plans]);
 
-  if (loading) return <p className="text-muted-foreground">Chargement des indicateurs…</p>;
-  if (!data) return <p className="text-muted-foreground">Aucune donnée disponible.</p>;
+  const evolution = useMemo(() => {
+    const map: Record<string, { mois: string; Correctives: number; Préventives: number; cout: number }> = {};
+    ots.forEach((o) => {
+      const k = moisCle(o.date_fin || o.date_debut || o.date_planifiee || o.created_at);
+      if (!k) return;
+      map[k] ||= { mois: k, Correctives: 0, Préventives: 0, cout: 0 };
+      if (o.type_maintenance === 'preventif') map[k].Préventives += 1;
+      else map[k].Correctives += 1;
+      map[k].cout += Number(o.cout_total || 0);
+    });
+    return Object.values(map).sort((a, b) => a.mois.localeCompare(b.mois)).slice(-12);
+  }, [ots]);
 
-  const kpis = [
-    { label: 'Équipements', value: data.equipements, icon: Gauge },
-    { label: 'En maintenance', value: data.equipementsEnMaintenance, icon: Wrench },
-    { label: 'Demandes en attente', value: data.demandesEnAttente, icon: AlertTriangle },
-    { label: 'OT ouverts', value: data.otOuverts, icon: ClipboardList },
-    { label: 'OT en retard', value: data.otEnRetard, icon: AlertTriangle },
-    { label: 'Pièces sous seuil', value: data.piecesSousSeuil, icon: Package },
-    { label: 'Taux préventif', value: `${data.tauxPreventif} %`, icon: TrendingUp },
-    { label: 'Coût total', value: `${Math.round(data.coutTotal).toLocaleString('fr-FR')} GNF`, icon: TrendingUp },
-  ];
+  const topCouts = useMemo(
+    () =>
+      Object.entries(statsParEquipement)
+        .map(([id, s]) => ({ nom: libelleEquipement(id).split(' — ')[0], cout: s.coutTotal, id }))
+        .filter((x) => x.cout > 0)
+        .sort((a, b) => b.cout - a.cout)
+        .slice(0, 10),
+    [statsParEquipement, libelleEquipement]
+  );
 
-  const parMois: Record<string, number> = {};
-  (data.ots || []).forEach((o: any) => {
-    if (!o.date_planifiee && !o.date_debut) return;
-    const d = new Date(o.date_debut || o.date_planifiee);
-    const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    parMois[k] = (parMois[k] || 0) + Number(o.cout_total || 0);
-  });
-  const chart = Object.entries(parMois).sort().map(([mois, cout]) => ({ mois, cout }));
+  const topImmobilisation = useMemo(
+    () =>
+      Object.entries(statsParEquipement)
+        .map(([id, s]) => ({ nom: libelleEquipement(id).split(' — ')[0], heures: s.immobilisationHeures, id }))
+        .filter((x) => x.heures > 0)
+        .sort((a, b) => b.heures - a.heures)
+        .slice(0, 10),
+    [statsParEquipement, libelleEquipement]
+  );
+
+  const repartitionStatut = useMemo(() => {
+    const map: Record<string, number> = {};
+    ots.forEach((o) => {
+      const k = o.cloture ? 'cloture' : o.statut || 'planifie';
+      map[k] = (map[k] || 0) + 1;
+    });
+    return Object.entries(map).map(([k, v]) => ({ nom: libelle(STATUTS_OT, k), valeur: v }));
+  }, [ots]);
+
+  if (chargement) {
+    return (
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
+        ))}
+      </div>
+    );
+  }
+
+  const vide = ots.length === 0;
 
   return (
     <div className="space-y-6">
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {kpis.map((k) => (
-          <Card key={k.label}>
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <k.icon className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{k.label}</p>
-                <p className="text-xl font-bold">{k.value}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        <KpiCard label="Total équipements" valeur={fmtNombre(kpis.total)} icon={Truck} onClick={() => allerA('equipements')} />
+        <KpiCard label="Disponibles" valeur={fmtNombre(kpis.disponibles)} icon={CheckCircle2} ton="succes" onClick={() => allerA('equipements')} />
+        <KpiCard label="En maintenance" valeur={fmtNombre(kpis.enMaintenance)} icon={Wrench} ton="alerte" onClick={() => allerA('equipements')} />
+        <KpiCard label="Immobilisés" valeur={fmtNombre(kpis.immobilises)} icon={AlertOctagon} ton="danger" onClick={() => allerA('equipements')} />
+        <KpiCard label="Interventions en cours" valeur={fmtNombre(kpis.enCours)} icon={ClipboardList} ton="info" onClick={() => allerA('interventions')} />
+        <KpiCard label="Interventions en retard" valeur={fmtNombre(kpis.enRetard)} icon={Clock} ton="danger" onClick={() => allerA('interventions')} />
+        <KpiCard label="Préventif à venir (30 j)" valeur={fmtNombre(kpis.preventifsAVenir)} icon={CalendarClock} ton="alerte" onClick={() => allerA('preventif')} />
+        <KpiCard label="Coût maintenance du mois" valeur={fmtMontant(kpis.coutMois)} icon={Coins} onClick={() => allerA('couts')} />
       </div>
 
-      <Card>
-        <CardHeader><CardTitle>Coûts de maintenance par mois</CardTitle></CardHeader>
-        <CardContent className="h-72">
-          {chart.length === 0 ? (
-            <p className="text-muted-foreground">Aucun coût enregistré pour le moment.</p>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chart}>
-                <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis dataKey="mois" />
-                <YAxis />
-                <Tooltip formatter={(v: number) => `${Number(v).toLocaleString('fr-FR')} GNF`} />
-                <Bar dataKey="cout" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Évolution des interventions</CardTitle></CardHeader>
+          <CardContent className="h-72">
+            {vide ? <p className="text-sm text-muted-foreground">Aucune intervention enregistrée.</p> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={evolution}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis dataKey="mois" fontSize={11} />
+                  <YAxis allowDecimals={false} fontSize={11} />
+                  <Tooltip />
+                  <Legend />
+                  <Line type="monotone" dataKey="Correctives" stroke="hsl(var(--destructive))" strokeWidth={2} />
+                  <Line type="monotone" dataKey="Préventives" stroke="hsl(var(--success))" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Coût de maintenance par mois</CardTitle></CardHeader>
+          <CardContent className="h-72">
+            {vide ? <p className="text-sm text-muted-foreground">Aucun coût enregistré.</p> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={evolution}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis dataKey="mois" fontSize={11} />
+                  <YAxis fontSize={11} />
+                  <Tooltip formatter={(v: number) => fmtMontant(Number(v))} />
+                  <Bar dataKey="cout" name="Coût" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Top 10 des équipements les plus coûteux</CardTitle></CardHeader>
+          <CardContent className="h-80">
+            {topCouts.length === 0 ? <p className="text-sm text-muted-foreground">Aucun coût rattaché à un équipement.</p> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topCouts} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis type="number" fontSize={11} />
+                  <YAxis type="category" dataKey="nom" width={110} fontSize={11} />
+                  <Tooltip formatter={(v: number) => fmtMontant(Number(v))} />
+                  <Bar dataKey="cout" name="Coût" fill="hsl(var(--warning))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Temps d'immobilisation par équipement</CardTitle></CardHeader>
+          <CardContent className="h-80">
+            {topImmobilisation.length === 0 ? <p className="text-sm text-muted-foreground">Aucune immobilisation enregistrée.</p> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topImmobilisation} layout="vertical" margin={{ left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                  <XAxis type="number" fontSize={11} />
+                  <YAxis type="category" dataKey="nom" width={110} fontSize={11} />
+                  <Tooltip formatter={(v: number) => `${fmtNombre(Number(v))} h`} />
+                  <Bar dataKey="heures" name="Heures" fill="hsl(var(--info))" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-2"><CardTitle className="text-base">Répartition des interventions par statut</CardTitle></CardHeader>
+          <CardContent className="h-72">
+            {vide ? <p className="text-sm text-muted-foreground">Aucune intervention.</p> : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={repartitionStatut} dataKey="valeur" nameKey="nom" outerRadius={90} label>
+                    {repartitionStatut.map((_, i) => <Cell key={i} fill={COULEURS[i % COULEURS.length]} />)}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell className="h-4 w-4" /> Alertes maintenance
+            </CardTitle>
+            <Badge variant={alertes.length ? 'destructive' : 'secondary'}>{alertes.length}</Badge>
+          </CardHeader>
+          <CardContent>
+            {alertes.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Aucune alerte : le parc est à jour.</p>
+            ) : (
+              <ScrollArea className="h-64 pr-3">
+                <div className="space-y-2">
+                  {alertes.map((a) => (
+                    <button
+                      key={a.id}
+                      onClick={() => allerA(a.section, a.equipementId || undefined)}
+                      className={cn(
+                        'flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors hover:bg-muted/60',
+                        a.gravite === 'danger' ? 'border-destructive/30 bg-destructive/5' : 'border-warning/30 bg-warning/5'
+                      )}
+                    >
+                      <span className={cn('h-2 w-2 shrink-0 rounded-full', a.gravite === 'danger' ? 'bg-destructive' : 'bg-warning')} />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium">{a.titre}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{a.detail}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

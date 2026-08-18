@@ -2,12 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Plus, Wrench, Coins, Timer, CalendarClock } from 'lucide-react';
 import { gmaoService, GmaoEquipement } from '@/services/gmao';
 import { GmaoEquipementHistorique } from './GmaoEquipementHistorique';
 import { GmaoPhotoUpload } from './GmaoPhotoUpload';
+import { GmaoInterventionForm } from './GmaoInterventionForm';
+import { BadgeStatutEquipement, BadgeTypeEquipement, KpiCard } from './gmaoUi';
+import { useGmao } from './GmaoContext';
 import { useToast } from '@/hooks/use-toast';
+
 
 interface Props {
   equipement: GmaoEquipement | null;
@@ -28,6 +34,10 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [nouvelle, setNouvelle] = useState(false);
+  const { statsParEquipement } = useGmao();
+  const stats = equipement ? statsParEquipement[equipement.id] : undefined;
+
 
   useEffect(() => {
     setPhotoUrl(equipement?.photo_url ?? null);
@@ -70,11 +80,34 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 flex-wrap">
                 <span>{equipement.immatriculation || equipement.code}</span>
-                <Badge variant={equipement.type_equipement === 'tracteur' ? 'default' : 'secondary'}>
-                  {equipement.type_equipement === 'tracteur' ? 'Tracteur' : equipement.type_equipement === 'remorque' ? 'Remorque' : 'Autre'}
-                </Badge>
+                <BadgeTypeEquipement type={equipement.type_equipement} />
+                <BadgeStatutEquipement statut={equipement.statut} />
+                <Button size="sm" className="ml-auto" onClick={() => setNouvelle(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Nouvelle intervention
+                </Button>
               </DialogTitle>
             </DialogHeader>
+
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+              <KpiCard label="Interventions" valeur={stats?.interventions ?? data?.ots?.length ?? 0} icon={Wrench} />
+              <KpiCard label="Coût cumulé" valeur={fmtMontant(stats?.coutTotal ?? data?.coutTotal ?? 0)} icon={Coins} ton="alerte" />
+              <KpiCard label="Immobilisation" valeur={`${Math.round(stats?.immobilisationHeures || 0)} h`} icon={Timer} ton="info" />
+              <KpiCard
+                label="Prochaine maintenance"
+                valeur={fmtDate(stats?.prochaineEcheance || prochaineEcheance)}
+                icon={CalendarClock}
+                ton="succes"
+                detail={stats?.prochainKm ? `ou ${stats.prochainKm.toLocaleString('fr-FR')} km` : undefined}
+              />
+            </div>
+
+            <GmaoInterventionForm
+              open={nouvelle}
+              onOpenChange={setNouvelle}
+              equipementId={equipement.id}
+              onSaved={() => { onUpdated?.(); }}
+            />
+
 
             <Tabs defaultValue="carnet">
               <TabsList className="flex flex-wrap h-auto">
