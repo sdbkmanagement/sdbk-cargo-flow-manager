@@ -158,6 +158,19 @@ export const gmaoService = {
   createOrdreTravail: (p: Record<string, unknown>) => insertRow<GmaoOrdreTravail>('gmao_ordres_travail', p),
   updateOrdreTravail: (id: string, p: Record<string, unknown>) => updateRow<GmaoOrdreTravail>('gmao_ordres_travail', id, p),
 
+  // Pièces consommées sur un ordre de travail (déclenche le mouvement de stock en base)
+  addOtPiece: (p: Record<string, unknown>) => insertRow('gmao_ot_pieces', p),
+  getOtPieces: async (otIds: string[]) => {
+    if (!otIds.length) return [] as any[];
+    const { data, error } = await (supabase as any)
+      .from('gmao_ot_pieces')
+      .select('*, gmao_pieces(reference, designation)')
+      .in('ot_id', otIds);
+    if (error) throw error;
+    return (data || []) as any[];
+  },
+
+
   // Pièces
   getPieces: () => fetchAll<GmaoPiece>('gmao_pieces', 'reference', true),
   createPiece: (p: Record<string, unknown>) => insertRow<GmaoPiece>('gmao_pieces', p),
