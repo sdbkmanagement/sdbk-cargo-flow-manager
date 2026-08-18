@@ -25,6 +25,7 @@ export type GmaoEquipement = {
   compteur_km?: number | null;
   compteur_heures?: number | null;
   observations?: string | null;
+  photo_url?: string | null;
   actif: boolean;
   created_at: string;
 };
