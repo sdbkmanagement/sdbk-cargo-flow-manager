@@ -41,6 +41,21 @@ const TYPES = [
 
 const labelType = (v: string) => TYPES.find((t) => t.value === v)?.label || 'Autre';
 
+const statutClassName = (statut?: string | null) => {
+  switch (statut) {
+    case 'operationnel':
+      return 'border-primary bg-primary text-primary-foreground';
+    case 'en_maintenance':
+      return 'border-border bg-secondary text-secondary-foreground';
+    case 'hors_service':
+      return 'border-destructive bg-destructive text-destructive-foreground';
+    case 'reforme':
+      return 'border-border bg-muted text-foreground';
+    default:
+      return 'border-border bg-background text-foreground';
+  }
+};
+
 const formInitial = {
   type_equipement: 'tracteur',
   immatriculation: '',
@@ -264,18 +279,8 @@ export const GmaoEquipements: React.FC = () => {
                     <TableCell>{e.compteur_km ?? 0}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          e.statut === 'operationnel'
-                            ? 'default'
-                            : e.statut === 'en_maintenance'
-                            ? 'secondary'
-                            : e.statut === 'hors_service'
-                            ? 'destructive'
-                            : e.statut === 'reforme'
-                            ? 'outline'
-                            : 'secondary'
-                        }
-                        className="whitespace-nowrap"
+                        variant="outline"
+                        className={`whitespace-nowrap ${statutClassName(e.statut)}`}
                       >
                         {STATUTS.find((s) => s.value === e.statut)?.label || e.statut || 'Non défini'}
                       </Badge>
