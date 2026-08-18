@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { gmaoService, GmaoDemande, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Plus, ArrowRightCircle } from 'lucide-react';
 
 const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
@@ -19,6 +20,8 @@ const STATUTS: Record<string, string> = {
 
 export const GmaoDemandes: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : '';
   const [items, setItems] = useState<GmaoDemande[]>([]);
   const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);
   const [open, setOpen] = useState(false);
@@ -38,16 +41,21 @@ export const GmaoDemandes: React.FC = () => {
 
   useEffect(() => { charger(); }, []);
 
+  // Le demandeur est toujours l'utilisateur connecté
+  useEffect(() => {
+    setForm((f) => ({ ...f, demandeur_nom: nomUtilisateur }));
+  }, [nomUtilisateur]);
+
   const enregistrer = async () => {
     if (!form.titre) {
       toast({ title: 'Champ requis', description: 'Le titre est obligatoire', variant: 'destructive' });
       return;
     }
     try {
-      await gmaoService.createDemande({ ...form, equipement_id: form.equipement_id || null });
+      await gmaoService.createDemande({ ...form, demandeur_nom: nomUtilisateur || null, equipement_id: form.equipement_id || null });
       toast({ title: 'Demande enregistrée' });
       setOpen(false);
-      setForm({ titre: '', description: '', priorite: 'normale', equipement_id: '', demandeur_nom: '' });
+      setForm({ titre: '', description: '', priorite: 'normale', equipement_id: '', demandeur_nom: nomUtilisateur });
       charger();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
@@ -108,7 +116,7 @@ export const GmaoDemandes: React.FC = () => {
                   <SelectContent>{PRIORITES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Demandeur</Label><Input value={form.demandeur_nom} onChange={(e) => setForm({ ...form, demandeur_nom: e.target.value })} /></div>
+              <div><Label>Demandeur</Label><Input value={nomUtilisateur} readOnly disabled className="bg-muted" /></div>
               <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             </div>
             <DialogFooter>
