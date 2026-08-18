@@ -41,6 +41,17 @@ const TYPES = [
 
 const labelType = (v: string) => TYPES.find((t) => t.value === v)?.label || 'Autre';
 
+const typeClassName = (type?: string | null) => {
+  switch (type) {
+    case 'tracteur':
+      return 'border-primary bg-primary text-primary-foreground';
+    case 'remorque':
+      return 'border-border bg-secondary text-secondary-foreground';
+    default:
+      return 'border-border bg-muted text-foreground';
+  }
+};
+
 const statutClassName = (statut?: string | null) => {
   switch (statut) {
     case 'operationnel':
@@ -270,7 +281,10 @@ export const GmaoEquipements: React.FC = () => {
                   <TableRow key={e.id} className="cursor-pointer" onClick={() => setSelection(e)}>
                     <TableCell className="font-medium">{e.immatriculation || '—'}</TableCell>
                     <TableCell>
-                      <Badge variant={e.type_equipement === 'tracteur' ? 'default' : 'secondary'}>
+                      <Badge
+                        variant="outline"
+                        className={`whitespace-nowrap ${typeClassName(e.type_equipement)}`}
+                      >
                         {labelType(e.type_equipement)}
                       </Badge>
                     </TableCell>
