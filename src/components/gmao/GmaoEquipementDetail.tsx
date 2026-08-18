@@ -70,11 +70,34 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
             <DialogHeader>
               <DialogTitle className="flex items-center gap-3 flex-wrap">
                 <span>{equipement.immatriculation || equipement.code}</span>
-                <Badge variant={equipement.type_equipement === 'tracteur' ? 'default' : 'secondary'}>
-                  {equipement.type_equipement === 'tracteur' ? 'Tracteur' : equipement.type_equipement === 'remorque' ? 'Remorque' : 'Autre'}
-                </Badge>
+                <BadgeTypeEquipement type={equipement.type_equipement} />
+                <BadgeStatutEquipement statut={equipement.statut} />
+                <Button size="sm" className="ml-auto" onClick={() => setNouvelle(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Nouvelle intervention
+                </Button>
               </DialogTitle>
             </DialogHeader>
+
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+              <KpiCard label="Interventions" valeur={stats?.interventions ?? data?.ots?.length ?? 0} icon={Wrench} />
+              <KpiCard label="Coût cumulé" valeur={fmtMontant(stats?.coutTotal ?? data?.coutTotal ?? 0)} icon={Coins} ton="alerte" />
+              <KpiCard label="Immobilisation" valeur={`${Math.round(stats?.immobilisationHeures || 0)} h`} icon={Timer} ton="info" />
+              <KpiCard
+                label="Prochaine maintenance"
+                valeur={fmtDate(stats?.prochaineEcheance || prochaineEcheance)}
+                icon={CalendarClock}
+                ton="succes"
+                detail={stats?.prochainKm ? `ou ${stats.prochainKm.toLocaleString('fr-FR')} km` : undefined}
+              />
+            </div>
+
+            <GmaoInterventionForm
+              open={nouvelle}
+              onOpenChange={setNouvelle}
+              equipementId={equipement.id}
+              onSaved={() => { onUpdated?.(); }}
+            />
+
 
             <Tabs defaultValue="carnet">
               <TabsList className="flex flex-wrap h-auto">
