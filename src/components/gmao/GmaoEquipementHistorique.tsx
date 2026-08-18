@@ -42,6 +42,10 @@ export const GmaoEquipementHistorique: React.FC<Props> = ({ equipement, prochain
   const [technicien, setTechnicien] = useState('tous');
   const [fournisseur, setFournisseur] = useState('tous');
   const [nature, setNature] = useState('');
+  const [ouverts, setOuverts] = useState<string[]>([]);
+  const basculer = (id: string) =>
+    setOuverts((o) => (o.includes(id) ? o.filter((x) => x !== id) : [...o, id]));
+
 
   useEffect(() => {
     let annule = false;
