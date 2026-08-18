@@ -25,7 +25,7 @@ export const GmaoPreventif: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({
     libelle: '', equipement_id: '', type_declencheur: 'date',
-    periodicite_jours: 30, periodicite_km: '', periodicite_heures: '', prochaine_echeance: '',
+    periodicite_jours: 30, periodicite_km: '', periodicite_heures: '', prochaine_echeance: '', prochain_km: '',
   });
 
   const charger = async () => {
@@ -52,7 +52,8 @@ export const GmaoPreventif: React.FC = () => {
         periodicite_jours: form.periodicite_jours ? Number(form.periodicite_jours) : null,
         periodicite_km: form.periodicite_km ? Number(form.periodicite_km) : null,
         periodicite_heures: form.periodicite_heures ? Number(form.periodicite_heures) : null,
-        prochaine_echeance: form.prochaine_echeance || null,
+        prochaine_echeance: form.type_declencheur === 'km' ? null : (form.prochaine_echeance || null),
+        prochain_km: form.type_declencheur === 'km' && form.prochain_km ? Number(form.prochain_km) : null,
       });
       toast({ title: 'Plan de maintenance créé' });
       setOpen(false);
@@ -117,7 +118,11 @@ export const GmaoPreventif: React.FC = () => {
               {form.type_declencheur === 'heures' && (
                 <div><Label>Périodicité (heures)</Label><Input type="number" value={form.periodicite_heures} onChange={(e) => setForm({ ...form, periodicite_heures: e.target.value })} /></div>
               )}
-              <div><Label>Prochaine échéance</Label><Input type="date" value={form.prochaine_echeance} onChange={(e) => setForm({ ...form, prochaine_echeance: e.target.value })} /></div>
+              {form.type_declencheur === 'km' ? (
+                <div><Label>Prochaine échéance (km)</Label><Input type="number" placeholder="Ex. 150000" value={form.prochain_km} onChange={(e) => setForm({ ...form, prochain_km: e.target.value })} /></div>
+              ) : (
+                <div><Label>Prochaine échéance</Label><Input type="date" value={form.prochaine_echeance} onChange={(e) => setForm({ ...form, prochaine_echeance: e.target.value })} /></div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
