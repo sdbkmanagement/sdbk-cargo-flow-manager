@@ -333,7 +333,7 @@ export const GmaoEquipements: React.FC = () => {
         </CardContent>
       </Card>
 
-      <GmaoEquipementDetail equipement={selection} onOpenChange={(o) => { if (!o) setSelection(null); }} />
+      <GmaoEquipementDetail equipement={selection} onOpenChange={(o) => { if (!o) setSelection(null); }} onUpdated={charger} />
     </>
   );
 };
