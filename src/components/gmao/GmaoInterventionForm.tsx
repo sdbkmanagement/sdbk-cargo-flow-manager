@@ -10,7 +10,6 @@ import { Separator } from '@/components/ui/separator';
 import { gmaoService } from '@/services/gmao';
 import { useGmao } from './GmaoContext';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Trash2 } from 'lucide-react';
 import { fmtMontant, PRIORITES, STATUTS_OT, TYPES_MAINTENANCE } from './gmaoUi';
 
@@ -45,7 +44,6 @@ const initial = {
 
 export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equipementId, onSaved }) => {
   const { toast } = useToast();
-  const { user } = useAuth();
   const { equipements, pieces, rafraichir } = useGmao();
   const [form, setForm] = useState<Record<string, any>>({ ...initial });
   const [lignes, setLignes] = useState<LignePiece[]>([]);
@@ -103,11 +101,14 @@ export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equi
         date_debut: form.date_debut ? new Date(form.date_debut).toISOString() : null,
         date_fin: form.date_fin ? new Date(form.date_fin).toISOString() : null,
         diagnostic: form.diagnostic || null,
-        travaux_realises: form.travaux_realises || null,
+        travaux_realises: [
+          form.travaux_realises,
+          form.technicien && `Technicien / prestataire : ${form.technicien}`,
+          form.heures_main_oeuvre && `Temps passé : ${form.heures_main_oeuvre} h`,
+        ].filter(Boolean).join('\n') || null,
         cout_main_oeuvre: Number(form.cout_main_oeuvre) || 0,
         cout_prestation: Number(form.cout_prestation) || 0,
         cout_autres: Number(form.cout_autres) || 0,
-        cree_par: user?.id || null,
       });
 
       for (const l of lignes.filter((x) => x.piece_id && Number(x.quantite) > 0)) {
