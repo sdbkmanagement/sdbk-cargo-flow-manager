@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { gmaoService, GmaoDemande, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Plus, ArrowRightCircle } from 'lucide-react';
 
 const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
