@@ -3283,22 +3283,28 @@ export type Database = {
           code: string
           compteur_heures: number | null
           compteur_km: number | null
+          configuration: string | null
           created_at: string
           criticite: string
+          date_mise_circulation: string | null
           date_mise_service: string | null
           departement: string | null
           designation: string
           id: string
+          immatriculation: string | null
           marque: string | null
           modele: string | null
+          numero_chassis: string | null
           numero_serie: string | null
           observations: string | null
           photo_url: string | null
           site: string | null
           statut: string
+          type_equipement: string
           updated_at: string
           valeur_acquisition: number | null
           vehicule_id: string | null
+          volume_litres: number | null
         }
         Insert: {
           actif?: boolean
@@ -3306,22 +3312,28 @@ export type Database = {
           code: string
           compteur_heures?: number | null
           compteur_km?: number | null
+          configuration?: string | null
           created_at?: string
           criticite?: string
+          date_mise_circulation?: string | null
           date_mise_service?: string | null
           departement?: string | null
           designation: string
           id?: string
+          immatriculation?: string | null
           marque?: string | null
           modele?: string | null
+          numero_chassis?: string | null
           numero_serie?: string | null
           observations?: string | null
           photo_url?: string | null
           site?: string | null
           statut?: string
+          type_equipement?: string
           updated_at?: string
           valeur_acquisition?: number | null
           vehicule_id?: string | null
+          volume_litres?: number | null
         }
         Update: {
           actif?: boolean
@@ -3329,22 +3341,28 @@ export type Database = {
           code?: string
           compteur_heures?: number | null
           compteur_km?: number | null
+          configuration?: string | null
           created_at?: string
           criticite?: string
+          date_mise_circulation?: string | null
           date_mise_service?: string | null
           departement?: string | null
           designation?: string
           id?: string
+          immatriculation?: string | null
           marque?: string | null
           modele?: string | null
+          numero_chassis?: string | null
           numero_serie?: string | null
           observations?: string | null
           photo_url?: string | null
           site?: string | null
           statut?: string
+          type_equipement?: string
           updated_at?: string
           valeur_acquisition?: number | null
           vehicule_id?: string | null
+          volume_litres?: number | null
         }
         Relationships: [
           {
