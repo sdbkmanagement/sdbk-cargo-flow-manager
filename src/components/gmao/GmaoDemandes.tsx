@@ -20,6 +20,8 @@ const STATUTS: Record<string, string> = {
 
 export const GmaoDemandes: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : '';
   const [items, setItems] = useState<GmaoDemande[]>([]);
   const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);
   const [open, setOpen] = useState(false);
