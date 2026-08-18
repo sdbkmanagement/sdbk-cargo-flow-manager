@@ -51,8 +51,9 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
               </DialogTitle>
             </DialogHeader>
 
-            <Tabs defaultValue="infos">
+            <Tabs defaultValue="carnet">
               <TabsList className="flex flex-wrap h-auto">
+                <TabsTrigger value="carnet">Historique des interventions</TabsTrigger>
                 <TabsTrigger value="infos">Informations</TabsTrigger>
                 <TabsTrigger value="ot">Interventions</TabsTrigger>
                 <TabsTrigger value="demandes">Pannes / demandes</TabsTrigger>
@@ -60,6 +61,10 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
                 <TabsTrigger value="preventif">Échéances</TabsTrigger>
                 <TabsTrigger value="historique">Historique</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="carnet" className="mt-4">
+                <GmaoEquipementHistorique equipement={equipement} prochaineEcheance={prochaineEcheance} />
+              </TabsContent>
 
               <TabsContent value="infos" className="mt-4">
                 <div className="grid gap-3 md:grid-cols-2 text-sm">
