@@ -1,0 +1,1 @@
+ALTER TABLE public.gmao_equipements ADD COLUMN IF NOT EXISTS photo_url text;
