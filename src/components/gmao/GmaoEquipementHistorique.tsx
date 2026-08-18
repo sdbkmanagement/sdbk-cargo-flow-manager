@@ -247,7 +247,7 @@ export const GmaoEquipementHistorique: React.FC<Props> = ({ equipement, prochain
                     </TableRow>
                   </CollapsibleContent>
                 </>
-              </CollapsibleContent>
+              </Collapsible>
             ))}
           </TableBody>
         </Table>
