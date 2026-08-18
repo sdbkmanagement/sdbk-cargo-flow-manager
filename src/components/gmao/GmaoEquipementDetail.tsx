@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { gmaoService, GmaoEquipement } from '@/services/gmao';
+import { GmaoEquipementHistorique } from './GmaoEquipementHistorique';
 import { useToast } from '@/hooks/use-toast';
 
 interface Props {
@@ -36,6 +37,12 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
       .finally(() => { if (!annule) setLoading(false); });
     return () => { annule = true; };
   }, [equipement, toast]);
+
+  const prochaineEcheance: string | null =
+    (data?.plans || [])
+      .map((p: any) => p.prochaine_echeance)
+      .filter(Boolean)
+      .sort()[0] || null;
 
   return (
     <Dialog open={!!equipement} onOpenChange={onOpenChange}>
