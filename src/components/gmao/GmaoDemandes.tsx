@@ -116,7 +116,7 @@ export const GmaoDemandes: React.FC = () => {
                   <SelectContent>{PRIORITES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div><Label>Demandeur</Label><Input value={form.demandeur_nom} onChange={(e) => setForm({ ...form, demandeur_nom: e.target.value })} /></div>
+              <div><Label>Demandeur</Label><Input value={nomUtilisateur} readOnly disabled className="bg-muted" /></div>
               <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             </div>
             <DialogFooter>
