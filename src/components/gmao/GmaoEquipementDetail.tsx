@@ -6,11 +6,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { gmaoService, GmaoEquipement } from '@/services/gmao';
 import { GmaoEquipementHistorique } from './GmaoEquipementHistorique';
+import { GmaoPhotoUpload } from './GmaoPhotoUpload';
 import { useToast } from '@/hooks/use-toast';
 
 interface Props {
   equipement: GmaoEquipement | null;
   onOpenChange: (open: boolean) => void;
+  onUpdated?: () => void;
 }
 
 const fmtDate = (d?: string | null) => {
@@ -21,10 +23,26 @@ const fmtDate = (d?: string | null) => {
 
 const fmtMontant = (n: number) => `${Number(n || 0).toLocaleString('fr-FR')} GNF`;
 
-export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange }) => {
+export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange, onUpdated }) => {
   const { toast } = useToast();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPhotoUrl(equipement?.photo_url ?? null);
+  }, [equipement]);
+
+  const enregistrerPhoto = async (url: string | null) => {
+    if (!equipement) return;
+    setPhotoUrl(url);
+    try {
+      await gmaoService.updateEquipement(equipement.id, { photo_url: url });
+      onUpdated?.();
+    } catch (e: any) {
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    }
+  };
 
   useEffect(() => {
     if (!equipement) { setData(null); return; }
@@ -73,7 +91,13 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
                 <GmaoEquipementHistorique equipement={equipement} prochaineEcheance={prochaineEcheance} />
               </TabsContent>
 
-              <TabsContent value="infos" className="mt-4">
+              <TabsContent value="infos" className="mt-4 space-y-4">
+                <GmaoPhotoUpload
+                  value={photoUrl}
+                  onChange={enregistrerPhoto}
+                  reference={equipement.immatriculation || equipement.code}
+                  id="gmao-photo-detail-equipement"
+                />
                 <div className="grid gap-3 md:grid-cols-2 text-sm">
                   <div><span className="text-muted-foreground">Code : </span>{equipement.code}</div>
                   <div><span className="text-muted-foreground">Immatriculation : </span>{equipement.immatriculation || '—'}</div>

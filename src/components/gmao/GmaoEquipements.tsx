@@ -17,7 +17,8 @@ import {
 import { gmaoService, GmaoEquipement } from '@/services/gmao';
 import { GmaoEquipementDetail } from './GmaoEquipementDetail';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Download } from 'lucide-react';
+import { Plus, Download, Image as ImageIcon } from 'lucide-react';
+import { GmaoPhotoUpload } from './GmaoPhotoUpload';
 
 const STATUTS = [
   { value: 'operationnel', label: 'Opérationnel' },
@@ -85,6 +86,7 @@ const formInitial = {
   criticite: 'normale',
   compteur_km: 0,
   observations: '',
+  photo_url: null as string | null,
 };
 
 export const GmaoEquipements: React.FC = () => {
@@ -141,6 +143,7 @@ export const GmaoEquipements: React.FC = () => {
       criticite: form.criticite,
       compteur_km: Number(form.compteur_km) || 0,
       observations: form.observations || null,
+      photo_url: form.photo_url || null,
     };
 
     try {
@@ -239,6 +242,14 @@ export const GmaoEquipements: React.FC = () => {
                       <SelectContent>{CRITICITES.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
+                  <div className="md:col-span-2">
+                    <GmaoPhotoUpload
+                      value={form.photo_url}
+                      onChange={(url) => setForm({ ...form, photo_url: url })}
+                      reference={form.immatriculation || form.code}
+                      id="gmao-photo-nouvel-equipement"
+                    />
+                  </div>
                   <div className="md:col-span-2"><Label>Observations</Label><Textarea value={form.observations} onChange={(e) => setForm({ ...form, observations: e.target.value })} /></div>
                 </div>
                 <DialogFooter>
@@ -264,6 +275,7 @@ export const GmaoEquipements: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-16">Photo</TableHead>
                   <TableHead>Immatriculation</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Code</TableHead>
@@ -273,12 +285,26 @@ export const GmaoEquipements: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {loading && <TableRow><TableCell colSpan={6}>Chargement…</TableCell></TableRow>}
+                {loading && <TableRow><TableCell colSpan={7}>Chargement…</TableCell></TableRow>}
                 {!loading && filtres.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-muted-foreground">Aucun équipement. Importez les immatriculations ou créez-en un.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-muted-foreground">Aucun équipement. Importez les immatriculations ou créez-en un.</TableCell></TableRow>
                 )}
                 {filtres.map((e) => (
                   <TableRow key={e.id} className="cursor-pointer" onClick={() => setSelection(e)}>
+                    <TableCell>
+                      {e.photo_url ? (
+                        <img
+                          src={e.photo_url}
+                          alt={`Photo ${e.immatriculation || e.code}`}
+                          className="h-10 w-14 rounded object-cover border border-border"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="h-10 w-14 rounded border border-dashed border-border flex items-center justify-center text-muted-foreground">
+                          <ImageIcon className="h-4 w-4" />
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{e.immatriculation || '—'}</TableCell>
                     <TableCell>
                       <Badge
@@ -307,7 +333,7 @@ export const GmaoEquipements: React.FC = () => {
         </CardContent>
       </Card>
 
-      <GmaoEquipementDetail equipement={selection} onOpenChange={(o) => { if (!o) setSelection(null); }} />
+      <GmaoEquipementDetail equipement={selection} onOpenChange={(o) => { if (!o) setSelection(null); }} onUpdated={charger} />
     </>
   );
 };
