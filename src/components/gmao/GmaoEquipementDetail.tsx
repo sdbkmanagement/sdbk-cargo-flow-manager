@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { gmaoService, GmaoEquipement } from '@/services/gmao';
+import { GmaoEquipementHistorique } from './GmaoEquipementHistorique';
 import { useToast } from '@/hooks/use-toast';
 
 interface Props {
@@ -37,6 +38,12 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
     return () => { annule = true; };
   }, [equipement, toast]);
 
+  const prochaineEcheance: string | null =
+    (data?.plans || [])
+      .map((p: any) => p.prochaine_echeance)
+      .filter(Boolean)
+      .sort()[0] || null;
+
   return (
     <Dialog open={!!equipement} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -51,8 +58,9 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
               </DialogTitle>
             </DialogHeader>
 
-            <Tabs defaultValue="infos">
+            <Tabs defaultValue="carnet">
               <TabsList className="flex flex-wrap h-auto">
+                <TabsTrigger value="carnet">Historique des interventions</TabsTrigger>
                 <TabsTrigger value="infos">Informations</TabsTrigger>
                 <TabsTrigger value="ot">Interventions</TabsTrigger>
                 <TabsTrigger value="demandes">Pannes / demandes</TabsTrigger>
@@ -60,6 +68,10 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
                 <TabsTrigger value="preventif">Échéances</TabsTrigger>
                 <TabsTrigger value="historique">Historique</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="carnet" className="mt-4">
+                <GmaoEquipementHistorique equipement={equipement} prochaineEcheance={prochaineEcheance} />
+              </TabsContent>
 
               <TabsContent value="infos" className="mt-4">
                 <div className="grid gap-3 md:grid-cols-2 text-sm">
