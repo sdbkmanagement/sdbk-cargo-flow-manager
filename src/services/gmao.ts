@@ -263,6 +263,21 @@ export const gmaoService = {
     };
   },
 
+  /**
+   * Vue globale du module : une seule collecte de données réutilisée par tous
+   * les écrans (dashboard, équipements, interventions, coûts, rapports).
+   */
+  async getVueGlobale() {
+    const [equipements, demandes, ots, pieces, plans] = await Promise.all([
+      gmaoService.getEquipements(),
+      gmaoService.getDemandes(),
+      gmaoService.getOrdresTravail(),
+      gmaoService.getPieces(),
+      gmaoService.getPlans(),
+    ]);
+    return { equipements, demandes, ots, pieces, plans };
+  },
+
   async getDashboard() {
     const [equipements, demandes, ots, pieces] = await Promise.all([
       gmaoService.getEquipements(),
@@ -293,3 +308,4 @@ export const gmaoService = {
     };
   },
 };
+
