@@ -1,9 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
 
+export type GmaoTypeEquipement = 'tracteur' | 'remorque' | 'autre';
+
 export type GmaoEquipement = {
   id: string;
   code: string;
   designation: string;
+  type_equipement: GmaoTypeEquipement | string;
+  immatriculation?: string | null;
+  numero_chassis?: string | null;
+  volume_litres?: number | null;
+  configuration?: string | null;
+  date_mise_circulation?: string | null;
   categorie_id?: string | null;
   vehicule_id?: string | null;
   marque?: string | null;
@@ -164,32 +172,94 @@ export const gmaoService = {
   createPlan: (p: Record<string, unknown>) => insertRow<GmaoPlan>('gmao_plans_maintenance', p),
   updatePlan: (id: string, p: Record<string, unknown>) => updateRow<GmaoPlan>('gmao_plans_maintenance', id, p),
 
-  // Import des véhicules existants comme équipements (liaison, pas de copie)
+  // Import des véhicules : une fiche équipement par immatriculation (tracteur ET remorque)
   async importerVehicules(): Promise<number> {
     const { data: vehicules, error } = await supabase
       .from('vehicules')
-      .select('id, numero, immatriculation, marque, modele, type_vehicule')
+      .select('*')
       .limit(1000);
     if (error) throw error;
 
     const existants = await gmaoService.getEquipements();
-    const dejaLies = new Set(existants.map((e) => e.vehicule_id).filter(Boolean));
+    const dejaEnregistrees = new Set(
+      existants.map((e) => (e.immatriculation || '').toUpperCase()).filter(Boolean)
+    );
 
-    const aCreer = (vehicules || [])
-      .filter((v: any) => !dejaLies.has(v.id))
-      .map((v: any) => ({
-        code: `EQ-${v.numero || v.immatriculation}`,
-        designation: `${v.marque || 'Véhicule'} ${v.modele || ''} ${v.immatriculation || ''}`.trim(),
-        vehicule_id: v.id,
-        marque: v.marque,
-        modele: v.modele,
-        statut: 'operationnel',
-      }));
+    const aCreer: Record<string, unknown>[] = [];
+    for (const v of (vehicules || []) as any[]) {
+      const tracteur = (v.tracteur_immatriculation || '').trim().toUpperCase();
+      const remorque = (v.remorque_immatriculation || '').trim().toUpperCase();
+
+      if (tracteur && !dejaEnregistrees.has(tracteur)) {
+        dejaEnregistrees.add(tracteur);
+        aCreer.push({
+          code: `TR-${tracteur}`,
+          designation: `Tracteur ${tracteur}${v.tracteur_marque ? ` - ${v.tracteur_marque}` : ''}`,
+          type_equipement: 'tracteur',
+          immatriculation: tracteur,
+          vehicule_id: v.id,
+          marque: v.tracteur_marque || v.marque,
+          modele: v.tracteur_modele || v.modele,
+          numero_chassis: v.tracteur_numero_chassis,
+          configuration: v.tracteur_configuration,
+          date_mise_circulation: v.tracteur_date_mise_circulation,
+          compteur_km: v.kilometrage || 0,
+          statut: 'operationnel',
+        });
+      }
+
+      if (remorque && !dejaEnregistrees.has(remorque)) {
+        dejaEnregistrees.add(remorque);
+        aCreer.push({
+          code: `RM-${remorque}`,
+          designation: `Remorque ${remorque}${v.remorque_marque ? ` - ${v.remorque_marque}` : ''}`,
+          type_equipement: 'remorque',
+          immatriculation: remorque,
+          vehicule_id: v.id,
+          marque: v.remorque_marque,
+          modele: v.remorque_modele,
+          numero_chassis: v.remorque_numero_chassis,
+          configuration: v.remorque_configuration || v.configuration_remorque,
+          volume_litres: v.remorque_volume_litres,
+          date_mise_circulation: v.remorque_date_mise_circulation,
+          statut: 'operationnel',
+        });
+      }
+    }
 
     if (aCreer.length === 0) return 0;
     const { error: insErr } = await (supabase as any).from('gmao_equipements').insert(aCreer);
     if (insErr) throw insErr;
     return aCreer.length;
+  },
+
+  // Historique complet de maintenance d'un équipement
+  async getHistoriqueEquipement(equipementId: string) {
+    const [ots, demandes, plans, historique] = await Promise.all([
+      (supabase as any).from('gmao_ordres_travail').select('*').eq('equipement_id', equipementId).order('created_at', { ascending: false }),
+      (supabase as any).from('gmao_demandes_intervention').select('*').eq('equipement_id', equipementId).order('created_at', { ascending: false }),
+      (supabase as any).from('gmao_plans_maintenance').select('*').eq('equipement_id', equipementId),
+      (supabase as any).from('gmao_historique_equipement').select('*').eq('equipement_id', equipementId).order('created_at', { ascending: false }),
+    ]);
+
+    const otList = (ots.data || []) as GmaoOrdreTravail[];
+    let pieces: any[] = [];
+    if (otList.length) {
+      const { data } = await (supabase as any)
+        .from('gmao_ot_pieces')
+        .select('*, gmao_pieces(reference, designation)')
+        .in('ot_id', otList.map((o) => o.id));
+      pieces = data || [];
+    }
+
+    return {
+      ots: otList,
+      demandes: (demandes.data || []) as GmaoDemande[],
+      plans: (plans.data || []) as GmaoPlan[],
+      historique: historique.data || [],
+      pieces,
+      coutTotal: otList.reduce((s, o) => s + Number(o.cout_total || 0), 0),
+    };
   },
 
   async getDashboard() {
