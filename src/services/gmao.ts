@@ -1,9 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
 
+export type GmaoTypeEquipement = 'tracteur' | 'remorque' | 'autre';
+
 export type GmaoEquipement = {
   id: string;
   code: string;
   designation: string;
+  type_equipement: GmaoTypeEquipement | string;
+  immatriculation?: string | null;
+  numero_chassis?: string | null;
+  volume_litres?: number | null;
+  configuration?: string | null;
+  date_mise_circulation?: string | null;
   categorie_id?: string | null;
   vehicule_id?: string | null;
   marque?: string | null;
