@@ -34,6 +34,10 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [nouvelle, setNouvelle] = useState(false);
+  const { statsParEquipement } = useGmao();
+  const stats = equipement ? statsParEquipement[equipement.id] : undefined;
+
 
   useEffect(() => {
     setPhotoUrl(equipement?.photo_url ?? null);
