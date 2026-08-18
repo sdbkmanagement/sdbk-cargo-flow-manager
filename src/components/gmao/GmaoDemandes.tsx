@@ -41,16 +41,21 @@ export const GmaoDemandes: React.FC = () => {
 
   useEffect(() => { charger(); }, []);
 
+  // Le demandeur est toujours l'utilisateur connecté
+  useEffect(() => {
+    setForm((f) => ({ ...f, demandeur_nom: nomUtilisateur }));
+  }, [nomUtilisateur]);
+
   const enregistrer = async () => {
     if (!form.titre) {
       toast({ title: 'Champ requis', description: 'Le titre est obligatoire', variant: 'destructive' });
       return;
     }
     try {
-      await gmaoService.createDemande({ ...form, equipement_id: form.equipement_id || null });
+      await gmaoService.createDemande({ ...form, demandeur_nom: nomUtilisateur || null, equipement_id: form.equipement_id || null });
       toast({ title: 'Demande enregistrée' });
       setOpen(false);
-      setForm({ titre: '', description: '', priorite: 'normale', equipement_id: '', demandeur_nom: '' });
+      setForm({ titre: '', description: '', priorite: 'normale', equipement_id: '', demandeur_nom: nomUtilisateur });
       charger();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
