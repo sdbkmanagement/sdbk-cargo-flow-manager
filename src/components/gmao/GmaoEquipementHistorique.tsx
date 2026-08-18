@@ -192,13 +192,12 @@ export const GmaoEquipementHistorique: React.FC<Props> = ({ equipement, prochain
               <TableRow><TableCell colSpan={10} className="text-muted-foreground">Aucune intervention sur la période sélectionnée</TableCell></TableRow>
             )}
             {filtrees.map((i) => (
-              <Collapsible key={i.id} asChild>
-                <>
-                  <TableRow>
+              <React.Fragment key={i.id}>
+                  <TableRow className="cursor-pointer" onClick={() => basculer(i.id)}>
                     <TableCell>
-                      <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-7 w-7"><ChevronDown className="w-4 h-4" /></Button>
-                      </CollapsibleTrigger>
+                      <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <ChevronDown className={`w-4 h-4 transition-transform ${ouverts.includes(i.id) ? 'rotate-180' : ''}`} />
+                      </Button>
                     </TableCell>
                     <TableCell>{fmtDate(i.date_intervention)}</TableCell>
                     <TableCell className="font-medium">{i.numero || '—'}</TableCell>
@@ -212,7 +211,7 @@ export const GmaoEquipementHistorique: React.FC<Props> = ({ equipement, prochain
                     <TableCell>{i.techniciens.join(', ') || i.fournisseur || '—'}</TableCell>
                     <TableCell>{i.statut}</TableCell>
                   </TableRow>
-                  <CollapsibleContent asChild>
+                  {ouverts.includes(i.id) && (
                     <TableRow>
                       <TableCell colSpan={10} className="bg-muted/40">
                         <div className="grid gap-2 md:grid-cols-2 text-sm py-2">
@@ -245,9 +244,8 @@ export const GmaoEquipementHistorique: React.FC<Props> = ({ equipement, prochain
                         </div>
                       </TableCell>
                     </TableRow>
-                  </CollapsibleContent>
-                </>
-              </Collapsible>
+                  )}
+              </React.Fragment>
             ))}
           </TableBody>
         </Table>
