@@ -263,8 +263,21 @@ export const GmaoEquipements: React.FC = () => {
                     <TableCell>{[e.marque, e.modele].filter(Boolean).join(' ') || '—'}</TableCell>
                     <TableCell>{e.compteur_km ?? 0}</TableCell>
                     <TableCell>
-                      <Badge variant={e.statut === 'operationnel' ? 'default' : e.statut === 'en_maintenance' ? 'secondary' : 'destructive'}>
-                        {STATUTS.find((s) => s.value === e.statut)?.label || e.statut}
+                      <Badge
+                        variant={
+                          e.statut === 'operationnel'
+                            ? 'default'
+                            : e.statut === 'en_maintenance'
+                            ? 'secondary'
+                            : e.statut === 'hors_service'
+                            ? 'destructive'
+                            : e.statut === 'reforme'
+                            ? 'outline'
+                            : 'secondary'
+                        }
+                        className="whitespace-nowrap"
+                      >
+                        {STATUTS.find((s) => s.value === e.statut)?.label || e.statut || 'Non défini'}
                       </Badge>
                     </TableCell>
                   </TableRow>
