@@ -126,7 +126,11 @@ const OBC: React.FC = () => {
                   <TableRow key={v.id}>
                     <TableCell className="whitespace-nowrap">{format(new Date(v.date_violation), 'dd/MM/yyyy HH:mm')}</TableCell>
                     <TableCell>{chauffeurMap.get(v.chauffeur_id) || '—'}</TableCell>
-                    <TableCell><Badge variant="destructive">-{v.points_retires}</Badge></TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="destructive" className="min-w-[3.5rem] justify-center px-2.5 py-1 text-sm font-bold">
+                        {v.points_retires != null ? `-${v.points_retires} pt${v.points_retires > 1 ? 's' : ''}` : '—'}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="max-w-[200px] truncate">{v.commentaire || '—'}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{v.mesures_prises || '—'}</TableCell>
                     <TableCell>{v.preuve_url ? <a href={v.preuve_url} target="_blank" rel="noreferrer" className="text-primary underline">Voir</a> : '—'}</TableCell>
