@@ -11,6 +11,7 @@ import { gmaoService } from '@/services/gmao';
 import { useGmao } from './GmaoContext';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
+import { EquipementCombobox } from './EquipementCombobox';
 import { fmtMontant, PRIORITES, STATUTS_OT, TYPES_MAINTENANCE } from './gmaoUi';
 
 interface Props {
@@ -157,16 +158,13 @@ export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equi
               </div>
               <div>
                 <Label>Équipement (immatriculation) *</Label>
-                <Select value={form.equipement_id} onValueChange={(v) => set('equipement_id', v)}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {equipements.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>
-                        {e.immatriculation || e.code} — {e.designation}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <EquipementCombobox
+                  equipements={equipements}
+                  value={form.equipement_id}
+                  onChange={(v) => set('equipement_id', v)}
+                  placeholder="Sélectionner"
+                  searchPlaceholder="Rechercher une immatriculation..."
+                />
               </div>
               <div>
                 <Label>Type d'intervention</Label>
