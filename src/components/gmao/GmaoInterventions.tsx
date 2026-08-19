@@ -95,6 +95,21 @@ export const GmaoInterventions: React.FC = () => {
     }
   };
 
+  const repasserEnDemande = async (o: any) => {
+    if (!window.confirm(`Repasser l'ordre de travail ${o.numero || ''} en demande d'intervention en attente de transfert vers un OT ?`)) return;
+    try {
+      const demande: any = await gmaoService.repasserOtEnDemande(o, o.demandeur_nom || null, null);
+      toast({
+        title: 'Repassé en demande',
+        description: `La demande ${demande?.numero || ''} est en attente de transfert vers un OT.`,
+      });
+      rafraichir();
+    } catch (e: any) {
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    }
+  };
+
+
   const lignesExport = () =>
     liste.map((o) => {
       const eq = equipementParId(o.equipement_id);
