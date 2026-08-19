@@ -190,29 +190,43 @@ export const GmaoDemandes: React.FC = () => {
               <TableHead>Priorité</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead>Traité par</TableHead>
               <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={6}>Chargement…</TableCell></TableRow>}
+            {loading && <TableRow><TableCell colSpan={7}>Chargement…</TableCell></TableRow>}
             {!loading && items.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-muted-foreground">Aucune demande enregistrée.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-muted-foreground">Aucune demande enregistrée.</TableCell></TableRow>
             )}
             {items.map((d) => (
               <TableRow key={d.id}>
                 <TableCell className="font-medium">{d.numero}</TableCell>
                 <TableCell>{d.titre}</TableCell>
                 <TableCell><Badge variant={d.priorite === 'urgente' ? 'destructive' : 'secondary'}>{d.priorite}</Badge></TableCell>
-                <TableCell>{STATUTS[d.statut] || d.statut}</TableCell>
+                <TableCell>
+                  <Badge variant={STATUT_VARIANT[d.statut] || 'secondary'}>{STATUTS[d.statut] || d.statut}</Badge>
+                  {d.statut === 'rejetee' && d.motif_rejet && (
+                    <div className="text-xs text-muted-foreground mt-1 max-w-[220px]">Motif : {d.motif_rejet}</div>
+                  )}
+                </TableCell>
                 <TableCell>{new Date(d.date_demande).toLocaleDateString('fr-FR')}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{d.traite_par_nom || '—'}</TableCell>
                 <TableCell className="space-x-2 whitespace-nowrap">
-                  {d.statut === 'nouvelle' && (
+                  {d.statut === 'nouvelle' && peutValider && (
                     <>
-                      <Button size="sm" variant="outline" onClick={() => transformer(d)}>
-                        <ArrowRightCircle className="w-4 h-4 mr-1" /> Créer OT
+                      <Button size="sm" onClick={() => ouvrirAction(d, 'valider')}>
+                        <CheckCircle2 className="w-4 h-4 mr-1" /> Valider en OT
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => changerStatut(d, 'rejetee')}>Rejeter</Button>
+                      <Button size="sm" variant="destructive" onClick={() => ouvrirAction(d, 'rejeter')}>
+                        <XCircle className="w-4 h-4 mr-1" /> Rejeter
+                      </Button>
                     </>
+                  )}
+                  {d.statut === 'nouvelle' && !peutValider && (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5" /> En attente du responsable maintenance
+                    </span>
                   )}
                 </TableCell>
               </TableRow>
@@ -220,6 +234,70 @@ export const GmaoDemandes: React.FC = () => {
           </TableBody>
         </Table>
       </CardContent>
+
+      {/* Dialogue de validation / rejet par le responsable maintenance */}
+      <Dialog open={!!demandeActive} onOpenChange={(o) => { if (!o) fermerAction(); }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {modeAction === 'valider' ? 'Valider la demande et créer un ordre de travail' : 'Rejeter la demande'}
+            </DialogTitle>
+          </DialogHeader>
+          {demandeActive && (
+            <div className="space-y-4">
+              <div className="rounded-md border p-3 text-sm space-y-1">
+                <div><span className="text-muted-foreground">Demande :</span> {demandeActive.numero} — {demandeActive.titre}</div>
+                <div><span className="text-muted-foreground">Demandeur :</span> {demandeActive.demandeur_nom || '—'}</div>
+                {demandeActive.description && (
+                  <div className="text-muted-foreground whitespace-pre-wrap">{demandeActive.description}</div>
+                )}
+              </div>
+
+              {modeAction === 'valider' ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Type de maintenance</Label>
+                      <Select value={traitement.type_maintenance} onValueChange={(v) => setTraitement({ ...traitement, type_maintenance: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{TYPES_MAINTENANCE.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Priorité de l'OT</Label>
+                      <Select value={traitement.priorite} onValueChange={(v) => setTraitement({ ...traitement, priorite: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>{PRIORITES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Date planifiée</Label>
+                    <Input type="date" value={traitement.date_planifiee} onChange={(e) => setTraitement({ ...traitement, date_planifiee: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Commentaire du responsable</Label>
+                    <Textarea value={traitement.commentaire} onChange={(e) => setTraitement({ ...traitement, commentaire: e.target.value })} placeholder="Consignes, précisions techniques…" />
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <Label>Motif du rejet *</Label>
+                  <Textarea value={traitement.motif_rejet} onChange={(e) => setTraitement({ ...traitement, motif_rejet: e.target.value })} placeholder="Expliquer pourquoi la demande est rejetée" />
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={fermerAction} disabled={enCours}>Annuler</Button>
+            {modeAction === 'valider' ? (
+              <Button onClick={valider} disabled={enCours}>{enCours ? 'Traitement…' : 'Valider et créer l\'OT'}</Button>
+            ) : (
+              <Button variant="destructive" onClick={rejeter} disabled={enCours}>{enCours ? 'Traitement…' : 'Confirmer le rejet'}</Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
