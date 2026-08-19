@@ -3312,6 +3312,7 @@ export type Database = {
       }
       gmao_demandes_intervention: {
         Row: {
+          commentaire_validation: string | null
           created_at: string
           date_demande: string
           date_traitement: string | null
@@ -3326,10 +3327,12 @@ export type Database = {
           source_nc_id: string | null
           statut: string
           titre: string
+          traite_par_nom: string | null
           updated_at: string
           vehicule_id: string | null
         }
         Insert: {
+          commentaire_validation?: string | null
           created_at?: string
           date_demande?: string
           date_traitement?: string | null
@@ -3344,10 +3347,12 @@ export type Database = {
           source_nc_id?: string | null
           statut?: string
           titre: string
+          traite_par_nom?: string | null
           updated_at?: string
           vehicule_id?: string | null
         }
         Update: {
+          commentaire_validation?: string | null
           created_at?: string
           date_demande?: string
           date_traitement?: string | null
@@ -3362,6 +3367,7 @@ export type Database = {
           source_nc_id?: string | null
           statut?: string
           titre?: string
+          traite_par_nom?: string | null
           updated_at?: string
           vehicule_id?: string | null
         }
