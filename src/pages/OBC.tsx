@@ -150,9 +150,18 @@ const OBC: React.FC = () => {
                     {Object.entries(OBC_VIOLATION_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                   </SelectContent>
                 </Select>
-                <Input type="date" value={fDate} onChange={e => setFDate(e.target.value)} className="w-[180px]" />
-                {(fChauffeur !== 'all' || fType !== 'all' || fDate) && (
-                  <Button variant="ghost" onClick={() => { setFChauffeur('all'); setFType('all'); setFDate(''); }}>Réinitialiser</Button>
+                <div className="flex items-center gap-2">
+                  <div>
+                    <Label className="text-xs">Du</Label>
+                    <Input type="date" value={fDateDebut} onChange={e => setFDateDebut(e.target.value)} className="w-[150px]" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Au</Label>
+                    <Input type="date" value={fDateFin} onChange={e => setFDateFin(e.target.value)} className="w-[150px]" />
+                  </div>
+                </div>
+                {(fChauffeur !== 'all' || fType !== 'all' || fDateDebut || fDateFin) && (
+                  <Button variant="ghost" onClick={() => { setFChauffeur('all'); setFType('all'); setFDateDebut(''); setFDateFin(''); }}>Réinitialiser</Button>
                 )}
               </div>
               <div className="overflow-x-auto">
