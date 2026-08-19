@@ -128,8 +128,7 @@ const OBC: React.FC = () => {
                     <TableCell>{chauffeurMap.get(v.chauffeur_id) || '—'}</TableCell>
                     <TableCell className="text-center">
                       <Badge
-                        variant="destructive"
-                        className="min-w-[5rem] justify-center px-3 py-1.5 text-base font-black shadow-sm"
+                        className="min-w-[5rem] justify-center border-destructive bg-destructive px-3 py-1.5 text-base font-black text-destructive-foreground shadow-sm"
                       >
                         {v.points_retires != null ? `-${v.points_retires} pt${v.points_retires > 1 ? 's' : ''}` : '—'}
                       </Badge>
