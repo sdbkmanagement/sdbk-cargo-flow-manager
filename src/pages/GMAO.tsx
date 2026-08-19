@@ -7,7 +7,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   LayoutDashboard, Truck, Wrench, CalendarClock, Package, Coins, BarChart3,
-  Bell, Plus, RefreshCw, ChevronRight, ShieldCheck,
+  Bell, Plus, RefreshCw, ChevronRight, ShieldCheck, CalendarCheck,
 } from 'lucide-react';
 import { GmaoProvider, useGmao, GmaoSection } from '@/components/gmao/GmaoContext';
 import { GmaoDashboard } from '@/components/gmao/GmaoDashboard';
