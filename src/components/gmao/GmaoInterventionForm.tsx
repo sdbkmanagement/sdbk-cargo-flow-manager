@@ -67,12 +67,24 @@ export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equi
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
+  useEffect(() => {
+    if (form.date_debut && form.date_fin) {
+      const debut = new Date(form.date_debut).getTime();
+      const fin = new Date(form.date_fin).getTime();
+      if (fin > debut) {
+        const heures = (fin - debut) / (1000 * 60 * 60);
+        setForm((f) => ({ ...f, heures_main_oeuvre: heures.toFixed(2) }));
+      }
+    }
+  }, [form.date_debut, form.date_fin]);
+
   const coutPieces = useMemo(
     () => lignes.reduce((s, l) => s + Number(l.quantite || 0) * Number(l.prix_unitaire || 0), 0),
     [lignes]
   );
   const coutTotal =
     coutPieces + Number(form.cout_main_oeuvre || 0) + Number(form.cout_prestation || 0) + Number(form.cout_autres || 0);
+
 
   const ajouterLigne = () => setLignes((l) => [...l, { piece_id: '', quantite: 1, prix_unitaire: 0 }]);
 
