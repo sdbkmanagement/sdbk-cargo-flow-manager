@@ -241,6 +241,12 @@ const OBC: React.FC = () => {
           <RankingConducteurs chauffeurs={chauffeurs} chauffeurMap={chauffeurMap} violations={violations} bls={bls} temps={temps} />
         </TabsContent>
 
+        {/* STATISTIQUES */}
+        <TabsContent value="stats">
+          <ObcStatistiques chauffeurs={chauffeurs} violations={violations} points={points} />
+        </TabsContent>
+
+
         {/* ALERTES */}
         <TabsContent value="alertes">
           <Card>
