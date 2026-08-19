@@ -127,7 +127,10 @@ const OBC: React.FC = () => {
                     <TableCell className="whitespace-nowrap">{format(new Date(v.date_violation), 'dd/MM/yyyy HH:mm')}</TableCell>
                     <TableCell>{chauffeurMap.get(v.chauffeur_id) || '—'}</TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="destructive" className="min-w-[3.5rem] justify-center px-2.5 py-1 text-sm font-bold">
+                      <Badge
+                        variant="destructive"
+                        className="min-w-[5rem] justify-center px-3 py-1.5 text-base font-black bg-red-600 text-white shadow-sm border-0"
+                      >
                         {v.points_retires != null ? `-${v.points_retires} pt${v.points_retires > 1 ? 's' : ''}` : '—'}
                       </Badge>
                     </TableCell>
