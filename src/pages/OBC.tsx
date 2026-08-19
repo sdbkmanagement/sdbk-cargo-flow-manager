@@ -73,6 +73,15 @@ const OBC: React.FC = () => {
     };
   }, [violations, alertes, pointsMap]);
 
+  const [detailType, setDetailType] = useState<ObcViolationType | null>(null);
+
+  const detailViolations = useMemo(() => {
+    if (!detailType) return [];
+    return violations.filter(v => v.type_violation === detailType).sort((a, b) =>
+      new Date(b.date_violation).getTime() - new Date(a.date_violation).getTime()
+    );
+  }, [detailType, violations]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4">
@@ -83,9 +92,64 @@ const OBC: React.FC = () => {
             value={stats.parType[t] || 0}
             icon={<ShieldAlert className="h-5 w-5" />}
             variant={(stats.parType[t] || 0) > 0 ? 'warning' : undefined}
+            onClick={() => setDetailType(t)}
           />
         ))}
       </div>
+
+      <Dialog open={!!detailType} onOpenChange={(open) => !open && setDetailType(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-primary" />
+              Détail — {detailType ? OBC_VIOLATION_LABELS[detailType] : ''}
+              <Badge variant="secondary" className="ml-2">{detailViolations.length} violation(s)</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-auto flex-1 pr-1">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Chauffeur</TableHead>
+                  <TableHead>Points</TableHead>
+                  <TableHead>Commentaire</TableHead>
+                  <TableHead>Mesures prises</TableHead>
+                  <TableHead>Preuve</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {detailViolations.length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucune violation</TableCell></TableRow>
+                )}
+                {detailViolations.map(v => (
+                  <TableRow key={v.id}>
+                    <TableCell className="whitespace-nowrap">{format(new Date(v.date_violation), 'dd/MM/yyyy HH:mm')}</TableCell>
+                    <TableCell>{chauffeurMap.get(v.chauffeur_id) || '—'}</TableCell>
+                    <TableCell><Badge variant="destructive">-{v.points_retires}</Badge></TableCell>
+                    <TableCell className="max-w-[200px] truncate">{v.commentaire || '—'}</TableCell>
+                    <TableCell className="max-w-[200px] truncate">{v.mesures_prises || '—'}</TableCell>
+                    <TableCell>{v.preuve_url ? <a href={v.preuve_url} target="_blank" rel="noreferrer" className="text-primary underline">Voir</a> : '—'}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="icon" onClick={async () => {
+                        if (confirm('Supprimer cette violation ?')) {
+                          await obcService.deleteViolation(v.id);
+                          toast.success('Supprimée');
+                          qc.invalidateQueries({ queryKey: ['obc-violations'] });
+                          qc.invalidateQueries({ queryKey: ['obc-points'] });
+                          qc.invalidateQueries({ queryKey: ['obc-alertes'] });
+                        }
+                      }}><Trash2 className="h-4 w-4" /></Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
 
       <Tabs defaultValue="violations" className="w-full">
