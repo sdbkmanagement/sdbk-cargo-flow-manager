@@ -11,11 +11,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { gmaoService, GmaoDemande, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, ArrowRightCircle } from 'lucide-react';
+import { Plus, CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 
 const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
+const TYPES_MAINTENANCE = [
+  { value: 'correctif', label: 'Correctif' },
+  { value: 'preventif', label: 'Préventif' },
+  { value: 'ameliorative', label: 'Améliorative' },
+];
 const STATUTS: Record<string, string> = {
-  nouvelle: 'Nouvelle', acceptee: 'Acceptée', rejetee: 'Rejetée', transformee: 'Transformée en OT',
+  nouvelle: 'En attente de validation', acceptee: 'Acceptée', rejetee: 'Rejetée', transformee: 'Validée — OT créé',
+};
+const STATUT_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = {
+  nouvelle: 'outline', acceptee: 'secondary', rejetee: 'destructive', transformee: 'default',
 };
 
 export const GmaoDemandes: React.FC = () => {
