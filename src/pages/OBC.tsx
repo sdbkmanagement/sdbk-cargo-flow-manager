@@ -18,6 +18,8 @@ import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as 
 import { format } from 'date-fns';
 import { bonsLivraisonService } from '@/services/bonsLivraison';
 import { ChauffeurCombobox } from '@/components/obc/ChauffeurCombobox';
+import { ObcStatistiques } from '@/components/obc/ObcStatistiques';
+
 
 const OBC: React.FC = () => {
   const { user } = useAuth();
@@ -81,12 +83,14 @@ const OBC: React.FC = () => {
       </div>
 
       <Tabs defaultValue="violations" className="w-full">
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
+        <TabsList className="grid grid-cols-7 w-full max-w-4xl">
           <TabsTrigger value="violations">Violations</TabsTrigger>
           <TabsTrigger value="points">Points</TabsTrigger>
           <TabsTrigger value="temps">Temps de conduite</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
+          <TabsTrigger value="stats">Statistiques</TabsTrigger>
           <TabsTrigger value="alertes">Alertes</TabsTrigger>
+
           <TabsTrigger value="config"><SettingsIcon className="h-4 w-4" /></TabsTrigger>
         </TabsList>
 
@@ -240,6 +244,12 @@ const OBC: React.FC = () => {
         <TabsContent value="ranking">
           <RankingConducteurs chauffeurs={chauffeurs} chauffeurMap={chauffeurMap} violations={violations} bls={bls} temps={temps} />
         </TabsContent>
+
+        {/* STATISTIQUES */}
+        <TabsContent value="stats">
+          <ObcStatistiques chauffeurs={chauffeurs} violations={violations} points={points} />
+        </TabsContent>
+
 
         {/* ALERTES */}
         <TabsContent value="alertes">
