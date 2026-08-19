@@ -129,7 +129,7 @@ const OBC: React.FC = () => {
                     <TableCell className="text-center">
                       <Badge
                         variant="destructive"
-                        className="min-w-[5rem] justify-center px-3 py-1.5 text-base font-black bg-red-600 text-white shadow-sm border-0"
+                        className="min-w-[5rem] justify-center px-3 py-1.5 text-base font-black shadow-sm"
                       >
                         {v.points_retires != null ? `-${v.points_retires} pt${v.points_retires > 1 ? 's' : ''}` : '—'}
                       </Badge>
