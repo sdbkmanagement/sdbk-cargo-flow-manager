@@ -686,8 +686,8 @@ const RankingColumn: React.FC<{
   </Card>
 );
 
-const KpiCard: React.FC<{ title: string; value: number; icon: React.ReactNode; variant?: 'warning' | 'danger' }> = ({ title, value, icon, variant }) => (
-  <Card>
+const KpiCard: React.FC<{ title: string; value: number; icon: React.ReactNode; variant?: 'warning' | 'danger'; onClick?: () => void }> = ({ title, value, icon, variant, onClick }) => (
+  <Card className={onClick ? 'cursor-pointer hover:bg-muted/40 transition-colors' : ''} onClick={onClick}>
     <CardContent className="p-4 flex items-center justify-between">
       <div>
         <p className="text-sm text-muted-foreground">{title}</p>
