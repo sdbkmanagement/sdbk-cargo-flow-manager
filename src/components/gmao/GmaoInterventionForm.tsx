@@ -67,12 +67,24 @@ export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equi
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
+  useEffect(() => {
+    if (form.date_debut && form.date_fin) {
+      const debut = new Date(form.date_debut).getTime();
+      const fin = new Date(form.date_fin).getTime();
+      if (fin > debut) {
+        const heures = (fin - debut) / (1000 * 60 * 60);
+        setForm((f) => ({ ...f, heures_main_oeuvre: heures.toFixed(2) }));
+      }
+    }
+  }, [form.date_debut, form.date_fin]);
+
   const coutPieces = useMemo(
     () => lignes.reduce((s, l) => s + Number(l.quantite || 0) * Number(l.prix_unitaire || 0), 0),
     [lignes]
   );
   const coutTotal =
     coutPieces + Number(form.cout_main_oeuvre || 0) + Number(form.cout_prestation || 0) + Number(form.cout_autres || 0);
+
 
   const ajouterLigne = () => setLignes((l) => [...l, { piece_id: '', quantite: 1, prix_unitaire: 0 }]);
 
@@ -207,7 +219,11 @@ export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equi
             <div className="grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2"><Label>Travaux réalisés</Label><Textarea rows={3} value={form.travaux_realises} onChange={(e) => set('travaux_realises', e.target.value)} /></div>
               <div><Label>Technicien / prestataire</Label><Input value={form.technicien} onChange={(e) => set('technicien', e.target.value)} /></div>
-              <div><Label>Temps passé (heures)</Label><Input type="number" value={form.heures_main_oeuvre} onChange={(e) => set('heures_main_oeuvre', e.target.value)} /></div>
+              <div>
+                <Label>Temps passé (heures)</Label>
+                <Input type="number" value={form.heures_main_oeuvre} readOnly className="bg-muted/40" />
+                <p className="text-xs text-muted-foreground mt-1">Calculé automatiquement à partir des dates de début et fin.</p>
+              </div>
               <div><Label>Date de début</Label><Input type="datetime-local" value={form.date_debut} onChange={(e) => set('date_debut', e.target.value)} /></div>
               <div><Label>Date de fin</Label><Input type="datetime-local" value={form.date_fin} onChange={(e) => set('date_fin', e.target.value)} /></div>
             </div>
