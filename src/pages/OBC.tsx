@@ -116,12 +116,11 @@ const OBC: React.FC = () => {
                   <TableHead>Commentaire</TableHead>
                   <TableHead>Mesures prises</TableHead>
                   <TableHead>Preuve</TableHead>
-                  <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {detailViolations.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Aucune violation</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Aucune violation</TableCell></TableRow>
                 )}
                 {detailViolations.map(v => (
                   <TableRow key={v.id}>
@@ -131,17 +130,6 @@ const OBC: React.FC = () => {
                     <TableCell className="max-w-[200px] truncate">{v.commentaire || '—'}</TableCell>
                     <TableCell className="max-w-[200px] truncate">{v.mesures_prises || '—'}</TableCell>
                     <TableCell>{v.preuve_url ? <a href={v.preuve_url} target="_blank" rel="noreferrer" className="text-primary underline">Voir</a> : '—'}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" onClick={async () => {
-                        if (confirm('Supprimer cette violation ?')) {
-                          await obcService.deleteViolation(v.id);
-                          toast.success('Supprimée');
-                          qc.invalidateQueries({ queryKey: ['obc-violations'] });
-                          qc.invalidateQueries({ queryKey: ['obc-points'] });
-                          qc.invalidateQueries({ queryKey: ['obc-alertes'] });
-                        }
-                      }}><Trash2 className="h-4 w-4" /></Button>
-                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
