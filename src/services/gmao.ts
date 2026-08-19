@@ -40,6 +40,10 @@ export type GmaoDemande = {
   statut: string;
   demandeur_nom?: string | null;
   date_demande: string;
+  date_traitement?: string | null;
+  motif_rejet?: string | null;
+  traite_par_nom?: string | null;
+  commentaire_validation?: string | null;
 };
 
 export type GmaoOrdreTravail = {
