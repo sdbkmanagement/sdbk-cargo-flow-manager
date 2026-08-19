@@ -42,6 +42,14 @@ const initial = {
   cout_autres: 0,
 };
 
+const Section: React.FC<{ titre: string; children: React.ReactNode }> = ({ titre, children }) => (
+  <div className="space-y-3">
+    <p className="text-sm font-semibold text-foreground">{titre}</p>
+    {children}
+  </div>
+);
+
+
 export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equipementId, onSaved }) => {
   const { toast } = useToast();
   const { equipements, pieces, rafraichir } = useGmao();
