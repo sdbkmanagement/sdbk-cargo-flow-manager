@@ -48,13 +48,18 @@ const OBC: React.FC = () => {
   // Filtres
   const [fChauffeur, setFChauffeur] = useState<string>('all');
   const [fType, setFType] = useState<string>('all');
-  const [fDate, setFDate] = useState<string>('');
+  const [fDateDebut, setFDateDebut] = useState<string>('');
+  const [fDateFin, setFDateFin] = useState<string>('');
 
-  const filteredViolations = violations.filter(v =>
-    (fChauffeur === 'all' || v.chauffeur_id === fChauffeur) &&
-    (fType === 'all' || v.type_violation === fType) &&
-    (!fDate || v.date_violation.startsWith(fDate))
-  );
+  const filteredViolations = violations.filter(v => {
+    const d = v.date_violation.slice(0, 10);
+    return (
+      (fChauffeur === 'all' || v.chauffeur_id === fChauffeur) &&
+      (fType === 'all' || v.type_violation === fType) &&
+      (!fDateDebut || d >= fDateDebut) &&
+      (!fDateFin || d <= fDateFin)
+    );
+  });
 
   // Stats
   const stats = useMemo(() => {
