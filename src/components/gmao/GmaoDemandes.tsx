@@ -38,6 +38,31 @@ export const GmaoDemandes: React.FC = () => {
     titre: '', description: '', priorite: 'normale', equipement_id: '', demandeur_nom: '',
   });
 
+  // Seul le responsable maintenance (ou un admin/direction) peut valider ou rejeter
+  const roles = user?.roles || [];
+  const peutValider = roles.some((r: string) => ['admin', 'maintenance', 'direction'].includes(r));
+
+  const [demandeActive, setDemandeActive] = useState<GmaoDemande | null>(null);
+  const [modeAction, setModeAction] = useState<'valider' | 'rejeter' | null>(null);
+  const [traitement, setTraitement] = useState<Record<string, any>>({
+    type_maintenance: 'correctif', priorite: 'normale', date_planifiee: '', commentaire: '', motif_rejet: '',
+  });
+  const [enCours, setEnCours] = useState(false);
+
+  const ouvrirAction = (d: GmaoDemande, mode: 'valider' | 'rejeter') => {
+    setDemandeActive(d);
+    setModeAction(mode);
+    setTraitement({
+      type_maintenance: 'correctif',
+      priorite: d.priorite || 'normale',
+      date_planifiee: '',
+      commentaire: '',
+      motif_rejet: '',
+    });
+  };
+
+  const fermerAction = () => { setDemandeActive(null); setModeAction(null); };
+
   const charger = async () => {
     try {
       const [d, e] = await Promise.all([gmaoService.getDemandes(), gmaoService.getEquipements()]);
