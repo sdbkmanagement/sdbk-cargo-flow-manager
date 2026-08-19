@@ -30,6 +30,7 @@ const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[]
   { value: 'pieces', label: 'Pièces / Stock', icon: Package },
   { value: 'couts', label: 'Coûts', icon: Coins },
   { value: 'socotac', label: 'Contrôles SOCOTAC', icon: ShieldCheck },
+  { value: 'controle_annuel', label: 'Contrôle Annuel', icon: CalendarCheck },
   { value: 'rapports', label: 'Rapports', icon: BarChart3 },
 ];
 
