@@ -118,6 +118,7 @@ const Contenu: React.FC = () => {
       {section === 'pieces' && <GmaoPieces />}
       {section === 'couts' && <GmaoCouts />}
       {section === 'socotac' && <SocotacModule />}
+      {section === 'controle_annuel' && <ControleAnnuelModule />}
       {section === 'rapports' && <GmaoRapports />}
 
       <GmaoInterventionForm open={nouvelleIntervention} onOpenChange={setNouvelleIntervention} />
