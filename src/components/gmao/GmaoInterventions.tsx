@@ -128,11 +128,15 @@ export const GmaoInterventions: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="ot">
+      <Tabs defaultValue="demandes">
         <TabsList>
-          <TabsTrigger value="ot">Ordres de travail</TabsTrigger>
           <TabsTrigger value="demandes">Déclarations de panne</TabsTrigger>
+          <TabsTrigger value="ot">Ordres de travail</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="demandes" className="mt-4">
+          <GmaoDemandes />
+        </TabsContent>
 
         <TabsContent value="ot" className="mt-4">
           <Card>
@@ -272,10 +276,6 @@ export const GmaoInterventions: React.FC = () => {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="demandes" className="mt-4">
-          <GmaoDemandes />
         </TabsContent>
       </Tabs>
 
