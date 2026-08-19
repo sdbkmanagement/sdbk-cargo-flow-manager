@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { gmaoService, GmaoOrdreTravail, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, CheckCircle } from 'lucide-react';
+import { EquipementCombobox } from './EquipementCombobox';
 
 const TYPES = [
   { value: 'correctif', label: 'Correctif' },
@@ -106,10 +107,13 @@ export const GmaoOrdresTravail: React.FC = () => {
               <div className="md:col-span-2"><Label>Titre *</Label><Input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} /></div>
               <div>
                 <Label>Équipement</Label>
-                <Select value={form.equipement_id} onValueChange={(v) => setForm({ ...form, equipement_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>{equipements.map((e) => <SelectItem key={e.id} value={e.id}>{e.code} — {e.designation}</SelectItem>)}</SelectContent>
-                </Select>
+                <EquipementCombobox
+                  equipements={equipements}
+                  value={form.equipement_id}
+                  onChange={(v) => setForm({ ...form, equipement_id: v })}
+                  placeholder="Sélectionner"
+                  searchPlaceholder="Rechercher une immatriculation..."
+                />
               </div>
               <div>
                 <Label>Type de maintenance</Label>
