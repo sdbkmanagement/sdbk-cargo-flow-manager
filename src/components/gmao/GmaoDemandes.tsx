@@ -95,32 +95,54 @@ export const GmaoDemandes: React.FC = () => {
     }
   };
 
-  const transformer = async (d: GmaoDemande) => {
+  const valider = async () => {
+    if (!demandeActive) return;
+    setEnCours(true);
     try {
-      await gmaoService.createOrdreTravail({
-        demande_id: d.id,
-        equipement_id: d.equipement_id || null,
-        titre: d.titre,
-        description: d.description,
-        type_maintenance: 'correctif',
-        priorite: d.priorite,
+      const ot = await gmaoService.createOrdreTravail({
+        demande_id: demandeActive.id,
+        equipement_id: demandeActive.equipement_id || null,
+        titre: demandeActive.titre,
+        description: [demandeActive.description, traitement.commentaire].filter(Boolean).join('\n\n') || null,
+        type_maintenance: traitement.type_maintenance,
+        priorite: traitement.priorite,
         statut: 'planifie',
+        date_planifiee: traitement.date_planifiee || null,
       });
-      await gmaoService.updateDemande(d.id, { statut: 'transformee', date_traitement: new Date().toISOString() });
-      toast({ title: 'Ordre de travail créé' });
+      await gmaoService.updateDemande(demandeActive.id, {
+        statut: 'transformee',
+        date_traitement: new Date().toISOString(),
+        traite_par_nom: nomUtilisateur || null,
+        commentaire_validation: traitement.commentaire || null,
+      });
+      toast({ title: 'Demande validée', description: `Ordre de travail ${ot?.numero || ''} créé.` });
+      fermerAction();
       charger();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
-    }
+    } finally { setEnCours(false); }
   };
 
-  const changerStatut = async (d: GmaoDemande, statut: string) => {
+  const rejeter = async () => {
+    if (!demandeActive) return;
+    if (!traitement.motif_rejet?.trim()) {
+      toast({ title: 'Motif requis', description: 'Merci d’indiquer le motif du rejet', variant: 'destructive' });
+      return;
+    }
+    setEnCours(true);
     try {
-      await gmaoService.updateDemande(d.id, { statut, date_traitement: new Date().toISOString() });
+      await gmaoService.updateDemande(demandeActive.id, {
+        statut: 'rejetee',
+        date_traitement: new Date().toISOString(),
+        traite_par_nom: nomUtilisateur || null,
+        motif_rejet: traitement.motif_rejet.trim(),
+      });
+      toast({ title: 'Demande rejetée' });
+      fermerAction();
       charger();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
-    }
+    } finally { setEnCours(false); }
   };
 
   return (
