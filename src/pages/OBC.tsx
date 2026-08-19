@@ -18,6 +18,8 @@ import { AlertTriangle, Plus, Trash2, Activity, Clock, ShieldAlert, Settings as 
 import { format } from 'date-fns';
 import { bonsLivraisonService } from '@/services/bonsLivraison';
 import { ChauffeurCombobox } from '@/components/obc/ChauffeurCombobox';
+import { ObcStatistiques } from '@/components/obc/ObcStatistiques';
+
 
 const OBC: React.FC = () => {
   const { user } = useAuth();
