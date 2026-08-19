@@ -18,6 +18,7 @@ import { GmaoPieces } from '@/components/gmao/GmaoPieces';
 import { GmaoCouts } from '@/components/gmao/GmaoCouts';
 import { GmaoRapports } from '@/components/gmao/GmaoRapports';
 import { SocotacModule } from '@/components/gmao/socotac/SocotacModule';
+import { ControleAnnuelModule } from '@/components/gmao/annuel/ControleAnnuelModule';
 import { GmaoInterventionForm } from '@/components/gmao/GmaoInterventionForm';
 import { cn } from '@/lib/utils';
 
