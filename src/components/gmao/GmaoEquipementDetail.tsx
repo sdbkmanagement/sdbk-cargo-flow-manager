@@ -9,6 +9,7 @@ import { Plus, Wrench, Coins, Timer, CalendarClock } from 'lucide-react';
 import { gmaoService, GmaoEquipement } from '@/services/gmao';
 import { GmaoEquipementHistorique } from './GmaoEquipementHistorique';
 import { GmaoPhotoUpload } from './GmaoPhotoUpload';
+import { SocotacEquipementSection } from './socotac/SocotacEquipementSection';
 import { GmaoInterventionForm } from './GmaoInterventionForm';
 import { BadgeStatutEquipement, BadgeTypeEquipement, KpiCard } from './gmaoUi';
 import { useGmao } from './GmaoContext';
@@ -117,11 +118,16 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
                 <TabsTrigger value="demandes">Pannes / demandes</TabsTrigger>
                 <TabsTrigger value="pieces">Pièces remplacées</TabsTrigger>
                 <TabsTrigger value="preventif">Échéances</TabsTrigger>
+                <TabsTrigger value="socotac">SOCOTAC</TabsTrigger>
                 <TabsTrigger value="historique">Historique</TabsTrigger>
               </TabsList>
 
               <TabsContent value="carnet" className="mt-4">
                 <GmaoEquipementHistorique equipement={equipement} prochaineEcheance={prochaineEcheance} />
+              </TabsContent>
+
+              <TabsContent value="socotac" className="mt-4">
+                <SocotacEquipementSection equipement={equipement} />
               </TabsContent>
 
               <TabsContent value="infos" className="mt-4 space-y-4">

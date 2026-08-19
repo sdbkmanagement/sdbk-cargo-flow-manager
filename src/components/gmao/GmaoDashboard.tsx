@@ -12,13 +12,14 @@ import {
   CalendarClock, Coins, Bell, ChevronRight,
 } from 'lucide-react';
 import { useGmao } from './GmaoContext';
+import { CLASSE_STATUT, LIBELLE_STATUT, dernierParEquipement, joursRestants, statutDepuisJours, taux } from './socotac/socotacUtils';
 import { fmtMontant, fmtNombre, KpiCard, libelle, moisCle, STATUTS_OT } from './gmaoUi';
 import { cn } from '@/lib/utils';
 
 const COULEURS = ['hsl(var(--primary))', 'hsl(var(--info))', 'hsl(var(--warning))', 'hsl(var(--success))', 'hsl(var(--destructive))'];
 
 export const GmaoDashboard: React.FC = () => {
-  const { chargement, equipements, ots, plans, alertes, statsParEquipement, allerA, libelleEquipement } = useGmao();
+  const { chargement, equipements, ots, plans, socotac, alertes, statsParEquipement, allerA, libelleEquipement } = useGmao();
 
   const kpis = useMemo(() => {
     const maintenant = Date.now();
@@ -102,6 +103,23 @@ export const GmaoDashboard: React.FC = () => {
     );
   }
 
+  const socotacKpi = (() => {
+    const derniers = dernierParEquipement(socotac);
+    const parStatut = { conforme: 0, proche: 0, urgent: 0, expire: 0 };
+    derniers.forEach((c) => { parStatut[statutDepuisJours(joursRestants(c.date_prochain_controle))] += 1; });
+    const acceptes = socotac.filter((c) => c.resultat === 'accepte').length;
+    const rejetes = socotac.filter((c) => c.resultat === 'rejete').length;
+    const prochains = derniers
+      .filter((c) => (joursRestants(c.date_prochain_controle) ?? 999) <= 40)
+      .sort((a, b) => (joursRestants(a.date_prochain_controle) ?? 0) - (joursRestants(b.date_prochain_controle) ?? 0))
+      .slice(0, 10);
+    return {
+      total: socotac.length, acceptes, rejetes,
+      tauxAcceptation: taux(acceptes, socotac.length), tauxRejet: taux(rejetes, socotac.length),
+      ...parStatut, prochains,
+    };
+  })();
+
   const vide = ots.length === 0;
 
   return (
@@ -116,6 +134,39 @@ export const GmaoDashboard: React.FC = () => {
         <KpiCard label="Préventif à venir (30 j)" valeur={fmtNombre(kpis.preventifsAVenir)} icon={CalendarClock} ton="alerte" onClick={() => allerA('preventif')} />
         <KpiCard label="Coût maintenance du mois" valeur={fmtMontant(kpis.coutMois)} icon={Coins} onClick={() => allerA('couts')} />
       </div>
+
+      {/* Synthèse SOCOTAC */}
+      <Card className="border-border/60">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-base">Contrôles SOCOTAC</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => allerA('socotac')}>Ouvrir le suivi</Button>
+        </CardHeader>
+        <CardContent>
+          {socotac.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun contrôle SOCOTAC enregistré.</p>
+          ) : (
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-6">
+              <div><p className="text-xs uppercase text-muted-foreground">Total réalisés</p><p className="text-xl font-bold">{socotacKpi.total}</p></div>
+              <div><p className="text-xs uppercase text-muted-foreground">Acceptés</p><p className="text-xl font-bold text-success">{socotacKpi.acceptes} — {socotacKpi.tauxAcceptation} %</p></div>
+              <div><p className="text-xs uppercase text-muted-foreground">Rejetés</p><p className="text-xl font-bold text-destructive">{socotacKpi.rejetes} — {socotacKpi.tauxRejet} %</p></div>
+              <div><p className="text-xs uppercase text-muted-foreground">Échéance &lt; 40 j</p><p className="text-xl font-bold">{socotacKpi.proche}</p></div>
+              <div><p className="text-xs uppercase text-muted-foreground">Urgents &lt; 15 j</p><p className="text-xl font-bold text-warning">{socotacKpi.urgent}</p></div>
+              <div><p className="text-xs uppercase text-muted-foreground">Expirés</p><p className="text-xl font-bold text-destructive">{socotacKpi.expire}</p></div>
+              <div className="col-span-2 lg:col-span-6 flex flex-wrap gap-2 pt-2">
+                {socotacKpi.prochains.map((c) => {
+                  const j = joursRestants(c.date_prochain_controle);
+                  const st = statutDepuisJours(j);
+                  return (
+                    <Badge key={c.id} className={cn('font-medium', CLASSE_STATUT[st])}>
+                      {c.immatriculation_tracteur} • {LIBELLE_STATUT[st]} ({j} j)
+                    </Badge>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

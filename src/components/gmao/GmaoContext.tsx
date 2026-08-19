@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { gmaoService, GmaoEquipement, GmaoOrdreTravail, GmaoDemande, GmaoPiece, GmaoPlan } from '@/services/gmao';
+import { socotacService, SocotacControle } from '@/services/socotac';
+import { dernierParEquipement, joursRestants } from './socotac/socotacUtils';
 import { useToast } from '@/hooks/use-toast';
 
 export type GmaoSection =
@@ -9,6 +11,7 @@ export type GmaoSection =
   | 'preventif'
   | 'pieces'
   | 'couts'
+  | 'socotac'
   | 'rapports';
 
 export type StatsEquipement = {
@@ -27,7 +30,7 @@ export type StatsEquipement = {
 
 export type AlerteGmao = {
   id: string;
-  type: 'preventif_echu' | 'preventif_proche' | 'ot_retard' | 'immobilise' | 'stock' | 'attente_piece';
+  type: 'preventif_echu' | 'preventif_proche' | 'ot_retard' | 'immobilise' | 'stock' | 'attente_piece' | 'socotac_expire' | 'socotac_proche';
   gravite: 'danger' | 'alerte' | 'info';
   titre: string;
   detail: string;
@@ -42,6 +45,7 @@ type Ctx = {
   demandes: GmaoDemande[];
   pieces: GmaoPiece[];
   plans: GmaoPlan[];
+  socotac: SocotacControle[];
   statsParEquipement: Record<string, StatsEquipement>;
   alertes: AlerteGmao[];
   equipementParId: (id?: string | null) => GmaoEquipement | undefined;
@@ -71,12 +75,17 @@ export const GmaoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [demandes, setDemandes] = useState<GmaoDemande[]>([]);
   const [pieces, setPieces] = useState<GmaoPiece[]>([]);
   const [plans, setPlans] = useState<GmaoPlan[]>([]);
+  const [socotac, setSocotac] = useState<SocotacControle[]>([]);
   const [section, setSection] = useState<GmaoSection>('dashboard');
   const [equipementCible, setEquipementCible] = useState<string | null>(null);
 
   const rafraichir = useCallback(async () => {
     try {
-      const d = await gmaoService.getVueGlobale();
+      const [d, controlesSocotac] = await Promise.all([
+        gmaoService.getVueGlobale(),
+        socotacService.getAll().catch(() => [] as SocotacControle[]),
+      ]);
+      setSocotac(controlesSocotac);
       setEquipements(d.equipements);
       setOts(d.ots as any[]);
       setDemandes(d.demandes);
@@ -206,9 +215,30 @@ export const GmaoProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    dernierParEquipement(socotac).forEach((c) => {
+      const j = joursRestants(c.date_prochain_controle);
+      if (j === null) return;
+      const ensemble = [c.immatriculation_tracteur, c.immatriculation_remorque].filter(Boolean).join(' / ');
+      if (j <= 0) {
+        liste.push({
+          id: `socotac-${c.id}`, type: 'socotac_expire', gravite: 'danger',
+          titre: `Contrôle SOCOTAC expiré — ${ensemble || 'Ensemble non renseigné'}`,
+          detail: `Échéance du ${new Date(`${c.date_prochain_controle}T00:00:00`).toLocaleDateString('fr-FR')} dépassée de ${Math.abs(j)} j`,
+          section: 'socotac', equipementId: c.equipement_id,
+        });
+      } else if (j <= 40) {
+        liste.push({
+          id: `socotac-${c.id}`, type: 'socotac_proche', gravite: j <= 15 ? 'danger' : 'alerte',
+          titre: `Contrôle SOCOTAC à ${j <= 1 ? 'réaliser immédiatement' : `J-${j}`} — ${ensemble || 'Ensemble non renseigné'}`,
+          detail: `Prochain contrôle le ${new Date(`${c.date_prochain_controle}T00:00:00`).toLocaleDateString('fr-FR')}`,
+          section: 'socotac', equipementId: c.equipement_id,
+        });
+      }
+    });
+
     const ordre = { danger: 0, alerte: 1, info: 2 } as const;
     return liste.sort((a, b) => ordre[a.gravite] - ordre[b.gravite]);
-  }, [equipements, ots, plans, pieces, statsParEquipement]);
+  }, [equipements, ots, plans, pieces, socotac, statsParEquipement]);
 
   const equipementParId = useCallback(
     (id?: string | null) => equipements.find((e) => e.id === id),
@@ -236,7 +266,7 @@ export const GmaoProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [equipementCible]);
 
   const value: Ctx = {
-    chargement, equipements, ots, demandes, pieces, plans,
+    chargement, equipements, ots, demandes, pieces, plans, socotac,
     statsParEquipement, alertes, equipementParId, libelleEquipement,
     rafraichir, section, allerA, equipementCible, consommerEquipementCible,
   };
