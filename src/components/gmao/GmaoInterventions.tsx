@@ -11,7 +11,7 @@ import { GmaoInterventionForm } from './GmaoInterventionForm';
 import { GmaoDemandes } from './GmaoDemandes';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Plus, Search, RotateCcw, FileSpreadsheet, FileText, CheckCircle,
+  Plus, Search, RotateCcw, FileSpreadsheet, FileText, CheckCircle, Undo2,
 } from 'lucide-react';
 import {
   BadgePriorite, BadgeStatutOt, fmtDate, fmtMontant, libelle, STATUTS_OT, TYPES_MAINTENANCE,
@@ -94,6 +94,21 @@ export const GmaoInterventions: React.FC = () => {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
     }
   };
+
+  const repasserEnDemande = async (o: any) => {
+    if (!window.confirm(`Repasser l'ordre de travail ${o.numero || ''} en demande d'intervention en attente de transfert vers un OT ?`)) return;
+    try {
+      const demande: any = await gmaoService.repasserOtEnDemande(o, o.demandeur_nom || null, null);
+      toast({
+        title: 'Repassé en demande',
+        description: `La demande ${demande?.numero || ''} est en attente de transfert vers un OT.`,
+      });
+      rafraichir();
+    } catch (e: any) {
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    }
+  };
+
 
   const lignesExport = () =>
     liste.map((o) => {
@@ -228,6 +243,11 @@ export const GmaoInterventions: React.FC = () => {
                           <TableCell className="text-right font-medium tabular-nums">{fmtMontant(o.cout_total)}</TableCell>
                           <TableCell><BadgeStatutOt statut={o.statut} cloture={o.cloture} /></TableCell>
                           <TableCell className="space-x-1 whitespace-nowrap text-right">
+                            {!o.cloture && (o.statut === 'planifie' || o.statut === 'attente_piece') && (
+                              <Button size="sm" variant="ghost" onClick={() => repasserEnDemande(o)}>
+                                <Undo2 className="mr-1 h-4 w-4" /> Repasser en demande
+                              </Button>
+                            )}
                             {!o.cloture && o.statut === 'planifie' && (
                               <Button size="sm" variant="outline" onClick={() => changerStatut(o, 'en_cours')}>Démarrer</Button>
                             )}
@@ -243,6 +263,7 @@ export const GmaoInterventions: React.FC = () => {
                               <Button size="sm" onClick={() => cloturer(o)}><CheckCircle className="mr-1 h-4 w-4" /> Valider</Button>
                             )}
                           </TableCell>
+
                         </TableRow>
                       );
                     })}

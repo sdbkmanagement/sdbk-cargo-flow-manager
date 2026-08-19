@@ -161,6 +161,27 @@ export const gmaoService = {
   getOrdresTravail: () => fetchAll<GmaoOrdreTravail>('gmao_ordres_travail'),
   createOrdreTravail: (p: Record<string, unknown>) => insertRow<GmaoOrdreTravail>('gmao_ordres_travail', p),
   updateOrdreTravail: (id: string, p: Record<string, unknown>) => updateRow<GmaoOrdreTravail>('gmao_ordres_travail', id, p),
+  deleteOrdreTravail: (id: string) => deleteRow('gmao_ordres_travail', id),
+
+  /**
+   * Repasse un ordre de travail non démarré en demande d'intervention
+   * « en attente de transfert vers un OT ». L'OT est supprimé après création.
+   */
+  async repasserOtEnDemande(ot: GmaoOrdreTravail, demandeurNom?: string | null, motif?: string | null) {
+    const demande = await insertRow<GmaoDemande>('gmao_demandes_intervention', {
+      equipement_id: ot.equipement_id || null,
+      titre: ot.titre,
+      description: [ot.description, motif ? `Repassé depuis l'OT ${ot.numero || ''} : ${motif}` : null]
+        .filter(Boolean)
+        .join('\n\n') || null,
+      priorite: ot.priorite || 'normale',
+      statut: 'nouvelle',
+      demandeur_nom: demandeurNom || null,
+    });
+    await deleteRow('gmao_ordres_travail', ot.id);
+    return demande;
+  },
+
 
   // Pièces consommées sur un ordre de travail (déclenche le mouvement de stock en base)
   addOtPiece: (p: Record<string, unknown>) => insertRow('gmao_ot_pieces', p),
