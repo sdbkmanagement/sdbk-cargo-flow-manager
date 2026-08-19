@@ -11,7 +11,7 @@ import { GmaoInterventionForm } from './GmaoInterventionForm';
 import { GmaoDemandes } from './GmaoDemandes';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Plus, Search, RotateCcw, FileSpreadsheet, FileText, CheckCircle,
+  Plus, Search, RotateCcw, FileSpreadsheet, FileText, CheckCircle, Undo2,
 } from 'lucide-react';
 import {
   BadgePriorite, BadgeStatutOt, fmtDate, fmtMontant, libelle, STATUTS_OT, TYPES_MAINTENANCE,
