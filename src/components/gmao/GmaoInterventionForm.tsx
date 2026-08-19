@@ -11,6 +11,7 @@ import { gmaoService } from '@/services/gmao';
 import { useGmao } from './GmaoContext';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2 } from 'lucide-react';
+import { EquipementCombobox } from './EquipementCombobox';
 import { fmtMontant, PRIORITES, STATUTS_OT, TYPES_MAINTENANCE } from './gmaoUi';
 
 interface Props {
