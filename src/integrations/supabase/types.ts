@@ -1315,6 +1315,105 @@ export type Database = {
           },
         ]
       }
+      controles_annuels: {
+        Row: {
+          action_corrective: string | null
+          conducteur_contact: string | null
+          conducteur_nom: string | null
+          created_at: string
+          created_by: string | null
+          created_by_nom: string | null
+          date_contre_visite: string | null
+          date_controle: string
+          date_correction: string | null
+          date_correction_prevue: string | null
+          date_prochain_controle: string | null
+          documents: Json
+          equipement_id: string | null
+          equipement_remorque_id: string | null
+          id: string
+          immatriculation_remorque: string | null
+          immatriculation_tracteur: string | null
+          motif_rejet: string | null
+          observations: string | null
+          responsable_action: string | null
+          resultat: string
+          resultat_contre_visite: string | null
+          updated_at: string
+          updated_by: string | null
+          updated_by_nom: string | null
+        }
+        Insert: {
+          action_corrective?: string | null
+          conducteur_contact?: string | null
+          conducteur_nom?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_nom?: string | null
+          date_contre_visite?: string | null
+          date_controle: string
+          date_correction?: string | null
+          date_correction_prevue?: string | null
+          date_prochain_controle?: string | null
+          documents?: Json
+          equipement_id?: string | null
+          equipement_remorque_id?: string | null
+          id?: string
+          immatriculation_remorque?: string | null
+          immatriculation_tracteur?: string | null
+          motif_rejet?: string | null
+          observations?: string | null
+          responsable_action?: string | null
+          resultat?: string
+          resultat_contre_visite?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_nom?: string | null
+        }
+        Update: {
+          action_corrective?: string | null
+          conducteur_contact?: string | null
+          conducteur_nom?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_nom?: string | null
+          date_contre_visite?: string | null
+          date_controle?: string
+          date_correction?: string | null
+          date_correction_prevue?: string | null
+          date_prochain_controle?: string | null
+          documents?: Json
+          equipement_id?: string | null
+          equipement_remorque_id?: string | null
+          id?: string
+          immatriculation_remorque?: string | null
+          immatriculation_tracteur?: string | null
+          motif_rejet?: string | null
+          observations?: string | null
+          responsable_action?: string | null
+          resultat?: string
+          resultat_contre_visite?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          updated_by_nom?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "controles_annuels_equipement_id_fkey"
+            columns: ["equipement_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "controles_annuels_equipement_remorque_id_fkey"
+            columns: ["equipement_remorque_id"]
+            isOneToOne: false
+            referencedRelation: "gmao_equipements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       controles_hsse: {
         Row: {
           absence_danger_visible: boolean | null

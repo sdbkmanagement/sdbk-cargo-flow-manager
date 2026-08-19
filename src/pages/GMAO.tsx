@@ -7,7 +7,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   LayoutDashboard, Truck, Wrench, CalendarClock, Package, Coins, BarChart3,
-  Bell, Plus, RefreshCw, ChevronRight, ShieldCheck,
+  Bell, Plus, RefreshCw, ChevronRight, ShieldCheck, CalendarCheck,
 } from 'lucide-react';
 import { GmaoProvider, useGmao, GmaoSection } from '@/components/gmao/GmaoContext';
 import { GmaoDashboard } from '@/components/gmao/GmaoDashboard';
@@ -18,6 +18,7 @@ import { GmaoPieces } from '@/components/gmao/GmaoPieces';
 import { GmaoCouts } from '@/components/gmao/GmaoCouts';
 import { GmaoRapports } from '@/components/gmao/GmaoRapports';
 import { SocotacModule } from '@/components/gmao/socotac/SocotacModule';
+import { ControleAnnuelModule } from '@/components/gmao/annuel/ControleAnnuelModule';
 import { GmaoInterventionForm } from '@/components/gmao/GmaoInterventionForm';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[]
   { value: 'pieces', label: 'Pièces / Stock', icon: Package },
   { value: 'couts', label: 'Coûts', icon: Coins },
   { value: 'socotac', label: 'Contrôles SOCOTAC', icon: ShieldCheck },
+  { value: 'controle_annuel', label: 'Contrôle Annuel', icon: CalendarCheck },
   { value: 'rapports', label: 'Rapports', icon: BarChart3 },
 ];
 
@@ -116,6 +118,7 @@ const Contenu: React.FC = () => {
       {section === 'pieces' && <GmaoPieces />}
       {section === 'couts' && <GmaoCouts />}
       {section === 'socotac' && <SocotacModule />}
+      {section === 'controle_annuel' && <ControleAnnuelModule />}
       {section === 'rapports' && <GmaoRapports />}
 
       <GmaoInterventionForm open={nouvelleIntervention} onOpenChange={setNouvelleIntervention} />

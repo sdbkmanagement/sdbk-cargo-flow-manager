@@ -12,6 +12,7 @@ export type GmaoSection =
   | 'pieces'
   | 'couts'
   | 'socotac'
+  | 'controle_annuel'
   | 'rapports';
 
 export type StatsEquipement = {
