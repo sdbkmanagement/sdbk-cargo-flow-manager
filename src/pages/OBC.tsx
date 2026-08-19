@@ -75,12 +75,18 @@ const OBC: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard title="Violations totales" value={stats.totalViolations} icon={<ShieldAlert className="h-5 w-5" />} />
-        <KpiCard title="Alertes actives" value={stats.alertesActives} icon={<AlertTriangle className="h-5 w-5" />} variant="warning" />
-        <KpiCard title="Chauffeurs bloqués" value={stats.chauffeursBloqes} icon={<Activity className="h-5 w-5" />} variant="danger" />
-        <KpiCard title="Chauffeurs à risque" value={stats.chauffeursRisque.length} icon={<Clock className="h-5 w-5" />} />
+      <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4">
+        {(Object.keys(OBC_VIOLATION_LABELS) as ObcViolationType[]).map((t) => (
+          <KpiCard
+            key={t}
+            title={OBC_VIOLATION_LABELS[t]}
+            value={stats.parType[t] || 0}
+            icon={<ShieldAlert className="h-5 w-5" />}
+            variant={(stats.parType[t] || 0) > 0 ? 'warning' : undefined}
+          />
+        ))}
       </div>
+
 
       <Tabs defaultValue="violations" className="w-full">
         <TabsList className="grid grid-cols-7 w-full max-w-4xl">
