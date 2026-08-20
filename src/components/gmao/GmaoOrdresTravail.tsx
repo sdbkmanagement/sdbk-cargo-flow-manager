@@ -16,7 +16,7 @@ import { EquipementCombobox } from './EquipementCombobox';
 const TYPES = [
   { value: 'correctif', label: 'Correctif' },
   { value: 'preventif', label: 'Préventif' },
-  { value: 'ameliorative', label: 'Amélioration' },
+  { value: 'ameliorative', label: 'Curative' },
 ];
 const STATUTS = [
   { value: 'planifie', label: 'Planifié' },
