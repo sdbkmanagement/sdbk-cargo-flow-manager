@@ -17,7 +17,7 @@ const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
 const TYPES_MAINTENANCE = [
   { value: 'correctif', label: 'Correctif' },
   { value: 'preventif', label: 'Préventif' },
-  { value: 'ameliorative', label: 'Améliorative' },
+  { value: 'ameliorative', label: 'Curative' },
 ];
 const STATUTS: Record<string, string> = {
   nouvelle: 'En attente de validation', acceptee: 'Acceptée', rejetee: 'Rejetée', transformee: 'Validée — OT créé',

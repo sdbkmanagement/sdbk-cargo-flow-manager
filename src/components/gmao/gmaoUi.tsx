@@ -43,7 +43,7 @@ export const STATUTS_EQUIPEMENT = [
 export const TYPES_MAINTENANCE = [
   { value: 'correctif', label: 'Corrective' },
   { value: 'preventif', label: 'Préventive' },
-  { value: 'ameliorative', label: 'Amélioration' },
+  { value: 'ameliorative', label: 'Curative' },
 ];
 
 export const STATUTS_OT = [
