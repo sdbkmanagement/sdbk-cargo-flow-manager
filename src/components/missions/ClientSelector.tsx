@@ -47,6 +47,13 @@ export const ClientSelector = ({
     loadDbClients();
   }, []);
 
+  // Villes: statiques + villes issues des clients en base
+  const villes = useMemo(() => {
+    const set = new Set<string>(DESTINATIONS.map(d => d.ville));
+    dbClients.forEach(c => { if (c.ville) set.add(c.ville); });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [dbClients]);
+
   // Obtenir les lieux de livraison pour la ville sélectionnée (statique + DB)
   const lieuxLivraisonForVille = useMemo(() => {
     const staticClients = selectedVille
@@ -91,6 +98,11 @@ export const ClientSelector = ({
         }
       }
       
+      if (!client) {
+        const dbMatch = dbClients.find(c => `${c.ville} ${c.nom}` === selectedClient || selectedClient.includes(c.nom));
+        if (dbMatch) client = { nom: dbMatch.nom, ville: dbMatch.ville, type: 'entreprise' as const };
+      }
+
       if (client) {
         console.log(`✅ ClientSelector BL ${blIndex}: Client trouvé:`, client);
         setSelectedVille(client.ville);
@@ -100,7 +112,7 @@ export const ClientSelector = ({
         console.log(`❌ ClientSelector BL ${blIndex}: Aucun client trouvé pour:`, selectedClient);
       }
     }
-  }, [selectedClient, selectedVille, blIndex]);
+  }, [selectedClient, selectedVille, blIndex, dbClients]);
 
   const handleVilleSelection = (ville: string) => {
     console.log(`🏙️ BL ${blIndex}: Ville sélectionnée:`, ville);
@@ -137,11 +149,11 @@ export const ClientSelector = ({
             <SelectValue placeholder="Sélectionner une ville (optionnel)" />
           </SelectTrigger>
           <SelectContent>
-            {DESTINATIONS.map(destination => (
-              <SelectItem key={destination.ville} value={destination.ville}>
+            {villes.map(ville => (
+              <SelectItem key={ville} value={ville}>
                 <div className="flex items-center">
                   <MapPin className="w-4 h-4 mr-2" />
-                  {destination.ville}
+                  {ville}
                 </div>
               </SelectItem>
             ))}
