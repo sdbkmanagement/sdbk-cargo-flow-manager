@@ -160,7 +160,7 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     }
   };
 
-  const typesContrat = ['CDI', 'CDD', 'Stage', 'Interim'];
+  const typesContrat = ['CDI', 'CDD', 'CS', 'CA', 'Stage', 'Interim'];
   const services = ['Transport', 'Maintenance', 'HSEQ', 'Administration', 'Direction'];
   const genres = ['Masculin', 'Féminin'];
   const groupesSanguins = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
