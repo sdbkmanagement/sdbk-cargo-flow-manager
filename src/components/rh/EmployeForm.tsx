@@ -278,8 +278,8 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
                 </select>
               </div>
               <div>
-                <Label htmlFor="date_embauche">Date d'embauche *</Label>
-                <Input id="date_embauche" type="date" value={formData.date_embauche} onChange={e => handleChange('date_embauche', e.target.value)} required />
+                <Label htmlFor="date_embauche">Date d'embauche</Label>
+                <Input id="date_embauche" type="date" value={formData.date_embauche} onChange={e => handleChange('date_embauche', e.target.value)} />
               </div>
               <div>
                 <Label htmlFor="anciennete_transporteur">Ancienneté transporteur</Label>
