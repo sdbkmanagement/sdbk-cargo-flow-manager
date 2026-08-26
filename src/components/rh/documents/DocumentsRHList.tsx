@@ -40,9 +40,10 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
     commentaire: '',
   });
 
-  const { data: documents, isLoading } = useQuery({
+  const { data: documents, isLoading, error, refetch } = useQuery({
     queryKey: ['documents-rh', employeId || 'all'],
     queryFn: () => sirhService.getDocuments(employeId),
+    refetchOnWindowFocus: true,
   });
 
   const { data: employes } = useQuery({
