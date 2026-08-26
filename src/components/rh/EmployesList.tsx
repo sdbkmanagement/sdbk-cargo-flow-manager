@@ -1,7 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { 
   Table, 
   TableBody, 
@@ -11,7 +12,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Edit, Phone, Mail, Upload, Download, UserPlus } from 'lucide-react';
+import { Eye, Edit, Phone, Mail, Upload, Download, UserPlus, Search, X } from 'lucide-react';
 import { EmployeDetailDialog } from './EmployeDetailDialog';
 import { EmployeForm } from './EmployeForm';
 import { EmployeesImport } from './EmployeesImport';
@@ -42,6 +43,21 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
   const [selectedEmploye, setSelectedEmploye] = useState<Employe | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredEmployes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return employes;
+    const terms = q.split(/\s+/);
+    return employes.filter((e: any) => {
+      const haystack = [
+        e.nom, e.prenom, e.matricule, e.poste, e.fonction, e.service,
+        e.departement, e.type_contrat, e.telephone, e.email, e.statut,
+      ].filter(Boolean).join(' ').toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [employes, search]);
+
   const getStatutColor = (statut: string) => {
     switch (statut) {
       case 'actif': return 'bg-green-500';
@@ -79,7 +95,27 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           <EmployeesImport onSuccess={() => { setShowImport(false); onRefresh(); }} onClose={() => setShowImport(false)} />
         </div>
       )}
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un collaborateur (nom, matricule, poste, service…)"
+            className="pl-9 pr-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Effacer la recherche"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={() => setShowCreate(true)}>
           <UserPlus className="w-4 h-4 mr-2" />
           Nouveau collaborateur
@@ -88,10 +124,11 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           <Upload className="w-4 h-4 mr-2" />
           Import Excel
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportRHService.exportToExcel(employes)}>
+        <Button variant="outline" size="sm" onClick={() => exportRHService.exportToExcel(filteredEmployes)}>
           <Download className="w-4 h-4 mr-2" />
           Export Excel
         </Button>
+        </div>
       </div>
       {showCreate && (
         <EmployeForm
@@ -112,7 +149,7 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           </TableRow>
         </TableHeader>
         <TableBody>
-          {employes.map((employe) => (
+          {filteredEmployes.map((employe) => (
             <TableRow key={employe.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
@@ -194,10 +231,17 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
         </TableBody>
       </Table>
 
-      {employes.length === 0 && (
+      {filteredEmployes.length === 0 && (
         <div className="text-center py-8">
-          <p className="text-muted-foreground">Aucun personnel trouvé</p>
+          <p className="text-muted-foreground">
+            {search ? `Aucun collaborateur ne correspond à « ${search} »` : 'Aucun personnel trouvé'}
+          </p>
         </div>
+      )}
+      {search && filteredEmployes.length > 0 && (
+        <p className="text-xs text-muted-foreground mt-2">
+          {filteredEmployes.length} collaborateur(s) sur {employes.length}
+        </p>
       )}
 
       {selectedEmploye && (
