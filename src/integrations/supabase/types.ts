@@ -2530,8 +2530,11 @@ export type Database = {
         Row: {
           adresse: string | null
           age: number | null
+          age_retraite: number
+          anciennete_annees: number | null
           anciennete_transporteur: string | null
           created_at: string
+          date_depart_retraite: string | null
           date_derniere_visite_medicale: string | null
           date_embauche: string
           date_fin_contrat: string | null
@@ -2546,6 +2549,7 @@ export type Database = {
           groupe_sanguin: string | null
           id: string
           immatricule_cnss: string | null
+          jours_restants_contrat: number | null
           jours_restants_visite: number | null
           lien_urgence: string | null
           lieu_naissance: string | null
@@ -2555,6 +2559,7 @@ export type Database = {
           nom_mere: string | null
           nom_pere: string | null
           nombre_enfants: number | null
+          organisme_visite_medicale: string | null
           personne_urgence: string | null
           photo_url: string | null
           poste: string
@@ -2576,8 +2581,11 @@ export type Database = {
         Insert: {
           adresse?: string | null
           age?: number | null
+          age_retraite?: number
+          anciennete_annees?: number | null
           anciennete_transporteur?: string | null
           created_at?: string
+          date_depart_retraite?: string | null
           date_derniere_visite_medicale?: string | null
           date_embauche: string
           date_fin_contrat?: string | null
@@ -2592,6 +2600,7 @@ export type Database = {
           groupe_sanguin?: string | null
           id?: string
           immatricule_cnss?: string | null
+          jours_restants_contrat?: number | null
           jours_restants_visite?: number | null
           lien_urgence?: string | null
           lieu_naissance?: string | null
@@ -2601,6 +2610,7 @@ export type Database = {
           nom_mere?: string | null
           nom_pere?: string | null
           nombre_enfants?: number | null
+          organisme_visite_medicale?: string | null
           personne_urgence?: string | null
           photo_url?: string | null
           poste: string
@@ -2622,8 +2632,11 @@ export type Database = {
         Update: {
           adresse?: string | null
           age?: number | null
+          age_retraite?: number
+          anciennete_annees?: number | null
           anciennete_transporteur?: string | null
           created_at?: string
+          date_depart_retraite?: string | null
           date_derniere_visite_medicale?: string | null
           date_embauche?: string
           date_fin_contrat?: string | null
@@ -2638,6 +2651,7 @@ export type Database = {
           groupe_sanguin?: string | null
           id?: string
           immatricule_cnss?: string | null
+          jours_restants_contrat?: number | null
           jours_restants_visite?: number | null
           lien_urgence?: string | null
           lieu_naissance?: string | null
@@ -2647,6 +2661,7 @@ export type Database = {
           nom_mere?: string | null
           nom_pere?: string | null
           nombre_enfants?: number | null
+          organisme_visite_medicale?: string | null
           personne_urgence?: string | null
           photo_url?: string | null
           poste?: string
@@ -6904,8 +6919,11 @@ export type Database = {
         Returns: {
           adresse: string | null
           age: number | null
+          age_retraite: number
+          anciennete_annees: number | null
           anciennete_transporteur: string | null
           created_at: string
+          date_depart_retraite: string | null
           date_derniere_visite_medicale: string | null
           date_embauche: string
           date_fin_contrat: string | null
@@ -6920,6 +6938,7 @@ export type Database = {
           groupe_sanguin: string | null
           id: string
           immatricule_cnss: string | null
+          jours_restants_contrat: number | null
           jours_restants_visite: number | null
           lien_urgence: string | null
           lieu_naissance: string | null
@@ -6929,6 +6948,7 @@ export type Database = {
           nom_mere: string | null
           nom_pere: string | null
           nombre_enfants: number | null
+          organisme_visite_medicale: string | null
           personne_urgence: string | null
           photo_url: string | null
           poste: string
