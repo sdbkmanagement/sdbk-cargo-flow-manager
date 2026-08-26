@@ -43,6 +43,21 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
   const [selectedEmploye, setSelectedEmploye] = useState<Employe | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredEmployes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return employes;
+    const terms = q.split(/\s+/);
+    return employes.filter((e: any) => {
+      const haystack = [
+        e.nom, e.prenom, e.matricule, e.poste, e.fonction, e.service,
+        e.departement, e.type_contrat, e.telephone, e.email, e.statut,
+      ].filter(Boolean).join(' ').toLowerCase();
+      return terms.every((t) => haystack.includes(t));
+    });
+  }, [employes, search]);
+
   const getStatutColor = (statut: string) => {
     switch (statut) {
       case 'actif': return 'bg-green-500';
