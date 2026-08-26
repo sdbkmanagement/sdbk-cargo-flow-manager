@@ -124,10 +124,11 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           <Upload className="w-4 h-4 mr-2" />
           Import Excel
         </Button>
-        <Button variant="outline" size="sm" onClick={() => exportRHService.exportToExcel(employes)}>
+        <Button variant="outline" size="sm" onClick={() => exportRHService.exportToExcel(filteredEmployes)}>
           <Download className="w-4 h-4 mr-2" />
           Export Excel
         </Button>
+        </div>
       </div>
       {showCreate && (
         <EmployeForm
