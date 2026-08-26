@@ -130,10 +130,11 @@ export const tbmService = {
     const { data: existing } = await query.maybeSingle();
 
     if ((existing as any)?.id) {
-      await supabase
+      const { error } = await supabase
         .from('tbm_presences' as any)
         .update({ present, date_presence: datePresence || null })
         .eq('id', (existing as any).id);
+      if (error) throw error;
     } else if (present) {
       const insert: any = {
         session_id: sessionId,
@@ -142,15 +143,17 @@ export const tbmService = {
       };
       if (isChauf) insert.chauffeur_id = collaborateur.id;
       else insert.employe_id = collaborateur.id;
-      await supabase.from('tbm_presences' as any).insert([insert]);
+      const { error } = await supabase.from('tbm_presences' as any).insert([insert]);
+      if (error) throw error;
     }
   },
 
   async getAllCollaborateurs(): Promise<Collaborateur[]> {
-    const [{ data: employes }, { data: chauffeurs }] = await Promise.all([
-      supabase.from('employes').select('id, nom, prenom, statut, poste').eq('statut', 'actif').order('nom'),
+    const [{ data: employes, error: empError }, { data: chauffeurs }] = await Promise.all([
+      supabase.rpc('get_tbm_collaborateurs' as any),
       supabase.from('chauffeurs').select('id, nom, prenom, statut, vehicule_assigne').order('nom'),
     ]);
+    if (empError) console.error('Erreur chargement collaborateurs TBM:', empError);
 
     const result: Collaborateur[] = [];
     (employes || []).forEach((e: any) => result.push({ id: e.id, nom: e.nom, prenom: e.prenom, type: 'employe', statut: e.statut, poste: e.poste }));

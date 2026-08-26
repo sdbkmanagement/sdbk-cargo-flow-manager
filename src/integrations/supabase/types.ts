@@ -6974,6 +6974,16 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_tbm_collaborateurs: {
+        Args: never
+        Returns: {
+          id: string
+          nom: string
+          poste: string
+          prenom: string
+          statut: string
+        }[]
+      }
       has_module_permission: {
         Args: { module_name: string; user_id: string }
         Returns: boolean
