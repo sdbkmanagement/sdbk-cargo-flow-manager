@@ -95,7 +95,27 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           <EmployeesImport onSuccess={() => { setShowImport(false); onRefresh(); }} onClose={() => setShowImport(false)} />
         </div>
       )}
-      <div className="flex justify-end gap-2 mb-4">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="relative w-full sm:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Rechercher un collaborateur (nom, matricule, poste, service…)"
+            className="pl-9 pr-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              aria-label="Effacer la recherche"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={() => setShowCreate(true)}>
           <UserPlus className="w-4 h-4 mr-2" />
           Nouveau collaborateur
