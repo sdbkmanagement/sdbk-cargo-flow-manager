@@ -127,6 +127,13 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
         <CardContent className="p-0">
           {isLoading ? (
             <p className="p-6 text-sm text-muted-foreground">Chargement...</p>
+          ) : error ? (
+            <div className="p-8 text-center">
+              <p className="text-sm text-destructive font-medium">
+                Impossible de charger les documents : {(error as any)?.message || 'erreur inconnue'}
+              </p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Réessayer</Button>
+            </div>
           ) : (documents || []).length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
