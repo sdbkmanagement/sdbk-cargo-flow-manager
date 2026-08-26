@@ -166,14 +166,20 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
                     <TableCell>{d.date_emission ? new Date(d.date_emission).toLocaleDateString('fr-FR') : '—'}</TableCell>
                     <TableCell>{d.date_expiration ? new Date(d.date_expiration).toLocaleDateString('fr-FR') : '—'}</TableCell>
                     <TableCell>{statutBadge(d.statut)}</TableCell>
-                    <TableCell>
-                      {d.fichier_url ? (
-                        <a href={d.fichier_url} target="_blank" rel="noreferrer" className="text-primary text-sm underline">
-                          {d.fichier_nom || 'Voir'}
-                        </a>
-                      ) : '—'}
+                    <TableCell className="max-w-[200px] truncate">
+                      {d.fichier_nom || (d.fichier_url ? 'Document' : '—')}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
+                      {d.fichier_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mr-1"
+                          onClick={() => window.open(d.fichier_url, '_blank', 'noopener,noreferrer')}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />Consulter
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => remove(d.id)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
