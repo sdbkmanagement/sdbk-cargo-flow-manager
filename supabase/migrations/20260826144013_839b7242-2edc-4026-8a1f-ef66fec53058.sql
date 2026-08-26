@@ -1,0 +1,1 @@
+ALTER TABLE public.employes ALTER COLUMN date_embauche DROP NOT NULL;
