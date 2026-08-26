@@ -78,6 +78,10 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
         </div>
       )}
       <div className="flex justify-end gap-2 mb-4">
+        <Button size="sm" onClick={() => setShowCreate(true)}>
+          <UserPlus className="w-4 h-4 mr-2" />
+          Nouveau collaborateur
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setShowImport(!showImport)}>
           <Upload className="w-4 h-4 mr-2" />
           Import Excel
@@ -87,6 +91,12 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           Export Excel
         </Button>
       </div>
+      {showCreate && (
+        <EmployeForm
+          onClose={() => setShowCreate(false)}
+          onSuccess={() => { setShowCreate(false); onRefresh(); }}
+        />
+      )}
       <Table>
         <TableHeader>
           <TableRow>
