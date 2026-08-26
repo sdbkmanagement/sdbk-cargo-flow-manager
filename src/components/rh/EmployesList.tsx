@@ -41,6 +41,7 @@ interface EmployesListProps {
 export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListProps) => {
   const [selectedEmploye, setSelectedEmploye] = useState<Employe | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const getStatutColor = (statut: string) => {
     switch (statut) {
       case 'actif': return 'bg-green-500';
