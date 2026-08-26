@@ -51,12 +51,14 @@ export const TBMTab = () => {
     mutationFn: (params: { mois: number; annee: number; numero_reunion: number; theme?: string; date_reunion?: string }) =>
       tbmService.upsertSession(params),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tbm-sessions', mois, annee] }),
+    onError: (error: any) => toast.error(`Erreur enregistrement session : ${error.message}`),
   });
 
   const toggleMutation = useMutation({
     mutationFn: (params: { sessionId: string; collaborateur: Collaborateur; present: boolean; datePresence?: string }) =>
       tbmService.togglePresence(params.sessionId, params.collaborateur, params.present, params.datePresence),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tbm-presences'] }),
+    onError: (error: any) => toast.error(`Erreur pointage présence : ${error.message}`),
   });
 
   const filteredCollabs = useMemo(() => {
