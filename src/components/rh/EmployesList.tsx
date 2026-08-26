@@ -12,7 +12,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Edit, Phone, Mail, Upload, Download, UserPlus } from 'lucide-react';
+import { Eye, Edit, Phone, Mail, Upload, Download, UserPlus, Search, X } from 'lucide-react';
 import { EmployeDetailDialog } from './EmployeDetailDialog';
 import { EmployeForm } from './EmployeForm';
 import { EmployeesImport } from './EmployeesImport';
