@@ -41,8 +41,10 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     // 3. Informations Médicales
     groupe_sanguin: employe?.groupe_sanguin || '',
     date_derniere_visite_medicale: employe?.date_derniere_visite_medicale || '',
+    organisme_visite_medicale: employe?.organisme_visite_medicale || '',
     statut_visite_medicale: employe?.statut_visite_medicale || 'a_faire',
     date_prochaine_visite: employe?.date_prochaine_visite || '',
+    age_retraite: employe?.age_retraite != null ? String(employe.age_retraite) : '60',
     // 4. Coordonnées
     telephone: employe?.telephone || '',
     email: employe?.email || '',
@@ -123,8 +125,10 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
         ...formData,
         poste: formData.fonction,
         age: formData.age ? parseInt(formData.age) : null,
+        age_retraite: formData.age_retraite ? parseInt(formData.age_retraite) : 60,
         salaire_base: formData.salaire_base ? Number(formData.salaire_base) : null,
         nombre_enfants: formData.nombre_enfants ? parseInt(formData.nombre_enfants) : null,
+        date_embauche: formData.date_embauche || null,
         date_fin_essai: formData.date_fin_essai || null,
         date_fin_contrat: formData.date_fin_contrat || null,
         date_naissance: formData.date_naissance || null,
@@ -156,7 +160,7 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     }
   };
 
-  const typesContrat = ['CDI', 'CDD', 'Stage', 'Interim'];
+  const typesContrat = ['CDI', 'CDD', 'CS', 'CA', 'Stage', 'Interim'];
   const services = ['Transport', 'Maintenance', 'HSEQ', 'Administration', 'Direction'];
   const genres = ['Masculin', 'Féminin'];
   const groupesSanguins = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -274,8 +278,8 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
                 </select>
               </div>
               <div>
-                <Label htmlFor="date_embauche">Date d'embauche *</Label>
-                <Input id="date_embauche" type="date" value={formData.date_embauche} onChange={e => handleChange('date_embauche', e.target.value)} required />
+                <Label htmlFor="date_embauche">Date d'embauche</Label>
+                <Input id="date_embauche" type="date" value={formData.date_embauche} onChange={e => handleChange('date_embauche', e.target.value)} />
               </div>
               <div>
                 <Label htmlFor="anciennete_transporteur">Ancienneté transporteur</Label>
@@ -338,6 +342,14 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
               <div>
                 <Label htmlFor="date_prochaine_visite">Prochaine visite</Label>
                 <Input id="date_prochaine_visite" type="date" value={formData.date_prochaine_visite} onChange={e => handleChange('date_prochaine_visite', e.target.value)} />
+              </div>
+              <div>
+                <Label htmlFor="organisme_visite_medicale">Organisme de visite</Label>
+                <Input id="organisme_visite_medicale" value={formData.organisme_visite_medicale} onChange={e => handleChange('organisme_visite_medicale', e.target.value)} placeholder="ex: SNMT" />
+              </div>
+              <div>
+                <Label htmlFor="age_retraite">Âge de départ à la retraite</Label>
+                <Input id="age_retraite" type="number" min={40} max={80} value={formData.age_retraite} onChange={e => handleChange('age_retraite', e.target.value)} />
               </div>
             </div>
           </div>

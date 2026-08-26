@@ -11,8 +11,9 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Edit, Phone, Mail, Upload, Download } from 'lucide-react';
+import { Eye, Edit, Phone, Mail, Upload, Download, UserPlus } from 'lucide-react';
 import { EmployeDetailDialog } from './EmployeDetailDialog';
+import { EmployeForm } from './EmployeForm';
 import { EmployeesImport } from './EmployeesImport';
 import { exportRHService } from '@/services/exportRHService';
 interface Employe {
@@ -40,6 +41,7 @@ interface EmployesListProps {
 export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListProps) => {
   const [selectedEmploye, setSelectedEmploye] = useState<Employe | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
   const getStatutColor = (statut: string) => {
     switch (statut) {
       case 'actif': return 'bg-green-500';
@@ -78,6 +80,10 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
         </div>
       )}
       <div className="flex justify-end gap-2 mb-4">
+        <Button size="sm" onClick={() => setShowCreate(true)}>
+          <UserPlus className="w-4 h-4 mr-2" />
+          Nouveau collaborateur
+        </Button>
         <Button variant="outline" size="sm" onClick={() => setShowImport(!showImport)}>
           <Upload className="w-4 h-4 mr-2" />
           Import Excel
@@ -87,6 +93,12 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           Export Excel
         </Button>
       </div>
+      {showCreate && (
+        <EmployeForm
+          onClose={() => setShowCreate(false)}
+          onSuccess={() => { setShowCreate(false); onRefresh(); }}
+        />
+      )}
       <Table>
         <TableHeader>
           <TableRow>
