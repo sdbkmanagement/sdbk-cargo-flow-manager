@@ -41,8 +41,10 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
     // 3. Informations Médicales
     groupe_sanguin: employe?.groupe_sanguin || '',
     date_derniere_visite_medicale: employe?.date_derniere_visite_medicale || '',
+    organisme_visite_medicale: employe?.organisme_visite_medicale || '',
     statut_visite_medicale: employe?.statut_visite_medicale || 'a_faire',
     date_prochaine_visite: employe?.date_prochaine_visite || '',
+    age_retraite: employe?.age_retraite != null ? String(employe.age_retraite) : '60',
     // 4. Coordonnées
     telephone: employe?.telephone || '',
     email: employe?.email || '',
