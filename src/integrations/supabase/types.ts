@@ -2536,7 +2536,7 @@ export type Database = {
           created_at: string
           date_depart_retraite: string | null
           date_derniere_visite_medicale: string | null
-          date_embauche: string
+          date_embauche: string | null
           date_fin_contrat: string | null
           date_fin_essai: string | null
           date_naissance: string | null
@@ -2587,7 +2587,7 @@ export type Database = {
           created_at?: string
           date_depart_retraite?: string | null
           date_derniere_visite_medicale?: string | null
-          date_embauche: string
+          date_embauche?: string | null
           date_fin_contrat?: string | null
           date_fin_essai?: string | null
           date_naissance?: string | null
@@ -2638,7 +2638,7 @@ export type Database = {
           created_at?: string
           date_depart_retraite?: string | null
           date_derniere_visite_medicale?: string | null
-          date_embauche?: string
+          date_embauche?: string | null
           date_fin_contrat?: string | null
           date_fin_essai?: string | null
           date_naissance?: string | null
@@ -6925,7 +6925,7 @@ export type Database = {
           created_at: string
           date_depart_retraite: string | null
           date_derniere_visite_medicale: string | null
-          date_embauche: string
+          date_embauche: string | null
           date_fin_contrat: string | null
           date_fin_essai: string | null
           date_naissance: string | null
