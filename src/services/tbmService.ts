@@ -147,10 +147,11 @@ export const tbmService = {
   },
 
   async getAllCollaborateurs(): Promise<Collaborateur[]> {
-    const [{ data: employes }, { data: chauffeurs }] = await Promise.all([
-      supabase.from('employes').select('id, nom, prenom, statut, poste').eq('statut', 'actif').order('nom'),
+    const [{ data: employes, error: empError }, { data: chauffeurs }] = await Promise.all([
+      supabase.rpc('get_tbm_collaborateurs' as any),
       supabase.from('chauffeurs').select('id, nom, prenom, statut, vehicule_assigne').order('nom'),
     ]);
+    if (empError) console.error('Erreur chargement collaborateurs TBM:', empError);
 
     const result: Collaborateur[] = [];
     (employes || []).forEach((e: any) => result.push({ id: e.id, nom: e.nom, prenom: e.prenom, type: 'employe', statut: e.statut, poste: e.poste }));
