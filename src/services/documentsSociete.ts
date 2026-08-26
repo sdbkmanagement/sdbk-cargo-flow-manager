@@ -472,26 +472,34 @@ export const documentsSocieteService = {
   }> {
     const { data: documents } = await supabase
       .from('documents_societe')
-      .select('statut, categorie:documents_societe_categories(nom)');
+      .select('statut, date_expiration, categorie:documents_societe_categories(nom)');
 
     const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
     const in30Days = new Date();
     in30Days.setDate(today.getDate() + 30);
 
     const { data: expirant } = await supabase
       .from('documents_societe')
       .select('id')
+      .neq('statut', 'archive')
       .not('date_expiration', 'is', null)
       .lte('date_expiration', in30Days.toISOString().split('T')[0])
-      .gte('date_expiration', today.toISOString().split('T')[0]);
+      .gte('date_expiration', todayStr);
+
+    const isExpire = (d: any) =>
+      d.statut === 'expire' ||
+      d.statut === 'archive' ||
+      (d.date_expiration && d.date_expiration < todayStr);
 
     const stats = {
       total: documents?.length || 0,
-      valides: documents?.filter(d => d.statut === 'valide').length || 0,
-      expires: documents?.filter(d => d.statut === 'expire').length || 0,
+      valides: documents?.filter(d => d.statut === 'valide' && !isExpire(d)).length || 0,
+      expires: documents?.filter(isExpire).length || 0,
       aRenouveler: expirant?.length || 0,
       parCategorie: [] as { categorie: string; count: number }[]
     };
+
 
     // Grouper par catégorie
     const categorieMap = new Map<string, number>();
