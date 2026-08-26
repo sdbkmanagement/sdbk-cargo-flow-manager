@@ -343,6 +343,14 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
                 <Label htmlFor="date_prochaine_visite">Prochaine visite</Label>
                 <Input id="date_prochaine_visite" type="date" value={formData.date_prochaine_visite} onChange={e => handleChange('date_prochaine_visite', e.target.value)} />
               </div>
+              <div>
+                <Label htmlFor="organisme_visite_medicale">Organisme de visite</Label>
+                <Input id="organisme_visite_medicale" value={formData.organisme_visite_medicale} onChange={e => handleChange('organisme_visite_medicale', e.target.value)} placeholder="ex: SNMT" />
+              </div>
+              <div>
+                <Label htmlFor="age_retraite">Âge de départ à la retraite</Label>
+                <Input id="age_retraite" type="number" min={40} max={80} value={formData.age_retraite} onChange={e => handleChange('age_retraite', e.target.value)} />
+              </div>
             </div>
           </div>
 
