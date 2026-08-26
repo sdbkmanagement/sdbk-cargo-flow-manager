@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Trash2, Paperclip, Loader2, FileText } from 'lucide-react';
+import { Plus, Trash2, Paperclip, Loader2, FileText, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import { sirhService, TYPES_DOCUMENTS_RH } from '@/services/sirhService';
 import { rhService } from '@/services/rh';
@@ -40,9 +40,10 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
     commentaire: '',
   });
 
-  const { data: documents, isLoading } = useQuery({
+  const { data: documents, isLoading, error, refetch } = useQuery({
     queryKey: ['documents-rh', employeId || 'all'],
     queryFn: () => sirhService.getDocuments(employeId),
+    refetchOnWindowFocus: true,
   });
 
   const { data: employes } = useQuery({
@@ -82,8 +83,9 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
         date_expiration: form.date_expiration || null,
       });
       toast.success('Document enregistré');
-      qc.invalidateQueries({ queryKey: ['documents-rh'] });
+      await qc.invalidateQueries({ queryKey: ['documents-rh'] });
       qc.invalidateQueries({ queryKey: ['rh-alertes'] });
+      await refetch();
       setOpen(false);
       reset();
     } catch (e: any) {
@@ -96,7 +98,8 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
   const remove = async (id: string) => {
     try {
       await sirhService.deleteDocument(id);
-      qc.invalidateQueries({ queryKey: ['documents-rh'] });
+      await qc.invalidateQueries({ queryKey: ['documents-rh'] });
+      await refetch();
       toast.success('Document supprimé');
     } catch (e: any) {
       toast.error(e.message || 'Erreur de suppression');
@@ -124,6 +127,13 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
         <CardContent className="p-0">
           {isLoading ? (
             <p className="p-6 text-sm text-muted-foreground">Chargement...</p>
+          ) : error ? (
+            <div className="p-8 text-center">
+              <p className="text-sm text-destructive font-medium">
+                Impossible de charger les documents : {(error as any)?.message || 'erreur inconnue'}
+              </p>
+              <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>Réessayer</Button>
+            </div>
           ) : (documents || []).length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-40" />
@@ -156,14 +166,20 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
                     <TableCell>{d.date_emission ? new Date(d.date_emission).toLocaleDateString('fr-FR') : '—'}</TableCell>
                     <TableCell>{d.date_expiration ? new Date(d.date_expiration).toLocaleDateString('fr-FR') : '—'}</TableCell>
                     <TableCell>{statutBadge(d.statut)}</TableCell>
-                    <TableCell>
-                      {d.fichier_url ? (
-                        <a href={d.fichier_url} target="_blank" rel="noreferrer" className="text-primary text-sm underline">
-                          {d.fichier_nom || 'Voir'}
-                        </a>
-                      ) : '—'}
+                    <TableCell className="max-w-[200px] truncate">
+                      {d.fichier_nom || (d.fichier_url ? 'Document' : '—')}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
+                      {d.fichier_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="mr-1"
+                          onClick={() => window.open(d.fichier_url, '_blank', 'noopener,noreferrer')}
+                        >
+                          <Eye className="w-4 h-4 mr-1" />Consulter
+                        </Button>
+                      )}
                       <Button size="icon" variant="ghost" onClick={() => remove(d.id)}>
                         <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>

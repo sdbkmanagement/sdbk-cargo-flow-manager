@@ -89,11 +89,30 @@ export const sirhService = {
     let query = sb
       .from('documents_rh')
       .select('*, employes:employe_id (id, nom, prenom, matricule, service)')
-      .order('date_expiration', { ascending: true, nullsFirst: false });
+      .order('created_at', { ascending: false });
     if (employeId) query = query.eq('employe_id', employeId);
     const { data, error } = await query;
-    if (error) throw error;
-    return data || [];
+    if (!error) return data || [];
+
+    // Repli sans jointure : selon les droits RLS sur employes, la jointure
+    // peut faire échouer toute la requête et masquer les documents.
+    console.warn('getDocuments: jointure employes impossible, repli sans jointure', error);
+    let fallback = sb
+      .from('documents_rh')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (employeId) fallback = fallback.eq('employe_id', employeId);
+    const { data: docs, error: err2 } = await fallback;
+    if (err2) throw err2;
+
+    // Enrichissement des noms via le RPC sécurisé (contourne les restrictions RLS)
+    try {
+      const { data: emps } = await sb.rpc('get_rh_employes');
+      const byId = new Map(((emps || []) as any[]).map((e: any) => [e.id, e]));
+      return (docs || []).map((d: any) => ({ ...d, employes: byId.get(d.employe_id) || null }));
+    } catch {
+      return docs || [];
+    }
   },
 
   async createDocument(doc: Partial<DocumentRH>) {
