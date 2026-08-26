@@ -83,8 +83,9 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
         date_expiration: form.date_expiration || null,
       });
       toast.success('Document enregistré');
-      qc.invalidateQueries({ queryKey: ['documents-rh'] });
+      await qc.invalidateQueries({ queryKey: ['documents-rh'] });
       qc.invalidateQueries({ queryKey: ['rh-alertes'] });
+      await refetch();
       setOpen(false);
       reset();
     } catch (e: any) {
@@ -97,7 +98,8 @@ export const DocumentsRHList: React.FC<Props> = ({ employeId, compact }) => {
   const remove = async (id: string) => {
     try {
       await sirhService.deleteDocument(id);
-      qc.invalidateQueries({ queryKey: ['documents-rh'] });
+      await qc.invalidateQueries({ queryKey: ['documents-rh'] });
+      await refetch();
       toast.success('Document supprimé');
     } catch (e: any) {
       toast.error(e.message || 'Erreur de suppression');
