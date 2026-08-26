@@ -149,7 +149,7 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
           </TableRow>
         </TableHeader>
         <TableBody>
-          {employes.map((employe) => (
+          {filteredEmployes.map((employe) => (
             <TableRow key={employe.id}>
               <TableCell>
                 <div className="flex items-center gap-3">
