@@ -130,10 +130,11 @@ export const tbmService = {
     const { data: existing } = await query.maybeSingle();
 
     if ((existing as any)?.id) {
-      await supabase
+      const { error } = await supabase
         .from('tbm_presences' as any)
         .update({ present, date_presence: datePresence || null })
         .eq('id', (existing as any).id);
+      if (error) throw error;
     } else if (present) {
       const insert: any = {
         session_id: sessionId,
@@ -142,7 +143,8 @@ export const tbmService = {
       };
       if (isChauf) insert.chauffeur_id = collaborateur.id;
       else insert.employe_id = collaborateur.id;
-      await supabase.from('tbm_presences' as any).insert([insert]);
+      const { error } = await supabase.from('tbm_presences' as any).insert([insert]);
+      if (error) throw error;
     }
   },
 
