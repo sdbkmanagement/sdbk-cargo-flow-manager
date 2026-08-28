@@ -38,14 +38,16 @@ interface EmployesListProps {
   employes: Employe[];
   isLoading: boolean;
   onRefresh: () => void;
+  /** Restreint la liste à un service précis (ex: "Chauffeurs") */
+  lockedService?: string;
 }
 
-export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListProps) => {
+export const EmployesList = ({ employes, isLoading, onRefresh, lockedService }: EmployesListProps) => {
   const [selectedEmploye, setSelectedEmploye] = useState<Employe | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState('');
-  const [filterService, setFilterService] = useState('all');
+  const [filterService, setFilterService] = useState(lockedService ?? 'all');
   const [filterContrat, setFilterContrat] = useState('all');
   const [filterStatut, setFilterStatut] = useState('all');
 
@@ -53,8 +55,8 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
   const typesContrat = useMemo(() => Array.from(new Set(employes.map((e: any) => e.type_contrat).filter(Boolean))).sort(), [employes]);
   const statuts = useMemo(() => Array.from(new Set(employes.map((e: any) => e.statut).filter(Boolean))).sort(), [employes]);
 
-  const hasActiveFilters = filterService !== 'all' || filterContrat !== 'all' || filterStatut !== 'all';
-  const resetFilters = () => { setFilterService('all'); setFilterContrat('all'); setFilterStatut('all'); };
+  const hasActiveFilters = (!lockedService && filterService !== 'all') || filterContrat !== 'all' || filterStatut !== 'all';
+  const resetFilters = () => { setFilterService(lockedService ?? 'all'); setFilterContrat('all'); setFilterStatut('all'); };
 
   const filteredEmployes = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -146,15 +148,17 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
       </div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <Select value={filterService} onValueChange={setFilterService}>
-          <SelectTrigger className="w-[180px] h-9">
-            <SelectValue placeholder="Service" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les services</SelectItem>
-            {services.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {!lockedService && (
+          <Select value={filterService} onValueChange={setFilterService}>
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue placeholder="Service" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les services</SelectItem>
+              {services.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={filterContrat} onValueChange={setFilterContrat}>
           <SelectTrigger className="w-[160px] h-9">
             <SelectValue placeholder="Contrat" />

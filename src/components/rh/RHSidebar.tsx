@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import {
   Users, LayoutDashboard, Bell, CalendarCheck, Wallet,
-  Target, Award, GraduationCap, FolderOpen, BarChart3
+  Target, Award, GraduationCap, FolderOpen, BarChart3, Truck
 } from 'lucide-react';
 
 interface RHSidebarProps {
@@ -13,6 +13,7 @@ interface RHSidebarProps {
 const items = [
   { id: 'dashboard', label: 'Tableau de bord RH', icon: LayoutDashboard },
   { id: 'collaborateurs', label: 'Collaborateurs', icon: Users },
+  { id: 'chauffeurs', label: 'Chauffeurs', icon: Truck },
   { id: 'alertes', label: 'Alertes RH', icon: Bell },
   { id: 'presences', label: 'Présences & Congés', icon: CalendarCheck },
   { id: 'paie', label: 'Paie & Masse salariale', icon: Wallet },
