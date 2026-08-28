@@ -148,15 +148,17 @@ export const EmployesList = ({ employes, isLoading, onRefresh, lockedService }: 
       </div>
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <Filter className="h-4 w-4 text-muted-foreground" />
-        <Select value={filterService} onValueChange={setFilterService}>
-          <SelectTrigger className="w-[180px] h-9">
-            <SelectValue placeholder="Service" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les services</SelectItem>
-            {services.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
-        </Select>
+        {!lockedService && (
+          <Select value={filterService} onValueChange={setFilterService}>
+            <SelectTrigger className="w-[180px] h-9">
+              <SelectValue placeholder="Service" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les services</SelectItem>
+              {services.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
         <Select value={filterContrat} onValueChange={setFilterContrat}>
           <SelectTrigger className="w-[160px] h-9">
             <SelectValue placeholder="Contrat" />
