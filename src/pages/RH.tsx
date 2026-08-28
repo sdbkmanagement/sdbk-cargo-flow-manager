@@ -25,6 +25,15 @@ const RH = () => {
     switch (activeSection) {
       case 'dashboard': return <RHDashboard />;
       case 'collaborateurs': return <EmployesList employes={employes || []} isLoading={isLoading} onRefresh={refetch} />;
+      case 'chauffeurs': return (
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-bold">Chauffeurs</h2>
+            <p className="text-muted-foreground text-sm">Dossiers RH complets des chauffeurs (permis, contrat, salaire brut, documents…)</p>
+          </div>
+          <EmployesList employes={employes || []} isLoading={isLoading} onRefresh={refetch} lockedService="Chauffeurs" />
+        </div>
+      );
       case 'alertes': return <AlertesRHCenter />;
       case 'presences': return <PresencesCongesModule />;
       case 'paie': return <PaieModule />;
