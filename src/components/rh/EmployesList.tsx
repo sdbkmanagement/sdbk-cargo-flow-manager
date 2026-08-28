@@ -55,8 +55,8 @@ export const EmployesList = ({ employes, isLoading, onRefresh, lockedService }: 
   const typesContrat = useMemo(() => Array.from(new Set(employes.map((e: any) => e.type_contrat).filter(Boolean))).sort(), [employes]);
   const statuts = useMemo(() => Array.from(new Set(employes.map((e: any) => e.statut).filter(Boolean))).sort(), [employes]);
 
-  const hasActiveFilters = filterService !== 'all' || filterContrat !== 'all' || filterStatut !== 'all';
-  const resetFilters = () => { setFilterService('all'); setFilterContrat('all'); setFilterStatut('all'); };
+  const hasActiveFilters = (!lockedService && filterService !== 'all') || filterContrat !== 'all' || filterStatut !== 'all';
+  const resetFilters = () => { setFilterService(lockedService ?? 'all'); setFilterContrat('all'); setFilterStatut('all'); };
 
   const filteredEmployes = useMemo(() => {
     const q = search.trim().toLowerCase();
