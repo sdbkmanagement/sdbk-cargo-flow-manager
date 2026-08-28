@@ -104,10 +104,7 @@ export const RHKpiDetailDialog = ({
     },
   });
 
-  const loadCtr = false;
-  const loadVis = false;
-
-  const loading = loadAbs || loadCtr || loadDoc || loadVis;
+  const loading = loadAbs || loadCng || loadDoc;
 
   const renderContent = () => {
     if (!kpi) return null;
