@@ -220,6 +220,13 @@ export const RHDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <RHKpiDetailDialog
+        kpi={detailKpi}
+        open={detailKpi !== null}
+        onOpenChange={(o) => { if (!o) setDetailKpi(null); }}
+        employes={filtered}
+      />
     </div>
   );
 };
