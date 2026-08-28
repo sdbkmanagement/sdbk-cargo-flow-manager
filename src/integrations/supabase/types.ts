@@ -2533,13 +2533,17 @@ export type Database = {
           age_retraite: number
           anciennete_annees: number | null
           anciennete_transporteur: string | null
+          base_affectation: string | null
+          chauffeur_id: string | null
           created_at: string
           date_depart_retraite: string | null
           date_derniere_visite_medicale: string | null
           date_embauche: string | null
+          date_expiration_permis: string | null
           date_fin_contrat: string | null
           date_fin_essai: string | null
           date_naissance: string | null
+          date_obtention_permis: string | null
           date_prochaine_visite: string | null
           departement: string | null
           diplome: string | null
@@ -2548,6 +2552,7 @@ export type Database = {
           genre: string | null
           groupe_sanguin: string | null
           id: string
+          id_conducteur: string | null
           immatricule_cnss: string | null
           jours_restants_contrat: number | null
           jours_restants_visite: number | null
@@ -2559,6 +2564,7 @@ export type Database = {
           nom_mere: string | null
           nom_pere: string | null
           nombre_enfants: number | null
+          numero_permis: string | null
           organisme_visite_medicale: string | null
           personne_urgence: string | null
           photo_url: string | null
@@ -2576,6 +2582,7 @@ export type Database = {
           telephone: string | null
           telephone_urgence: string | null
           type_contrat: string
+          type_permis: string[] | null
           updated_at: string
         }
         Insert: {
@@ -2584,13 +2591,17 @@ export type Database = {
           age_retraite?: number
           anciennete_annees?: number | null
           anciennete_transporteur?: string | null
+          base_affectation?: string | null
+          chauffeur_id?: string | null
           created_at?: string
           date_depart_retraite?: string | null
           date_derniere_visite_medicale?: string | null
           date_embauche?: string | null
+          date_expiration_permis?: string | null
           date_fin_contrat?: string | null
           date_fin_essai?: string | null
           date_naissance?: string | null
+          date_obtention_permis?: string | null
           date_prochaine_visite?: string | null
           departement?: string | null
           diplome?: string | null
@@ -2599,6 +2610,7 @@ export type Database = {
           genre?: string | null
           groupe_sanguin?: string | null
           id?: string
+          id_conducteur?: string | null
           immatricule_cnss?: string | null
           jours_restants_contrat?: number | null
           jours_restants_visite?: number | null
@@ -2610,6 +2622,7 @@ export type Database = {
           nom_mere?: string | null
           nom_pere?: string | null
           nombre_enfants?: number | null
+          numero_permis?: string | null
           organisme_visite_medicale?: string | null
           personne_urgence?: string | null
           photo_url?: string | null
@@ -2627,6 +2640,7 @@ export type Database = {
           telephone?: string | null
           telephone_urgence?: string | null
           type_contrat?: string
+          type_permis?: string[] | null
           updated_at?: string
         }
         Update: {
@@ -2635,13 +2649,17 @@ export type Database = {
           age_retraite?: number
           anciennete_annees?: number | null
           anciennete_transporteur?: string | null
+          base_affectation?: string | null
+          chauffeur_id?: string | null
           created_at?: string
           date_depart_retraite?: string | null
           date_derniere_visite_medicale?: string | null
           date_embauche?: string | null
+          date_expiration_permis?: string | null
           date_fin_contrat?: string | null
           date_fin_essai?: string | null
           date_naissance?: string | null
+          date_obtention_permis?: string | null
           date_prochaine_visite?: string | null
           departement?: string | null
           diplome?: string | null
@@ -2650,6 +2668,7 @@ export type Database = {
           genre?: string | null
           groupe_sanguin?: string | null
           id?: string
+          id_conducteur?: string | null
           immatricule_cnss?: string | null
           jours_restants_contrat?: number | null
           jours_restants_visite?: number | null
@@ -2661,6 +2680,7 @@ export type Database = {
           nom_mere?: string | null
           nom_pere?: string | null
           nombre_enfants?: number | null
+          numero_permis?: string | null
           organisme_visite_medicale?: string | null
           personne_urgence?: string | null
           photo_url?: string | null
@@ -2678,9 +2698,17 @@ export type Database = {
           telephone?: string | null
           telephone_urgence?: string | null
           type_contrat?: string
+          type_permis?: string[] | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "employes_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "employes_responsable_id_fkey"
             columns: ["responsable_id"]
@@ -6922,13 +6950,17 @@ export type Database = {
           age_retraite: number
           anciennete_annees: number | null
           anciennete_transporteur: string | null
+          base_affectation: string | null
+          chauffeur_id: string | null
           created_at: string
           date_depart_retraite: string | null
           date_derniere_visite_medicale: string | null
           date_embauche: string | null
+          date_expiration_permis: string | null
           date_fin_contrat: string | null
           date_fin_essai: string | null
           date_naissance: string | null
+          date_obtention_permis: string | null
           date_prochaine_visite: string | null
           departement: string | null
           diplome: string | null
@@ -6937,6 +6969,7 @@ export type Database = {
           genre: string | null
           groupe_sanguin: string | null
           id: string
+          id_conducteur: string | null
           immatricule_cnss: string | null
           jours_restants_contrat: number | null
           jours_restants_visite: number | null
@@ -6948,6 +6981,7 @@ export type Database = {
           nom_mere: string | null
           nom_pere: string | null
           nombre_enfants: number | null
+          numero_permis: string | null
           organisme_visite_medicale: string | null
           personne_urgence: string | null
           photo_url: string | null
@@ -6965,6 +6999,7 @@ export type Database = {
           telephone: string | null
           telephone_urgence: string | null
           type_contrat: string
+          type_permis: string[] | null
           updated_at: string
         }[]
         SetofOptions: {
