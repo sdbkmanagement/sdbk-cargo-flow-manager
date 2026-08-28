@@ -192,6 +192,14 @@ export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDeta
                       { l: 'Fin période d’essai', v: employe.date_fin_essai ? new Date(employe.date_fin_essai).toLocaleDateString('fr-FR') : null },
                       { l: 'Fin de contrat', v: employe.date_fin_contrat ? new Date(employe.date_fin_contrat).toLocaleDateString('fr-FR') : null },
                       { l: 'Salaire brut', v: employe.salaire_base ? `${Number(employe.salaire_base).toLocaleString('fr-FR')} GNF` : null },
+                      ...(employe.chauffeur_id || employe.numero_permis ? [
+                        { l: 'N° de permis', v: employe.numero_permis },
+                        { l: 'Types de permis', v: Array.isArray(employe.type_permis) ? employe.type_permis.join(', ') : employe.type_permis },
+                        { l: 'Obtention du permis', v: employe.date_obtention_permis ? new Date(employe.date_obtention_permis).toLocaleDateString('fr-FR') : null },
+                        { l: 'Expiration du permis', v: employe.date_expiration_permis ? new Date(employe.date_expiration_permis).toLocaleDateString('fr-FR') : null },
+                        { l: 'Base d’affectation', v: employe.base_affectation },
+                        { l: 'ID conducteur', v: employe.id_conducteur },
+                      ] : []),
                     ].map((f) => (
                       <div key={f.l}>
                         <p className="text-muted-foreground">{f.l}</p>
