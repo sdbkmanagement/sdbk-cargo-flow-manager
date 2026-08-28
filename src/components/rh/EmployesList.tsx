@@ -144,6 +144,42 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
         </Button>
         </div>
       </div>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <Select value={filterService} onValueChange={setFilterService}>
+          <SelectTrigger className="w-[180px] h-9">
+            <SelectValue placeholder="Service" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les services</SelectItem>
+            {services.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterContrat} onValueChange={setFilterContrat}>
+          <SelectTrigger className="w-[160px] h-9">
+            <SelectValue placeholder="Contrat" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les contrats</SelectItem>
+            {typesContrat.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterStatut} onValueChange={setFilterStatut}>
+          <SelectTrigger className="w-[150px] h-9">
+            <SelectValue placeholder="Statut" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les statuts</SelectItem>
+            {statuts.map((s) => <SelectItem key={s} value={s}>{getStatutLabel(s)}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={resetFilters}>
+            <X className="h-4 w-4 mr-1" />
+            Réinitialiser
+          </Button>
+        )}
+      </div>
       {showCreate && (
         <EmployeForm
           onClose={() => setShowCreate(false)}
