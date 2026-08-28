@@ -168,12 +168,9 @@ export const RHKpiDetailDialog = ({
           </Row>
         ));
       }
-      case 'absences':
-      case 'conges': {
-        const rows = (absences as any[]).filter((a) =>
-          kpi === 'conges' ? /cong/i.test(a.type_absence || '') : !/cong/i.test(a.type_absence || '')
-        );
-        if (!rows.length) return <p className="text-sm text-muted-foreground py-6 text-center">Aucun élément en cours</p>;
+      case 'absences': {
+        const rows = absences as any[];
+        if (!rows.length) return <p className="text-sm text-muted-foreground py-6 text-center">Aucune absence en cours</p>;
         return rows.map((a) => (
           <Row key={a.id}>
             <div>
@@ -184,17 +181,34 @@ export const RHKpiDetailDialog = ({
           </Row>
         ));
       }
-      case 'contrats': {
-        if (!contrats.length) return <p className="text-sm text-muted-foreground py-6 text-center">Aucun contrat à échéance</p>;
-        return (contrats as any[]).map((c) => (
+      case 'conges': {
+        const rows = conges as any[];
+        if (!rows.length) return <p className="text-sm text-muted-foreground py-6 text-center">Aucun congé en cours</p>;
+        return rows.map((c) => (
           <Row key={c.id}>
             <div>
               <p className="font-medium">{c.employe?.prenom} {c.employe?.nom}</p>
-              <p className="text-xs text-muted-foreground">{c.employe?.service || ''}</p>
+              <p className="text-xs text-muted-foreground">{c.type_conge || 'Congé'}</p>
             </div>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{fmtDate(c.date_debut)} → {fmtDate(c.date_fin)}</span>
+          </Row>
+        ));
+      }
+      case 'contrats': {
+        const rows = list
+          .filter((e) => {
+            if (!e.date_fin_contrat) return false;
+            const d = String(e.date_fin_contrat).slice(0, 10);
+            return d >= today && d <= in60;
+          })
+          .sort((a, b) => String(a.date_fin_contrat).localeCompare(String(b.date_fin_contrat)));
+        if (!rows.length) return <p className="text-sm text-muted-foreground py-6 text-center">Aucun contrat à échéance</p>;
+        return rows.map((e) => (
+          <Row key={e.id}>
+            <EmployeNom e={e} />
             <div className="text-right">
-              <Badge variant="outline">{c.type_contrat}</Badge>
-              <p className="text-xs text-muted-foreground mt-1">Fin : {fmtDate(c.date_fin)}</p>
+              <Badge variant="outline">{e.type_contrat || 'Contrat'}</Badge>
+              <p className="text-xs text-muted-foreground mt-1">Fin : {fmtDate(e.date_fin_contrat)}</p>
             </div>
           </Row>
         ));
@@ -214,15 +228,20 @@ export const RHKpiDetailDialog = ({
         ));
       }
       case 'visites': {
-        if (!visites.length) return <p className="text-sm text-muted-foreground py-6 text-center">Aucune visite à renouveler</p>;
-        return (visites as any[]).map((v) => (
-          <Row key={v.id}>
-            <div>
-              <p className="font-medium">{v.employe?.prenom} {v.employe?.nom}</p>
-              <p className="text-xs text-muted-foreground">Visite {v.type_visite} — dernière le {fmtDate(v.date_visite)}</p>
-            </div>
-            <Badge variant={v.date_prochaine < today ? 'destructive' : 'secondary'}>
-              {v.date_prochaine < today ? 'En retard' : `Prochaine : ${fmtDate(v.date_prochaine)}`}
+        const min = new Date(Date.now() - 365 * 864e5).toISOString().split('T')[0];
+        const rows = list
+          .filter((e) => {
+            if (!e.date_prochaine_visite) return false;
+            const d = String(e.date_prochaine_visite).slice(0, 10);
+            return d >= min && d <= in30;
+          })
+          .sort((a, b) => String(a.date_prochaine_visite).localeCompare(String(b.date_prochaine_visite)));
+        if (!rows.length) return <p className="text-sm text-muted-foreground py-6 text-center">Aucune visite à renouveler</p>;
+        return rows.map((e) => (
+          <Row key={e.id}>
+            <EmployeNom e={e} />
+            <Badge variant={String(e.date_prochaine_visite).slice(0, 10) < today ? 'destructive' : 'secondary'}>
+              {String(e.date_prochaine_visite).slice(0, 10) < today ? 'En retard' : `Prochaine : ${fmtDate(e.date_prochaine_visite)}`}
             </Badge>
           </Row>
         ));
