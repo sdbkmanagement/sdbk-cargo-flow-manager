@@ -284,11 +284,11 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
       {filteredEmployes.length === 0 && (
         <div className="text-center py-8">
           <p className="text-muted-foreground">
-            {search ? `Aucun collaborateur ne correspond à « ${search} »` : 'Aucun personnel trouvé'}
+            {search || hasActiveFilters ? 'Aucun collaborateur ne correspond aux critères de recherche/filtres' : 'Aucun personnel trouvé'}
           </p>
         </div>
       )}
-      {search && filteredEmployes.length > 0 && (
+      {(search || hasActiveFilters) && filteredEmployes.length > 0 && (
         <p className="text-xs text-muted-foreground mt-2">
           {filteredEmployes.length} collaborateur(s) sur {employes.length}
         </p>
