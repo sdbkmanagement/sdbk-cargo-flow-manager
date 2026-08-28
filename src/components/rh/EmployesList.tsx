@@ -38,14 +38,16 @@ interface EmployesListProps {
   employes: Employe[];
   isLoading: boolean;
   onRefresh: () => void;
+  /** Restreint la liste à un service précis (ex: "Chauffeurs") */
+  lockedService?: string;
 }
 
-export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListProps) => {
+export const EmployesList = ({ employes, isLoading, onRefresh, lockedService }: EmployesListProps) => {
   const [selectedEmploye, setSelectedEmploye] = useState<Employe | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState('');
-  const [filterService, setFilterService] = useState('all');
+  const [filterService, setFilterService] = useState(lockedService ?? 'all');
   const [filterContrat, setFilterContrat] = useState('all');
   const [filterStatut, setFilterStatut] = useState('all');
 
