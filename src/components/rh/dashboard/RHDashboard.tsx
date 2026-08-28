@@ -13,11 +13,16 @@ import {
 } from 'lucide-react';
 import { sirhService } from '@/services/sirhService';
 import { rhService } from '@/services/rh';
+import { RHKpiDetailDialog, RHKpiKey } from './RHKpiDetailDialog';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-const Kpi = ({ icon: Icon, label, value, hint, tone = 'default' }: any) => (
-  <Card>
+const Kpi = ({ icon: Icon, label, value, hint, tone = 'default', onClick }: any) => (
+  <Card
+    onClick={onClick}
+    className={onClick ? 'cursor-pointer transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5' : ''}
+    title={onClick ? 'Cliquer pour voir le détail' : undefined}
+  >
     <CardContent className="p-4">
       <div className="flex items-start justify-between">
         <div>
