@@ -13,11 +13,16 @@ import {
 } from 'lucide-react';
 import { sirhService } from '@/services/sirhService';
 import { rhService } from '@/services/rh';
+import { RHKpiDetailDialog, RHKpiKey } from './RHKpiDetailDialog';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
 
-const Kpi = ({ icon: Icon, label, value, hint, tone = 'default' }: any) => (
-  <Card>
+const Kpi = ({ icon: Icon, label, value, hint, tone = 'default', onClick }: any) => (
+  <Card
+    onClick={onClick}
+    className={onClick ? 'cursor-pointer transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5' : ''}
+    title={onClick ? 'Cliquer pour voir le détail' : undefined}
+  >
     <CardContent className="p-4">
       <div className="flex items-start justify-between">
         <div>
@@ -34,6 +39,7 @@ const Kpi = ({ icon: Icon, label, value, hint, tone = 'default' }: any) => (
 export const RHDashboard = () => {
   const [filterService, setFilterService] = useState('tous');
   const [filterDepartement, setFilterDepartement] = useState('tous');
+  const [detailKpi, setDetailKpi] = useState<RHKpiKey | null>(null);
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['rh-dashboard-stats'],
@@ -109,18 +115,18 @@ export const RHDashboard = () => {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Kpi icon={Users} label="Effectif total" value={effectifTotal} />
-        <Kpi icon={UserCheck} label="Effectif actif" value={effectifActif} />
-        <Kpi icon={UserX} label="Inactifs" value={isFiltered ? filtered.length - effectifActif : stats?.effectif_inactif ?? 0} />
-        <Kpi icon={Wallet} label="Masse salariale" value={`${(stats?.masse_salariale ?? 0).toLocaleString('fr-FR')} GNF`} hint="Salaires de base actifs" />
-        <Kpi icon={Cake} label="Moyenne d'âge" value={stats?.age_moyen ? `${stats.age_moyen} ans` : '—'} />
-        <Kpi icon={Clock} label="Ancienneté moyenne" value={stats?.anciennete_moyenne ? `${stats.anciennete_moyenne} ans` : '—'} />
-        <Kpi icon={CalendarOff} label="Absences en cours" value={stats?.absences_en_cours ?? 0} />
-        <Kpi icon={CalendarCheck} label="Congés en cours" value={stats?.conges_en_cours ?? 0} />
-        <Kpi icon={FileWarning} label="Contrats à échéance" value={stats?.contrats_echeance ?? 0} tone="warn" hint="< 60 jours" />
-        <Kpi icon={FileWarning} label="Documents expirants" value={stats?.documents_expirants ?? 0} tone="warn" hint="< 30 jours" />
-        <Kpi icon={Stethoscope} label="Visites médicales" value={stats?.visites_medicales ?? 0} tone="warn" hint="À renouveler" />
-        <Kpi icon={Briefcase} label="Départs retraite" value={stats?.departs_retraite ?? 0} hint="59 ans et +" />
+        <Kpi icon={Users} label="Effectif total" value={effectifTotal} onClick={() => setDetailKpi('effectif_total')} />
+        <Kpi icon={UserCheck} label="Effectif actif" value={effectifActif} onClick={() => setDetailKpi('effectif_actif')} />
+        <Kpi icon={UserX} label="Inactifs" value={isFiltered ? filtered.length - effectifActif : stats?.effectif_inactif ?? 0} onClick={() => setDetailKpi('inactifs')} />
+        <Kpi icon={Wallet} label="Masse salariale" value={`${(stats?.masse_salariale ?? 0).toLocaleString('fr-FR')} GNF`} hint="Salaires de base actifs" onClick={() => setDetailKpi('masse_salariale')} />
+        <Kpi icon={Cake} label="Moyenne d'âge" value={stats?.age_moyen ? `${stats.age_moyen} ans` : '—'} onClick={() => setDetailKpi('age_moyen')} />
+        <Kpi icon={Clock} label="Ancienneté moyenne" value={stats?.anciennete_moyenne ? `${stats.anciennete_moyenne} ans` : '—'} onClick={() => setDetailKpi('anciennete')} />
+        <Kpi icon={CalendarOff} label="Absences en cours" value={stats?.absences_en_cours ?? 0} onClick={() => setDetailKpi('absences')} />
+        <Kpi icon={CalendarCheck} label="Congés en cours" value={stats?.conges_en_cours ?? 0} onClick={() => setDetailKpi('conges')} />
+        <Kpi icon={FileWarning} label="Contrats à échéance" value={stats?.contrats_echeance ?? 0} tone="warn" hint="< 60 jours" onClick={() => setDetailKpi('contrats')} />
+        <Kpi icon={FileWarning} label="Documents expirants" value={stats?.documents_expirants ?? 0} tone="warn" hint="< 30 jours" onClick={() => setDetailKpi('documents')} />
+        <Kpi icon={Stethoscope} label="Visites médicales" value={stats?.visites_medicales ?? 0} tone="warn" hint="À renouveler" onClick={() => setDetailKpi('visites')} />
+        <Kpi icon={Briefcase} label="Départs retraite" value={stats?.departs_retraite ?? 0} hint="59 ans et +" onClick={() => setDetailKpi('retraite')} />
       </div>
 
       {alertesCritiques > 0 && (
@@ -214,6 +220,13 @@ export const RHDashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      <RHKpiDetailDialog
+        kpi={detailKpi}
+        open={detailKpi !== null}
+        onOpenChange={(o) => { if (!o) setDetailKpi(null); }}
+        employes={filtered}
+      />
     </div>
   );
 };
