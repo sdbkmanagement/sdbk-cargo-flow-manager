@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import {
   Users, LayoutDashboard, Bell, CalendarCheck, Wallet,
-  Target, Award, GraduationCap, FolderOpen, BarChart3
+  Target, Award, GraduationCap, FolderOpen, BarChart3, Truck
 } from 'lucide-react';
 
 interface RHSidebarProps {
