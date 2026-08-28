@@ -313,7 +313,7 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
                 <Input id="date_fin_contrat" type="date" value={formData.date_fin_contrat} onChange={e => handleChange('date_fin_contrat', e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="salaire_base">Salaire de base (GNF)</Label>
+                <Label htmlFor="salaire_base">Salaire brut (GNF)</Label>
                 <Input id="salaire_base" type="number" value={formData.salaire_base} onChange={e => handleChange('salaire_base', e.target.value)} />
               </div>
             </div>
