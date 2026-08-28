@@ -13,6 +13,7 @@ interface RHSidebarProps {
 const items = [
   { id: 'dashboard', label: 'Tableau de bord RH', icon: LayoutDashboard },
   { id: 'collaborateurs', label: 'Collaborateurs', icon: Users },
+  { id: 'chauffeurs', label: 'Chauffeurs', icon: Truck },
   { id: 'alertes', label: 'Alertes RH', icon: Bell },
   { id: 'presences', label: 'Présences & Congés', icon: CalendarCheck },
   { id: 'paie', label: 'Paie & Masse salariale', icon: Wallet },
