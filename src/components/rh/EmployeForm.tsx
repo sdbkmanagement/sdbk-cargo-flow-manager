@@ -152,9 +152,10 @@ export const EmployeForm = ({ onClose, onSuccess, employe }: EmployeFormProps) =
         toast.success('Personnel ajouté avec succès');
       }
       onSuccess();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur:', error);
-      toast.error('Erreur lors de l\'enregistrement');
+      toast.error(`Erreur lors de l'enregistrement : ${error?.message || 'erreur inconnue'}`);
+
     } finally {
       setIsSubmitting(false);
     }
