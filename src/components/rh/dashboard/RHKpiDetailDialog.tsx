@@ -73,19 +73,19 @@ export const RHKpiDetailDialog = ({
     },
   });
 
-  const { data: contrats = [], isLoading: loadCtr } = useQuery({
-    queryKey: ['rh-detail-contrats'],
-    enabled: open && kpi === 'contrats',
+  const { data: conges = [], isLoading: loadCng } = useQuery({
+    queryKey: ['rh-detail-conges'],
+    enabled: open && kpi === 'conges',
     queryFn: async () => {
       const { data, error } = await sb
-        .from('contrats')
+        .from('conges')
         .select('*, employe:employes(nom, prenom, service)')
-        .not('date_fin', 'is', null)
-        .lte('date_fin', in60)
-        .gte('date_fin', today)
-        .order('date_fin');
+        .lte('date_debut', today)
+        .gte('date_fin', today);
       if (error) throw error;
-      return data as any[];
+      return (data as any[]).filter((c) =>
+        ['approuve', 'approuvé', 'valide', 'validé', 'en_cours'].includes(String(c.statut || '').toLowerCase())
+      );
     },
   });
 
@@ -104,20 +104,8 @@ export const RHKpiDetailDialog = ({
     },
   });
 
-  const { data: visites = [], isLoading: loadVis } = useQuery({
-    queryKey: ['rh-detail-visites'],
-    enabled: open && kpi === 'visites',
-    queryFn: async () => {
-      const { data, error } = await sb
-        .from('visites_medicales')
-        .select('*, employe:employes(nom, prenom, service)')
-        .not('date_prochaine', 'is', null)
-        .lte('date_prochaine', in30)
-        .order('date_prochaine');
-      if (error) throw error;
-      return data as any[];
-    },
-  });
+  const loadCtr = false;
+  const loadVis = false;
 
   const loading = loadAbs || loadCtr || loadDoc || loadVis;
 
