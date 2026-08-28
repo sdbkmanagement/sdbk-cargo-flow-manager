@@ -128,7 +128,7 @@ export const ContratsList = () => {
               <div><Label>Date fin</Label><Input type="date" value={form.date_fin} onChange={e => setForm({...form, date_fin: e.target.value})} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Salaire de base (GNF)</Label><Input type="number" value={form.salaire_base} onChange={e => setForm({...form, salaire_base: e.target.value})} /></div>
+              <div><Label>Salaire brut (GNF)</Label><Input type="number" value={form.salaire_base} onChange={e => setForm({...form, salaire_base: e.target.value})} /></div>
               <div><Label>Période d'essai (jours)</Label><Input type="number" value={form.duree_periode_essai} onChange={e => setForm({...form, duree_periode_essai: e.target.value})} /></div>
             </div>
             <Button onClick={handleSubmit} className="w-full" disabled={createMutation.isPending}>Enregistrer</Button>

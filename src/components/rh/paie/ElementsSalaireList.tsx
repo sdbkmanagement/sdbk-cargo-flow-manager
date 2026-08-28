@@ -79,7 +79,7 @@ export const ElementsSalaireList = () => {
                 <SelectContent>{employes?.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Salaire de base (GNF) *</Label><Input type="number" value={form.salaire_base} onChange={e => setForm({...form, salaire_base: e.target.value})} /></div>
+            <div><Label>Salaire brut (GNF) *</Label><Input type="number" value={form.salaire_base} onChange={e => setForm({...form, salaire_base: e.target.value})} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Prime transport</Label><Input type="number" value={form.prime_transport} onChange={e => setForm({...form, prime_transport: e.target.value})} /></div>
               <div><Label>Prime logement</Label><Input type="number" value={form.prime_logement} onChange={e => setForm({...form, prime_logement: e.target.value})} /></div>

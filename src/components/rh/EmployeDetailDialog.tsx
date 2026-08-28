@@ -191,7 +191,7 @@ export const EmployeDetailDialog = ({ employe, onClose, onRefresh }: EmployeDeta
                       { l: 'Date d’embauche', v: employe.date_embauche ? new Date(employe.date_embauche).toLocaleDateString('fr-FR') : null },
                       { l: 'Fin période d’essai', v: employe.date_fin_essai ? new Date(employe.date_fin_essai).toLocaleDateString('fr-FR') : null },
                       { l: 'Fin de contrat', v: employe.date_fin_contrat ? new Date(employe.date_fin_contrat).toLocaleDateString('fr-FR') : null },
-                      { l: 'Salaire de base', v: employe.salaire_base ? `${Number(employe.salaire_base).toLocaleString('fr-FR')} GNF` : null },
+                      { l: 'Salaire brut', v: employe.salaire_base ? `${Number(employe.salaire_base).toLocaleString('fr-FR')} GNF` : null },
                     ].map((f) => (
                       <div key={f.l}>
                         <p className="text-muted-foreground">{f.l}</p>
