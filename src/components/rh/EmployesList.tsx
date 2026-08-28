@@ -12,7 +12,8 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Edit, Phone, Mail, Upload, Download, UserPlus, Search, X } from 'lucide-react';
+import { Eye, Edit, Phone, Mail, Upload, Download, UserPlus, Search, X, Filter } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmployeDetailDialog } from './EmployeDetailDialog';
 import { EmployeForm } from './EmployeForm';
 import { EmployeesImport } from './EmployeesImport';
@@ -44,19 +45,32 @@ export const EmployesList = ({ employes, isLoading, onRefresh }: EmployesListPro
   const [showImport, setShowImport] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState('');
+  const [filterService, setFilterService] = useState('all');
+  const [filterContrat, setFilterContrat] = useState('all');
+  const [filterStatut, setFilterStatut] = useState('all');
+
+  const services = useMemo(() => Array.from(new Set(employes.map((e: any) => e.service).filter(Boolean))).sort(), [employes]);
+  const typesContrat = useMemo(() => Array.from(new Set(employes.map((e: any) => e.type_contrat).filter(Boolean))).sort(), [employes]);
+  const statuts = useMemo(() => Array.from(new Set(employes.map((e: any) => e.statut).filter(Boolean))).sort(), [employes]);
+
+  const hasActiveFilters = filterService !== 'all' || filterContrat !== 'all' || filterStatut !== 'all';
+  const resetFilters = () => { setFilterService('all'); setFilterContrat('all'); setFilterStatut('all'); };
 
   const filteredEmployes = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return employes;
-    const terms = q.split(/\s+/);
+    const terms = q ? q.split(/\s+/) : [];
     return employes.filter((e: any) => {
+      if (filterService !== 'all' && e.service !== filterService) return false;
+      if (filterContrat !== 'all' && e.type_contrat !== filterContrat) return false;
+      if (filterStatut !== 'all' && e.statut !== filterStatut) return false;
+      if (terms.length === 0) return true;
       const haystack = [
         e.nom, e.prenom, e.matricule, e.poste, e.fonction, e.service,
         e.departement, e.type_contrat, e.telephone, e.email, e.statut,
       ].filter(Boolean).join(' ').toLowerCase();
       return terms.every((t) => haystack.includes(t));
     });
-  }, [employes, search]);
+  }, [employes, search, filterService, filterContrat, filterStatut]);
 
   const getStatutColor = (statut: string) => {
     switch (statut) {
