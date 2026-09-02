@@ -196,7 +196,10 @@ export const TBMTab = () => {
               ))}
               <td className="px-3 py-1 text-center font-bold text-sm">{cumul}</td>
               <td className="px-3 py-1 text-center text-sm">
-                <Badge variant={pct === 100 ? 'default' : pct >= 50 ? 'secondary' : 'destructive'}>
+                <Badge
+                  variant={pct === 100 ? 'default' : pct >= 50 ? 'secondary' : 'destructive'}
+                  className="min-w-[3rem] justify-center px-2 py-0.5 text-xs font-extrabold border shadow-sm"
+                >
                   {pct}%
                 </Badge>
               </td>
