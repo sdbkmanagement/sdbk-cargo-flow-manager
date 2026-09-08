@@ -18,6 +18,7 @@ import {
 } from './gmaoUi';
 import { exporterExcel, exporterPdf } from '@/utils/gmaoExport';
 import { cn } from '@/lib/utils';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const RAPIDES = [
   { value: 'toutes', label: 'Toutes' },

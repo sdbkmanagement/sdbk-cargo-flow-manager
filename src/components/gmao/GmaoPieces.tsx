@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, PackagePlus } from 'lucide-react';
 import { useGmao } from './GmaoContext';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 export const GmaoPieces: React.FC = () => {
   const { toast } = useToast();

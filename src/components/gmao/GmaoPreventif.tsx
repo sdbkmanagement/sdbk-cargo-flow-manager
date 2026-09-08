@@ -11,6 +11,7 @@ import { gmaoService, GmaoPlan, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
 import { EquipementCombobox } from './EquipementCombobox';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const DECLENCHEURS = [
   { value: 'date', label: 'Périodicité (jours)' },

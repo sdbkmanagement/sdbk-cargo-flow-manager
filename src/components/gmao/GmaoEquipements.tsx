@@ -28,6 +28,7 @@ import {
   libelle, STATUTS_EQUIPEMENT, TYPES_EQUIPEMENT,
 } from './gmaoUi';
 import { exporterExcel, exporterPdf } from '@/utils/gmaoExport';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const CRITICITES = [
   { value: 'faible', label: 'Faible' },

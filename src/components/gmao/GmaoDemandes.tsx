@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 import { useGmao } from './GmaoContext';
 import { fmtMontant } from './gmaoUi';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
 const TYPES_MAINTENANCE = [

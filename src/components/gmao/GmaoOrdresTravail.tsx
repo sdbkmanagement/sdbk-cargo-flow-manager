@@ -12,6 +12,7 @@ import { gmaoService, GmaoOrdreTravail, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, CheckCircle } from 'lucide-react';
 import { EquipementCombobox } from './EquipementCombobox';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const TYPES = [
   { value: 'correctif', label: 'Correctif' },

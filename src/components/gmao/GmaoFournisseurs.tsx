@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { gmaoService, GmaoFournisseur } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 export const GmaoFournisseurs: React.FC = () => {
   const { toast } = useToast();
