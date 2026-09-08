@@ -6,12 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { gmaoService, GmaoDemande, GmaoEquipement } from '@/services/gmao';
+import { gmaoService, GmaoDemande } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 
 const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
 const TYPES_MAINTENANCE = [
@@ -26,17 +26,14 @@ const STATUT_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   nouvelle: 'outline', acceptee: 'secondary', rejetee: 'destructive', transformee: 'default',
 };
 
-export const GmaoDemandes: React.FC = () => {
+interface Props { refreshKey?: number }
+
+export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : '';
   const [items, setItems] = useState<GmaoDemande[]>([]);
-  const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);
-  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState<Record<string, any>>({
-    titre: '', description: '', priorite: 'normale', equipement_id: '', demandeur_nom: '',
-  });
 
   // Seul le responsable maintenance (ou un admin/direction) peut valider ou rejeter
   const roles = user?.roles || [];
@@ -65,35 +62,14 @@ export const GmaoDemandes: React.FC = () => {
 
   const charger = async () => {
     try {
-      const [d, e] = await Promise.all([gmaoService.getDemandes(), gmaoService.getEquipements()]);
-      setItems(d); setEquipements(e);
+      const d = await gmaoService.getDemandes();
+      setItems(d);
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { charger(); }, []);
-
-  // Le demandeur est toujours l'utilisateur connecté
-  useEffect(() => {
-    setForm((f) => ({ ...f, demandeur_nom: nomUtilisateur }));
-  }, [nomUtilisateur]);
-
-  const enregistrer = async () => {
-    if (!form.titre) {
-      toast({ title: 'Champ requis', description: 'Le titre est obligatoire', variant: 'destructive' });
-      return;
-    }
-    try {
-      await gmaoService.createDemande({ ...form, demandeur_nom: nomUtilisateur || null, equipement_id: form.equipement_id || null });
-      toast({ title: 'Demande enregistrée' });
-      setOpen(false);
-      setForm({ titre: '', description: '', priorite: 'normale', equipement_id: '', demandeur_nom: nomUtilisateur });
-      charger();
-    } catch (e: any) {
-      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
-    }
-  };
+  useEffect(() => { charger(); }, [refreshKey]);
 
   const valider = async () => {
     if (!demandeActive) return;
@@ -147,39 +123,11 @@ export const GmaoDemandes: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle>Demandes d'intervention</CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Déclarer une panne</Button></DialogTrigger>
-          <DialogContent className="max-w-xl">
-            <DialogHeader><DialogTitle>Nouvelle demande d'intervention</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div><Label>Titre *</Label><Input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} /></div>
-              <div>
-                <Label>Équipement</Label>
-                <Select value={form.equipement_id} onValueChange={(v) => setForm({ ...form, equipement_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un équipement" /></SelectTrigger>
-                  <SelectContent>
-                    {equipements.map((e) => <SelectItem key={e.id} value={e.id}>{e.code} — {e.designation}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Priorité</Label>
-                <Select value={form.priorite} onValueChange={(v) => setForm({ ...form, priorite: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PRIORITES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div><Label>Demandeur</Label><Input value={nomUtilisateur} readOnly disabled className="bg-muted" /></div>
-              <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-              <Button onClick={enregistrer}>Enregistrer</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <p className="text-sm text-muted-foreground">
+          Le responsable maintenance valide chaque demande pour la transformer en ordre de travail.
+        </p>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>

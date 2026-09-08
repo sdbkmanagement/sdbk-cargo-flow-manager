@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { gmaoService } from '@/services/gmao';
 import { useGmao } from './GmaoContext';
-import { GmaoInterventionForm } from './GmaoInterventionForm';
+import { GmaoDemandeForm } from './GmaoDemandeForm';
 import { GmaoDemandes } from './GmaoDemandes';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -37,6 +37,7 @@ export const GmaoInterventions: React.FC = () => {
   const [filtreType, setFiltreType] = useState('tous');
   const [filtreStatut, setFiltreStatut] = useState('tous');
   const [open, setOpen] = useState(false);
+  const [refreshDemandes, setRefreshDemandes] = useState(0);
 
   const liste = useMemo(() => {
     const q = recherche.trim().toLowerCase();
@@ -130,12 +131,12 @@ export const GmaoInterventions: React.FC = () => {
     <div className="space-y-4">
       <Tabs defaultValue="demandes">
         <TabsList>
-          <TabsTrigger value="demandes">Déclarations de panne</TabsTrigger>
+          <TabsTrigger value="demandes">Demandes d'intervention</TabsTrigger>
           <TabsTrigger value="ot">Ordres de travail</TabsTrigger>
         </TabsList>
 
         <TabsContent value="demandes" className="mt-4">
-          <GmaoDemandes />
+          <GmaoDemandes refreshKey={refreshDemandes} />
         </TabsContent>
 
         <TabsContent value="ot" className="mt-4">
@@ -162,7 +163,7 @@ export const GmaoInterventions: React.FC = () => {
                   <FileText className="mr-2 h-4 w-4" /> PDF
                 </Button>
                 <Button size="sm" onClick={() => { consommerEquipementCible(); setOpen(true); }}>
-                  <Plus className="mr-2 h-4 w-4" /> Nouvelle intervention
+                  <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
                 </Button>
               </div>
             </CardHeader>
@@ -279,7 +280,7 @@ export const GmaoInterventions: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      <GmaoInterventionForm open={open} onOpenChange={setOpen} />
+      <GmaoDemandeForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshDemandes((n) => n + 1)} />
     </div>
   );
 };
