@@ -54,6 +54,7 @@ const Section: React.FC<{ titre: string; children: React.ReactNode }> = ({ titre
 export const GmaoInterventionForm: React.FC<Props> = ({ open, onOpenChange, equipementId, onSaved }) => {
   const { toast } = useToast();
   const { equipements, pieces, rafraichir } = useGmao();
+  useEffect(() => { if (open) rafraichir(); }, [open]);
   const [form, setForm] = useState<Record<string, any>>({ ...initial });
   const [lignes, setLignes] = useState<LignePiece[]>([]);
   const [enregistrement, setEnregistrement] = useState(false);
