@@ -136,22 +136,7 @@ export const GmaoInterventions: React.FC = () => {
         </TabsList>
 
         <TabsContent value="demandes" className="mt-4">
-          <Card>
-            <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <CardTitle>Demandes d'intervention</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Créez une demande ; le responsable maintenance la relit avant de la valider en ordre de travail.
-                </p>
-              </div>
-              <Button size="sm" onClick={() => { consommerEquipementCible(); setOpen(true); }}>
-                <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <GmaoDemandes refreshKey={refreshDemandes} />
-            </CardContent>
-          </Card>
+          <GmaoDemandes refreshKey={refreshDemandes} />
         </TabsContent>
 
         <TabsContent value="ot" className="mt-4">
@@ -176,6 +161,9 @@ export const GmaoInterventions: React.FC = () => {
                   }}
                 >
                   <FileText className="mr-2 h-4 w-4" /> PDF
+                </Button>
+                <Button size="sm" onClick={() => { consommerEquipementCible(); setOpen(true); }}>
+                  <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
                 </Button>
               </div>
             </CardHeader>
