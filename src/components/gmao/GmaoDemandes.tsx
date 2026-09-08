@@ -147,39 +147,11 @@ export const GmaoDemandes: React.FC = () => {
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader>
         <CardTitle>Demandes d'intervention</CardTitle>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Déclarer une panne</Button></DialogTrigger>
-          <DialogContent className="max-w-xl">
-            <DialogHeader><DialogTitle>Nouvelle demande d'intervention</DialogTitle></DialogHeader>
-            <div className="space-y-4">
-              <div><Label>Titre *</Label><Input value={form.titre} onChange={(e) => setForm({ ...form, titre: e.target.value })} /></div>
-              <div>
-                <Label>Équipement</Label>
-                <Select value={form.equipement_id} onValueChange={(v) => setForm({ ...form, equipement_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un équipement" /></SelectTrigger>
-                  <SelectContent>
-                    {equipements.map((e) => <SelectItem key={e.id} value={e.id}>{e.code} — {e.designation}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Priorité</Label>
-                <Select value={form.priorite} onValueChange={(v) => setForm({ ...form, priorite: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{PRIORITES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
-              <div><Label>Demandeur</Label><Input value={nomUtilisateur} readOnly disabled className="bg-muted" /></div>
-              <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
-              <Button onClick={enregistrer}>Enregistrer</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <p className="text-sm text-muted-foreground">
+          Le responsable maintenance valide chaque demande pour la transformer en ordre de travail.
+        </p>
       </CardHeader>
       <CardContent className="overflow-x-auto">
         <Table>
