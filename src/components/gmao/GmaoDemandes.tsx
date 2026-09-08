@@ -92,6 +92,7 @@ const RecapDemande: React.FC<{ demande: any; equipementParId: (id?: string | nul
 interface Props { refreshKey?: number }
 
 export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const { user } = useAuth();
   const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : '';

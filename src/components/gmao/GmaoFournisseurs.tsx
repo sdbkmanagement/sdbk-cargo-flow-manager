@@ -11,6 +11,7 @@ import { Plus } from 'lucide-react';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 export const GmaoFournisseurs: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const [items, setItems] = useState<GmaoFournisseur[]>([]);
   const [loading, setLoading] = useState(true);

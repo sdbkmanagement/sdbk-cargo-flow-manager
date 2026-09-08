@@ -62,6 +62,7 @@ type Tri = 'immatriculation' | 'type_equipement' | 'compteur_km' | 'statut' | 'c
 const PAR_PAGE = 25;
 
 export const GmaoEquipements: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const { equipements, statsParEquipement, chargement, rafraichir, consommerEquipementCible } = useGmao();
 

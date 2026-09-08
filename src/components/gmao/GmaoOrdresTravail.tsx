@@ -27,6 +27,7 @@ const STATUTS = [
 ];
 
 export const GmaoOrdresTravail: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const [items, setItems] = useState<GmaoOrdreTravail[]>([]);
   const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);

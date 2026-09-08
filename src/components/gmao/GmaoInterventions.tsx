@@ -31,6 +31,7 @@ const RAPIDES = [
 ];
 
 export const GmaoInterventions: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const { ots, chargement, rafraichir, equipementParId, consommerEquipementCible } = useGmao();
   const [rapide, setRapide] = useState('toutes');

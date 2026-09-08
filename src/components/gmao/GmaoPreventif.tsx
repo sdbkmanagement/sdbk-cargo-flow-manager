@@ -20,6 +20,7 @@ const DECLENCHEURS = [
 ];
 
 export const GmaoPreventif: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const [items, setItems] = useState<GmaoPlan[]>([]);
   const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);
