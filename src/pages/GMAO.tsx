@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -7,7 +7,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   LayoutDashboard, Truck, Wrench, CalendarClock, Package, Coins, BarChart3,
-  Bell, Plus, RefreshCw, ChevronRight, ShieldCheck, CalendarCheck,
+  Bell, RefreshCw, ChevronRight, ShieldCheck, CalendarCheck,
 } from 'lucide-react';
 import { GmaoProvider, useGmao, GmaoSection } from '@/components/gmao/GmaoContext';
 import { GmaoDashboard } from '@/components/gmao/GmaoDashboard';
@@ -19,7 +19,6 @@ import { GmaoCouts } from '@/components/gmao/GmaoCouts';
 import { GmaoRapports } from '@/components/gmao/GmaoRapports';
 import { SocotacModule } from '@/components/gmao/socotac/SocotacModule';
 import { ControleAnnuelModule } from '@/components/gmao/annuel/ControleAnnuelModule';
-import { GmaoDemandeForm } from '@/components/gmao/GmaoDemandeForm';
 import { cn } from '@/lib/utils';
 
 const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[] = [
@@ -36,7 +35,6 @@ const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[]
 
 const Contenu: React.FC = () => {
   const { section, allerA, alertes, rafraichir, chargement } = useGmao();
-  const [nouvelleIntervention, setNouvelleIntervention] = useState(false);
 
   return (
     <div className="space-y-5">
@@ -104,10 +102,6 @@ const Contenu: React.FC = () => {
           <Button variant="outline" size="sm" onClick={() => rafraichir()} disabled={chargement}>
             <RefreshCw className={cn('h-4 w-4', chargement && 'animate-spin')} />
           </Button>
-
-          <Button size="sm" onClick={() => setNouvelleIntervention(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
-          </Button>
         </div>
       </div>
 
@@ -120,8 +114,6 @@ const Contenu: React.FC = () => {
       {section === 'socotac' && <SocotacModule />}
       {section === 'controle_annuel' && <ControleAnnuelModule />}
       {section === 'rapports' && <GmaoRapports />}
-
-      <GmaoDemandeForm open={nouvelleIntervention} onOpenChange={setNouvelleIntervention} />
     </div>
   );
 };
