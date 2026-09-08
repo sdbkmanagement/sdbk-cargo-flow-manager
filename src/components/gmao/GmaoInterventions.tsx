@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { gmaoService } from '@/services/gmao';
 import { useGmao } from './GmaoContext';
-import { GmaoInterventionForm } from './GmaoInterventionForm';
+import { GmaoDemandeForm } from './GmaoDemandeForm';
 import { GmaoDemandes } from './GmaoDemandes';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -162,7 +162,7 @@ export const GmaoInterventions: React.FC = () => {
                   <FileText className="mr-2 h-4 w-4" /> PDF
                 </Button>
                 <Button size="sm" onClick={() => { consommerEquipementCible(); setOpen(true); }}>
-                  <Plus className="mr-2 h-4 w-4" /> Nouvelle intervention
+                  <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
                 </Button>
               </div>
             </CardHeader>
@@ -279,7 +279,7 @@ export const GmaoInterventions: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      <GmaoInterventionForm open={open} onOpenChange={setOpen} />
+      <GmaoDemandeForm open={open} onOpenChange={setOpen} />
     </div>
   );
 };

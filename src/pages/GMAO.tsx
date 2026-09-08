@@ -19,7 +19,7 @@ import { GmaoCouts } from '@/components/gmao/GmaoCouts';
 import { GmaoRapports } from '@/components/gmao/GmaoRapports';
 import { SocotacModule } from '@/components/gmao/socotac/SocotacModule';
 import { ControleAnnuelModule } from '@/components/gmao/annuel/ControleAnnuelModule';
-import { GmaoInterventionForm } from '@/components/gmao/GmaoInterventionForm';
+import { GmaoDemandeForm } from '@/components/gmao/GmaoDemandeForm';
 import { cn } from '@/lib/utils';
 
 const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[] = [
@@ -106,7 +106,7 @@ const Contenu: React.FC = () => {
           </Button>
 
           <Button size="sm" onClick={() => setNouvelleIntervention(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Nouvelle intervention
+            <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
           </Button>
         </div>
       </div>
@@ -121,7 +121,7 @@ const Contenu: React.FC = () => {
       {section === 'controle_annuel' && <ControleAnnuelModule />}
       {section === 'rapports' && <GmaoRapports />}
 
-      <GmaoInterventionForm open={nouvelleIntervention} onOpenChange={setNouvelleIntervention} />
+      <GmaoDemandeForm open={nouvelleIntervention} onOpenChange={setNouvelleIntervention} />
     </div>
   );
 };

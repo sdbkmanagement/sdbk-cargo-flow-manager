@@ -16,7 +16,7 @@ import {
 import { gmaoService, GmaoEquipement } from '@/services/gmao';
 import { GmaoEquipementDetail } from './GmaoEquipementDetail';
 import { GmaoPhotoUpload } from './GmaoPhotoUpload';
-import { GmaoInterventionForm } from './GmaoInterventionForm';
+import { GmaoDemandeForm } from './GmaoDemandeForm';
 import { useGmao } from './GmaoContext';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -441,7 +441,7 @@ export const GmaoEquipements: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      <GmaoInterventionForm
+      <GmaoDemandeForm
         open={!!interventionPour}
         onOpenChange={(o) => { if (!o) setInterventionPour(null); }}
         equipementId={interventionPour}

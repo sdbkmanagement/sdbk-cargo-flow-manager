@@ -10,7 +10,7 @@ import { gmaoService, GmaoEquipement } from '@/services/gmao';
 import { GmaoEquipementHistorique } from './GmaoEquipementHistorique';
 import { GmaoPhotoUpload } from './GmaoPhotoUpload';
 import { SocotacEquipementSection } from './socotac/SocotacEquipementSection';
-import { GmaoInterventionForm } from './GmaoInterventionForm';
+import { GmaoDemandeForm } from './GmaoDemandeForm';
 import { BadgeStatutEquipement, BadgeTypeEquipement, KpiCard } from './gmaoUi';
 import { useGmao } from './GmaoContext';
 import { useToast } from '@/hooks/use-toast';
@@ -84,7 +84,7 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
                 <BadgeTypeEquipement type={equipement.type_equipement} />
                 <BadgeStatutEquipement statut={equipement.statut} />
                 <Button size="sm" className="ml-auto" onClick={() => setNouvelle(true)}>
-                  <Plus className="mr-2 h-4 w-4" /> Nouvelle intervention
+                  <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
                 </Button>
               </DialogTitle>
             </DialogHeader>
@@ -102,7 +102,7 @@ export const GmaoEquipementDetail: React.FC<Props> = ({ equipement, onOpenChange
               />
             </div>
 
-            <GmaoInterventionForm
+            <GmaoDemandeForm
               open={nouvelle}
               onOpenChange={setNouvelle}
               equipementId={equipement.id}
