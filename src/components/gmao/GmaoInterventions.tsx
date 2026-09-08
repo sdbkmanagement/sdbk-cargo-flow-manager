@@ -37,6 +37,7 @@ export const GmaoInterventions: React.FC = () => {
   const [filtreType, setFiltreType] = useState('tous');
   const [filtreStatut, setFiltreStatut] = useState('tous');
   const [open, setOpen] = useState(false);
+  const [refreshDemandes, setRefreshDemandes] = useState(0);
 
   const liste = useMemo(() => {
     const q = recherche.trim().toLowerCase();
@@ -130,12 +131,12 @@ export const GmaoInterventions: React.FC = () => {
     <div className="space-y-4">
       <Tabs defaultValue="demandes">
         <TabsList>
-          <TabsTrigger value="demandes">Déclarations de panne</TabsTrigger>
+          <TabsTrigger value="demandes">Demandes d'intervention</TabsTrigger>
           <TabsTrigger value="ot">Ordres de travail</TabsTrigger>
         </TabsList>
 
         <TabsContent value="demandes" className="mt-4">
-          <GmaoDemandes />
+          <GmaoDemandes refreshKey={refreshDemandes} />
         </TabsContent>
 
         <TabsContent value="ot" className="mt-4">
@@ -279,7 +280,7 @@ export const GmaoInterventions: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      <GmaoDemandeForm open={open} onOpenChange={setOpen} />
+      <GmaoDemandeForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshDemandes((n) => n + 1)} />
     </div>
   );
 };
