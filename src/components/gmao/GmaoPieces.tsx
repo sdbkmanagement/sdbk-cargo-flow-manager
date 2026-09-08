@@ -84,6 +84,7 @@ export const GmaoPieces: React.FC = () => {
       setOpen(false);
       setForm({ ...form, reference: '', designation: '' });
       charger();
+      rafraichir();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
     }
