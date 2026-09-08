@@ -51,13 +51,20 @@ export interface DocumentRH {
 }
 
 export const TYPES_DOCUMENTS_RH = [
-  'Contrat',
-  'Permis de conduire',
-  "Pièce d'identité",
-  'Passeport',
-  'Diplôme',
-  'Certification',
-  'Certificat médical',
+  'Acte de naissance',
+  'Attestations / Certificats / Diplômes de formation ou de travail (plusieurs documents)',
+  'Autres',
+  'Casier judiciaire',
+  'Certificat de résidence',
+  'CNSS',
+  'CV',
+  "Demande d'emploi",
+  'Enquête de moralité',
+  'Fiche de congé',
+  "Fiche d'entretien d'embauche",
+  'Fiche de poste',
+  'Fiche de renseignements individuels',
+  'RIB',
 ];
 
 export const sirhService = {
