@@ -174,13 +174,13 @@ export const GmaoOrdresTravail: React.FC = () => {
                 </TableCell>
                 <TableCell className="text-right font-medium">{Number(o.cout_total || 0).toLocaleString('fr-FR')} GNF</TableCell>
                 <TableCell className="space-x-2 whitespace-nowrap">
-                  {!o.cloture && o.statut === 'planifie' && (
+                  {peutGerer && !o.cloture && o.statut === 'planifie' && (
                     <Button size="sm" variant="outline" onClick={() => changerStatut(o, 'en_cours')}>Démarrer</Button>
                   )}
-                  {!o.cloture && o.statut === 'en_cours' && (
+                  {peutGerer && !o.cloture && o.statut === 'en_cours' && (
                     <Button size="sm" variant="outline" onClick={() => changerStatut(o, 'termine')}>Terminer</Button>
                   )}
-                  {!o.cloture && o.statut === 'termine' && (
+                  {peutGerer && !o.cloture && o.statut === 'termine' && (
                     <Button size="sm" onClick={() => cloturer(o)}><CheckCircle className="w-4 h-4 mr-1" /> Clôturer</Button>
                   )}
                 </TableCell>

@@ -250,15 +250,15 @@ export const GmaoInterventions: React.FC = () => {
                           <TableCell className="text-right font-medium tabular-nums">{fmtMontant(o.cout_total)}</TableCell>
                           <TableCell><BadgeStatutOt statut={o.statut} cloture={o.cloture} /></TableCell>
                           <TableCell className="space-x-1 whitespace-nowrap text-right">
-                            {!o.cloture && (o.statut === 'planifie' || o.statut === 'attente_piece') && (
+                            {peutGerer && !o.cloture && (o.statut === 'planifie' || o.statut === 'attente_piece') && (
                               <Button size="sm" variant="ghost" onClick={() => repasserEnDemande(o)}>
                                 <Undo2 className="mr-1 h-4 w-4" /> Repasser en demande
                               </Button>
                             )}
-                            {!o.cloture && o.statut === 'planifie' && (
+                            {peutGerer && !o.cloture && o.statut === 'planifie' && (
                               <Button size="sm" variant="outline" onClick={() => changerStatut(o, 'en_cours')}>Démarrer</Button>
                             )}
-                            {!o.cloture && (o.statut === 'en_cours' || o.statut === 'attente_piece') && (
+                            {peutGerer && !o.cloture && (o.statut === 'en_cours' || o.statut === 'attente_piece') && (
                               <>
                                 {o.statut === 'en_cours' && (
                                   <Button size="sm" variant="ghost" onClick={() => changerStatut(o, 'attente_piece')}>Attente pièce</Button>
@@ -266,7 +266,7 @@ export const GmaoInterventions: React.FC = () => {
                                 <Button size="sm" variant="outline" onClick={() => changerStatut(o, 'termine')}>Terminer</Button>
                               </>
                             )}
-                            {!o.cloture && o.statut === 'termine' && (
+                            {peutGerer && !o.cloture && o.statut === 'termine' && (
                               <Button size="sm" onClick={() => cloturer(o)}><CheckCircle className="mr-1 h-4 w-4" /> Valider</Button>
                             )}
                           </TableCell>
