@@ -49,7 +49,7 @@ export const GmaoFournisseurs: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Fournisseurs & prestataires</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouveau fournisseur</Button></DialogTrigger>
+          {peutGerer && <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouveau fournisseur</Button></DialogTrigger>}
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>Nouveau fournisseur</DialogTitle></DialogHeader>
             <div className="grid gap-4 md:grid-cols-2">

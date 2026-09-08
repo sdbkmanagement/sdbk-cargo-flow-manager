@@ -102,7 +102,7 @@ export const GmaoOrdresTravail: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Ordres de travail</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouvel ordre de travail</Button></DialogTrigger>
+          {peutGerer && <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouvel ordre de travail</Button></DialogTrigger>}
           <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>Nouvel ordre de travail</DialogTitle></DialogHeader>
             <div className="grid gap-4 md:grid-cols-2">
