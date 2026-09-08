@@ -59,6 +59,7 @@ export const GmaoPieces: React.FC = () => {
       toast({ title: 'Stock réapprovisionné', description: `${reappro.reference} : nouveau stock ${nouveau}` });
       setReappro(null);
       charger();
+      rafraichir();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
     } finally {
