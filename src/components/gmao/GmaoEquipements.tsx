@@ -28,6 +28,7 @@ import {
   libelle, STATUTS_EQUIPEMENT, TYPES_EQUIPEMENT,
 } from './gmaoUi';
 import { exporterExcel, exporterPdf } from '@/utils/gmaoExport';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const CRITICITES = [
   { value: 'faible', label: 'Faible' },
@@ -61,6 +62,7 @@ type Tri = 'immatriculation' | 'type_equipement' | 'compteur_km' | 'statut' | 'c
 const PAR_PAGE = 25;
 
 export const GmaoEquipements: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const { equipements, statsParEquipement, chargement, rafraichir, consommerEquipementCible } = useGmao();
 
@@ -260,8 +262,12 @@ export const GmaoEquipements: React.FC = () => {
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={exportExcel}><FileSpreadsheet className="mr-2 h-4 w-4" /> Excel</Button>
             <Button variant="outline" size="sm" onClick={exportPdf}><FileText className="mr-2 h-4 w-4" /> PDF</Button>
-            <Button variant="outline" size="sm" onClick={importer}><Download className="mr-2 h-4 w-4" /> Importer la flotte</Button>
-            <Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Ajouter un équipement</Button>
+            {peutGerer && (
+              <>
+                <Button variant="outline" size="sm" onClick={importer}><Download className="mr-2 h-4 w-4" /> Importer la flotte</Button>
+                <Button size="sm" onClick={() => setOpen(true)}><Plus className="mr-2 h-4 w-4" /> Ajouter un équipement</Button>
+              </>
+            )}
           </div>
         </CardHeader>
 

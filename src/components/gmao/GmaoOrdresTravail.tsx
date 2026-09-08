@@ -12,6 +12,7 @@ import { gmaoService, GmaoOrdreTravail, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, CheckCircle } from 'lucide-react';
 import { EquipementCombobox } from './EquipementCombobox';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const TYPES = [
   { value: 'correctif', label: 'Correctif' },
@@ -26,6 +27,7 @@ const STATUTS = [
 ];
 
 export const GmaoOrdresTravail: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const [items, setItems] = useState<GmaoOrdreTravail[]>([]);
   const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);
@@ -100,7 +102,7 @@ export const GmaoOrdresTravail: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Ordres de travail</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouvel ordre de travail</Button></DialogTrigger>
+          {peutGerer && <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouvel ordre de travail</Button></DialogTrigger>}
           <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>Nouvel ordre de travail</DialogTitle></DialogHeader>
             <div className="grid gap-4 md:grid-cols-2">
@@ -172,13 +174,13 @@ export const GmaoOrdresTravail: React.FC = () => {
                 </TableCell>
                 <TableCell className="text-right font-medium">{Number(o.cout_total || 0).toLocaleString('fr-FR')} GNF</TableCell>
                 <TableCell className="space-x-2 whitespace-nowrap">
-                  {!o.cloture && o.statut === 'planifie' && (
+                  {peutGerer && !o.cloture && o.statut === 'planifie' && (
                     <Button size="sm" variant="outline" onClick={() => changerStatut(o, 'en_cours')}>Démarrer</Button>
                   )}
-                  {!o.cloture && o.statut === 'en_cours' && (
+                  {peutGerer && !o.cloture && o.statut === 'en_cours' && (
                     <Button size="sm" variant="outline" onClick={() => changerStatut(o, 'termine')}>Terminer</Button>
                   )}
-                  {!o.cloture && o.statut === 'termine' && (
+                  {peutGerer && !o.cloture && o.statut === 'termine' && (
                     <Button size="sm" onClick={() => cloturer(o)}><CheckCircle className="w-4 h-4 mr-1" /> Clôturer</Button>
                   )}
                 </TableCell>

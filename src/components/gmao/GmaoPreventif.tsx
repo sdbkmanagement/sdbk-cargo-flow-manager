@@ -11,6 +11,7 @@ import { gmaoService, GmaoPlan, GmaoEquipement } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
 import { EquipementCombobox } from './EquipementCombobox';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const DECLENCHEURS = [
   { value: 'date', label: 'Périodicité (jours)' },
@@ -19,6 +20,7 @@ const DECLENCHEURS = [
 ];
 
 export const GmaoPreventif: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const [items, setItems] = useState<GmaoPlan[]>([]);
   const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);
@@ -91,7 +93,7 @@ export const GmaoPreventif: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Maintenance préventive</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouveau plan</Button></DialogTrigger>
+          {peutGerer && <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouveau plan</Button></DialogTrigger>}
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>Nouveau plan de maintenance</DialogTitle></DialogHeader>
             <div className="grid gap-4 md:grid-cols-2">
@@ -166,7 +168,7 @@ export const GmaoPreventif: React.FC = () => {
                         : '—'}
                   </TableCell>
                   <TableCell>
-                    <Button size="sm" variant="outline" onClick={() => genererOT(p)}>Générer un OT</Button>
+                    {peutGerer && <Button size="sm" variant="outline" onClick={() => genererOT(p)}>Générer un OT</Button>}
                   </TableCell>
                 </TableRow>
               );

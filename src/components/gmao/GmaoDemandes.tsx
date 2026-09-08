@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
 import { useGmao } from './GmaoContext';
 import { fmtMontant } from './gmaoUi';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
 const TYPES_MAINTENANCE = [
@@ -91,6 +92,7 @@ const RecapDemande: React.FC<{ demande: any; equipementParId: (id?: string | nul
 interface Props { refreshKey?: number }
 
 export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const { user } = useAuth();
   const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : '';
@@ -100,7 +102,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
   // Seul le responsable maintenance (ou un admin/direction) peut valider ou rejeter
   const roles = user?.roles || [];
-  const peutValider = roles.some((r: string) => ['admin', 'maintenance', 'direction'].includes(r));
+  const peutValider = peutGerer && roles.some((r: string) => ['admin', 'maintenance', 'direction'].includes(r));
 
   const [demandeActive, setDemandeActive] = useState<GmaoDemande | null>(null);
   const [modeAction, setModeAction] = useState<'valider' | 'rejeter' | null>(null);

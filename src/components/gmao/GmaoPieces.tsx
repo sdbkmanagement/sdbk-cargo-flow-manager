@@ -11,8 +11,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, PackagePlus } from 'lucide-react';
 import { useGmao } from './GmaoContext';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 export const GmaoPieces: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const { rafraichir } = useGmao();
   const { user } = useAuth() as any;
@@ -95,7 +97,7 @@ export const GmaoPieces: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Pièces détachées & stock</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouvelle pièce</Button></DialogTrigger>
+          {peutGerer && <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouvelle pièce</Button></DialogTrigger>}
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>Nouvelle pièce</DialogTitle></DialogHeader>
             <div className="grid gap-4 md:grid-cols-2">
@@ -143,9 +145,11 @@ export const GmaoPieces: React.FC = () => {
                   <TableCell className="text-right">{Number(p.prix_unitaire).toLocaleString('fr-FR')} GNF</TableCell>
                   <TableCell><Badge variant={alerte ? 'destructive' : 'default'}>{alerte ? 'Sous seuil' : 'OK'}</Badge></TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="outline" onClick={() => ouvrirReappro(p)}>
-                      <PackagePlus className="w-4 h-4 mr-2" /> Réapprovisionner
-                    </Button>
+                    {peutGerer && (
+                      <Button size="sm" variant="outline" onClick={() => ouvrirReappro(p)}>
+                        <PackagePlus className="w-4 h-4 mr-2" /> Réapprovisionner
+                      </Button>
+                    )}
                   </TableCell>
                 </TableRow>
               );

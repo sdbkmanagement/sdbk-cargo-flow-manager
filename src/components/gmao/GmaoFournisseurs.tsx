@@ -8,8 +8,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { gmaoService, GmaoFournisseur } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
 export const GmaoFournisseurs: React.FC = () => {
+  const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
   const [items, setItems] = useState<GmaoFournisseur[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +49,7 @@ export const GmaoFournisseurs: React.FC = () => {
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>Fournisseurs & prestataires</CardTitle>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouveau fournisseur</Button></DialogTrigger>
+          {peutGerer && <DialogTrigger asChild><Button><Plus className="w-4 h-4 mr-2" /> Nouveau fournisseur</Button></DialogTrigger>}
           <DialogContent className="max-w-xl">
             <DialogHeader><DialogTitle>Nouveau fournisseur</DialogTitle></DialogHeader>
             <div className="grid gap-4 md:grid-cols-2">
