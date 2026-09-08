@@ -3356,61 +3356,103 @@ export type Database = {
       gmao_demandes_intervention: {
         Row: {
           commentaire_validation: string | null
+          cout_autres: number | null
+          cout_main_oeuvre: number | null
+          cout_prestation: number | null
           created_at: string
+          date_debut: string | null
           date_demande: string
+          date_fin: string | null
+          date_planifiee: string | null
           date_traitement: string | null
           demandeur_id: string | null
           demandeur_nom: string | null
           description: string | null
+          diagnostic: string | null
           equipement_id: string | null
+          heures_main_oeuvre: number | null
           id: string
           motif_rejet: string | null
           numero: string | null
+          pieces_prevues: Json | null
           priorite: string
           source_nc_id: string | null
           statut: string
+          statut_souhaite: string | null
+          symptomes: string | null
+          technicien: string | null
           titre: string
           traite_par_nom: string | null
+          travaux_realises: string | null
+          type_maintenance: string | null
           updated_at: string
           vehicule_id: string | null
         }
         Insert: {
           commentaire_validation?: string | null
+          cout_autres?: number | null
+          cout_main_oeuvre?: number | null
+          cout_prestation?: number | null
           created_at?: string
+          date_debut?: string | null
           date_demande?: string
+          date_fin?: string | null
+          date_planifiee?: string | null
           date_traitement?: string | null
           demandeur_id?: string | null
           demandeur_nom?: string | null
           description?: string | null
+          diagnostic?: string | null
           equipement_id?: string | null
+          heures_main_oeuvre?: number | null
           id?: string
           motif_rejet?: string | null
           numero?: string | null
+          pieces_prevues?: Json | null
           priorite?: string
           source_nc_id?: string | null
           statut?: string
+          statut_souhaite?: string | null
+          symptomes?: string | null
+          technicien?: string | null
           titre: string
           traite_par_nom?: string | null
+          travaux_realises?: string | null
+          type_maintenance?: string | null
           updated_at?: string
           vehicule_id?: string | null
         }
         Update: {
           commentaire_validation?: string | null
+          cout_autres?: number | null
+          cout_main_oeuvre?: number | null
+          cout_prestation?: number | null
           created_at?: string
+          date_debut?: string | null
           date_demande?: string
+          date_fin?: string | null
+          date_planifiee?: string | null
           date_traitement?: string | null
           demandeur_id?: string | null
           demandeur_nom?: string | null
           description?: string | null
+          diagnostic?: string | null
           equipement_id?: string | null
+          heures_main_oeuvre?: number | null
           id?: string
           motif_rejet?: string | null
           numero?: string | null
+          pieces_prevues?: Json | null
           priorite?: string
           source_nc_id?: string | null
           statut?: string
+          statut_souhaite?: string | null
+          symptomes?: string | null
+          technicien?: string | null
           titre?: string
           traite_par_nom?: string | null
+          travaux_realises?: string | null
+          type_maintenance?: string | null
           updated_at?: string
           vehicule_id?: string | null
         }
