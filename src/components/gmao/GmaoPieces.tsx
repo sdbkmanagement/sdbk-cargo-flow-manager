@@ -10,9 +10,11 @@ import { gmaoService, GmaoPiece } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, PackagePlus } from 'lucide-react';
+import { useGmao } from './GmaoContext';
 
 export const GmaoPieces: React.FC = () => {
   const { toast } = useToast();
+  const { rafraichir } = useGmao();
   const { user } = useAuth() as any;
   const [items, setItems] = useState<GmaoPiece[]>([]);
   const [loading, setLoading] = useState(true);
