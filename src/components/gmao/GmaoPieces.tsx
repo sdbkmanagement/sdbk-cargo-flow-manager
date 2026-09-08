@@ -10,9 +10,11 @@ import { gmaoService, GmaoPiece } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, PackagePlus } from 'lucide-react';
+import { useGmao } from './GmaoContext';
 
 export const GmaoPieces: React.FC = () => {
   const { toast } = useToast();
+  const { rafraichir } = useGmao();
   const { user } = useAuth() as any;
   const [items, setItems] = useState<GmaoPiece[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +59,7 @@ export const GmaoPieces: React.FC = () => {
       toast({ title: 'Stock réapprovisionné', description: `${reappro.reference} : nouveau stock ${nouveau}` });
       setReappro(null);
       charger();
+      rafraichir();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
     } finally {
@@ -81,6 +84,7 @@ export const GmaoPieces: React.FC = () => {
       setOpen(false);
       setForm({ ...form, reference: '', designation: '' });
       charger();
+      rafraichir();
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
     }
