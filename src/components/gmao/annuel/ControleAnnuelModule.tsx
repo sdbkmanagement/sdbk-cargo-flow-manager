@@ -30,6 +30,7 @@ const TOUS = 'tous';
 
 export const ControleAnnuelModule: React.FC = () => {
   const { toast } = useToast();
+  const { peutGerer } = useGmaoAccess();
   const [controles, setControles] = useState<ControleAnnuel[]>([]);
   const [chargement, setChargement] = useState(true);
 
@@ -153,10 +154,14 @@ export const ControleAnnuelModule: React.FC = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => setImportOuvert(true)}><Upload className="mr-2 h-4 w-4" />Importer Excel</Button>
+          {peutGerer && (
+            <Button variant="outline" size="sm" onClick={() => setImportOuvert(true)}><Upload className="mr-2 h-4 w-4" />Importer Excel</Button>
+          )}
           <Button variant="outline" size="sm" onClick={exportEtatExcel}><FileSpreadsheet className="mr-2 h-4 w-4" />État parc (Excel)</Button>
           <Button variant="outline" size="sm" onClick={exportEtatPdf}><FileText className="mr-2 h-4 w-4" />État parc (PDF)</Button>
-          <Button size="sm" onClick={() => { setEnEdition(null); setFormOuvert(true); }}><Plus className="mr-2 h-4 w-4" />Nouveau contrôle</Button>
+          {peutGerer && (
+            <Button size="sm" onClick={() => { setEnEdition(null); setFormOuvert(true); }}><Plus className="mr-2 h-4 w-4" />Nouveau contrôle</Button>
+          )}
         </div>
       </div>
 
@@ -311,9 +316,11 @@ export const ControleAnnuelModule: React.FC = () => {
                         {c.created_by_nom || '—'}<br />{new Date(c.created_at).toLocaleString('fr-FR')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => { setEnEdition(c); setFormOuvert(true); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        {peutGerer && (
+                          <Button variant="ghost" size="icon" onClick={() => { setEnEdition(c); setFormOuvert(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

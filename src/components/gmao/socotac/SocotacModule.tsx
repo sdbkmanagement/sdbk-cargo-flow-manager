@@ -32,6 +32,7 @@ const TOUS = 'tous';
 export const SocotacModule: React.FC = () => {
   const { socotac, rafraichir, chargement } = useGmao();
   const { toast } = useToast();
+  const { peutGerer } = useGmaoAccess();
 
   const [formOuvert, setFormOuvert] = useState(false);
   const [importOuvert, setImportOuvert] = useState(false);
@@ -207,10 +208,14 @@ export const SocotacModule: React.FC = () => {
           <p className="text-sm text-muted-foreground">Contrôle réglementaire périodique — échéance automatique à 6 mois.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => setImportOuvert(true)}><Upload className="mr-2 h-4 w-4" />Importer Excel</Button>
+          {peutGerer && (
+            <Button variant="outline" size="sm" onClick={() => setImportOuvert(true)}><Upload className="mr-2 h-4 w-4" />Importer Excel</Button>
+          )}
           <Button variant="outline" size="sm" onClick={exportEtatExcel}><FileSpreadsheet className="mr-2 h-4 w-4" />État parc (Excel)</Button>
           <Button variant="outline" size="sm" onClick={exportEtatPdf}><FileText className="mr-2 h-4 w-4" />État parc (PDF)</Button>
-          <Button size="sm" onClick={() => { setEnEdition(null); setFormOuvert(true); }}><Plus className="mr-2 h-4 w-4" />Nouveau contrôle</Button>
+          {peutGerer && (
+            <Button size="sm" onClick={() => { setEnEdition(null); setFormOuvert(true); }}><Plus className="mr-2 h-4 w-4" />Nouveau contrôle</Button>
+          )}
         </div>
       </div>
 
@@ -372,9 +377,11 @@ export const SocotacModule: React.FC = () => {
                         {c.created_by_nom || '—'}<br />{new Date(c.created_at).toLocaleString('fr-FR')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => { setEnEdition(c); setFormOuvert(true); }}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        {peutGerer && (
+                          <Button variant="ghost" size="icon" onClick={() => { setEnEdition(c); setFormOuvert(true); }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
