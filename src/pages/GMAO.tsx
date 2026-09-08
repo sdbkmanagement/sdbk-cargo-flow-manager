@@ -35,7 +35,6 @@ const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[]
 
 const Contenu: React.FC = () => {
   const { section, allerA, alertes, rafraichir, chargement } = useGmao();
-  const [nouvelleIntervention, setNouvelleIntervention] = useState(false);
 
   return (
     <div className="space-y-5">
