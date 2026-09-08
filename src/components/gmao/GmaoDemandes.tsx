@@ -126,7 +126,8 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
   const charger = async () => {
     try {
-      const d = await gmaoService.getDemandes();
+      // Une fois transformée en OT ou rejetée, la demande disparaît de la liste
+      const d = (await gmaoService.getDemandes()).filter((x: any) => !['transformee', 'rejetee'].includes(x.statut));
       setItems(d);
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
