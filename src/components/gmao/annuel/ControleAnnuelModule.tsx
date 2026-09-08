@@ -17,6 +17,7 @@ import { controlesAnnuelsService, ControleAnnuel } from '@/services/controlesAnn
 import { EtatVide, KpiCard, fmtDate } from '../gmaoUi';
 import { exporterExcel, exporterPdf } from '@/utils/gmaoExport';
 import { useToast } from '@/hooks/use-toast';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 import { ControleAnnuelForm } from './ControleAnnuelForm';
 import { ControleAnnuelImport } from './ControleAnnuelImport';
 import { MOIS_FR, anneesDisponibles, joursRestants, statistiquesMensuelles, taux } from '../socotac/socotacUtils';

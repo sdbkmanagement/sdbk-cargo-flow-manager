@@ -19,6 +19,7 @@ import { useGmao } from '../GmaoContext';
 import { EtatVide, KpiCard, fmtDate } from '../gmaoUi';
 import { exporterExcel, exporterPdf } from '@/utils/gmaoExport';
 import { useToast } from '@/hooks/use-toast';
+import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 import { SocotacForm } from './SocotacForm';
 import { SocotacImport } from './SocotacImport';
 import {
