@@ -102,10 +102,6 @@ const Contenu: React.FC = () => {
           <Button variant="outline" size="sm" onClick={() => rafraichir()} disabled={chargement}>
             <RefreshCw className={cn('h-4 w-4', chargement && 'animate-spin')} />
           </Button>
-
-          <Button size="sm" onClick={() => setNouvelleIntervention(true)}>
-            <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
-          </Button>
         </div>
       </div>
 
@@ -118,8 +114,6 @@ const Contenu: React.FC = () => {
       {section === 'socotac' && <SocotacModule />}
       {section === 'controle_annuel' && <ControleAnnuelModule />}
       {section === 'rapports' && <GmaoRapports />}
-
-      <GmaoDemandeForm open={nouvelleIntervention} onOpenChange={setNouvelleIntervention} />
     </div>
   );
 };
