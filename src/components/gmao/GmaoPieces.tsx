@@ -8,13 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { gmaoService, GmaoPiece } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Plus, PackagePlus } from 'lucide-react';
 
 export const GmaoPieces: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth() as any;
   const [items, setItems] = useState<GmaoPiece[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [reappro, setReappro] = useState<GmaoPiece | null>(null);
+  const [reapproForm, setReapproForm] = useState({ quantite: '', prix_unitaire: '', motif: '' });
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({
     reference: '', designation: '', categorie: '', unite: 'unite',
     quantite_stock: 0, seuil_mini: 0, prix_unitaire: 0, emplacement: '',
@@ -27,6 +32,38 @@ export const GmaoPieces: React.FC = () => {
   };
 
   useEffect(() => { charger(); }, []);
+
+  const ouvrirReappro = (p: GmaoPiece) => {
+    setReappro(p);
+    setReapproForm({ quantite: '', prix_unitaire: String(p.prix_unitaire ?? ''), motif: '' });
+  };
+
+  const validerReappro = async () => {
+    if (!reappro) return;
+    const qte = Number(reapproForm.quantite);
+    if (!qte || qte <= 0) {
+      toast({ title: 'Quantité invalide', description: 'Saisir une quantité supérieure à 0', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const nouveau = await gmaoService.entreeStock({
+        pieceId: reappro.id,
+        quantite: qte,
+        prixUnitaire: Number(reapproForm.prix_unitaire) || undefined,
+        motif: reapproForm.motif || 'Réapprovisionnement',
+        utilisateur: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : undefined,
+      });
+      toast({ title: 'Stock réapprovisionné', description: `${reappro.reference} : nouveau stock ${nouveau}` });
+      setReappro(null);
+      charger();
+    } catch (e: any) {
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const enregistrer = async () => {
     if (!form.reference || !form.designation) {
@@ -83,12 +120,13 @@ export const GmaoPieces: React.FC = () => {
               <TableHead className="text-right">Seuil</TableHead>
               <TableHead className="text-right">Prix unitaire</TableHead>
               <TableHead>État</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={6}>Chargement…</TableCell></TableRow>}
+            {loading && <TableRow><TableCell colSpan={7}>Chargement…</TableCell></TableRow>}
             {!loading && items.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-muted-foreground">Aucune pièce enregistrée.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-muted-foreground">Aucune pièce enregistrée.</TableCell></TableRow>
             )}
             {items.map((p) => {
               const alerte = Number(p.quantite_stock) <= Number(p.seuil_mini);
@@ -100,12 +138,55 @@ export const GmaoPieces: React.FC = () => {
                   <TableCell className="text-right">{p.seuil_mini}</TableCell>
                   <TableCell className="text-right">{Number(p.prix_unitaire).toLocaleString('fr-FR')} GNF</TableCell>
                   <TableCell><Badge variant={alerte ? 'destructive' : 'default'}>{alerte ? 'Sous seuil' : 'OK'}</Badge></TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => ouvrirReappro(p)}>
+                      <PackagePlus className="w-4 h-4 mr-2" /> Réapprovisionner
+                    </Button>
+                  </TableCell>
                 </TableRow>
               );
             })}
           </TableBody>
         </Table>
+
+        <Dialog open={!!reappro} onOpenChange={(o) => !o && setReappro(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Réapprovisionner — {reappro?.reference}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4">
+              <div className="text-sm text-muted-foreground">
+                {reappro?.designation} • stock actuel : <strong>{reappro?.quantite_stock}</strong>
+              </div>
+              <div>
+                <Label>Quantité reçue *</Label>
+                <Input type="number" min={1} value={reapproForm.quantite}
+                  onChange={(e) => setReapproForm({ ...reapproForm, quantite: e.target.value })} />
+              </div>
+              <div>
+                <Label>Prix unitaire (GNF)</Label>
+                <Input type="number" value={reapproForm.prix_unitaire}
+                  onChange={(e) => setReapproForm({ ...reapproForm, prix_unitaire: e.target.value })} />
+              </div>
+              <div>
+                <Label>Motif / fournisseur</Label>
+                <Input value={reapproForm.motif} placeholder="Achat, retour, inventaire…"
+                  onChange={(e) => setReapproForm({ ...reapproForm, motif: e.target.value })} />
+              </div>
+              {reapproForm.quantite && Number(reapproForm.quantite) > 0 && (
+                <div className="text-sm">
+                  Nouveau stock : <strong>{Number(reappro?.quantite_stock || 0) + Number(reapproForm.quantite)}</strong>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setReappro(null)}>Annuler</Button>
+              <Button onClick={validerReappro} disabled={saving}>{saving ? 'Enregistrement…' : 'Valider l\'entrée'}</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </CardContent>
+
     </Card>
   );
 };

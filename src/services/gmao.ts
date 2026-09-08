@@ -200,6 +200,33 @@ export const gmaoService = {
   getPieces: () => fetchAll<GmaoPiece>('gmao_pieces', 'reference', true),
   createPiece: (p: Record<string, unknown>) => insertRow<GmaoPiece>('gmao_pieces', p),
   updatePiece: (id: string, p: Record<string, unknown>) => updateRow<GmaoPiece>('gmao_pieces', id, p),
+  // Réapprovisionnement de stock (entrée) + traçabilité du mouvement
+  entreeStock: async (opts: { pieceId: string; quantite: number; motif?: string; prixUnitaire?: number; utilisateur?: string }) => {
+    const { data: piece, error: e1 } = await (supabase as any)
+      .from('gmao_pieces').select('quantite_stock').eq('id', opts.pieceId).single();
+    if (e1) throw e1;
+    const nouveau = Number(piece?.quantite_stock || 0) + Number(opts.quantite);
+    const maj: Record<string, unknown> = { quantite_stock: nouveau };
+    if (opts.prixUnitaire && opts.prixUnitaire > 0) maj.prix_unitaire = opts.prixUnitaire;
+    const { error: e2 } = await (supabase as any).from('gmao_pieces').update(maj).eq('id', opts.pieceId);
+    if (e2) throw e2;
+    const { error: e3 } = await (supabase as any).from('gmao_mouvements_stock').insert({
+      piece_id: opts.pieceId,
+      type_mouvement: 'entree',
+      quantite: Number(opts.quantite),
+      motif: opts.motif || 'Réapprovisionnement',
+      utilisateur_nom: opts.utilisateur || null,
+    });
+    if (e3) throw e3;
+    return nouveau;
+  },
+  getMouvements: async (pieceId: string) => {
+    const { data, error } = await (supabase as any)
+      .from('gmao_mouvements_stock').select('*').eq('piece_id', pieceId)
+      .order('date_mouvement', { ascending: false }).limit(50);
+    if (error) throw error;
+    return (data || []) as any[];
+  },
 
   // Fournisseurs
   getFournisseurs: () => fetchAll<GmaoFournisseur>('gmao_fournisseurs', 'nom', true),
