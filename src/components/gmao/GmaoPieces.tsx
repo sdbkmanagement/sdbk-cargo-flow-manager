@@ -8,13 +8,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { gmaoService, GmaoPiece } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
-import { Plus } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { Plus, PackagePlus } from 'lucide-react';
 
 export const GmaoPieces: React.FC = () => {
   const { toast } = useToast();
+  const { user } = useAuth() as any;
   const [items, setItems] = useState<GmaoPiece[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [reappro, setReappro] = useState<GmaoPiece | null>(null);
+  const [reapproForm, setReapproForm] = useState({ quantite: '', prix_unitaire: '', motif: '' });
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({
     reference: '', designation: '', categorie: '', unite: 'unite',
     quantite_stock: 0, seuil_mini: 0, prix_unitaire: 0, emplacement: '',
@@ -27,6 +32,38 @@ export const GmaoPieces: React.FC = () => {
   };
 
   useEffect(() => { charger(); }, []);
+
+  const ouvrirReappro = (p: GmaoPiece) => {
+    setReappro(p);
+    setReapproForm({ quantite: '', prix_unitaire: String(p.prix_unitaire ?? ''), motif: '' });
+  };
+
+  const validerReappro = async () => {
+    if (!reappro) return;
+    const qte = Number(reapproForm.quantite);
+    if (!qte || qte <= 0) {
+      toast({ title: 'Quantité invalide', description: 'Saisir une quantité supérieure à 0', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const nouveau = await gmaoService.entreeStock({
+        pieceId: reappro.id,
+        quantite: qte,
+        prixUnitaire: Number(reapproForm.prix_unitaire) || undefined,
+        motif: reapproForm.motif || 'Réapprovisionnement',
+        utilisateur: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email : undefined,
+      });
+      toast({ title: 'Stock réapprovisionné', description: `${reappro.reference} : nouveau stock ${nouveau}` });
+      setReappro(null);
+      charger();
+    } catch (e: any) {
+      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const enregistrer = async () => {
     if (!form.reference || !form.designation) {
