@@ -1,0 +1,15 @@
+ALTER TABLE public.gmao_demandes_intervention
+  ADD COLUMN IF NOT EXISTS type_maintenance text,
+  ADD COLUMN IF NOT EXISTS statut_souhaite text,
+  ADD COLUMN IF NOT EXISTS date_planifiee date,
+  ADD COLUMN IF NOT EXISTS date_debut timestamptz,
+  ADD COLUMN IF NOT EXISTS date_fin timestamptz,
+  ADD COLUMN IF NOT EXISTS symptomes text,
+  ADD COLUMN IF NOT EXISTS diagnostic text,
+  ADD COLUMN IF NOT EXISTS travaux_realises text,
+  ADD COLUMN IF NOT EXISTS technicien text,
+  ADD COLUMN IF NOT EXISTS heures_main_oeuvre numeric DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cout_main_oeuvre numeric DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cout_prestation numeric DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cout_autres numeric DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pieces_prevues jsonb DEFAULT '[]'::jsonb;

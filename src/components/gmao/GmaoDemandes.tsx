@@ -12,6 +12,8 @@ import { gmaoService, GmaoDemande } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
+import { useGmao } from './GmaoContext';
+import { fmtMontant } from './gmaoUi';
 
 const PRIORITES = ['basse', 'normale', 'haute', 'urgente'];
 const TYPES_MAINTENANCE = [
@@ -26,12 +28,73 @@ const STATUT_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | '
   nouvelle: 'outline', acceptee: 'secondary', rejetee: 'destructive', transformee: 'default',
 };
 
+
+const Ligne: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="text-sm"><span className="text-muted-foreground">{label} : </span>{children || '—'}</div>
+);
+
+/** Récapitulatif complet de la demande, relu par le responsable avant validation. */
+const RecapDemande: React.FC<{ demande: any; equipementParId: (id?: string | null) => any; pieces: any[] }> = ({ demande, equipementParId, pieces }) => {
+  const eq = equipementParId(demande.equipement_id);
+  const lignes = Array.isArray(demande.pieces_prevues) ? demande.pieces_prevues : [];
+  const coutPieces = lignes.reduce((s: number, l: any) => s + Number(l.quantite || 0) * Number(l.prix_unitaire || 0), 0);
+  const coutTotal = coutPieces + Number(demande.cout_main_oeuvre || 0) + Number(demande.cout_prestation || 0) + Number(demande.cout_autres || 0);
+  const dt = (v?: string | null) => (v ? new Date(v).toLocaleString('fr-FR') : '');
+
+  return (
+    <div className="space-y-3 rounded-md border p-3">
+      <div className="grid gap-x-6 gap-y-1 md:grid-cols-2">
+        <Ligne label="Demande">{demande.numero} — {demande.titre}</Ligne>
+        <Ligne label="Demandeur">{demande.demandeur_nom}</Ligne>
+        <Ligne label="Équipement">{eq ? `${eq.immatriculation || eq.code} — ${eq.designation}` : ''}</Ligne>
+        <Ligne label="Type demandé">{TYPES_MAINTENANCE.find((t) => t.value === demande.type_maintenance)?.label}</Ligne>
+        <Ligne label="Priorité">{demande.priorite}</Ligne>
+        <Ligne label="Date planifiée souhaitée">{demande.date_planifiee ? new Date(demande.date_planifiee).toLocaleDateString('fr-FR') : ''}</Ligne>
+        <Ligne label="Début">{dt(demande.date_debut)}</Ligne>
+        <Ligne label="Fin">{dt(demande.date_fin)}</Ligne>
+        <Ligne label="Technicien / prestataire">{demande.technicien}</Ligne>
+        <Ligne label="Temps passé">{demande.heures_main_oeuvre ? `${demande.heures_main_oeuvre} h` : ''}</Ligne>
+      </div>
+
+      {demande.symptomes && <Ligne label="Symptômes"><span className="whitespace-pre-wrap">{demande.symptomes}</span></Ligne>}
+      {demande.diagnostic && <Ligne label="Diagnostic"><span className="whitespace-pre-wrap">{demande.diagnostic}</span></Ligne>}
+      {demande.description && <Ligne label="Observations"><span className="whitespace-pre-wrap">{demande.description}</span></Ligne>}
+      {demande.travaux_realises && <Ligne label="Travaux"><span className="whitespace-pre-wrap">{demande.travaux_realises}</span></Ligne>}
+
+      {lignes.length > 0 && (
+        <div>
+          <p className="text-sm font-medium">Pièces prévues</p>
+          <ul className="mt-1 space-y-0.5 text-sm text-muted-foreground">
+            {lignes.map((l: any, i: number) => {
+              const p = pieces.find((x: any) => x.id === l.piece_id);
+              return (
+                <li key={i}>
+                  {p ? `${p.reference} — ${p.designation}` : 'Pièce'} × {l.quantite} = {fmtMontant(Number(l.quantite || 0) * Number(l.prix_unitaire || 0))}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      <div className="flex flex-wrap justify-between gap-2 rounded bg-muted/50 p-2 text-sm">
+        <span>Pièces : <strong>{fmtMontant(coutPieces)}</strong></span>
+        <span>Main-d'œuvre : <strong>{fmtMontant(Number(demande.cout_main_oeuvre || 0))}</strong></span>
+        <span>Prestation : <strong>{fmtMontant(Number(demande.cout_prestation || 0))}</strong></span>
+        <span>Autres : <strong>{fmtMontant(Number(demande.cout_autres || 0))}</strong></span>
+        <span className="font-semibold">Total estimé : {fmtMontant(coutTotal)}</span>
+      </div>
+    </div>
+  );
+};
+
 interface Props { refreshKey?: number }
 
 export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : '';
+  const { equipementParId, pieces } = useGmao();
   const [items, setItems] = useState<GmaoDemande[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -49,10 +112,11 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
   const ouvrirAction = (d: GmaoDemande, mode: 'valider' | 'rejeter') => {
     setDemandeActive(d);
     setModeAction(mode);
+    const dd = d as any;
     setTraitement({
-      type_maintenance: 'correctif',
+      type_maintenance: dd.type_maintenance || 'correctif',
       priorite: d.priorite || 'normale',
-      date_planifiee: '',
+      date_planifiee: dd.date_planifiee || '',
       commentaire: '',
       motif_rejet: '',
     });
@@ -75,16 +139,39 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
     if (!demandeActive) return;
     setEnCours(true);
     try {
-      const ot = await gmaoService.createOrdreTravail({
+      const d = demandeActive as any;
+      const ot: any = await gmaoService.createOrdreTravail({
         demande_id: demandeActive.id,
         equipement_id: demandeActive.equipement_id || null,
         titre: demandeActive.titre,
         description: [demandeActive.description, traitement.commentaire].filter(Boolean).join('\n\n') || null,
         type_maintenance: traitement.type_maintenance,
         priorite: traitement.priorite,
-        statut: 'planifie',
+        statut: d.statut_souhaite || 'planifie',
         date_planifiee: traitement.date_planifiee || null,
+        date_debut: d.date_debut || null,
+        date_fin: d.date_fin || null,
+        diagnostic: [d.symptomes && `Symptômes : ${d.symptomes}`, d.diagnostic].filter(Boolean).join('\n') || null,
+        travaux_realises: [
+          d.travaux_realises,
+          d.technicien && `Technicien / prestataire : ${d.technicien}`,
+          d.heures_main_oeuvre && `Temps passé : ${d.heures_main_oeuvre} h`,
+        ].filter(Boolean).join('\n') || null,
+        cout_main_oeuvre: Number(d.cout_main_oeuvre) || 0,
+        cout_prestation: Number(d.cout_prestation) || 0,
+        cout_autres: Number(d.cout_autres) || 0,
       });
+
+      for (const l of (Array.isArray(d.pieces_prevues) ? d.pieces_prevues : [])) {
+        if (!l?.piece_id || !(Number(l.quantite) > 0)) continue;
+        await gmaoService.addOtPiece({
+          ot_id: ot.id,
+          piece_id: l.piece_id,
+          quantite: Number(l.quantite),
+          prix_unitaire: Number(l.prix_unitaire) || 0,
+          montant: Number(l.quantite) * (Number(l.prix_unitaire) || 0),
+        });
+      }
       await gmaoService.updateDemande(demandeActive.id, {
         statut: 'transformee',
         date_traitement: new Date().toISOString(),
@@ -193,13 +280,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
           </DialogHeader>
           {demandeActive && (
             <div className="space-y-4">
-              <div className="rounded-md border p-3 text-sm space-y-1">
-                <div><span className="text-muted-foreground">Demande :</span> {demandeActive.numero} — {demandeActive.titre}</div>
-                <div><span className="text-muted-foreground">Demandeur :</span> {demandeActive.demandeur_nom || '—'}</div>
-                {demandeActive.description && (
-                  <div className="text-muted-foreground whitespace-pre-wrap">{demandeActive.description}</div>
-                )}
-              </div>
+              <RecapDemande demande={demandeActive} equipementParId={equipementParId} pieces={pieces} />
 
               {modeAction === 'valider' ? (
                 <>
