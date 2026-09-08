@@ -1333,7 +1333,7 @@ const ViolationsMatrix: React.FC<{
               chauffeur_id: chauffeurId,
               date_violation: dateIso,
               type_violation: type as ObcViolationType,
-              points_retires: Number(entry.points_retires) || 1,
+              points_retires: Number(entry.points_retires) || 0,
               commentaire: entry.commentaire || null,
               mesures_prises: null,
               preuve_url,
