@@ -282,7 +282,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
             </DialogTitle>
           </DialogHeader>
           {demandeActive && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-1">
               <RecapDemande demande={demandeActive} equipementParId={equipementParId} pieces={pieces} />
 
               {modeAction === 'valider' ? (
