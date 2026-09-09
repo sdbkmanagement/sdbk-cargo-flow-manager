@@ -275,7 +275,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
       {/* Dialogue de validation / rejet par le responsable maintenance */}
       <Dialog open={!!demandeActive} onOpenChange={(o) => { if (!o) fermerAction(); }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>
               {modeAction === 'valider' ? 'Valider la demande et créer un ordre de travail' : 'Rejeter la demande'}
