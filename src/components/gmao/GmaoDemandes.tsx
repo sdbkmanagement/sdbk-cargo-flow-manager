@@ -320,7 +320,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
               )}
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="shrink-0 pt-4 border-t mt-2">
             <Button variant="outline" onClick={fermerAction} disabled={enCours}>Annuler</Button>
             {modeAction === 'valider' ? (
               <Button onClick={valider} disabled={enCours}>{enCours ? 'Traitement…' : 'Valider et créer l\'OT'}</Button>
