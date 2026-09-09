@@ -275,14 +275,14 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
       {/* Dialogue de validation / rejet par le responsable maintenance */}
       <Dialog open={!!demandeActive} onOpenChange={(o) => { if (!o) fermerAction(); }}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>
               {modeAction === 'valider' ? 'Valider la demande et créer un ordre de travail' : 'Rejeter la demande'}
             </DialogTitle>
           </DialogHeader>
           {demandeActive && (
-            <div className="space-y-4">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-1">
               <RecapDemande demande={demandeActive} equipementParId={equipementParId} pieces={pieces} />
 
               {modeAction === 'valider' ? (
@@ -320,7 +320,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
               )}
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="shrink-0 pt-4 border-t mt-2">
             <Button variant="outline" onClick={fermerAction} disabled={enCours}>Annuler</Button>
             {modeAction === 'valider' ? (
               <Button onClick={valider} disabled={enCours}>{enCours ? 'Traitement…' : 'Valider et créer l\'OT'}</Button>
