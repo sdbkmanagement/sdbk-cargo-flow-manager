@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { gmaoService, GmaoDemande } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldAlert, Pencil } from 'lucide-react';
 import { useGmao } from './GmaoContext';
 import { fmtMontant } from './gmaoUi';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
@@ -128,8 +128,9 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
   const charger = async () => {
     try {
-      // Une fois transformée en OT ou rejetée, la demande disparaît de la liste
-      const d = (await gmaoService.getDemandes()).filter((x: any) => !['transformee', 'rejetee'].includes(x.statut));
+      // Une fois transformée en OT, la demande disparaît de la liste.
+      // Une demande rejetée reste visible le temps d'être modifiée puis renvoyée en validation.
+      const d = (await gmaoService.getDemandes()).filter((x: any) => x.statut !== 'transformee');
       setItems(d);
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
