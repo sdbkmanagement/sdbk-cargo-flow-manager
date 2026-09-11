@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { CheckCircle2, XCircle, ShieldAlert, Pencil } from 'lucide-react';
 import { useGmao } from './GmaoContext';
+import { GmaoDemandeForm } from './GmaoDemandeForm';
 import { fmtMontant } from './gmaoUi';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
@@ -106,6 +107,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
   const [demandeActive, setDemandeActive] = useState<GmaoDemande | null>(null);
   const [modeAction, setModeAction] = useState<'valider' | 'rejeter' | null>(null);
+  const [demandeEdition, setDemandeEdition] = useState<GmaoDemande | null>(null);
   const [traitement, setTraitement] = useState<Record<string, any>>({
     type_maintenance: 'correctif', priorite: 'normale', date_planifiee: '', commentaire: '', motif_rejet: '',
   });
@@ -266,6 +268,11 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <ShieldAlert className="w-3.5 h-3.5" /> En attente du responsable maintenance
                     </span>
+                  )}
+                  {d.statut === 'rejetee' && (
+                    <Button size="sm" variant="outline" onClick={() => setDemandeEdition(d)}>
+                      <Pencil className="w-4 h-4 mr-1" /> Modifier
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
