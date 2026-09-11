@@ -206,7 +206,10 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
         traite_par_nom: nomUtilisateur || null,
         motif_rejet: traitement.motif_rejet.trim(),
       });
-      toast({ title: 'Demande rejetée' });
+      toast({
+        title: 'Demande rejetée pour adaptation',
+        description: 'Elle reste dans la liste : modifiez-la puis renvoyez-la en validation.',
+      });
       fermerAction();
       charger();
     } catch (e: any) {
@@ -338,6 +341,14 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modification d'une demande rejetée : elle repart ensuite en validation */}
+      <GmaoDemandeForm
+        open={!!demandeEdition}
+        onOpenChange={(o) => { if (!o) setDemandeEdition(null); }}
+        demande={demandeEdition}
+        onSaved={charger}
+      />
     </Card>
   );
 };
