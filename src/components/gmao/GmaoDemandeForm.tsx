@@ -200,7 +200,7 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Demande d'intervention</DialogTitle>
+          <DialogTitle>{demande ? `Modifier la demande ${demande.numero || ''}` : "Demande d'intervention"}</DialogTitle>
           <DialogDescription>
             Le responsable maintenance relit l'ensemble de ces informations avant de valider la demande en ordre de travail.
           </DialogDescription>
@@ -353,7 +353,7 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
           <Button onClick={enregistrer} disabled={enregistrement}>
-            {enregistrement ? 'Enregistrement…' : 'Envoyer la demande'}
+            {enregistrement ? 'Enregistrement…' : demande ? 'Enregistrer et renvoyer en validation' : 'Envoyer la demande'}
           </Button>
         </DialogFooter>
       </DialogContent>
