@@ -142,13 +142,12 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
     }
     setEnregistrement(true);
     try {
-      const demande: any = await gmaoService.createDemande({
+      const payload = {
         titre: form.titre.trim(),
         description: form.description || null,
         equipement_id: form.equipement_id,
         priorite: form.priorite,
         statut: 'nouvelle',
-        demandeur_nom: nomUtilisateur || null,
         type_maintenance: form.type_maintenance,
         statut_souhaite: form.statut_souhaite,
         date_planifiee: form.date_planifiee || null,
@@ -163,12 +162,30 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
         cout_prestation: Number(form.cout_prestation) || 0,
         cout_autres: Number(form.cout_autres) || 0,
         pieces_prevues: lignes.filter((x) => x.piece_id && Number(x.quantite) > 0),
-      });
+      };
 
-      toast({
-        title: 'Demande enregistrée',
-        description: `${demande?.numero ? `N° ${demande.numero} — ` : ''}En attente de validation du responsable maintenance.`,
-      });
+      if (demande?.id) {
+        // Adaptation d'une demande rejetée : elle repart en validation
+        await gmaoService.updateDemande(demande.id, {
+          ...payload,
+          motif_rejet: null,
+          date_traitement: null,
+          traite_par_nom: null,
+        } as any);
+        toast({
+          title: 'Demande modifiée',
+          description: 'Elle est de nouveau en attente de validation du responsable maintenance.',
+        });
+      } else {
+        const nouvelle: any = await gmaoService.createDemande({
+          ...payload,
+          demandeur_nom: nomUtilisateur || null,
+        });
+        toast({
+          title: 'Demande enregistrée',
+          description: `${nouvelle?.numero ? `N° ${nouvelle.numero} — ` : ''}En attente de validation du responsable maintenance.`,
+        });
+      }
       onOpenChange(false);
       await rafraichir();
       onSaved?.();
