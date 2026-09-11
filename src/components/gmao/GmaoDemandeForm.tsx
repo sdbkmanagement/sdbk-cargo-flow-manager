@@ -19,6 +19,8 @@ interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   equipementId?: string | null;
+  /** Demande existante à modifier (ex : rejetée pour adaptation) */
+  demande?: any | null;
   onSaved?: () => void;
 }
 
