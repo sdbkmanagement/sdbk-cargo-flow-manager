@@ -58,7 +58,7 @@ const Section: React.FC<{ titre: string; children: React.ReactNode }> = ({ titre
  * Tous les champs saisis ici sont relus par le responsable maintenance
  * avant la validation de la demande en ordre de travail.
  */
-export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipementId, onSaved }) => {
+export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipementId, demande, onSaved }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { equipements, pieces, rafraichir } = useGmao();
@@ -71,10 +71,35 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
 
   useEffect(() => {
     if (open) {
-      setForm({ ...initial, equipement_id: equipementId || '' });
-      setLignes([]);
+      if (demande) {
+        // Pré-remplissage pour adaptation d'une demande rejetée
+        setForm({
+          ...initial,
+          titre: demande.titre || '',
+          equipement_id: demande.equipement_id || '',
+          type_maintenance: demande.type_maintenance || 'correctif',
+          priorite: demande.priorite || 'normale',
+          statut_souhaite: demande.statut_souhaite || 'planifie',
+          date_planifiee: demande.date_planifiee || '',
+          date_debut: demande.date_debut ? new Date(demande.date_debut).toISOString().slice(0, 16) : '',
+          date_fin: demande.date_fin ? new Date(demande.date_fin).toISOString().slice(0, 16) : '',
+          description: demande.description || '',
+          symptomes: demande.symptomes || '',
+          diagnostic: demande.diagnostic || '',
+          travaux_realises: demande.travaux_realises || '',
+          technicien: demande.technicien || '',
+          heures_main_oeuvre: demande.heures_main_oeuvre || '',
+          cout_main_oeuvre: Number(demande.cout_main_oeuvre) || 0,
+          cout_prestation: Number(demande.cout_prestation) || 0,
+          cout_autres: Number(demande.cout_autres) || 0,
+        });
+        setLignes(Array.isArray(demande.pieces_prevues) ? demande.pieces_prevues : []);
+      } else {
+        setForm({ ...initial, equipement_id: equipementId || '' });
+        setLignes([]);
+      }
     }
-  }, [open, equipementId]);
+  }, [open, equipementId, demande]);
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
