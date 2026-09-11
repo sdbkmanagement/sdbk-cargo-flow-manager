@@ -19,6 +19,8 @@ interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   equipementId?: string | null;
+  /** Demande existante à modifier (ex : rejetée pour adaptation) */
+  demande?: any | null;
   onSaved?: () => void;
 }
 
@@ -56,7 +58,7 @@ const Section: React.FC<{ titre: string; children: React.ReactNode }> = ({ titre
  * Tous les champs saisis ici sont relus par le responsable maintenance
  * avant la validation de la demande en ordre de travail.
  */
-export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipementId, onSaved }) => {
+export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipementId, demande, onSaved }) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { equipements, pieces, rafraichir } = useGmao();
@@ -69,10 +71,35 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
 
   useEffect(() => {
     if (open) {
-      setForm({ ...initial, equipement_id: equipementId || '' });
-      setLignes([]);
+      if (demande) {
+        // Pré-remplissage pour adaptation d'une demande rejetée
+        setForm({
+          ...initial,
+          titre: demande.titre || '',
+          equipement_id: demande.equipement_id || '',
+          type_maintenance: demande.type_maintenance || 'correctif',
+          priorite: demande.priorite || 'normale',
+          statut_souhaite: demande.statut_souhaite || 'planifie',
+          date_planifiee: demande.date_planifiee || '',
+          date_debut: demande.date_debut ? new Date(demande.date_debut).toISOString().slice(0, 16) : '',
+          date_fin: demande.date_fin ? new Date(demande.date_fin).toISOString().slice(0, 16) : '',
+          description: demande.description || '',
+          symptomes: demande.symptomes || '',
+          diagnostic: demande.diagnostic || '',
+          travaux_realises: demande.travaux_realises || '',
+          technicien: demande.technicien || '',
+          heures_main_oeuvre: demande.heures_main_oeuvre || '',
+          cout_main_oeuvre: Number(demande.cout_main_oeuvre) || 0,
+          cout_prestation: Number(demande.cout_prestation) || 0,
+          cout_autres: Number(demande.cout_autres) || 0,
+        });
+        setLignes(Array.isArray(demande.pieces_prevues) ? demande.pieces_prevues : []);
+      } else {
+        setForm({ ...initial, equipement_id: equipementId || '' });
+        setLignes([]);
+      }
     }
-  }, [open, equipementId]);
+  }, [open, equipementId, demande]);
 
   const set = (k: string, v: any) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -115,13 +142,12 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
     }
     setEnregistrement(true);
     try {
-      const demande: any = await gmaoService.createDemande({
+      const payload = {
         titre: form.titre.trim(),
         description: form.description || null,
         equipement_id: form.equipement_id,
         priorite: form.priorite,
         statut: 'nouvelle',
-        demandeur_nom: nomUtilisateur || null,
         type_maintenance: form.type_maintenance,
         statut_souhaite: form.statut_souhaite,
         date_planifiee: form.date_planifiee || null,
@@ -136,12 +162,30 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
         cout_prestation: Number(form.cout_prestation) || 0,
         cout_autres: Number(form.cout_autres) || 0,
         pieces_prevues: lignes.filter((x) => x.piece_id && Number(x.quantite) > 0),
-      });
+      };
 
-      toast({
-        title: 'Demande enregistrée',
-        description: `${demande?.numero ? `N° ${demande.numero} — ` : ''}En attente de validation du responsable maintenance.`,
-      });
+      if (demande?.id) {
+        // Adaptation d'une demande rejetée : elle repart en validation
+        await gmaoService.updateDemande(demande.id, {
+          ...payload,
+          motif_rejet: null,
+          date_traitement: null,
+          traite_par_nom: null,
+        } as any);
+        toast({
+          title: 'Demande modifiée',
+          description: 'Elle est de nouveau en attente de validation du responsable maintenance.',
+        });
+      } else {
+        const nouvelle: any = await gmaoService.createDemande({
+          ...payload,
+          demandeur_nom: nomUtilisateur || null,
+        });
+        toast({
+          title: 'Demande enregistrée',
+          description: `${nouvelle?.numero ? `N° ${nouvelle.numero} — ` : ''}En attente de validation du responsable maintenance.`,
+        });
+      }
       onOpenChange(false);
       await rafraichir();
       onSaved?.();
@@ -156,7 +200,7 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Demande d'intervention</DialogTitle>
+          <DialogTitle>{demande ? `Modifier la demande ${demande.numero || ''}` : "Demande d'intervention"}</DialogTitle>
           <DialogDescription>
             Le responsable maintenance relit l'ensemble de ces informations avant de valider la demande en ordre de travail.
           </DialogDescription>
@@ -309,7 +353,7 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
           <Button onClick={enregistrer} disabled={enregistrement}>
-            {enregistrement ? 'Enregistrement…' : 'Envoyer la demande'}
+            {enregistrement ? 'Enregistrement…' : demande ? 'Enregistrer et renvoyer en validation' : 'Envoyer la demande'}
           </Button>
         </DialogFooter>
       </DialogContent>

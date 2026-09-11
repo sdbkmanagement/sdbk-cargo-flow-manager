@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { gmaoService, GmaoDemande } from '@/services/gmao';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { CheckCircle2, XCircle, ShieldAlert } from 'lucide-react';
+import { CheckCircle2, XCircle, ShieldAlert, Pencil } from 'lucide-react';
 import { useGmao } from './GmaoContext';
+import { GmaoDemandeForm } from './GmaoDemandeForm';
 import { fmtMontant } from './gmaoUi';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 
@@ -106,6 +107,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
   const [demandeActive, setDemandeActive] = useState<GmaoDemande | null>(null);
   const [modeAction, setModeAction] = useState<'valider' | 'rejeter' | null>(null);
+  const [demandeEdition, setDemandeEdition] = useState<GmaoDemande | null>(null);
   const [traitement, setTraitement] = useState<Record<string, any>>({
     type_maintenance: 'correctif', priorite: 'normale', date_planifiee: '', commentaire: '', motif_rejet: '',
   });
@@ -128,8 +130,9 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
   const charger = async () => {
     try {
-      // Une fois transformée en OT ou rejetée, la demande disparaît de la liste
-      const d = (await gmaoService.getDemandes()).filter((x: any) => !['transformee', 'rejetee'].includes(x.statut));
+      // Une fois transformée en OT, la demande disparaît de la liste.
+      // Une demande rejetée reste visible le temps d'être modifiée puis renvoyée en validation.
+      const d = (await gmaoService.getDemandes()).filter((x: any) => x.statut !== 'transformee');
       setItems(d);
     } catch (e: any) {
       toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
@@ -203,7 +206,10 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
         traite_par_nom: nomUtilisateur || null,
         motif_rejet: traitement.motif_rejet.trim(),
       });
-      toast({ title: 'Demande rejetée' });
+      toast({
+        title: 'Demande rejetée pour adaptation',
+        description: 'Elle reste dans la liste : modifiez-la puis renvoyez-la en validation.',
+      });
       fermerAction();
       charger();
     } catch (e: any) {
@@ -265,6 +271,11 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <ShieldAlert className="w-3.5 h-3.5" /> En attente du responsable maintenance
                     </span>
+                  )}
+                  {d.statut === 'rejetee' && (
+                    <Button size="sm" variant="outline" onClick={() => setDemandeEdition(d)}>
+                      <Pencil className="w-4 h-4 mr-1" /> Modifier
+                    </Button>
                   )}
                 </TableCell>
               </TableRow>
@@ -330,6 +341,14 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Modification d'une demande rejetée : elle repart ensuite en validation */}
+      <GmaoDemandeForm
+        open={!!demandeEdition}
+        onOpenChange={(o) => { if (!o) setDemandeEdition(null); }}
+        demande={demandeEdition}
+        onSaved={charger}
+      />
     </Card>
   );
 };
