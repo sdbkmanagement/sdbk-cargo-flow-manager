@@ -39,8 +39,8 @@ export const BulletinsPaieList = () => {
 
   const generateMutation = useMutation({
     mutationFn: async (periodeId: string) => {
-      // Paramétrage CNSS (plafond et taux configurables)
-      const paramsCnss = await getParametresCnss();
+      // Paramétrage de paie (CNSS, barème RTS, ONFPP, versement forfaitaire)
+      const params = await getParametresPaie();
 
       // Récupérer tous les employés actifs
       const { data: employes, error: empError } = await supabase.from('employes').select('id').eq('statut', 'actif');
@@ -49,41 +49,46 @@ export const BulletinsPaieList = () => {
       // Récupérer les éléments de salaire
       for (const emp of (employes || [])) {
         const { data: elements } = await supabase.from('elements_salaire').select('*').eq('employe_id', emp.id).order('date_effet', { ascending: false }).limit(1);
-        
+
         const el = elements?.[0];
-        const salaireBase = el?.salaire_base || 0;
-        const primes = (el?.prime_transport || 0) + (el?.prime_logement || 0) + (el?.prime_risque || 0) + (el?.prime_anciennete || 0) + (el?.prime_rendement || 0) + (el?.autres_primes || 0);
-        const indemnites = el?.indemnite_repas || 0;
-        const brut = salaireBase + primes + indemnites;
-        const { baseCnss, cnssSalarie: cnssEmp, cnssPatronal: cnssPatr } = calculerCnss(brut, paramsCnss);
-        // IRG simplifié (barème progressif Guinée approximé)
-        const brutImposable = brut - cnssEmp;
-        let irg = 0;
-        if (brutImposable > 0) {
-          irg = Math.round(brutImposable * 0.10); // Taux simplifié 10%
-        }
         // Retenue prêt
         const { data: prets } = await supabase.from('prets').select('montant_mensualite').eq('employe_id', emp.id).eq('statut', 'en_cours');
         const retenuePret = prets?.reduce((sum, p) => sum + (p.montant_mensualite || 0), 0) || 0;
-        
-        const totalRetenues = cnssEmp + irg + retenuePret;
-        const net = brut - totalRetenues;
+
+        const autresPrimes = (el?.prime_risque || 0) + (el?.prime_anciennete || 0) + (el?.prime_rendement || 0) + (el?.autres_primes || 0) + (el?.indemnite_repas || 0);
+        const r = calculerBulletin({
+          salaireBase: el?.salaire_base || 0,
+          primeTransport: el?.prime_transport || 0,
+          primeLogement: el?.prime_logement || 0,
+          primeChereteVie: 0,
+          autresPrimes,
+          retenuePret,
+        }, params);
 
         const { error } = await supabase.from('bulletins_paie').insert({
           employe_id: emp.id,
           periode_id: periodeId,
-          salaire_base: salaireBase,
-          total_primes: primes,
-          total_indemnites: indemnites,
-          salaire_brut: brut,
-          base_cnss: baseCnss,
-          cotisation_cnss_employe: cnssEmp,
-          cotisation_cnss_employeur: cnssPatr,
-          irg,
+          salaire_base: r.salaireBase,
+          prime_transport: el?.prime_transport || 0,
+          prime_logement: el?.prime_logement || 0,
+          prime_cherete_vie: 0,
+          autres_primes: autresPrimes,
+          total_primes: r.totalPrimes,
+          total_indemnites: 0,
+          salaire_brut: r.salaireBrut,
+          base_cnss: r.baseCnss,
+          cotisation_cnss_employe: r.cnssSalarie,
+          cotisation_cnss_employeur: r.cnssPatronal,
+          base_rts: r.baseRts,
+          rts: r.rts,
+          irg: r.rts,
+          onfpp: r.onfpp,
+          versement_forfaitaire: r.versementForfaitaire,
+          total_charges_patronales: r.totalChargesPatronales,
           retenue_pret: retenuePret,
-          total_retenues: totalRetenues,
-          salaire_net: net,
-          net_a_payer: net,
+          total_retenues: r.totalRetenues,
+          salaire_net: r.netAPayer,
+          net_a_payer: r.netAPayer,
         });
         if (error && !error.message.includes('duplicate')) console.error(error);
       }
