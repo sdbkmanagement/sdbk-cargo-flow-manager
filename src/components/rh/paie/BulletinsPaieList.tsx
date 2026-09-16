@@ -18,6 +18,9 @@ export const BulletinsPaieList = () => {
   const queryClient = useQueryClient();
   const [showGenerate, setShowGenerate] = useState(false);
   const [selectedPeriode, setSelectedPeriode] = useState('');
+  const [showEtatMois, setShowEtatMois] = useState(false);
+  const [moisEtat, setMoisEtat] = useState(String(new Date().getMonth() + 1));
+  const [anneeEtat, setAnneeEtat] = useState(String(new Date().getFullYear()));
   const [editBulletin, setEditBulletin] = useState<any>(null);
   const [form, setForm] = useState<Record<string, any>>({
     salaire_base: 0, prime_transport: 0, prime_logement: 0, prime_cherete_vie: 0,
