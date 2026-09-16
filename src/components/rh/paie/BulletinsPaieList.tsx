@@ -38,6 +38,9 @@ export const BulletinsPaieList = () => {
 
   const generateMutation = useMutation({
     mutationFn: async (periodeId: string) => {
+      // Paramétrage CNSS (plafond et taux configurables)
+      const paramsCnss = await getParametresCnss();
+
       // Récupérer tous les employés actifs
       const { data: employes, error: empError } = await supabase.from('employes').select('id').eq('statut', 'actif');
       if (empError) throw empError;
