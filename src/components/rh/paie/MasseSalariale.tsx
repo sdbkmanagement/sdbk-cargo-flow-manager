@@ -8,17 +8,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Download, Wallet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { rhService } from '@/services/rh';
-import { getParametresCnss, calculerCnss, PARAMETRES_CNSS_DEFAUT } from '@/services/paieConfig';
+import { getParametresPaie, calculerBulletin, PARAMETRES_PAIE_DEFAUT } from '@/services/paieConfig';
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} GNF`;
-
-const TAUX_IRG = 0.10;
 
 export const MasseSalariale = () => {
   const [departement, setDepartement] = useState('tous');
   const { data: employes, isLoading } = useQuery({ queryKey: ['employes'], queryFn: () => rhService.getEmployes() });
-  const { data: paramsCnss } = useQuery({ queryKey: ['parametres-cnss'], queryFn: getParametresCnss });
-  const cnssParams = paramsCnss || PARAMETRES_CNSS_DEFAUT;
+  const { data: paramsPaie } = useQuery({ queryKey: ['parametres-paie'], queryFn: getParametresPaie });
+  const params = paramsPaie || PARAMETRES_PAIE_DEFAUT;
 
   const list = useMemo(() => {
     let l = ((employes || []) as any[]).filter((e) => e.statut === 'actif');
@@ -33,21 +31,21 @@ export const MasseSalariale = () => {
 
   const lignes = list.map((e) => {
     const base = Number(e.salaire_base || 0);
-    const { baseCnss, cnssSalarie, cnssPatronal: patronal } = calculerCnss(base, cnssParams);
-    const irg = (base - cnssSalarie) * TAUX_IRG;
-    const net = base - cnssSalarie - irg;
+    const r = calculerBulletin({ salaireBase: base }, params);
     return {
       id: e.id,
       nom: `${e.nom} ${e.prenom}`,
       departement: e.departement || e.service,
       service: e.service,
-      brut: base,
-      baseCnss,
-      cnssSalarie,
-      irg,
-      net,
-      patronal,
-      cout: base + patronal,
+      brut: r.salaireBrut,
+      baseCnss: r.baseCnss,
+      cnssSalarie: r.cnssSalarie,
+      irg: r.rts,
+      onfpp: r.onfpp,
+      vf: r.versementForfaitaire,
+      net: r.netAPayer,
+      patronal: r.totalChargesPatronales,
+      cout: r.salaireBrut + r.totalChargesPatronales,
     };
   });
 
@@ -77,9 +75,11 @@ export const MasseSalariale = () => {
       'Salaire brut': l.brut,
       'Base CNSS': Math.round(l.baseCnss),
       'CNSS salarié': Math.round(l.cnssSalarie),
-      IRG: Math.round(l.irg),
+      RTS: Math.round(l.irg),
       'Salaire net': Math.round(l.net),
-      'Charges patronales': Math.round(l.patronal),
+      ONFPP: Math.round(l.onfpp),
+      'Versement forfaitaire': Math.round(l.vf),
+      'Total charges patronales': Math.round(l.patronal),
       'Coût employeur': Math.round(l.cout),
     })));
     const wb = XLSX.utils.book_new();
@@ -151,9 +151,11 @@ export const MasseSalariale = () => {
                   <TableHead className="text-right">Brut</TableHead>
                   <TableHead className="text-right">Base CNSS</TableHead>
                   <TableHead className="text-right">CNSS salarié (5 %)</TableHead>
-                  <TableHead className="text-right">IRG</TableHead>
+                  <TableHead className="text-right">RTS</TableHead>
                   <TableHead className="text-right">Net</TableHead>
-                  <TableHead className="text-right">Charges patronales</TableHead>
+                  <TableHead className="text-right">ONFPP</TableHead>
+                  <TableHead className="text-right">VF</TableHead>
+                  <TableHead className="text-right">Total charges patronales</TableHead>
                   <TableHead className="text-right">Coût employeur</TableHead>
                 </TableRow>
               </TableHeader>
@@ -167,6 +169,8 @@ export const MasseSalariale = () => {
                     <TableCell className="text-right">{fmt(l.cnssSalarie)}</TableCell>
                     <TableCell className="text-right">{fmt(l.irg)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(l.net)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.onfpp)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.vf)}</TableCell>
                     <TableCell className="text-right">{fmt(l.patronal)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(l.cout)}</TableCell>
                   </TableRow>

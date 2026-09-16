@@ -10,7 +10,7 @@ import { Plus, Calculator } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { getParametresCnss, calculerCnss } from '@/services/paieConfig';
+import { getParametresPaie, calculerBulletin } from '@/services/paieConfig';
 
 const moisNoms = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -39,8 +39,8 @@ export const BulletinsPaieList = () => {
 
   const generateMutation = useMutation({
     mutationFn: async (periodeId: string) => {
-      // Paramétrage CNSS (plafond et taux configurables)
-      const paramsCnss = await getParametresCnss();
+      // Paramétrage de paie (CNSS, barème RTS, ONFPP, versement forfaitaire)
+      const params = await getParametresPaie();
 
       // Récupérer tous les employés actifs
       const { data: employes, error: empError } = await supabase.from('employes').select('id').eq('statut', 'actif');
@@ -49,41 +49,46 @@ export const BulletinsPaieList = () => {
       // Récupérer les éléments de salaire
       for (const emp of (employes || [])) {
         const { data: elements } = await supabase.from('elements_salaire').select('*').eq('employe_id', emp.id).order('date_effet', { ascending: false }).limit(1);
-        
+
         const el = elements?.[0];
-        const salaireBase = el?.salaire_base || 0;
-        const primes = (el?.prime_transport || 0) + (el?.prime_logement || 0) + (el?.prime_risque || 0) + (el?.prime_anciennete || 0) + (el?.prime_rendement || 0) + (el?.autres_primes || 0);
-        const indemnites = el?.indemnite_repas || 0;
-        const brut = salaireBase + primes + indemnites;
-        const { baseCnss, cnssSalarie: cnssEmp, cnssPatronal: cnssPatr } = calculerCnss(brut, paramsCnss);
-        // IRG simplifié (barème progressif Guinée approximé)
-        const brutImposable = brut - cnssEmp;
-        let irg = 0;
-        if (brutImposable > 0) {
-          irg = Math.round(brutImposable * 0.10); // Taux simplifié 10%
-        }
         // Retenue prêt
         const { data: prets } = await supabase.from('prets').select('montant_mensualite').eq('employe_id', emp.id).eq('statut', 'en_cours');
         const retenuePret = prets?.reduce((sum, p) => sum + (p.montant_mensualite || 0), 0) || 0;
-        
-        const totalRetenues = cnssEmp + irg + retenuePret;
-        const net = brut - totalRetenues;
+
+        const autresPrimes = (el?.prime_risque || 0) + (el?.prime_anciennete || 0) + (el?.prime_rendement || 0) + (el?.autres_primes || 0) + (el?.indemnite_repas || 0);
+        const r = calculerBulletin({
+          salaireBase: el?.salaire_base || 0,
+          primeTransport: el?.prime_transport || 0,
+          primeLogement: el?.prime_logement || 0,
+          primeChereteVie: 0,
+          autresPrimes,
+          retenuePret,
+        }, params);
 
         const { error } = await supabase.from('bulletins_paie').insert({
           employe_id: emp.id,
           periode_id: periodeId,
-          salaire_base: salaireBase,
-          total_primes: primes,
-          total_indemnites: indemnites,
-          salaire_brut: brut,
-          base_cnss: baseCnss,
-          cotisation_cnss_employe: cnssEmp,
-          cotisation_cnss_employeur: cnssPatr,
-          irg,
+          salaire_base: r.salaireBase,
+          prime_transport: el?.prime_transport || 0,
+          prime_logement: el?.prime_logement || 0,
+          prime_cherete_vie: 0,
+          autres_primes: autresPrimes,
+          total_primes: r.totalPrimes,
+          total_indemnites: 0,
+          salaire_brut: r.salaireBrut,
+          base_cnss: r.baseCnss,
+          cotisation_cnss_employe: r.cnssSalarie,
+          cotisation_cnss_employeur: r.cnssPatronal,
+          base_rts: r.baseRts,
+          rts: r.rts,
+          irg: r.rts,
+          onfpp: r.onfpp,
+          versement_forfaitaire: r.versementForfaitaire,
+          total_charges_patronales: r.totalChargesPatronales,
           retenue_pret: retenuePret,
-          total_retenues: totalRetenues,
-          salaire_net: net,
-          net_a_payer: net,
+          total_retenues: r.totalRetenues,
+          salaire_net: r.netAPayer,
+          net_a_payer: r.netAPayer,
         });
         if (error && !error.message.includes('duplicate')) console.error(error);
       }
@@ -106,11 +111,11 @@ export const BulletinsPaieList = () => {
       <Card><CardContent className="p-0">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50"><tr>
-            <th className="text-left p-3">Employé</th><th className="text-left p-3">Période</th><th className="text-left p-3">Brut</th><th className="text-left p-3">Base CNSS</th><th className="text-left p-3">CNSS salarié</th><th className="text-left p-3">Charges patronales</th><th className="text-left p-3">Retenues</th><th className="text-left p-3">Net à payer</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
+            <th className="text-left p-3">Employé</th><th className="text-left p-3">Période</th><th className="text-left p-3">Brut</th><th className="text-left p-3">Base CNSS</th><th className="text-left p-3">CNSS salarié</th><th className="text-left p-3">Base RTS</th><th className="text-left p-3">RTS</th><th className="text-left p-3">CNSS patronale</th><th className="text-left p-3">ONFPP</th><th className="text-left p-3">VF</th><th className="text-left p-3">Total charges patronales</th><th className="text-left p-3">Retenues</th><th className="text-left p-3">Net à payer</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
           </tr></thead>
           <tbody>
-            {isLoading ? <tr><td colSpan={10} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
-            : bulletins?.length === 0 ? <tr><td colSpan={10} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
+            {isLoading ? <tr><td colSpan={15} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
+            : bulletins?.length === 0 ? <tr><td colSpan={15} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
             : bulletins?.map((b: any) => (
               <tr key={b.id} className="border-b hover:bg-muted/30">
                 <td className="p-3 font-medium">{b.employe?.prenom} {b.employe?.nom}</td>
@@ -118,7 +123,12 @@ export const BulletinsPaieList = () => {
                 <td className="p-3">{Number(b.salaire_brut).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3">{Number(b.base_cnss || 0).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3">{Number(b.cotisation_cnss_employe || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.base_rts || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.rts ?? b.irg ?? 0).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3">{Number(b.cotisation_cnss_employeur || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.onfpp || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.versement_forfaitaire || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.total_charges_patronales || 0).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3 text-destructive">{Number(b.total_retenues).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3 font-semibold">{Number(b.net_a_payer).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3"><Badge variant={b.statut === 'valide' ? 'default' : b.statut === 'paye' ? 'secondary' : 'outline'}>{b.statut}</Badge></td>
