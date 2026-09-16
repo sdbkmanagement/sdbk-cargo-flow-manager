@@ -47,10 +47,11 @@ export const BulletinsPaieList = () => {
     }
   });
 
-  const generateMutation = useMutation({
-    mutationFn: async (periodeId: string) => {
+  const genererBulletins = async (periodeId: string) => {
+    {
       // Paramétrage de paie (CNSS, barème RTS, ONFPP, versement forfaitaire)
       const params = await getParametresPaie();
+
 
       // Récupérer tous les employés actifs
       const { data: employes, error: empError } = await supabase.from('employes').select('id').eq('statut', 'actif');
