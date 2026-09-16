@@ -75,6 +75,7 @@ export const MasseSalariale = () => {
       Département: l.departement,
       Service: l.service,
       'Salaire brut': l.brut,
+      'Base CNSS': Math.round(l.baseCnss),
       'CNSS salarié': Math.round(l.cnssSalarie),
       IRG: Math.round(l.irg),
       'Salaire net': Math.round(l.net),
@@ -148,7 +149,8 @@ export const MasseSalariale = () => {
                   <TableHead>Collaborateur</TableHead>
                   <TableHead>Département</TableHead>
                   <TableHead className="text-right">Brut</TableHead>
-                  <TableHead className="text-right">CNSS salarié</TableHead>
+                  <TableHead className="text-right">Base CNSS</TableHead>
+                  <TableHead className="text-right">CNSS salarié (5 %)</TableHead>
                   <TableHead className="text-right">IRG</TableHead>
                   <TableHead className="text-right">Net</TableHead>
                   <TableHead className="text-right">Charges patronales</TableHead>
@@ -161,6 +163,7 @@ export const MasseSalariale = () => {
                     <TableCell className="font-medium">{l.nom}</TableCell>
                     <TableCell>{l.departement}</TableCell>
                     <TableCell className="text-right">{fmt(l.brut)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.baseCnss)}</TableCell>
                     <TableCell className="text-right">{fmt(l.cnssSalarie)}</TableCell>
                     <TableCell className="text-right">{fmt(l.irg)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(l.net)}</TableCell>
