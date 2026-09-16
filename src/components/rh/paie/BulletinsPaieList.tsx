@@ -111,11 +111,11 @@ export const BulletinsPaieList = () => {
       <Card><CardContent className="p-0">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50"><tr>
-            <th className="text-left p-3">Employé</th><th className="text-left p-3">Période</th><th className="text-left p-3">Brut</th><th className="text-left p-3">Base CNSS</th><th className="text-left p-3">CNSS salarié</th><th className="text-left p-3">Charges patronales</th><th className="text-left p-3">Retenues</th><th className="text-left p-3">Net à payer</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
+            <th className="text-left p-3">Employé</th><th className="text-left p-3">Période</th><th className="text-left p-3">Brut</th><th className="text-left p-3">Base CNSS</th><th className="text-left p-3">CNSS salarié</th><th className="text-left p-3">Base RTS</th><th className="text-left p-3">RTS</th><th className="text-left p-3">CNSS patronale</th><th className="text-left p-3">ONFPP</th><th className="text-left p-3">VF</th><th className="text-left p-3">Total charges patronales</th><th className="text-left p-3">Retenues</th><th className="text-left p-3">Net à payer</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
           </tr></thead>
           <tbody>
-            {isLoading ? <tr><td colSpan={10} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
-            : bulletins?.length === 0 ? <tr><td colSpan={10} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
+            {isLoading ? <tr><td colSpan={15} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
+            : bulletins?.length === 0 ? <tr><td colSpan={15} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
             : bulletins?.map((b: any) => (
               <tr key={b.id} className="border-b hover:bg-muted/30">
                 <td className="p-3 font-medium">{b.employe?.prenom} {b.employe?.nom}</td>
