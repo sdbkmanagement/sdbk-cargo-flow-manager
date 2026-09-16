@@ -169,6 +169,8 @@ export const MasseSalariale = () => {
                     <TableCell className="text-right">{fmt(l.cnssSalarie)}</TableCell>
                     <TableCell className="text-right">{fmt(l.irg)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(l.net)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.onfpp)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.vf)}</TableCell>
                     <TableCell className="text-right">{fmt(l.patronal)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(l.cout)}</TableCell>
                   </TableRow>
