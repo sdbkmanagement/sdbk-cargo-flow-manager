@@ -300,6 +300,31 @@ export const BulletinsPaieList = () => {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={showEtatMois} onOpenChange={setShowEtatMois}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Générer l'état du mois</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Mois</Label>
+                <Select value={moisEtat} onValueChange={setMoisEtat}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {moisNoms.slice(1).map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Année</Label>
+                <Input type="number" value={anneeEtat} onChange={(e) => setAnneeEtat(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">La période sera créée si elle n'existe pas, puis les bulletins seront générés pour tous les collaborateurs actifs.</p>
+            <Button className="w-full" disabled={etatMoisMutation.isPending} onClick={() => etatMoisMutation.mutate()}>
+              {etatMoisMutation.isPending ? 'Génération en cours...' : "Générer l'état du mois"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!editBulletin} onOpenChange={(o) => !o && setEditBulletin(null)}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
