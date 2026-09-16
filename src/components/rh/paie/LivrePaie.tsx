@@ -36,50 +36,70 @@ export const LivrePaie = () => {
       : Object.entries(grouped).map(([periode, items]: [string, any]) => {
         const totalBrut = items.reduce((s: number, b: any) => s + Number(b.salaire_brut), 0);
         const totalNet = items.reduce((s: number, b: any) => s + Number(b.net_a_payer), 0);
-        const totalRetenues = items.reduce((s: number, b: any) => s + Number(b.total_retenues), 0);
-        const totalBaseCnss = items.reduce((s: number, b: any) => s + Number(b.base_cnss || 0), 0);
+        const sum = (field: string) => items.reduce((s: number, b: any) => s + Number(b[field] || 0), 0);
+        const totalBase = sum('salaire_base');
+        const totalTransport = sum('prime_transport');
+        const totalLogement = sum('prime_logement');
+        const totalCherte = sum('prime_cherete_vie');
+        const totalAutresPrimes = sum('autres_primes');
         const totalCnssSalarie = items.reduce((s: number, b: any) => s + Number(b.cotisation_cnss_employe || 0), 0);
         const totalPatronal = items.reduce((s: number, b: any) => s + Number(b.cotisation_cnss_employeur || 0), 0);
+        const totalBaseRts = sum('base_rts');
         const totalRts = items.reduce((s: number, b: any) => s + Number(b.rts ?? b.irg ?? 0), 0);
+        const totalAvance = sum('avance_salaire');
+        const totalManquant = sum('manquant');
+        const totalComplement = sum('complement_mois_precedent');
         const totalOnfpp = items.reduce((s: number, b: any) => s + Number(b.onfpp || 0), 0);
         const totalVf = items.reduce((s: number, b: any) => s + Number(b.versement_forfaitaire || 0), 0);
         const totalChargesPat = items.reduce((s: number, b: any) => s + Number(b.total_charges_patronales || 0), 0);
         return (
           <Card key={periode}>
-            <CardContent className="p-4">
+            <CardContent className="p-4 overflow-x-auto">
               <h3 className="font-semibold mb-2">{periode}</h3>
-              <table className="w-full text-sm">
+              <table className="w-max min-w-full text-sm whitespace-nowrap">
                 <thead className="border-b bg-muted/50"><tr>
-                  <th className="text-left p-2">Employé</th><th className="text-right p-2">Brut</th><th className="text-right p-2">Base CNSS</th><th className="text-right p-2">CNSS salarié</th><th className="text-right p-2">RTS</th><th className="text-right p-2">CNSS patronale</th><th className="text-right p-2">ONFPP</th><th className="text-right p-2">VF</th><th className="text-right p-2">Total charges patronales</th><th className="text-right p-2">Retenues</th><th className="text-right p-2">Net à payer</th>
+                  <th className="text-left p-2">Personnel</th><th className="text-right p-2">Salaire Base</th><th className="text-right p-2">P. transport</th><th className="text-right p-2">P. de Logement</th><th className="text-right p-2">Prime de cherté de vie</th><th className="text-right p-2">Autres primes et indemnité</th><th className="text-right p-2">Salaire Brut</th><th className="text-right p-2">CNSS1 (5%)</th><th className="text-right p-2">CNSS (18%)</th><th className="text-right p-2">Base d'imposition RTS</th><th className="text-right p-2">RTS net</th><th className="text-right p-2">Salaire net</th><th className="text-right p-2">Avance sur Salaire</th><th className="text-right p-2">Manquant</th><th className="text-right p-2">Complément Salaire Mois Précédent</th><th className="text-right p-2">ONFPP</th><th className="text-right p-2">VF</th>
                 </tr></thead>
                 <tbody>
                   {items.map((b: any) => (
                     <tr key={b.id} className="border-b">
                       <td className="p-2">{b.employe?.prenom} {b.employe?.nom}</td>
+                      <td className="p-2 text-right">{fmt(b.salaire_base)}</td>
+                      <td className="p-2 text-right">{fmt(b.prime_transport)}</td>
+                      <td className="p-2 text-right">{fmt(b.prime_logement)}</td>
+                      <td className="p-2 text-right">{fmt(b.prime_cherete_vie)}</td>
+                      <td className="p-2 text-right">{fmt(b.autres_primes)}</td>
                       <td className="p-2 text-right">{fmt(b.salaire_brut)}</td>
-                      <td className="p-2 text-right">{fmt(b.base_cnss)}</td>
                       <td className="p-2 text-right">{fmt(b.cotisation_cnss_employe)}</td>
-                      <td className="p-2 text-right">{fmt(b.rts ?? b.irg)}</td>
                       <td className="p-2 text-right">{fmt(b.cotisation_cnss_employeur)}</td>
+                      <td className="p-2 text-right">{fmt(b.base_rts)}</td>
+                      <td className="p-2 text-right">{fmt(b.rts ?? b.irg)}</td>
+                      <td className="p-2 text-right font-semibold">{fmt(b.net_a_payer)}</td>
+                      <td className="p-2 text-right">{fmt(b.avance_salaire)}</td>
+                      <td className="p-2 text-right">{fmt(b.manquant)}</td>
+                      <td className="p-2 text-right">{fmt(b.complement_mois_precedent)}</td>
                       <td className="p-2 text-right">{fmt(b.onfpp)}</td>
                       <td className="p-2 text-right">{fmt(b.versement_forfaitaire)}</td>
-                      <td className="p-2 text-right">{fmt(b.total_charges_patronales)}</td>
-                      <td className="p-2 text-right text-destructive">{fmt(b.total_retenues)}</td>
-                      <td className="p-2 text-right font-semibold">{fmt(b.net_a_payer)}</td>
                     </tr>
                   ))}
                   <tr className="bg-muted/30 font-bold">
                     <td className="p-2">TOTAL</td>
+                    <td className="p-2 text-right">{fmt(totalBase)}</td>
+                    <td className="p-2 text-right">{fmt(totalTransport)}</td>
+                    <td className="p-2 text-right">{fmt(totalLogement)}</td>
+                    <td className="p-2 text-right">{fmt(totalCherte)}</td>
+                    <td className="p-2 text-right">{fmt(totalAutresPrimes)}</td>
                     <td className="p-2 text-right">{fmt(totalBrut)}</td>
-                    <td className="p-2 text-right">{fmt(totalBaseCnss)}</td>
                     <td className="p-2 text-right">{fmt(totalCnssSalarie)}</td>
-                    <td className="p-2 text-right">{fmt(totalRts)}</td>
                     <td className="p-2 text-right">{fmt(totalPatronal)}</td>
+                    <td className="p-2 text-right">{fmt(totalBaseRts)}</td>
+                    <td className="p-2 text-right">{fmt(totalRts)}</td>
+                    <td className="p-2 text-right">{fmt(totalNet)}</td>
+                    <td className="p-2 text-right">{fmt(totalAvance)}</td>
+                    <td className="p-2 text-right">{fmt(totalManquant)}</td>
+                    <td className="p-2 text-right">{fmt(totalComplement)}</td>
                     <td className="p-2 text-right">{fmt(totalOnfpp)}</td>
                     <td className="p-2 text-right">{fmt(totalVf)}</td>
-                    <td className="p-2 text-right">{fmt(totalChargesPat)}</td>
-                    <td className="p-2 text-right text-destructive">{fmt(totalRetenues)}</td>
-                    <td className="p-2 text-right">{fmt(totalNet)}</td>
                   </tr>
                 </tbody>
               </table>
