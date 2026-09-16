@@ -10,6 +10,7 @@ import { Plus, Calculator } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { getParametresCnss, calculerCnss } from '@/services/paieConfig';
 
 const moisNoms = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -54,8 +55,7 @@ export const BulletinsPaieList = () => {
         const primes = (el?.prime_transport || 0) + (el?.prime_logement || 0) + (el?.prime_risque || 0) + (el?.prime_anciennete || 0) + (el?.prime_rendement || 0) + (el?.autres_primes || 0);
         const indemnites = el?.indemnite_repas || 0;
         const brut = salaireBase + primes + indemnites;
-        const cnssEmp = Math.round(brut * 0.05);
-        const cnssPatr = Math.round(brut * 0.18);
+        const { baseCnss, cnssSalarie: cnssEmp, cnssPatronal: cnssPatr } = calculerCnss(brut, paramsCnss);
         // IRG simplifié (barème progressif Guinée approximé)
         const brutImposable = brut - cnssEmp;
         let irg = 0;
