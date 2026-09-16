@@ -228,7 +228,10 @@ export const BulletinsPaieList = () => {
                 <td className="p-3 text-right">{Number(b.versement_forfaitaire || 0).toLocaleString('fr-FR')}</td>
                 <td className="p-3"><Badge variant={b.statut === 'valide' ? 'default' : b.statut === 'paye' ? 'secondary' : 'outline'}>{b.statut}</Badge></td>
                 <td className="p-3">
-                  {b.statut === 'brouillon' && <Button size="sm" variant="outline" onClick={() => validerMutation.mutate(b.id)}>Valider</Button>}
+                  <div className="flex gap-2">
+                    {b.statut !== 'paye' && <Button size="sm" variant="outline" onClick={() => openEdit(b)}><Pencil className="w-3.5 h-3.5 mr-1" />Modifier</Button>}
+                    {b.statut === 'brouillon' && <Button size="sm" variant="outline" onClick={() => validerMutation.mutate(b.id)}>Valider</Button>}
+                  </div>
                 </td>
               </tr>
             ))}
