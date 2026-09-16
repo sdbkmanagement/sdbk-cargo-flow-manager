@@ -31,21 +31,21 @@ export const MasseSalariale = () => {
 
   const lignes = list.map((e) => {
     const base = Number(e.salaire_base || 0);
-    const { baseCnss, cnssSalarie, cnssPatronal: patronal } = calculerCnss(base, cnssParams);
-    const irg = (base - cnssSalarie) * TAUX_IRG;
-    const net = base - cnssSalarie - irg;
+    const r = calculerBulletin({ salaireBase: base }, params);
     return {
       id: e.id,
       nom: `${e.nom} ${e.prenom}`,
       departement: e.departement || e.service,
       service: e.service,
-      brut: base,
-      baseCnss,
-      cnssSalarie,
-      irg,
-      net,
-      patronal,
-      cout: base + patronal,
+      brut: r.salaireBrut,
+      baseCnss: r.baseCnss,
+      cnssSalarie: r.cnssSalarie,
+      irg: r.rts,
+      onfpp: r.onfpp,
+      vf: r.versementForfaitaire,
+      net: r.netAPayer,
+      patronal: r.totalChargesPatronales,
+      cout: r.salaireBrut + r.totalChargesPatronales,
     };
   });
 
