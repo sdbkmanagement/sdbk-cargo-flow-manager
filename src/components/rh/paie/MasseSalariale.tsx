@@ -141,18 +141,24 @@ export const MasseSalariale = () => {
       </Card>
 
       <Card>
-        <CardContent className="p-0">
+        <CardContent className="p-0 overflow-x-auto">
           {isLoading ? <p className="p-6 text-sm text-muted-foreground">Chargement...</p> : (
-            <Table>
+            <Table className="w-max min-w-full whitespace-nowrap">
               <TableHeader>
                 <TableRow>
                   <TableHead>Collaborateur</TableHead>
                   <TableHead>Département</TableHead>
-                  <TableHead className="text-right">Brut</TableHead>
+                  <TableHead className="text-right">Salaire Base</TableHead>
+                  <TableHead className="text-right">P. transport</TableHead>
+                  <TableHead className="text-right">P. de Logement</TableHead>
+                  <TableHead className="text-right">Prime de cherté de vie</TableHead>
+                  <TableHead className="text-right">Autres primes et indemnité</TableHead>
+                  <TableHead className="text-right">Salaire Brut</TableHead>
                   <TableHead className="text-right">Base CNSS</TableHead>
-                  <TableHead className="text-right">CNSS salarié (5 %)</TableHead>
-                  <TableHead className="text-right">RTS</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
+                  <TableHead className="text-right">CNSS1 (5%)</TableHead>
+                  <TableHead className="text-right">Base d'imposition RTS</TableHead>
+                  <TableHead className="text-right">RTS net</TableHead>
+                  <TableHead className="text-right">Salaire net</TableHead>
                   <TableHead className="text-right">ONFPP</TableHead>
                   <TableHead className="text-right">VF</TableHead>
                   <TableHead className="text-right">Total charges patronales</TableHead>
@@ -165,8 +171,14 @@ export const MasseSalariale = () => {
                     <TableCell className="font-medium">{l.nom}</TableCell>
                     <TableCell>{l.departement}</TableCell>
                     <TableCell className="text-right">{fmt(l.brut)}</TableCell>
+                    <TableCell className="text-right">{fmt(0)}</TableCell>
+                    <TableCell className="text-right">{fmt(0)}</TableCell>
+                    <TableCell className="text-right">{fmt(0)}</TableCell>
+                    <TableCell className="text-right">{fmt(0)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.brut)}</TableCell>
                     <TableCell className="text-right">{fmt(l.baseCnss)}</TableCell>
                     <TableCell className="text-right">{fmt(l.cnssSalarie)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.brut - l.cnssSalarie)}</TableCell>
                     <TableCell className="text-right">{fmt(l.irg)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(l.net)}</TableCell>
                     <TableCell className="text-right">{fmt(l.onfpp)}</TableCell>

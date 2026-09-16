@@ -51,7 +51,6 @@ export const LivrePaie = () => {
         const totalComplement = sum('complement_mois_precedent');
         const totalOnfpp = items.reduce((s: number, b: any) => s + Number(b.onfpp || 0), 0);
         const totalVf = items.reduce((s: number, b: any) => s + Number(b.versement_forfaitaire || 0), 0);
-        const totalChargesPat = items.reduce((s: number, b: any) => s + Number(b.total_charges_patronales || 0), 0);
         return (
           <Card key={periode}>
             <CardContent className="p-4 overflow-x-auto">
