@@ -103,8 +103,39 @@ export const BulletinsPaieList = () => {
         });
         if (error && !error.message.includes('duplicate')) console.error(error);
       }
-    },
+    }
+  };
+
+  const generateMutation = useMutation({
+    mutationFn: (periodeId: string) => genererBulletins(periodeId),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] }); setShowGenerate(false); toast({ title: 'Bulletins générés avec succès' }); },
+    onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' })
+  });
+
+  const etatMoisMutation = useMutation({
+    mutationFn: async () => {
+      const mois = Number(moisEtat);
+      const annee = Number(anneeEtat);
+      const { data: existante } = await supabase.from('periodes_paie').select('id').eq('mois', mois).eq('annee', annee).maybeSingle();
+      let periodeId = existante?.id;
+      if (!periodeId) {
+        const dateDebut = new Date(Date.UTC(annee, mois - 1, 1)).toISOString().split('T')[0];
+        const dateFin = new Date(Date.UTC(annee, mois, 0)).toISOString().split('T')[0];
+        const { data: nouvelle, error } = await supabase.from('periodes_paie')
+          .insert({ mois, annee, date_debut: dateDebut, date_fin: dateFin, statut: 'ouverte' })
+          .select('id').single();
+        if (error) throw error;
+        periodeId = nouvelle.id;
+      }
+      await genererBulletins(periodeId!);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] });
+      queryClient.invalidateQueries({ queryKey: ['periodes-paie-ouvertes'] });
+      queryClient.invalidateQueries({ queryKey: ['periodes-paie'] });
+      setShowEtatMois(false);
+      toast({ title: "État du mois généré" });
+    },
     onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' })
   });
 
