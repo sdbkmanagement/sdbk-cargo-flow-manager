@@ -123,7 +123,12 @@ export const BulletinsPaieList = () => {
                 <td className="p-3">{Number(b.salaire_brut).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3">{Number(b.base_cnss || 0).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3">{Number(b.cotisation_cnss_employe || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.base_rts || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.rts ?? b.irg ?? 0).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3">{Number(b.cotisation_cnss_employeur || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.onfpp || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.versement_forfaitaire || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.total_charges_patronales || 0).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3 text-destructive">{Number(b.total_retenues).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3 font-semibold">{Number(b.net_a_payer).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3"><Badge variant={b.statut === 'valide' ? 'default' : b.statut === 'paye' ? 'secondary' : 'outline'}>{b.statut}</Badge></td>
