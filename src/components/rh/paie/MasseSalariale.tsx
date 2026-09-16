@@ -8,17 +8,17 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Download, Wallet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { rhService } from '@/services/rh';
+import { getParametresCnss, calculerCnss, PARAMETRES_CNSS_DEFAUT } from '@/services/paieConfig';
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} GNF`;
 
-// Paramètres Guinée (déjà utilisés par le module Paie)
-const TAUX_CNSS_SALARIE = 0.05;
-const TAUX_CNSS_PATRONAL = 0.18;
 const TAUX_IRG = 0.10;
 
 export const MasseSalariale = () => {
   const [departement, setDepartement] = useState('tous');
   const { data: employes, isLoading } = useQuery({ queryKey: ['employes'], queryFn: () => rhService.getEmployes() });
+  const { data: paramsCnss } = useQuery({ queryKey: ['parametres-cnss'], queryFn: getParametresCnss });
+  const cnssParams = paramsCnss || PARAMETRES_CNSS_DEFAUT;
 
   const list = useMemo(() => {
     let l = ((employes || []) as any[]).filter((e) => e.statut === 'actif');
@@ -33,16 +33,16 @@ export const MasseSalariale = () => {
 
   const lignes = list.map((e) => {
     const base = Number(e.salaire_base || 0);
-    const cnssSalarie = base * TAUX_CNSS_SALARIE;
+    const { baseCnss, cnssSalarie, cnssPatronal: patronal } = calculerCnss(base, cnssParams);
     const irg = (base - cnssSalarie) * TAUX_IRG;
     const net = base - cnssSalarie - irg;
-    const patronal = base * TAUX_CNSS_PATRONAL;
     return {
       id: e.id,
       nom: `${e.nom} ${e.prenom}`,
       departement: e.departement || e.service,
       service: e.service,
       brut: base,
+      baseCnss,
       cnssSalarie,
       irg,
       net,
