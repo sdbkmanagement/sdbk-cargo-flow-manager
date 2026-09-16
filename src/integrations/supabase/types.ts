@@ -451,8 +451,12 @@ export type Database = {
       }
       bulletins_paie: {
         Row: {
+          autres_primes: number | null
           autres_retenues: number | null
+          avance_salaire: number | null
           base_cnss: number
+          base_rts: number | null
+          complement_mois_precedent: number | null
           cotisation_cnss_employe: number | null
           cotisation_cnss_employeur: number | null
           created_at: string | null
@@ -461,24 +465,36 @@ export type Database = {
           employe_id: string
           id: string
           irg: number | null
+          manquant: number | null
           mode_paiement: string | null
           net_a_payer: number
           numero: string | null
+          onfpp: number | null
           periode_id: string
+          prime_cherete_vie: number | null
+          prime_logement: number | null
+          prime_transport: number | null
           retenue_pret: number | null
+          rts: number | null
           salaire_base: number
           salaire_brut: number
           salaire_net: number
           statut: string | null
+          total_charges_patronales: number | null
           total_indemnites: number | null
           total_primes: number | null
           total_retenues: number | null
           updated_at: string | null
           valide_par: string | null
+          versement_forfaitaire: number | null
         }
         Insert: {
+          autres_primes?: number | null
           autres_retenues?: number | null
+          avance_salaire?: number | null
           base_cnss?: number
+          base_rts?: number | null
+          complement_mois_precedent?: number | null
           cotisation_cnss_employe?: number | null
           cotisation_cnss_employeur?: number | null
           created_at?: string | null
@@ -487,24 +503,36 @@ export type Database = {
           employe_id: string
           id?: string
           irg?: number | null
+          manquant?: number | null
           mode_paiement?: string | null
           net_a_payer?: number
           numero?: string | null
+          onfpp?: number | null
           periode_id: string
+          prime_cherete_vie?: number | null
+          prime_logement?: number | null
+          prime_transport?: number | null
           retenue_pret?: number | null
+          rts?: number | null
           salaire_base?: number
           salaire_brut?: number
           salaire_net?: number
           statut?: string | null
+          total_charges_patronales?: number | null
           total_indemnites?: number | null
           total_primes?: number | null
           total_retenues?: number | null
           updated_at?: string | null
           valide_par?: string | null
+          versement_forfaitaire?: number | null
         }
         Update: {
+          autres_primes?: number | null
           autres_retenues?: number | null
+          avance_salaire?: number | null
           base_cnss?: number
+          base_rts?: number | null
+          complement_mois_precedent?: number | null
           cotisation_cnss_employe?: number | null
           cotisation_cnss_employeur?: number | null
           created_at?: string | null
@@ -513,20 +541,28 @@ export type Database = {
           employe_id?: string
           id?: string
           irg?: number | null
+          manquant?: number | null
           mode_paiement?: string | null
           net_a_payer?: number
           numero?: string | null
+          onfpp?: number | null
           periode_id?: string
+          prime_cherete_vie?: number | null
+          prime_logement?: number | null
+          prime_transport?: number | null
           retenue_pret?: number | null
+          rts?: number | null
           salaire_base?: number
           salaire_brut?: number
           salaire_net?: number
           statut?: string | null
+          total_charges_patronales?: number | null
           total_indemnites?: number | null
           total_primes?: number | null
           total_retenues?: number | null
           updated_at?: string | null
           valide_par?: string | null
+          versement_forfaitaire?: number | null
         }
         Relationships: [
           {
