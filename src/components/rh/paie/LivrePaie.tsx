@@ -50,7 +50,7 @@ export const LivrePaie = () => {
               <h3 className="font-semibold mb-2">{periode}</h3>
               <table className="w-full text-sm">
                 <thead className="border-b bg-muted/50"><tr>
-                  <th className="text-left p-2">Employé</th><th className="text-right p-2">Brut</th><th className="text-right p-2">Base CNSS</th><th className="text-right p-2">CNSS salarié</th><th className="text-right p-2">Charges patronales</th><th className="text-right p-2">Retenues</th><th className="text-right p-2">Net à payer</th>
+                  <th className="text-left p-2">Employé</th><th className="text-right p-2">Brut</th><th className="text-right p-2">Base CNSS</th><th className="text-right p-2">CNSS salarié</th><th className="text-right p-2">RTS</th><th className="text-right p-2">CNSS patronale</th><th className="text-right p-2">ONFPP</th><th className="text-right p-2">VF</th><th className="text-right p-2">Total charges patronales</th><th className="text-right p-2">Retenues</th><th className="text-right p-2">Net à payer</th>
                 </tr></thead>
                 <tbody>
                   {items.map((b: any) => (
@@ -59,7 +59,11 @@ export const LivrePaie = () => {
                       <td className="p-2 text-right">{fmt(b.salaire_brut)}</td>
                       <td className="p-2 text-right">{fmt(b.base_cnss)}</td>
                       <td className="p-2 text-right">{fmt(b.cotisation_cnss_employe)}</td>
+                      <td className="p-2 text-right">{fmt(b.rts ?? b.irg)}</td>
                       <td className="p-2 text-right">{fmt(b.cotisation_cnss_employeur)}</td>
+                      <td className="p-2 text-right">{fmt(b.onfpp)}</td>
+                      <td className="p-2 text-right">{fmt(b.versement_forfaitaire)}</td>
+                      <td className="p-2 text-right">{fmt(b.total_charges_patronales)}</td>
                       <td className="p-2 text-right text-destructive">{fmt(b.total_retenues)}</td>
                       <td className="p-2 text-right font-semibold">{fmt(b.net_a_payer)}</td>
                     </tr>
@@ -69,7 +73,11 @@ export const LivrePaie = () => {
                     <td className="p-2 text-right">{fmt(totalBrut)}</td>
                     <td className="p-2 text-right">{fmt(totalBaseCnss)}</td>
                     <td className="p-2 text-right">{fmt(totalCnssSalarie)}</td>
+                    <td className="p-2 text-right">{fmt(totalRts)}</td>
                     <td className="p-2 text-right">{fmt(totalPatronal)}</td>
+                    <td className="p-2 text-right">{fmt(totalOnfpp)}</td>
+                    <td className="p-2 text-right">{fmt(totalVf)}</td>
+                    <td className="p-2 text-right">{fmt(totalChargesPat)}</td>
                     <td className="p-2 text-right text-destructive">{fmt(totalRetenues)}</td>
                     <td className="p-2 text-right">{fmt(totalNet)}</td>
                   </tr>
