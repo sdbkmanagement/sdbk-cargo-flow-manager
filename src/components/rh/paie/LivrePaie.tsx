@@ -37,6 +37,9 @@ export const LivrePaie = () => {
         const totalBrut = items.reduce((s: number, b: any) => s + Number(b.salaire_brut), 0);
         const totalNet = items.reduce((s: number, b: any) => s + Number(b.net_a_payer), 0);
         const totalRetenues = items.reduce((s: number, b: any) => s + Number(b.total_retenues), 0);
+        const totalBaseCnss = items.reduce((s: number, b: any) => s + Number(b.base_cnss || 0), 0);
+        const totalCnssSalarie = items.reduce((s: number, b: any) => s + Number(b.cotisation_cnss_employe || 0), 0);
+        const totalPatronal = items.reduce((s: number, b: any) => s + Number(b.cotisation_cnss_employeur || 0), 0);
         return (
           <Card key={periode}>
             <CardContent className="p-4">
