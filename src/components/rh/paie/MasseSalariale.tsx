@@ -151,9 +151,11 @@ export const MasseSalariale = () => {
                   <TableHead className="text-right">Brut</TableHead>
                   <TableHead className="text-right">Base CNSS</TableHead>
                   <TableHead className="text-right">CNSS salarié (5 %)</TableHead>
-                  <TableHead className="text-right">IRG</TableHead>
+                  <TableHead className="text-right">RTS</TableHead>
                   <TableHead className="text-right">Net</TableHead>
-                  <TableHead className="text-right">Charges patronales</TableHead>
+                  <TableHead className="text-right">ONFPP</TableHead>
+                  <TableHead className="text-right">VF</TableHead>
+                  <TableHead className="text-right">Total charges patronales</TableHead>
                   <TableHead className="text-right">Coût employeur</TableHead>
                 </TableRow>
               </TableHeader>
