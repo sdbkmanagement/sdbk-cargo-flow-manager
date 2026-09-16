@@ -102,6 +102,85 @@ export const BulletinsPaieList = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] }); toast({ title: 'Bulletin validé' }); }
   });
 
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!editBulletin) return;
+      const params = await getParametresPaie();
+      const n = (v: any) => Number(v) || 0;
+      const r = calculerBulletin({
+        salaireBase: n(form.salaire_base),
+        primeTransport: n(form.prime_transport),
+        primeLogement: n(form.prime_logement),
+        primeChereteVie: n(form.prime_cherete_vie),
+        autresPrimes: n(form.autres_primes),
+        avanceSalaire: n(form.avance_salaire),
+        manquant: n(form.manquant),
+        complementMoisPrecedent: n(form.complement_mois_precedent),
+        retenuePret: n(editBulletin.retenue_pret),
+      }, params);
+      const { error } = await supabase.from('bulletins_paie').update({
+        salaire_base: r.salaireBase,
+        prime_transport: n(form.prime_transport),
+        prime_logement: n(form.prime_logement),
+        prime_cherete_vie: n(form.prime_cherete_vie),
+        autres_primes: n(form.autres_primes),
+        total_primes: r.totalPrimes,
+        salaire_brut: r.salaireBrut,
+        base_cnss: r.baseCnss,
+        cotisation_cnss_employe: r.cnssSalarie,
+        cotisation_cnss_employeur: r.cnssPatronal,
+        base_rts: r.baseRts,
+        rts: r.rts,
+        irg: r.rts,
+        onfpp: r.onfpp,
+        versement_forfaitaire: r.versementForfaitaire,
+        total_charges_patronales: r.totalChargesPatronales,
+        avance_salaire: n(form.avance_salaire),
+        manquant: n(form.manquant),
+        complement_mois_precedent: n(form.complement_mois_precedent),
+        total_retenues: r.totalRetenues,
+        salaire_net: r.netAPayer,
+        net_a_payer: r.netAPayer,
+      }).eq('id', editBulletin.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] });
+      setEditBulletin(null);
+      toast({ title: 'Bulletin mis à jour' });
+    },
+    onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' })
+  });
+
+  const openEdit = (b: any) => {
+    setEditBulletin(b);
+    setForm({
+      salaire_base: b.salaire_base ?? 0,
+      prime_transport: b.prime_transport ?? 0,
+      prime_logement: b.prime_logement ?? 0,
+      prime_cherete_vie: b.prime_cherete_vie ?? 0,
+      autres_primes: b.autres_primes ?? 0,
+      avance_salaire: b.avance_salaire ?? 0,
+      manquant: b.manquant ?? 0,
+      complement_mois_precedent: b.complement_mois_precedent ?? 0,
+    });
+  };
+
+  const apercu = React.useMemo(() => {
+    const n = (v: any) => Number(v) || 0;
+    return calculerBulletin({
+      salaireBase: n(form.salaire_base),
+      primeTransport: n(form.prime_transport),
+      primeLogement: n(form.prime_logement),
+      primeChereteVie: n(form.prime_cherete_vie),
+      autresPrimes: n(form.autres_primes),
+      avanceSalaire: n(form.avance_salaire),
+      manquant: n(form.manquant),
+      complementMoisPrecedent: n(form.complement_mois_precedent),
+      retenuePret: Number(editBulletin?.retenue_pret) || 0,
+    }, parametres || PARAMETRES_PAIE_DEFAUT);
+  }, [form, editBulletin, parametres]);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
