@@ -6,11 +6,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calculator } from 'lucide-react';
+import { Plus, Calculator, Pencil } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { getParametresPaie, calculerBulletin } from '@/services/paieConfig';
+import { getParametresPaie, calculerBulletin, PARAMETRES_PAIE_DEFAUT } from '@/services/paieConfig';
 
 const moisNoms = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -18,6 +18,16 @@ export const BulletinsPaieList = () => {
   const queryClient = useQueryClient();
   const [showGenerate, setShowGenerate] = useState(false);
   const [selectedPeriode, setSelectedPeriode] = useState('');
+  const [editBulletin, setEditBulletin] = useState<any>(null);
+  const [form, setForm] = useState<Record<string, any>>({
+    salaire_base: 0, prime_transport: 0, prime_logement: 0, prime_cherete_vie: 0,
+    autres_primes: 0, avance_salaire: 0, manquant: 0, complement_mois_precedent: 0,
+  });
+
+  const { data: parametres } = useQuery({
+    queryKey: ['parametres-paie'],
+    queryFn: () => getParametresPaie(),
+  });
 
   const { data: bulletins, isLoading } = useQuery({
     queryKey: ['bulletins-paie'],
@@ -102,6 +112,85 @@ export const BulletinsPaieList = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] }); toast({ title: 'Bulletin validé' }); }
   });
 
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!editBulletin) return;
+      const params = await getParametresPaie();
+      const n = (v: any) => Number(v) || 0;
+      const r = calculerBulletin({
+        salaireBase: n(form.salaire_base),
+        primeTransport: n(form.prime_transport),
+        primeLogement: n(form.prime_logement),
+        primeChereteVie: n(form.prime_cherete_vie),
+        autresPrimes: n(form.autres_primes),
+        avanceSalaire: n(form.avance_salaire),
+        manquant: n(form.manquant),
+        complementMoisPrecedent: n(form.complement_mois_precedent),
+        retenuePret: n(editBulletin.retenue_pret),
+      }, params);
+      const { error } = await supabase.from('bulletins_paie').update({
+        salaire_base: r.salaireBase,
+        prime_transport: n(form.prime_transport),
+        prime_logement: n(form.prime_logement),
+        prime_cherete_vie: n(form.prime_cherete_vie),
+        autres_primes: n(form.autres_primes),
+        total_primes: r.totalPrimes,
+        salaire_brut: r.salaireBrut,
+        base_cnss: r.baseCnss,
+        cotisation_cnss_employe: r.cnssSalarie,
+        cotisation_cnss_employeur: r.cnssPatronal,
+        base_rts: r.baseRts,
+        rts: r.rts,
+        irg: r.rts,
+        onfpp: r.onfpp,
+        versement_forfaitaire: r.versementForfaitaire,
+        total_charges_patronales: r.totalChargesPatronales,
+        avance_salaire: n(form.avance_salaire),
+        manquant: n(form.manquant),
+        complement_mois_precedent: n(form.complement_mois_precedent),
+        total_retenues: r.totalRetenues,
+        salaire_net: r.netAPayer,
+        net_a_payer: r.netAPayer,
+      }).eq('id', editBulletin.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] });
+      setEditBulletin(null);
+      toast({ title: 'Bulletin mis à jour' });
+    },
+    onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' })
+  });
+
+  const openEdit = (b: any) => {
+    setEditBulletin(b);
+    setForm({
+      salaire_base: b.salaire_base ?? 0,
+      prime_transport: b.prime_transport ?? 0,
+      prime_logement: b.prime_logement ?? 0,
+      prime_cherete_vie: b.prime_cherete_vie ?? 0,
+      autres_primes: b.autres_primes ?? 0,
+      avance_salaire: b.avance_salaire ?? 0,
+      manquant: b.manquant ?? 0,
+      complement_mois_precedent: b.complement_mois_precedent ?? 0,
+    });
+  };
+
+  const apercu = React.useMemo(() => {
+    const n = (v: any) => Number(v) || 0;
+    return calculerBulletin({
+      salaireBase: n(form.salaire_base),
+      primeTransport: n(form.prime_transport),
+      primeLogement: n(form.prime_logement),
+      primeChereteVie: n(form.prime_cherete_vie),
+      autresPrimes: n(form.autres_primes),
+      avanceSalaire: n(form.avance_salaire),
+      manquant: n(form.manquant),
+      complementMoisPrecedent: n(form.complement_mois_precedent),
+      retenuePret: Number(editBulletin?.retenue_pret) || 0,
+    }, parametres || PARAMETRES_PAIE_DEFAUT);
+  }, [form, editBulletin, parametres]);
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -139,7 +228,10 @@ export const BulletinsPaieList = () => {
                 <td className="p-3 text-right">{Number(b.versement_forfaitaire || 0).toLocaleString('fr-FR')}</td>
                 <td className="p-3"><Badge variant={b.statut === 'valide' ? 'default' : b.statut === 'paye' ? 'secondary' : 'outline'}>{b.statut}</Badge></td>
                 <td className="p-3">
-                  {b.statut === 'brouillon' && <Button size="sm" variant="outline" onClick={() => validerMutation.mutate(b.id)}>Valider</Button>}
+                  <div className="flex gap-2">
+                    {b.statut !== 'paye' && <Button size="sm" variant="outline" onClick={() => openEdit(b)}><Pencil className="w-3.5 h-3.5 mr-1" />Modifier</Button>}
+                    {b.statut === 'brouillon' && <Button size="sm" variant="outline" onClick={() => validerMutation.mutate(b.id)}>Valider</Button>}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -165,6 +257,54 @@ export const BulletinsPaieList = () => {
               generateMutation.mutate(selectedPeriode);
             }} className="w-full" disabled={generateMutation.isPending}>
               {generateMutation.isPending ? 'Génération en cours...' : 'Générer'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editBulletin} onOpenChange={(o) => !o && setEditBulletin(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Modifier le bulletin — {editBulletin?.employe?.prenom} {editBulletin?.employe?.nom}
+              {editBulletin?.periode ? ` (${moisNoms[editBulletin.periode.mois]} ${editBulletin.periode.annee})` : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto space-y-4 pr-1">
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                ['salaire_base', 'Salaire de base'],
+                ['prime_transport', 'Prime de transport'],
+                ['prime_logement', 'Prime de logement'],
+                ['prime_cherete_vie', 'Prime de cherté de vie'],
+                ['autres_primes', 'Autres primes et indemnités'],
+                ['avance_salaire', 'Avance sur salaire'],
+                ['manquant', 'Manquant'],
+                ['complement_mois_precedent', 'Complément mois précédent'],
+              ].map(([key, label]) => (
+                <div key={key}>
+                  <Label>{label}</Label>
+                  <Input
+                    type="number"
+                    value={form[key] ?? 0}
+                    onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg border p-3 text-sm space-y-1 bg-muted/30">
+              <div className="flex justify-between"><span>Salaire brut</span><span className="font-medium">{apercu.salaireBrut.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>CNSS salarié (5%)</span><span>{apercu.cnssSalarie.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>Base d'imposition RTS</span><span>{apercu.baseRts.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>RTS</span><span>{apercu.rts.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>Total retenues</span><span>{apercu.totalRetenues.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between text-base font-semibold pt-1 border-t"><span>Salaire net à payer</span><span>{apercu.netAPayer.toLocaleString('fr-FR')} GNF</span></div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t">
+            <Button variant="outline" onClick={() => setEditBulletin(null)}>Annuler</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
             </Button>
           </div>
         </DialogContent>
