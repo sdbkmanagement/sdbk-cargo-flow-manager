@@ -18,6 +18,16 @@ export const BulletinsPaieList = () => {
   const queryClient = useQueryClient();
   const [showGenerate, setShowGenerate] = useState(false);
   const [selectedPeriode, setSelectedPeriode] = useState('');
+  const [editBulletin, setEditBulletin] = useState<any>(null);
+  const [form, setForm] = useState<Record<string, any>>({
+    salaire_base: 0, prime_transport: 0, prime_logement: 0, prime_cherete_vie: 0,
+    autres_primes: 0, avance_salaire: 0, manquant: 0, complement_mois_precedent: 0,
+  });
+
+  const { data: parametres } = useQuery({
+    queryKey: ['parametres-paie'],
+    queryFn: () => getParametresPaie(),
+  });
 
   const { data: bulletins, isLoading } = useQuery({
     queryKey: ['bulletins-paie'],
