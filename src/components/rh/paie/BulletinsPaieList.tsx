@@ -230,7 +230,10 @@ export const BulletinsPaieList = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Bulletins de paie</h2>
-        <Button onClick={() => setShowGenerate(true)}><Calculator className="w-4 h-4 mr-2" />Générer les bulletins</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowGenerate(true)}><Calculator className="w-4 h-4 mr-2" />Générer les bulletins</Button>
+          <Button onClick={() => setShowEtatMois(true)}><Plus className="w-4 h-4 mr-2" />Générer l'état du mois</Button>
+        </div>
       </div>
       <Card><CardContent className="p-0 overflow-x-auto">
         <table className="w-max min-w-full text-sm whitespace-nowrap">
