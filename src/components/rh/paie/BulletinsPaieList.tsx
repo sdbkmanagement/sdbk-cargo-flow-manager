@@ -108,29 +108,35 @@ export const BulletinsPaieList = () => {
         <h2 className="text-xl font-semibold">Bulletins de paie</h2>
         <Button onClick={() => setShowGenerate(true)}><Calculator className="w-4 h-4 mr-2" />Générer les bulletins</Button>
       </div>
-      <Card><CardContent className="p-0">
-        <table className="w-full text-sm">
+      <Card><CardContent className="p-0 overflow-x-auto">
+        <table className="w-max min-w-full text-sm whitespace-nowrap">
           <thead className="border-b bg-muted/50"><tr>
-            <th className="text-left p-3">Employé</th><th className="text-left p-3">Période</th><th className="text-left p-3">Brut</th><th className="text-left p-3">Base CNSS</th><th className="text-left p-3">CNSS salarié</th><th className="text-left p-3">Base RTS</th><th className="text-left p-3">RTS</th><th className="text-left p-3">CNSS patronale</th><th className="text-left p-3">ONFPP</th><th className="text-left p-3">VF</th><th className="text-left p-3">Total charges patronales</th><th className="text-left p-3">Retenues</th><th className="text-left p-3">Net à payer</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
+            <th className="text-left p-3">Personnel</th><th className="text-left p-3">Fonction</th><th className="text-left p-3">Période</th><th className="text-right p-3">Salaire Base</th><th className="text-right p-3">P. transport</th><th className="text-right p-3">P. de Logement</th><th className="text-right p-3">Prime de cherté de vie</th><th className="text-right p-3">Autres primes et indemnité</th><th className="text-right p-3">Salaire Brut</th><th className="text-right p-3">CNSS1 (5%)</th><th className="text-right p-3">CNSS (18%)</th><th className="text-right p-3">Base d'imposition RTS</th><th className="text-right p-3">RTS net</th><th className="text-right p-3">Salaire net</th><th className="text-right p-3">Avance sur Salaire</th><th className="text-right p-3">Manquant</th><th className="text-right p-3">Complément Salaire Mois Précédent</th><th className="text-right p-3">ONFPP</th><th className="text-right p-3">VF</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
           </tr></thead>
           <tbody>
-            {isLoading ? <tr><td colSpan={15} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
-            : bulletins?.length === 0 ? <tr><td colSpan={15} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
+            {isLoading ? <tr><td colSpan={21} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
+            : bulletins?.length === 0 ? <tr><td colSpan={21} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
             : bulletins?.map((b: any) => (
               <tr key={b.id} className="border-b hover:bg-muted/30">
                 <td className="p-3 font-medium">{b.employe?.prenom} {b.employe?.nom}</td>
+                <td className="p-3">{b.employe?.poste || '-'}</td>
                 <td className="p-3">{b.periode ? `${moisNoms[b.periode.mois]} ${b.periode.annee}` : '-'}</td>
-                <td className="p-3">{Number(b.salaire_brut).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.base_cnss || 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.cotisation_cnss_employe || 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.base_rts || 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.rts ?? b.irg ?? 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.cotisation_cnss_employeur || 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.onfpp || 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.versement_forfaitaire || 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3">{Number(b.total_charges_patronales || 0).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3 text-destructive">{Number(b.total_retenues).toLocaleString('fr-FR')} GNF</td>
-                <td className="p-3 font-semibold">{Number(b.net_a_payer).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3 text-right">{Number(b.salaire_base || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.prime_transport || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.prime_logement || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.prime_cherete_vie || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.autres_primes || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right font-medium">{Number(b.salaire_brut || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.cotisation_cnss_employe || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.cotisation_cnss_employeur || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.base_rts || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.rts ?? b.irg ?? 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right font-semibold">{Number(b.net_a_payer || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.avance_salaire || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.manquant || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.complement_mois_precedent || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.onfpp || 0).toLocaleString('fr-FR')}</td>
+                <td className="p-3 text-right">{Number(b.versement_forfaitaire || 0).toLocaleString('fr-FR')}</td>
                 <td className="p-3"><Badge variant={b.statut === 'valide' ? 'default' : b.statut === 'paye' ? 'secondary' : 'outline'}>{b.statut}</Badge></td>
                 <td className="p-3">
                   {b.statut === 'brouillon' && <Button size="sm" variant="outline" onClick={() => validerMutation.mutate(b.id)}>Valider</Button>}
