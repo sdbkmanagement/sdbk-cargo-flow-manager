@@ -75,9 +75,11 @@ export const MasseSalariale = () => {
       'Salaire brut': l.brut,
       'Base CNSS': Math.round(l.baseCnss),
       'CNSS salarié': Math.round(l.cnssSalarie),
-      IRG: Math.round(l.irg),
+      RTS: Math.round(l.irg),
       'Salaire net': Math.round(l.net),
-      'Charges patronales': Math.round(l.patronal),
+      ONFPP: Math.round(l.onfpp),
+      'Versement forfaitaire': Math.round(l.vf),
+      'Total charges patronales': Math.round(l.patronal),
       'Coût employeur': Math.round(l.cout),
     })));
     const wb = XLSX.utils.book_new();
