@@ -40,6 +40,10 @@ export const LivrePaie = () => {
         const totalBaseCnss = items.reduce((s: number, b: any) => s + Number(b.base_cnss || 0), 0);
         const totalCnssSalarie = items.reduce((s: number, b: any) => s + Number(b.cotisation_cnss_employe || 0), 0);
         const totalPatronal = items.reduce((s: number, b: any) => s + Number(b.cotisation_cnss_employeur || 0), 0);
+        const totalRts = items.reduce((s: number, b: any) => s + Number(b.rts ?? b.irg ?? 0), 0);
+        const totalOnfpp = items.reduce((s: number, b: any) => s + Number(b.onfpp || 0), 0);
+        const totalVf = items.reduce((s: number, b: any) => s + Number(b.versement_forfaitaire || 0), 0);
+        const totalChargesPat = items.reduce((s: number, b: any) => s + Number(b.total_charges_patronales || 0), 0);
         return (
           <Card key={periode}>
             <CardContent className="p-4">
