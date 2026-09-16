@@ -452,6 +452,7 @@ export type Database = {
       bulletins_paie: {
         Row: {
           autres_retenues: number | null
+          base_cnss: number
           cotisation_cnss_employe: number | null
           cotisation_cnss_employeur: number | null
           created_at: string | null
@@ -477,6 +478,7 @@ export type Database = {
         }
         Insert: {
           autres_retenues?: number | null
+          base_cnss?: number
           cotisation_cnss_employe?: number | null
           cotisation_cnss_employeur?: number | null
           created_at?: string | null
@@ -502,6 +504,7 @@ export type Database = {
         }
         Update: {
           autres_retenues?: number | null
+          base_cnss?: number
           cotisation_cnss_employe?: number | null
           cotisation_cnss_employeur?: number | null
           created_at?: string | null
