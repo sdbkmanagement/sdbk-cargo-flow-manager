@@ -261,6 +261,54 @@ export const BulletinsPaieList = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editBulletin} onOpenChange={(o) => !o && setEditBulletin(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Modifier le bulletin — {editBulletin?.employe?.prenom} {editBulletin?.employe?.nom}
+              {editBulletin?.periode ? ` (${moisNoms[editBulletin.periode.mois]} ${editBulletin.periode.annee})` : ''}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto space-y-4 pr-1">
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                ['salaire_base', 'Salaire de base'],
+                ['prime_transport', 'Prime de transport'],
+                ['prime_logement', 'Prime de logement'],
+                ['prime_cherete_vie', 'Prime de cherté de vie'],
+                ['autres_primes', 'Autres primes et indemnités'],
+                ['avance_salaire', 'Avance sur salaire'],
+                ['manquant', 'Manquant'],
+                ['complement_mois_precedent', 'Complément mois précédent'],
+              ].map(([key, label]) => (
+                <div key={key}>
+                  <Label>{label}</Label>
+                  <Input
+                    type="number"
+                    value={form[key] ?? 0}
+                    onChange={(e) => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="rounded-lg border p-3 text-sm space-y-1 bg-muted/30">
+              <div className="flex justify-between"><span>Salaire brut</span><span className="font-medium">{apercu.salaireBrut.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>CNSS salarié (5%)</span><span>{apercu.cnssSalarie.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>Base d'imposition RTS</span><span>{apercu.baseRts.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>RTS</span><span>{apercu.rts.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between"><span>Total retenues</span><span>{apercu.totalRetenues.toLocaleString('fr-FR')}</span></div>
+              <div className="flex justify-between text-base font-semibold pt-1 border-t"><span>Salaire net à payer</span><span>{apercu.netAPayer.toLocaleString('fr-FR')} GNF</span></div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-3 border-t">
+            <Button variant="outline" onClick={() => setEditBulletin(null)}>Annuler</Button>
+            <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
+              {saveMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
