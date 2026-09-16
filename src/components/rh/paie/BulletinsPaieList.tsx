@@ -18,6 +18,9 @@ export const BulletinsPaieList = () => {
   const queryClient = useQueryClient();
   const [showGenerate, setShowGenerate] = useState(false);
   const [selectedPeriode, setSelectedPeriode] = useState('');
+  const [showEtatMois, setShowEtatMois] = useState(false);
+  const [moisEtat, setMoisEtat] = useState(String(new Date().getMonth() + 1));
+  const [anneeEtat, setAnneeEtat] = useState(String(new Date().getFullYear()));
   const [editBulletin, setEditBulletin] = useState<any>(null);
   const [form, setForm] = useState<Record<string, any>>({
     salaire_base: 0, prime_transport: 0, prime_logement: 0, prime_cherete_vie: 0,
@@ -47,10 +50,11 @@ export const BulletinsPaieList = () => {
     }
   });
 
-  const generateMutation = useMutation({
-    mutationFn: async (periodeId: string) => {
+  const genererBulletins = async (periodeId: string) => {
+    {
       // Paramétrage de paie (CNSS, barème RTS, ONFPP, versement forfaitaire)
       const params = await getParametresPaie();
+
 
       // Récupérer tous les employés actifs
       const { data: employes, error: empError } = await supabase.from('employes').select('id').eq('statut', 'actif');
@@ -102,8 +106,39 @@ export const BulletinsPaieList = () => {
         });
         if (error && !error.message.includes('duplicate')) console.error(error);
       }
-    },
+    }
+  };
+
+  const generateMutation = useMutation({
+    mutationFn: (periodeId: string) => genererBulletins(periodeId),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] }); setShowGenerate(false); toast({ title: 'Bulletins générés avec succès' }); },
+    onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' })
+  });
+
+  const etatMoisMutation = useMutation({
+    mutationFn: async () => {
+      const mois = Number(moisEtat);
+      const annee = Number(anneeEtat);
+      const { data: existante } = await supabase.from('periodes_paie').select('id').eq('mois', mois).eq('annee', annee).maybeSingle();
+      let periodeId = existante?.id;
+      if (!periodeId) {
+        const dateDebut = new Date(Date.UTC(annee, mois - 1, 1)).toISOString().split('T')[0];
+        const dateFin = new Date(Date.UTC(annee, mois, 0)).toISOString().split('T')[0];
+        const { data: nouvelle, error } = await supabase.from('periodes_paie')
+          .insert({ mois, annee, date_debut: dateDebut, date_fin: dateFin, statut: 'ouverte' })
+          .select('id').single();
+        if (error) throw error;
+        periodeId = nouvelle.id;
+      }
+      await genererBulletins(periodeId!);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] });
+      queryClient.invalidateQueries({ queryKey: ['periodes-paie-ouvertes'] });
+      queryClient.invalidateQueries({ queryKey: ['periodes-paie'] });
+      setShowEtatMois(false);
+      toast({ title: "État du mois généré" });
+    },
     onError: (e: any) => toast({ title: 'Erreur', description: e.message, variant: 'destructive' })
   });
 
@@ -195,7 +230,10 @@ export const BulletinsPaieList = () => {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Bulletins de paie</h2>
-        <Button onClick={() => setShowGenerate(true)}><Calculator className="w-4 h-4 mr-2" />Générer les bulletins</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowGenerate(true)}><Calculator className="w-4 h-4 mr-2" />Générer les bulletins</Button>
+          <Button onClick={() => setShowEtatMois(true)}><Plus className="w-4 h-4 mr-2" />Générer l'état du mois</Button>
+        </div>
       </div>
       <Card><CardContent className="p-0 overflow-x-auto">
         <table className="w-max min-w-full text-sm whitespace-nowrap">
@@ -257,6 +295,31 @@ export const BulletinsPaieList = () => {
               generateMutation.mutate(selectedPeriode);
             }} className="w-full" disabled={generateMutation.isPending}>
               {generateMutation.isPending ? 'Génération en cours...' : 'Générer'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEtatMois} onOpenChange={setShowEtatMois}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Générer l'état du mois</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Mois</Label>
+                <Select value={moisEtat} onValueChange={setMoisEtat}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {moisNoms.slice(1).map((m, i) => <SelectItem key={m} value={String(i + 1)}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Année</Label>
+                <Input type="number" value={anneeEtat} onChange={(e) => setAnneeEtat(e.target.value)} />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">La période sera créée si elle n'existe pas, puis les bulletins seront générés pour tous les collaborateurs actifs.</p>
+            <Button className="w-full" disabled={etatMoisMutation.isPending} onClick={() => etatMoisMutation.mutate()}>
+              {etatMoisMutation.isPending ? 'Génération en cours...' : "Générer l'état du mois"}
             </Button>
           </div>
         </DialogContent>
