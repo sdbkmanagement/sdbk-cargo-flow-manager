@@ -1,0 +1,1 @@
+ALTER TABLE public.bulletins_paie ADD COLUMN IF NOT EXISTS base_cnss numeric NOT NULL DEFAULT 0;
