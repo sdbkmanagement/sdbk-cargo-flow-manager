@@ -10,6 +10,7 @@ import { Plus, Calculator } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { getParametresCnss, calculerCnss } from '@/services/paieConfig';
 
 const moisNoms = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -38,6 +39,9 @@ export const BulletinsPaieList = () => {
 
   const generateMutation = useMutation({
     mutationFn: async (periodeId: string) => {
+      // Paramétrage CNSS (plafond et taux configurables)
+      const paramsCnss = await getParametresCnss();
+
       // Récupérer tous les employés actifs
       const { data: employes, error: empError } = await supabase.from('employes').select('id').eq('statut', 'actif');
       if (empError) throw empError;
@@ -51,8 +55,7 @@ export const BulletinsPaieList = () => {
         const primes = (el?.prime_transport || 0) + (el?.prime_logement || 0) + (el?.prime_risque || 0) + (el?.prime_anciennete || 0) + (el?.prime_rendement || 0) + (el?.autres_primes || 0);
         const indemnites = el?.indemnite_repas || 0;
         const brut = salaireBase + primes + indemnites;
-        const cnssEmp = Math.round(brut * 0.05);
-        const cnssPatr = Math.round(brut * 0.18);
+        const { baseCnss, cnssSalarie: cnssEmp, cnssPatronal: cnssPatr } = calculerCnss(brut, paramsCnss);
         // IRG simplifié (barème progressif Guinée approximé)
         const brutImposable = brut - cnssEmp;
         let irg = 0;
@@ -73,6 +76,7 @@ export const BulletinsPaieList = () => {
           total_primes: primes,
           total_indemnites: indemnites,
           salaire_brut: brut,
+          base_cnss: baseCnss,
           cotisation_cnss_employe: cnssEmp,
           cotisation_cnss_employeur: cnssPatr,
           irg,
@@ -102,16 +106,19 @@ export const BulletinsPaieList = () => {
       <Card><CardContent className="p-0">
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50"><tr>
-            <th className="text-left p-3">Employé</th><th className="text-left p-3">Période</th><th className="text-left p-3">Brut</th><th className="text-left p-3">Retenues</th><th className="text-left p-3">Net à payer</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
+            <th className="text-left p-3">Employé</th><th className="text-left p-3">Période</th><th className="text-left p-3">Brut</th><th className="text-left p-3">Base CNSS</th><th className="text-left p-3">CNSS salarié</th><th className="text-left p-3">Charges patronales</th><th className="text-left p-3">Retenues</th><th className="text-left p-3">Net à payer</th><th className="text-left p-3">Statut</th><th className="text-left p-3">Actions</th>
           </tr></thead>
           <tbody>
-            {isLoading ? <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
-            : bulletins?.length === 0 ? <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
+            {isLoading ? <tr><td colSpan={10} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
+            : bulletins?.length === 0 ? <tr><td colSpan={10} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
             : bulletins?.map((b: any) => (
               <tr key={b.id} className="border-b hover:bg-muted/30">
                 <td className="p-3 font-medium">{b.employe?.prenom} {b.employe?.nom}</td>
                 <td className="p-3">{b.periode ? `${moisNoms[b.periode.mois]} ${b.periode.annee}` : '-'}</td>
                 <td className="p-3">{Number(b.salaire_brut).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.base_cnss || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.cotisation_cnss_employe || 0).toLocaleString('fr-FR')} GNF</td>
+                <td className="p-3">{Number(b.cotisation_cnss_employeur || 0).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3 text-destructive">{Number(b.total_retenues).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3 font-semibold">{Number(b.net_a_payer).toLocaleString('fr-FR')} GNF</td>
                 <td className="p-3"><Badge variant={b.statut === 'valide' ? 'default' : b.statut === 'paye' ? 'secondary' : 'outline'}>{b.statut}</Badge></td>

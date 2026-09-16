@@ -8,17 +8,17 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Download, Wallet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { rhService } from '@/services/rh';
+import { getParametresCnss, calculerCnss, PARAMETRES_CNSS_DEFAUT } from '@/services/paieConfig';
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} GNF`;
 
-// Paramètres Guinée (déjà utilisés par le module Paie)
-const TAUX_CNSS_SALARIE = 0.05;
-const TAUX_CNSS_PATRONAL = 0.18;
 const TAUX_IRG = 0.10;
 
 export const MasseSalariale = () => {
   const [departement, setDepartement] = useState('tous');
   const { data: employes, isLoading } = useQuery({ queryKey: ['employes'], queryFn: () => rhService.getEmployes() });
+  const { data: paramsCnss } = useQuery({ queryKey: ['parametres-cnss'], queryFn: getParametresCnss });
+  const cnssParams = paramsCnss || PARAMETRES_CNSS_DEFAUT;
 
   const list = useMemo(() => {
     let l = ((employes || []) as any[]).filter((e) => e.statut === 'actif');
@@ -33,16 +33,16 @@ export const MasseSalariale = () => {
 
   const lignes = list.map((e) => {
     const base = Number(e.salaire_base || 0);
-    const cnssSalarie = base * TAUX_CNSS_SALARIE;
+    const { baseCnss, cnssSalarie, cnssPatronal: patronal } = calculerCnss(base, cnssParams);
     const irg = (base - cnssSalarie) * TAUX_IRG;
     const net = base - cnssSalarie - irg;
-    const patronal = base * TAUX_CNSS_PATRONAL;
     return {
       id: e.id,
       nom: `${e.nom} ${e.prenom}`,
       departement: e.departement || e.service,
       service: e.service,
       brut: base,
+      baseCnss,
       cnssSalarie,
       irg,
       net,
@@ -75,6 +75,7 @@ export const MasseSalariale = () => {
       Département: l.departement,
       Service: l.service,
       'Salaire brut': l.brut,
+      'Base CNSS': Math.round(l.baseCnss),
       'CNSS salarié': Math.round(l.cnssSalarie),
       IRG: Math.round(l.irg),
       'Salaire net': Math.round(l.net),
@@ -148,7 +149,8 @@ export const MasseSalariale = () => {
                   <TableHead>Collaborateur</TableHead>
                   <TableHead>Département</TableHead>
                   <TableHead className="text-right">Brut</TableHead>
-                  <TableHead className="text-right">CNSS salarié</TableHead>
+                  <TableHead className="text-right">Base CNSS</TableHead>
+                  <TableHead className="text-right">CNSS salarié (5 %)</TableHead>
                   <TableHead className="text-right">IRG</TableHead>
                   <TableHead className="text-right">Net</TableHead>
                   <TableHead className="text-right">Charges patronales</TableHead>
@@ -161,6 +163,7 @@ export const MasseSalariale = () => {
                     <TableCell className="font-medium">{l.nom}</TableCell>
                     <TableCell>{l.departement}</TableCell>
                     <TableCell className="text-right">{fmt(l.brut)}</TableCell>
+                    <TableCell className="text-right">{fmt(l.baseCnss)}</TableCell>
                     <TableCell className="text-right">{fmt(l.cnssSalarie)}</TableCell>
                     <TableCell className="text-right">{fmt(l.irg)}</TableCell>
                     <TableCell className="text-right font-semibold">{fmt(l.net)}</TableCell>
