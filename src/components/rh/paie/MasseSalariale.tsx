@@ -8,17 +8,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Download, Wallet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { rhService } from '@/services/rh';
-import { getParametresCnss, calculerCnss, PARAMETRES_CNSS_DEFAUT } from '@/services/paieConfig';
+import { getParametresPaie, calculerBulletin, PARAMETRES_PAIE_DEFAUT } from '@/services/paieConfig';
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} GNF`;
-
-const TAUX_IRG = 0.10;
 
 export const MasseSalariale = () => {
   const [departement, setDepartement] = useState('tous');
   const { data: employes, isLoading } = useQuery({ queryKey: ['employes'], queryFn: () => rhService.getEmployes() });
-  const { data: paramsCnss } = useQuery({ queryKey: ['parametres-cnss'], queryFn: getParametresCnss });
-  const cnssParams = paramsCnss || PARAMETRES_CNSS_DEFAUT;
+  const { data: paramsPaie } = useQuery({ queryKey: ['parametres-paie'], queryFn: getParametresPaie });
+  const params = paramsPaie || PARAMETRES_PAIE_DEFAUT;
 
   const list = useMemo(() => {
     let l = ((employes || []) as any[]).filter((e) => e.statut === 'actif');
