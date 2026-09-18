@@ -336,9 +336,36 @@ export const FormationsListView = () => {
                               >
                                 Fiche d'évaluation pratique
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                           <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                               <Button variant="outline" size="sm" title="Archiver les fiches d'évaluation">
+                                 <Archive className="w-4 h-4" />
+                               </Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end" className="bg-background z-50">
+                               <DropdownMenuItem
+                                 onClick={() => {
+                                   setArchiveChauffeur(chauffeur);
+                                   setArchiveType('theorique');
+                                   setShowArchiveDialog(true);
+                                 }}
+                               >
+                                 Archiver la fiche théorique
+                               </DropdownMenuItem>
+                               <DropdownMenuItem
+                                 onClick={() => {
+                                   setArchiveChauffeur(chauffeur);
+                                   setArchiveType('pratique');
+                                   setShowArchiveDialog(true);
+                                 }}
+                               >
+                                 Archiver la fiche pratique
+                               </DropdownMenuItem>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                         </div>
                       </td>
                     </tr>
                   );
@@ -363,6 +390,13 @@ export const FormationsListView = () => {
         chauffeur={bulkChauffeur}
         themes={themes}
         existingFormations={formationMap.get(bulkChauffeur?.id) || new Map()}
+      />
+
+      <FichesEvaluationDialog
+        open={showArchiveDialog}
+        onOpenChange={setShowArchiveDialog}
+        chauffeur={archiveChauffeur}
+        defaultType={archiveType}
       />
     </Card>
   );
