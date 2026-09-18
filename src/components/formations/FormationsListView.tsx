@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, CheckCircle, AlertTriangle, XCircle, Plus, ClipboardList, Download } from 'lucide-react';
+import { Search, CheckCircle, AlertTriangle, XCircle, Plus, ClipboardList, Download, Archive } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { genererFicheTheorique, genererFichePratique } from '@/utils/fichesEvaluationPdf';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import { formationsService, Formation } from '@/services/formationsService';
 import { chauffeursService } from '@/services/chauffeurs';
 import { FormationFormDialog } from './FormationFormDialog';
 import { BulkFormationDialog } from './BulkFormationDialog';
+import { FichesEvaluationDialog } from './FichesEvaluationDialog';
 import { toast } from '@/hooks/use-toast';
 
 const statutConfig = {
@@ -29,6 +30,9 @@ export const FormationsListView = () => {
   const [bulkChauffeur, setBulkChauffeur] = useState<any>(null);
   const [showBulkDialog, setShowBulkDialog] = useState(false);
   const [noteEdits, setNoteEdits] = useState<Record<string, string>>({});
+  const [archiveChauffeur, setArchiveChauffeur] = useState<any>(null);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archiveType, setArchiveType] = useState<'theorique' | 'pratique'>('theorique');
   const queryClient = useQueryClient();
 
   const updateNoteMutation = useMutation({
@@ -332,9 +336,36 @@ export const FormationsListView = () => {
                               >
                                 Fiche d'évaluation pratique
                               </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                           <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                               <Button variant="outline" size="sm" title="Archiver les fiches d'évaluation">
+                                 <Archive className="w-4 h-4" />
+                               </Button>
+                             </DropdownMenuTrigger>
+                             <DropdownMenuContent align="end" className="bg-background z-50">
+                               <DropdownMenuItem
+                                 onClick={() => {
+                                   setArchiveChauffeur(chauffeur);
+                                   setArchiveType('theorique');
+                                   setShowArchiveDialog(true);
+                                 }}
+                               >
+                                 Archiver la fiche théorique
+                               </DropdownMenuItem>
+                               <DropdownMenuItem
+                                 onClick={() => {
+                                   setArchiveChauffeur(chauffeur);
+                                   setArchiveType('pratique');
+                                   setShowArchiveDialog(true);
+                                 }}
+                               >
+                                 Archiver la fiche pratique
+                               </DropdownMenuItem>
+                             </DropdownMenuContent>
+                           </DropdownMenu>
+                         </div>
                       </td>
                     </tr>
                   );
@@ -359,6 +390,13 @@ export const FormationsListView = () => {
         chauffeur={bulkChauffeur}
         themes={themes}
         existingFormations={formationMap.get(bulkChauffeur?.id) || new Map()}
+      />
+
+      <FichesEvaluationDialog
+        open={showArchiveDialog}
+        onOpenChange={setShowArchiveDialog}
+        chauffeur={archiveChauffeur}
+        defaultType={archiveType}
       />
     </Card>
   );

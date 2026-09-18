@@ -2984,6 +2984,59 @@ export type Database = {
           },
         ]
       }
+      fiches_evaluation: {
+        Row: {
+          chauffeur_id: string
+          commentaire: string | null
+          created_at: string
+          created_by: string | null
+          date_fiche: string
+          fichier_nom: string | null
+          fichier_url: string | null
+          formateur_nom: string | null
+          id: string
+          note_obtenue: number | null
+          type_fiche: string
+          updated_at: string
+        }
+        Insert: {
+          chauffeur_id: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_fiche?: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          formateur_nom?: string | null
+          id?: string
+          note_obtenue?: number | null
+          type_fiche: string
+          updated_at?: string
+        }
+        Update: {
+          chauffeur_id?: string
+          commentaire?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_fiche?: string
+          fichier_nom?: string | null
+          fichier_url?: string | null
+          formateur_nom?: string | null
+          id?: string
+          note_obtenue?: number | null
+          type_fiche?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiches_evaluation_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       formations: {
         Row: {
           chauffeur_id: string
