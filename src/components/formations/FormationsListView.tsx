@@ -282,14 +282,59 @@ export const FormationsListView = () => {
                         })()}
                       </td>
                       <td className="p-3 text-center">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBulkClick(chauffeur)}
-                          title="Enregistrer plusieurs formations"
-                        >
-                          <ClipboardList className="w-4 h-4" />
-                        </Button>
+                        <div className="flex items-center justify-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleBulkClick(chauffeur)}
+                            title="Enregistrer plusieurs formations"
+                          >
+                            <ClipboardList className="w-4 h-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" title="Télécharger les fiches d'évaluation">
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-background z-50">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const fs = Array.from(formationMap.get(chauffeur.id)?.values() || []);
+                                  const notes = fs.map(f => f.note_obtenue).filter(n => n != null) as number[];
+                                  const avg = notes.length ? Math.round(notes.reduce((a, b) => a + b, 0) / notes.length) : null;
+                                  const lignes = themes.map(t => {
+                                    const f = formationMap.get(chauffeur.id)?.get(t.id);
+                                    return {
+                                      theme: t.nom,
+                                      obligatoire: t.obligatoire,
+                                      date_formation: f?.date_formation || null,
+                                      date_recyclage: f?.date_recyclage || null,
+                                      formateur_nom: f?.formateur_nom || null,
+                                      note_obtenue: f?.note_obtenue ?? null,
+                                      statut: f?.statut || null,
+                                    };
+                                  });
+                                  genererFicheTheorique(chauffeur, lignes, avg);
+                                }}
+                              >
+                                Fiche d'évaluation théorique
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  const fs = Array.from(formationMap.get(chauffeur.id)?.values() || []);
+                                  const derniere = fs.sort((a, b) => (b.date_formation || '').localeCompare(a.date_formation || ''))[0];
+                                  genererFichePratique(chauffeur, {
+                                    formateur: derniere?.formateur_nom || null,
+                                    date: derniere?.date_formation || null,
+                                  });
+                                }}
+                              >
+                                Fiche d'évaluation pratique
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </td>
                     </tr>
                   );
