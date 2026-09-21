@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Popover, PopoverContent, PopoverTrigger
 } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   LayoutDashboard, Truck, Wrench, CalendarClock, Package, Coins, BarChart3,
-  Bell, Plus, RefreshCw, ChevronRight, ShieldCheck, CalendarCheck,
+  Bell, Plus, RefreshCw, ChevronRight, ChevronDown, ShieldCheck, CalendarCheck,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react';
 import { GmaoProvider, useGmao, GmaoSection } from '@/components/gmao/GmaoContext';
 import { GmaoDashboard } from '@/components/gmao/GmaoDashboard';
@@ -20,6 +23,7 @@ import { GmaoRapports } from '@/components/gmao/GmaoRapports';
 import { SocotacModule } from '@/components/gmao/socotac/SocotacModule';
 import { ControleAnnuelModule } from '@/components/gmao/annuel/ControleAnnuelModule';
 import { GmaoDemandeForm } from '@/components/gmao/GmaoDemandeForm';
+import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[] = [
@@ -34,38 +38,169 @@ const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[]
   { value: 'rapports', label: 'Rapports', icon: BarChart3 },
 ];
 
+type GroupeNavigation = {
+  id: string;
+  label: string;
+  sections: GmaoSection[];
+};
+
+const GROUPES: GroupeNavigation[] = [
+  { id: 'vue', label: 'Vue d’ensemble', sections: ['dashboard', 'equipements'] },
+  { id: 'maintenance', label: 'Maintenance', sections: ['interventions', 'preventif'] },
+  { id: 'pilotage', label: 'Stocks et pilotage', sections: ['pieces', 'couts', 'rapports'] },
+  { id: 'controles', label: 'Contrôles', sections: ['socotac', 'controle_annuel'] },
+];
+
+const estSectionGmao = (value: string | null): value is GmaoSection =>
+  SECTIONS.some((item) => item.value === value);
+
 const Contenu: React.FC = () => {
   const { section, allerA, alertes, rafraichir, chargement } = useGmao();
+  const { user } = useAuth();
   const [nouvelleIntervention, setNouvelleIntervention] = useState(false);
+  const [sidebarReduite, setSidebarReduite] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('gmao:sidebar-reduite') === 'true';
+  });
+  const [groupesOuverts, setGroupesOuverts] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(GROUPES.map((groupe) => [groupe.id, true]))
+  );
   const sectionActive = SECTIONS.find((item) => item.value === section);
+  const cleOnglet = user?.id ? `gmao:onglet-actif:${user.id}` : null;
+
+  const sectionsParGroupe = useMemo(
+    () => GROUPES.map((groupe) => ({
+      ...groupe,
+      items: SECTIONS.filter((item) => groupe.sections.includes(item.value)),
+    })),
+    []
+  );
+
+  useEffect(() => {
+    if (!cleOnglet) return;
+    const ongletMemorise = window.localStorage.getItem(cleOnglet);
+    if (estSectionGmao(ongletMemorise)) allerA(ongletMemorise);
+  }, [allerA, cleOnglet]);
+
+  useEffect(() => {
+    const groupeActif = GROUPES.find((groupe) => groupe.sections.includes(section));
+    if (!groupeActif) return;
+    setGroupesOuverts((actuels) => ({ ...actuels, [groupeActif.id]: true }));
+  }, [section]);
+
+  const naviguer = useCallback((destination: GmaoSection, equipementId?: string) => {
+    if (cleOnglet) window.localStorage.setItem(cleOnglet, destination);
+    allerA(destination, equipementId);
+  }, [allerA, cleOnglet]);
+
+  const basculerSidebar = () => {
+    setSidebarReduite((actuelle) => {
+      const nouvelleValeur = !actuelle;
+      window.localStorage.setItem('gmao:sidebar-reduite', String(nouvelleValeur));
+      return nouvelleValeur;
+    });
+  };
+
+  const boutonNavigation = (item: typeof SECTIONS[number]) => {
+    const Icon = item.icon;
+    const bouton = (
+      <Button
+        key={item.value}
+        type="button"
+        variant="ghost"
+        size={sidebarReduite ? 'icon' : 'default'}
+        onClick={() => naviguer(item.value)}
+        aria-current={section === item.value ? 'page' : undefined}
+        aria-label={item.label}
+        className={cn(
+          'h-10 text-sm font-medium md:w-full',
+          sidebarReduite ? 'md:justify-center md:px-0' : 'justify-start px-3 text-left',
+          section === item.value
+            ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        <span className={cn('min-w-0 whitespace-normal leading-tight', sidebarReduite && 'md:hidden')}>
+          {item.label}
+        </span>
+      </Button>
+    );
+
+    if (!sidebarReduite) return bouton;
+
+    return (
+      <Tooltip key={item.value}>
+        <TooltipTrigger asChild>{bouton}</TooltipTrigger>
+        <TooltipContent side="right" className="hidden md:block">{item.label}</TooltipContent>
+      </Tooltip>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-5 md:flex-row md:items-start">
-      <aside className="w-full shrink-0 border-b border-border bg-card pb-4 md:sticky md:top-24 md:w-56 md:border-b-0 md:border-r md:pb-0 md:pr-4">
-        <div className="mb-3 px-2">
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Navigation GMAO</p>
-          <p className="mt-1 text-sm font-medium text-foreground">{sectionActive?.label}</p>
+      <aside className={cn(
+        'w-full shrink-0 border-b border-border bg-card pb-4 transition-[width] duration-200 md:sticky md:top-24 md:border-b-0 md:border-r md:pb-0 md:pr-3',
+        sidebarReduite ? 'md:w-16' : 'md:w-60'
+      )}>
+        <div className="mb-3 flex min-h-10 items-start justify-between gap-2 px-2">
+          <div className={cn('min-w-0', sidebarReduite && 'md:hidden')}>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Navigation GMAO</p>
+            <p className="mt-1 truncate text-sm font-medium text-foreground">{sectionActive?.label}</p>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={basculerSidebar}
+            className="ml-auto hidden h-9 w-9 md:inline-flex"
+            aria-label={sidebarReduite ? 'Déployer la navigation GMAO' : 'Réduire la navigation GMAO'}
+            title={sidebarReduite ? 'Déployer la navigation' : 'Réduire la navigation'}
+          >
+            {sidebarReduite ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
         </div>
-        <nav className="grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-1" aria-label="Navigation du module GMAO">
-          {SECTIONS.map((s) => (
-            <Button
-              key={s.value}
-              type="button"
-              variant="ghost"
-              onClick={() => allerA(s.value)}
-              aria-current={section === s.value ? 'page' : undefined}
-              className={cn(
-                'h-10 w-full justify-start px-3 text-left text-sm font-medium',
-                section === s.value
-                  ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-              )}
-            >
-              <s.icon className="h-4 w-4 shrink-0" />
-              <span className="min-w-0 whitespace-normal leading-tight">{s.label}</span>
-            </Button>
-          ))}
-        </nav>
+        <TooltipProvider delayDuration={250}>
+          <nav className="grid grid-cols-1 gap-1 sm:grid-cols-2 md:grid-cols-1" aria-label="Navigation du module GMAO">
+            {sectionsParGroupe.map((groupe) => {
+              const contientSectionActive = groupe.sections.includes(section);
+
+              if (sidebarReduite) {
+                return (
+                  <div key={groupe.id} className="contents md:block md:border-t md:border-border md:pt-1 first:md:border-t-0 first:md:pt-0">
+                    {groupe.items.map(boutonNavigation)}
+                  </div>
+                );
+              }
+
+              return (
+                <Collapsible
+                  key={groupe.id}
+                  open={groupesOuverts[groupe.id] || contientSectionActive}
+                  onOpenChange={(open) => setGroupesOuverts((actuels) => ({ ...actuels, [groupe.id]: open }))}
+                  className="min-w-0"
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="h-9 w-full justify-between px-3 text-xs font-semibold uppercase text-muted-foreground hover:text-foreground"
+                    >
+                      <span className="truncate">{groupe.label}</span>
+                      <ChevronDown className={cn(
+                        'h-4 w-4 shrink-0 transition-transform',
+                        (groupesOuverts[groupe.id] || contientSectionActive) && 'rotate-180'
+                      )} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-1 pb-2">
+                    {groupe.items.map(boutonNavigation)}
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
+          </nav>
+        </TooltipProvider>
       </aside>
 
       <div className="min-w-0 flex-1 space-y-5">
@@ -95,7 +230,7 @@ const Contenu: React.FC = () => {
                     {alertes.map((a) => (
                       <button
                         key={a.id}
-                        onClick={() => allerA(a.section, a.equipementId || undefined)}
+                        onClick={() => naviguer(a.section, a.equipementId || undefined)}
                         className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/60"
                       >
                         <span className={cn('h-2 w-2 shrink-0 rounded-full', a.gravite === 'danger' ? 'bg-destructive' : 'bg-warning')} />
