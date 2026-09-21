@@ -24,6 +24,7 @@ import { SocotacModule } from '@/components/gmao/socotac/SocotacModule';
 import { ControleAnnuelModule } from '@/components/gmao/annuel/ControleAnnuelModule';
 import { GmaoDemandeForm } from '@/components/gmao/GmaoDemandeForm';
 import { useAuth } from '@/contexts/AuthContext';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[] = [
@@ -57,6 +58,7 @@ const estSectionGmao = (value: string | null): value is GmaoSection =>
 const Contenu: React.FC = () => {
   const { section, allerA, alertes, rafraichir, chargement } = useGmao();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [nouvelleIntervention, setNouvelleIntervention] = useState(false);
   const [sidebarReduite, setSidebarReduite] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -67,6 +69,7 @@ const Contenu: React.FC = () => {
   );
   const sectionActive = SECTIONS.find((item) => item.value === section);
   const cleOnglet = user?.id ? `gmao:onglet-actif:${user.id}` : null;
+  const navigationCompacte = sidebarReduite && !isMobile;
 
   const sectionsParGroupe = useMemo(
     () => GROUPES.map((groupe) => ({
@@ -108,26 +111,26 @@ const Contenu: React.FC = () => {
         key={item.value}
         type="button"
         variant="ghost"
-        size={sidebarReduite ? 'icon' : 'default'}
+        size={navigationCompacte ? 'icon' : 'default'}
         onClick={() => naviguer(item.value)}
         aria-current={section === item.value ? 'page' : undefined}
         aria-label={item.label}
         className={cn(
           'h-10 text-sm font-medium md:w-full',
-          sidebarReduite ? 'md:justify-center md:px-0' : 'justify-start px-3 text-left',
+          navigationCompacte ? 'md:justify-center md:px-0' : 'justify-start px-3 text-left',
           section === item.value
             ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
         )}
       >
         <Icon className="h-4 w-4 shrink-0" />
-        <span className={cn('min-w-0 whitespace-normal leading-tight', sidebarReduite && 'md:hidden')}>
+        <span className={cn('min-w-0 whitespace-normal leading-tight', navigationCompacte && 'md:hidden')}>
           {item.label}
         </span>
       </Button>
     );
 
-    if (!sidebarReduite) return bouton;
+    if (!navigationCompacte) return bouton;
 
     return (
       <Tooltip key={item.value}>
@@ -144,7 +147,7 @@ const Contenu: React.FC = () => {
         sidebarReduite ? 'md:w-16' : 'md:w-60'
       )}>
         <div className="mb-3 flex min-h-10 items-start justify-between gap-2 px-2">
-          <div className={cn('min-w-0', sidebarReduite && 'md:hidden')}>
+          <div className={cn('min-w-0', navigationCompacte && 'md:hidden')}>
             <p className="text-xs font-semibold uppercase text-muted-foreground">Navigation GMAO</p>
             <p className="mt-1 truncate text-sm font-medium text-foreground">{sectionActive?.label}</p>
           </div>
@@ -165,7 +168,7 @@ const Contenu: React.FC = () => {
             {sectionsParGroupe.map((groupe) => {
               const contientSectionActive = groupe.sections.includes(section);
 
-              if (sidebarReduite) {
+              if (navigationCompacte) {
                 return (
                   <div key={groupe.id} className="contents md:block md:border-t md:border-border md:pt-1 first:md:border-t-0 first:md:pt-0">
                     {groupe.items.map(boutonNavigation)}
