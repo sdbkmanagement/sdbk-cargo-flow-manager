@@ -37,29 +37,40 @@ const SECTIONS: { value: GmaoSection; label: string; icon: React.ElementType }[]
 const Contenu: React.FC = () => {
   const { section, allerA, alertes, rafraichir, chargement } = useGmao();
   const [nouvelleIntervention, setNouvelleIntervention] = useState(false);
+  const sectionActive = SECTIONS.find((item) => item.value === section);
 
   return (
-    <div className="space-y-5">
-      {/* Barre d'actions */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-3 lg:flex-row lg:items-center lg:justify-between">
-        <nav className="flex flex-wrap gap-1">
+    <div className="flex flex-col gap-5 md:flex-row md:items-start">
+      <aside className="w-full shrink-0 border-b border-border bg-card pb-4 md:sticky md:top-24 md:w-56 md:border-b-0 md:border-r md:pb-0 md:pr-4">
+        <div className="mb-3 px-2">
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Navigation GMAO</p>
+          <p className="mt-1 text-sm font-medium text-foreground">{sectionActive?.label}</p>
+        </div>
+        <nav className="grid grid-cols-2 gap-1 sm:grid-cols-3 md:grid-cols-1" aria-label="Navigation du module GMAO">
           {SECTIONS.map((s) => (
-            <button
+            <Button
               key={s.value}
+              type="button"
+              variant="ghost"
               onClick={() => allerA(s.value)}
+              aria-current={section === s.value ? 'page' : undefined}
               className={cn(
-                'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'h-10 w-full justify-start px-3 text-left text-sm font-medium',
                 section === s.value
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              <s.icon className="h-4 w-4" />
-              <span className="hidden sm:inline">{s.label}</span>
-            </button>
+              <s.icon className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 whitespace-normal leading-tight">{s.label}</span>
+            </Button>
           ))}
         </nav>
+      </aside>
 
+      <div className="min-w-0 flex-1 space-y-5">
+        {/* Barre d'actions */}
+        <div className="flex flex-wrap items-center justify-end gap-2 border-b border-border pb-3">
         <div className="flex items-center gap-2">
           <Popover>
             <PopoverTrigger asChild>
@@ -109,17 +120,17 @@ const Contenu: React.FC = () => {
             <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
           </Button>
         </div>
-      </div>
 
-      {section === 'dashboard' && <GmaoDashboard />}
-      {section === 'equipements' && <GmaoEquipements />}
-      {section === 'interventions' && <GmaoInterventions />}
-      {section === 'preventif' && <GmaoPreventif />}
-      {section === 'pieces' && <GmaoPieces />}
-      {section === 'couts' && <GmaoCouts />}
-      {section === 'socotac' && <SocotacModule />}
-      {section === 'controle_annuel' && <ControleAnnuelModule />}
-      {section === 'rapports' && <GmaoRapports />}
+        {section === 'dashboard' && <GmaoDashboard />}
+        {section === 'equipements' && <GmaoEquipements />}
+        {section === 'interventions' && <GmaoInterventions />}
+        {section === 'preventif' && <GmaoPreventif />}
+        {section === 'pieces' && <GmaoPieces />}
+        {section === 'couts' && <GmaoCouts />}
+        {section === 'socotac' && <SocotacModule />}
+        {section === 'controle_annuel' && <ControleAnnuelModule />}
+        {section === 'rapports' && <GmaoRapports />}
+      </div>
 
       <GmaoDemandeForm open={nouvelleIntervention} onOpenChange={setNouvelleIntervention} />
     </div>
