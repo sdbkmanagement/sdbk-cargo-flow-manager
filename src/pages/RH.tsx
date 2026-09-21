@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { RHSidebar } from '@/components/rh/RHSidebar';
+import React, { useCallback, useEffect, useState } from 'react';
+import { RH_ITEMS, RHSidebar } from '@/components/rh/RHSidebar';
 import { RHDashboard } from '@/components/rh/dashboard/RHDashboard';
 import { AlertesRHCenter } from '@/components/rh/alertes/AlertesRHCenter';
 import { DocumentsRHList } from '@/components/rh/documents/DocumentsRHList';
@@ -12,14 +12,31 @@ import { KpiRHModule } from '@/components/rh/kpi/KpiRHModule';
 import { EmployesList } from '@/components/rh/EmployesList';
 import { useQuery } from '@tanstack/react-query';
 import { rhService } from '@/services/rh';
+import { useAuth } from '@/contexts/AuthContext';
+
+const estSectionRH = (value: string | null) => RH_ITEMS.some((item) => item.id === value);
 
 const RH = () => {
+  const { user } = useAuth();
+  const cleOnglet = user?.id ? `rh:onglet-actif:${user.id}` : null;
   const [activeSection, setActiveSection] = useState('dashboard');
 
   const { data: employes, isLoading, refetch } = useQuery({
     queryKey: ['employes'],
     queryFn: () => rhService.getEmployes(),
   });
+
+  useEffect(() => {
+    if (!cleOnglet) return;
+    const ongletMemorise = window.localStorage.getItem(cleOnglet);
+    if (estSectionRH(ongletMemorise)) setActiveSection(ongletMemorise);
+  }, [cleOnglet]);
+
+  const changerSection = useCallback((section: string) => {
+    if (!estSectionRH(section)) return;
+    setActiveSection(section);
+    if (cleOnglet) window.localStorage.setItem(cleOnglet, section);
+  }, [cleOnglet]);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -47,9 +64,9 @@ const RH = () => {
   };
 
   return (
-    <div className="flex h-[calc(100vh-120px)] -m-6">
-      <RHSidebar activeSection={activeSection} onSectionChange={setActiveSection} />
-      <div className="flex-1 overflow-y-auto p-6">
+    <div className="-m-6 flex min-h-[calc(100vh-120px)] flex-col md:h-[calc(100vh-120px)] md:flex-row">
+      <RHSidebar activeSection={activeSection} onSectionChange={changerSection} />
+      <div className="min-w-0 flex-1 overflow-y-auto p-6">
         {renderContent()}
       </div>
     </div>
