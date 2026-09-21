@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -67,6 +67,7 @@ const Contenu: React.FC = () => {
   const [groupesOuverts, setGroupesOuverts] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(GROUPES.map((groupe) => [groupe.id, true]))
   );
+  const ignorerProchaineSauvegarde = useRef(false);
   const sectionActive = SECTIONS.find((item) => item.value === section);
   const cleOnglet = user?.id ? `gmao:onglet-actif:${user.id}` : null;
   const navigationCompacte = sidebarReduite && !isMobile;
@@ -82,8 +83,20 @@ const Contenu: React.FC = () => {
   useEffect(() => {
     if (!cleOnglet) return;
     const ongletMemorise = window.localStorage.getItem(cleOnglet);
-    if (estSectionGmao(ongletMemorise)) allerA(ongletMemorise);
+    if (estSectionGmao(ongletMemorise) && ongletMemorise !== section) {
+      ignorerProchaineSauvegarde.current = true;
+      allerA(ongletMemorise);
+    }
   }, [allerA, cleOnglet]);
+
+  useEffect(() => {
+    if (!cleOnglet) return;
+    if (ignorerProchaineSauvegarde.current) {
+      ignorerProchaineSauvegarde.current = false;
+      return;
+    }
+    window.localStorage.setItem(cleOnglet, section);
+  }, [cleOnglet, section]);
 
   useEffect(() => {
     const groupeActif = GROUPES.find((groupe) => groupe.sections.includes(section));
