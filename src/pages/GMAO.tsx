@@ -120,6 +120,7 @@ const Contenu: React.FC = () => {
             <Plus className="mr-2 h-4 w-4" /> Demande d'intervention
           </Button>
         </div>
+        </div>
 
         {section === 'dashboard' && <GmaoDashboard />}
         {section === 'equipements' && <GmaoEquipements />}
