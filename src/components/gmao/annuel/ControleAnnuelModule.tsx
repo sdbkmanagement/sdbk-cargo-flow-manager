@@ -249,10 +249,11 @@ export const ControleAnnuelModule: React.FC = () => {
                     <TableHead>Tracteur</TableHead><TableHead>Remorque</TableHead><TableHead>Opérateur</TableHead>
                     <TableHead>Dernier contrôle</TableHead><TableHead>Résultat</TableHead>
                     <TableHead>Prochaine échéance</TableHead><TableHead>Jours restants</TableHead><TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {!derniers.length && <TableRow><TableCell colSpan={8}><EtatVide message={chargement ? 'Chargement…' : 'Aucun contrôle annuel enregistré.'} /></TableCell></TableRow>}
+                  {!derniers.length && <TableRow><TableCell colSpan={9}><EtatVide message={chargement ? 'Chargement…' : 'Aucun contrôle annuel enregistré.'} /></TableCell></TableRow>}
                   {derniers
                     .slice()
                     .sort((a, b) => (joursRestants(a.date_prochain_controle) ?? 0) - (joursRestants(b.date_prochain_controle) ?? 0))
