@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import {
   Plus, Upload, FileSpreadsheet, FileText, ShieldCheck, ShieldAlert, ShieldX, CalendarClock,
-  Truck, Percent, Pencil, Paperclip, Search, RotateCcw,
+  Truck, Percent, Pencil, Paperclip, Search, RotateCcw, History,
 } from 'lucide-react';
 import { controlesAnnuelsService, ControleAnnuel } from '@/services/controlesAnnuels';
 import { EtatVide, KpiCard, fmtDate } from '../gmaoUi';
@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 import { ControleAnnuelForm } from './ControleAnnuelForm';
 import { ControleAnnuelImport } from './ControleAnnuelImport';
+import { ControleRenouvellementDialog } from '../controles/ControleRenouvellementDialog';
+import { ControleHistoriqueDialog } from '../controles/ControleHistoriqueDialog';
 import { MOIS_FR, anneesDisponibles, joursRestants, statistiquesMensuelles, taux } from '../socotac/socotacUtils';
 import {
   CLASSE_STATUT_ANNUEL, LIBELLE_STATUT_ANNUEL, SEUIL_PROCHE, SEUIL_URGENT,
@@ -50,6 +52,8 @@ export const ControleAnnuelModule: React.FC = () => {
   const [formOuvert, setFormOuvert] = useState(false);
   const [importOuvert, setImportOuvert] = useState(false);
   const [enEdition, setEnEdition] = useState<ControleAnnuel | null>(null);
+  const [renouvellement, setRenouvellement] = useState<ControleAnnuel | null>(null);
+  const [historique, setHistorique] = useState<ControleAnnuel | null>(null);
 
   const [recherche, setRecherche] = useState('');
   const [annee, setAnnee] = useState<string>(TOUS);
