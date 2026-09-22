@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import {
   Plus, Upload, FileSpreadsheet, FileText, ShieldCheck, ShieldAlert, ShieldX, CalendarClock,
-  Truck, Percent, Pencil, Paperclip, Search, RotateCcw,
+  Truck, Percent, Pencil, Paperclip, Search, RotateCcw, History,
 } from 'lucide-react';
 import { socotacService, SocotacControle } from '@/services/socotac';
 import { useGmao } from '../GmaoContext';
@@ -334,6 +334,16 @@ export const SocotacModule: React.FC = () => {
                           <TableCell>{fmtDate(c.date_prochain_controle)}</TableCell>
                           <TableCell>{j ?? '—'}</TableCell>
                           <TableCell><Badge className={CLASSE_STATUT[s]}>{LIBELLE_STATUT[s]}</Badge></TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            {peutGerer && (
+                              <Button variant="outline" size="sm" className="mr-2" onClick={() => setRenouvellement(c)}>
+                                <CalendarClock className="mr-2 h-4 w-4" />Mettre à jour
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setHistorique(c)}>
+                              <History className="mr-2 h-4 w-4" />Historique
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
