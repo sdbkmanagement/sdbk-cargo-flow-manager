@@ -22,6 +22,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 import { SocotacForm } from './SocotacForm';
 import { SocotacImport } from './SocotacImport';
+import { ControleRenouvellementDialog } from '../controles/ControleRenouvellementDialog';
+import { ControleHistoriqueDialog } from '../controles/ControleHistoriqueDialog';
 import {
   CLASSE_STATUT, LIBELLE_STATUT, MOIS_FR, anneesDisponibles, dernierParEquipement,
   joursRestants, normaliserImmat, statistiquesMensuelles, statutDepuisJours, taux,
@@ -37,6 +39,8 @@ export const SocotacModule: React.FC = () => {
   const [formOuvert, setFormOuvert] = useState(false);
   const [importOuvert, setImportOuvert] = useState(false);
   const [enEdition, setEnEdition] = useState<SocotacControle | null>(null);
+  const [renouvellement, setRenouvellement] = useState<SocotacControle | null>(null);
+  const [historique, setHistorique] = useState<SocotacControle | null>(null);
 
   const [recherche, setRecherche] = useState('');
   const [annee, setAnnee] = useState<string>(String(new Date().getFullYear()));
