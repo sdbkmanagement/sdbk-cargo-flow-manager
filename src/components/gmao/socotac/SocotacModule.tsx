@@ -625,6 +625,19 @@ export const SocotacModule: React.FC = () => {
         onSaved={rafraichir}
       />
       <SocotacImport open={importOuvert} onOpenChange={setImportOuvert} onImported={rafraichir} />
+      <ControleRenouvellementDialog
+        open={!!renouvellement}
+        onOpenChange={(o) => !o && setRenouvellement(null)}
+        type="socotac"
+        controle={renouvellement}
+        onSaved={rafraichir}
+      />
+      <ControleHistoriqueDialog
+        open={!!historique}
+        onOpenChange={(o) => !o && setHistorique(null)}
+        type="socotac"
+        controle={historique}
+      />
     </div>
   );
 };
