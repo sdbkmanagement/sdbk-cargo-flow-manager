@@ -11,7 +11,7 @@ import {
 } from 'recharts';
 import {
   Plus, Upload, FileSpreadsheet, FileText, ShieldCheck, ShieldAlert, ShieldX, CalendarClock,
-  Truck, Percent, Pencil, Paperclip, Search, RotateCcw,
+  Truck, Percent, Pencil, Paperclip, Search, RotateCcw, History,
 } from 'lucide-react';
 import { controlesAnnuelsService, ControleAnnuel } from '@/services/controlesAnnuels';
 import { EtatVide, KpiCard, fmtDate } from '../gmaoUi';
@@ -20,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 import { ControleAnnuelForm } from './ControleAnnuelForm';
 import { ControleAnnuelImport } from './ControleAnnuelImport';
+import { ControleRenouvellementDialog } from '../controles/ControleRenouvellementDialog';
+import { ControleHistoriqueDialog } from '../controles/ControleHistoriqueDialog';
 import { MOIS_FR, anneesDisponibles, joursRestants, statistiquesMensuelles, taux } from '../socotac/socotacUtils';
 import {
   CLASSE_STATUT_ANNUEL, LIBELLE_STATUT_ANNUEL, SEUIL_PROCHE, SEUIL_URGENT,
@@ -50,6 +52,8 @@ export const ControleAnnuelModule: React.FC = () => {
   const [formOuvert, setFormOuvert] = useState(false);
   const [importOuvert, setImportOuvert] = useState(false);
   const [enEdition, setEnEdition] = useState<ControleAnnuel | null>(null);
+  const [renouvellement, setRenouvellement] = useState<ControleAnnuel | null>(null);
+  const [historique, setHistorique] = useState<ControleAnnuel | null>(null);
 
   const [recherche, setRecherche] = useState('');
   const [annee, setAnnee] = useState<string>(TOUS);
@@ -245,10 +249,11 @@ export const ControleAnnuelModule: React.FC = () => {
                     <TableHead>Tracteur</TableHead><TableHead>Remorque</TableHead><TableHead>Opérateur</TableHead>
                     <TableHead>Dernier contrôle</TableHead><TableHead>Résultat</TableHead>
                     <TableHead>Prochaine échéance</TableHead><TableHead>Jours restants</TableHead><TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {!derniers.length && <TableRow><TableCell colSpan={8}><EtatVide message={chargement ? 'Chargement…' : 'Aucun contrôle annuel enregistré.'} /></TableCell></TableRow>}
+                  {!derniers.length && <TableRow><TableCell colSpan={9}><EtatVide message={chargement ? 'Chargement…' : 'Aucun contrôle annuel enregistré.'} /></TableCell></TableRow>}
                   {derniers
                     .slice()
                     .sort((a, b) => (joursRestants(a.date_prochain_controle) ?? 0) - (joursRestants(b.date_prochain_controle) ?? 0))
@@ -269,6 +274,16 @@ export const ControleAnnuelModule: React.FC = () => {
                           <TableCell>{fmtDate(c.date_prochain_controle)}</TableCell>
                           <TableCell>{j ?? '—'}</TableCell>
                           <TableCell><Badge className={CLASSE_STATUT_ANNUEL[s]}>{LIBELLE_STATUT_ANNUEL[s]}</Badge></TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            {peutGerer && (
+                              <Button variant="outline" size="sm" className="mr-2" onClick={() => setRenouvellement(c)}>
+                                <CalendarClock className="mr-2 h-4 w-4" />Mettre à jour
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setHistorique(c)}>
+                              <History className="mr-2 h-4 w-4" />Historique
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -397,6 +412,19 @@ export const ControleAnnuelModule: React.FC = () => {
 
       <ControleAnnuelForm open={formOuvert} onOpenChange={setFormOuvert} controle={enEdition} onSaved={charger} />
       <ControleAnnuelImport open={importOuvert} onOpenChange={setImportOuvert} onImported={charger} />
+      <ControleRenouvellementDialog
+        open={!!renouvellement}
+        onOpenChange={(o) => !o && setRenouvellement(null)}
+        type="annuel"
+        controle={renouvellement}
+        onSaved={charger}
+      />
+      <ControleHistoriqueDialog
+        open={!!historique}
+        onOpenChange={(o) => !o && setHistorique(null)}
+        type="annuel"
+        controle={historique}
+      />
     </div>
   );
 };

@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import {
   Plus, Upload, FileSpreadsheet, FileText, ShieldCheck, ShieldAlert, ShieldX, CalendarClock,
-  Truck, Percent, Pencil, Paperclip, Search, RotateCcw,
+  Truck, Percent, Pencil, Paperclip, Search, RotateCcw, History,
 } from 'lucide-react';
 import { socotacService, SocotacControle } from '@/services/socotac';
 import { useGmao } from '../GmaoContext';
@@ -22,6 +22,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 import { SocotacForm } from './SocotacForm';
 import { SocotacImport } from './SocotacImport';
+import { ControleRenouvellementDialog } from '../controles/ControleRenouvellementDialog';
+import { ControleHistoriqueDialog } from '../controles/ControleHistoriqueDialog';
 import {
   CLASSE_STATUT, LIBELLE_STATUT, MOIS_FR, anneesDisponibles, dernierParEquipement,
   joursRestants, normaliserImmat, statistiquesMensuelles, statutDepuisJours, taux,
@@ -37,6 +39,8 @@ export const SocotacModule: React.FC = () => {
   const [formOuvert, setFormOuvert] = useState(false);
   const [importOuvert, setImportOuvert] = useState(false);
   const [enEdition, setEnEdition] = useState<SocotacControle | null>(null);
+  const [renouvellement, setRenouvellement] = useState<SocotacControle | null>(null);
+  const [historique, setHistorique] = useState<SocotacControle | null>(null);
 
   const [recherche, setRecherche] = useState('');
   const [annee, setAnnee] = useState<string>(String(new Date().getFullYear()));
@@ -305,10 +309,11 @@ export const SocotacModule: React.FC = () => {
                     <TableHead>Tracteur</TableHead><TableHead>Remorque</TableHead><TableHead>Conducteur</TableHead>
                     <TableHead>Dernier contrôle</TableHead><TableHead>Résultat</TableHead>
                     <TableHead>Prochaine échéance</TableHead><TableHead>Jours restants</TableHead><TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {!derniers.length && <TableRow><TableCell colSpan={8}><EtatVide message={chargement ? 'Chargement…' : 'Aucun contrôle enregistré.'} /></TableCell></TableRow>}
+                  {!derniers.length && <TableRow><TableCell colSpan={9}><EtatVide message={chargement ? 'Chargement…' : 'Aucun contrôle enregistré.'} /></TableCell></TableRow>}
                   {derniers
                     .slice()
                     .sort((a, b) => (joursRestants(a.date_prochain_controle) ?? 0) - (joursRestants(b.date_prochain_controle) ?? 0))
@@ -329,6 +334,16 @@ export const SocotacModule: React.FC = () => {
                           <TableCell>{fmtDate(c.date_prochain_controle)}</TableCell>
                           <TableCell>{j ?? '—'}</TableCell>
                           <TableCell><Badge className={CLASSE_STATUT[s]}>{LIBELLE_STATUT[s]}</Badge></TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            {peutGerer && (
+                              <Button variant="outline" size="sm" className="mr-2" onClick={() => setRenouvellement(c)}>
+                                <CalendarClock className="mr-2 h-4 w-4" />Mettre à jour
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setHistorique(c)}>
+                              <History className="mr-2 h-4 w-4" />Historique
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
@@ -610,6 +625,19 @@ export const SocotacModule: React.FC = () => {
         onSaved={rafraichir}
       />
       <SocotacImport open={importOuvert} onOpenChange={setImportOuvert} onImported={rafraichir} />
+      <ControleRenouvellementDialog
+        open={!!renouvellement}
+        onOpenChange={(o) => !o && setRenouvellement(null)}
+        type="socotac"
+        controle={renouvellement}
+        onSaved={rafraichir}
+      />
+      <ControleHistoriqueDialog
+        open={!!historique}
+        onOpenChange={(o) => !o && setHistorique(null)}
+        type="socotac"
+        controle={historique}
+      />
     </div>
   );
 };
