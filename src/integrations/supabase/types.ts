@@ -1453,6 +1453,48 @@ export type Database = {
           },
         ]
       }
+      controles_historique: {
+        Row: {
+          controle_id: string
+          created_at: string
+          date_controle: string | null
+          date_prochain_controle: string | null
+          documents: Json | null
+          enregistre_par: string | null
+          id: string
+          motif_rejet: string | null
+          observations: string | null
+          resultat: string | null
+          type_controle: string
+        }
+        Insert: {
+          controle_id: string
+          created_at?: string
+          date_controle?: string | null
+          date_prochain_controle?: string | null
+          documents?: Json | null
+          enregistre_par?: string | null
+          id?: string
+          motif_rejet?: string | null
+          observations?: string | null
+          resultat?: string | null
+          type_controle: string
+        }
+        Update: {
+          controle_id?: string
+          created_at?: string
+          date_controle?: string | null
+          date_prochain_controle?: string | null
+          documents?: Json | null
+          enregistre_par?: string | null
+          id?: string
+          motif_rejet?: string | null
+          observations?: string | null
+          resultat?: string | null
+          type_controle?: string
+        }
+        Relationships: []
+      }
       controles_hsse: {
         Row: {
           absence_danger_visible: boolean | null
