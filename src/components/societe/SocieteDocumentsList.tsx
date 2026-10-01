@@ -101,21 +101,21 @@ export const SocieteDocumentsList: React.FC<SocieteDocumentsListProps> = ({ onEd
 
   const getStatutBadge = (doc: DocumentSociete) => {
     if (!doc.date_expiration) {
-      return <Badge variant="outline">Permanent</Badge>;
+      return <Badge variant="outline" className="bg-muted text-foreground font-semibold">Permanent</Badge>;
     }
 
     const jours = differenceInDays(new Date(doc.date_expiration), new Date());
 
     if (jours < 0) {
-      return <Badge variant="destructive">Expiré</Badge>;
+      return <Badge variant="outline" className="border-destructive/50 bg-destructive/10 text-foreground font-semibold">Expiré</Badge>;
     } else if (jours <= 7) {
-      return <Badge className="bg-red-500 text-white">Expire dans {jours}j</Badge>;
+      return <Badge variant="outline" className="border-destructive/50 bg-destructive/10 text-foreground font-semibold">Expire dans {jours}j</Badge>;
     } else if (jours <= 15) {
-      return <Badge className="bg-orange-500 text-white">Expire dans {jours}j</Badge>;
+      return <Badge variant="outline" className="border-warning/50 bg-warning/15 text-foreground font-semibold">Expire dans {jours}j</Badge>;
     } else if (jours <= 30) {
-      return <Badge className="bg-amber-500 text-white">Expire dans {jours}j</Badge>;
+      return <Badge variant="outline" className="border-warning/50 bg-warning/15 text-foreground font-semibold">Expire dans {jours}j</Badge>;
     } else {
-      return <Badge className="bg-green-500 text-white">Valide</Badge>;
+      return <Badge variant="outline" className="border-success/50 bg-success/10 text-foreground font-semibold">Valide</Badge>;
     }
   };
 
