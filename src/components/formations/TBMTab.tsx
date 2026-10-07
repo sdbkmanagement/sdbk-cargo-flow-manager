@@ -130,7 +130,7 @@ export const TBMTab = () => {
         const row: any = {
           'N°': String(idx + 1).padStart(2, '0'),
           'Nom / Prénoms': `${collab.nom} ${collab.prenom}`,
-          'Statut': collab.type === 'employe' ? collab.poste || '-' : collab.vehicule_assigne || 'Réserve',
+          'Statut': collab.poste || (collab.type === 'employe' ? '-' : 'Réserve'),
         };
         sessions.forEach(s => {
           const present = isPresent(s.id, collab);
@@ -173,7 +173,7 @@ export const TBMTab = () => {
               <td className="px-3 py-1 text-sm font-medium whitespace-nowrap">{String(idx + 1).padStart(2, '0')}</td>
               <td className="px-3 py-1 text-sm whitespace-nowrap">{collab.nom} {collab.prenom}</td>
               <td className="px-3 py-1 text-sm text-muted-foreground whitespace-nowrap">
-                {collab.type === 'employe' ? collab.poste || '-' : collab.vehicule_assigne || 'Réserve'}
+                {collab.poste || (collab.type === 'employe' ? '-' : 'Réserve')}
               </td>
               {sessions.map(session => (
                 <React.Fragment key={session.id}>
