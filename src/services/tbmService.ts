@@ -34,6 +34,15 @@ export interface Collaborateur {
 
 const MOIS_NOMS = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
+export const formatFonctionRH = (f?: string | null): string | undefined => {
+  if (!f) return undefined;
+  const k = f.toLowerCase().trim();
+  if (k === 'titulaire') return 'Titulaire';
+  if (k === 'reserve' || k === 'réserve') return 'Réserve';
+  if (k === 'doublon') return 'Doublon';
+  return f.charAt(0).toUpperCase() + f.slice(1);
+};
+
 export const tbmService = {
   getMoisNom(mois: number) { return MOIS_NOMS[mois] || ''; },
 
@@ -149,15 +158,18 @@ export const tbmService = {
   },
 
   async getAllCollaborateurs(): Promise<Collaborateur[]> {
-    const [{ data: employes, error: empError }, { data: chauffeurs }] = await Promise.all([
+    const [{ data: employes, error: empError }, { data: chauffeurs }, { data: fonctions }] = await Promise.all([
       supabase.rpc('get_tbm_collaborateurs' as any),
       supabase.from('chauffeurs').select('id, nom, prenom, statut, vehicule_assigne').order('nom'),
+      supabase.rpc('get_chauffeurs_fonction_rh' as any),
     ]);
     if (empError) console.error('Erreur chargement collaborateurs TBM:', empError);
+    const fonctionMap = new Map<string, string>();
+    ((fonctions as any[]) || []).forEach((f: any) => { if (f.fonction) fonctionMap.set(f.chauffeur_id, f.fonction); });
 
     const result: Collaborateur[] = [];
     (employes || []).forEach((e: any) => result.push({ id: e.id, nom: e.nom, prenom: e.prenom, type: 'employe', statut: e.statut, poste: e.poste }));
-    (chauffeurs || []).forEach((c: any) => result.push({ id: c.id, nom: c.nom, prenom: c.prenom, type: 'chauffeur', statut: c.statut, vehicule_assigne: c.vehicule_assigne }));
+    (chauffeurs || []).forEach((c: any) => result.push({ id: c.id, nom: c.nom, prenom: c.prenom, type: 'chauffeur', statut: c.statut, vehicule_assigne: c.vehicule_assigne, poste: formatFonctionRH(fonctionMap.get(c.id)) }));
     return result;
   },
 

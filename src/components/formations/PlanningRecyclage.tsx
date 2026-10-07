@@ -1,3 +1,4 @@
+import { formatFonctionRH } from '@/services/tbmService';
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -63,6 +64,9 @@ export const PlanningRecyclage = () => {
           (affectationsData || []).map(a => [a.chauffeur_id, a.vehicule_id])
         );
 
+        const { data: fonctionsData } = await supabase.rpc('get_chauffeurs_fonction_rh' as any);
+        const fonctionMap = new Map<string, string>(((fonctionsData as any[]) || []).map((f: any) => [f.chauffeur_id, formatFonctionRH(f.fonction) || 'Réserve']));
+
         // Load formations with date_recyclage
         const { data: formationsData } = await supabase
           .from('formations' as any)
@@ -85,10 +89,10 @@ export const PlanningRecyclage = () => {
           .map((c, index) => {
             // Priority: affectation active > vehicule_assigne field
             const vehiculeId = affectationMap.get(c.id) || c.vehicule_assigne;
-            let tracteur = 'Reserve';
+            let tracteur = fonctionMap.get(c.id) || 'Réserve';
             if (vehiculeId) {
               const immat = vehiculeMapById.get(vehiculeId);
-              tracteur = immat && immat.trim() !== '' ? immat : 'Reserve';
+              tracteur = immat && immat.trim() !== '' ? immat : tracteur;
             }
             
             const lastFormation = lastFormationMap.get(c.id);
