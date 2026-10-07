@@ -32,7 +32,6 @@ export const FormationsListView = () => {
   const [noteEdits, setNoteEdits] = useState<Record<string, string>>({});
   const [archiveChauffeur, setArchiveChauffeur] = useState<any>(null);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
-  const [archiveType, setArchiveType] = useState<'theorique' | 'pratique'>('theorique');
   const queryClient = useQueryClient();
 
   const updateNoteMutation = useMutation({
@@ -338,33 +337,17 @@ export const FormationsListView = () => {
                               </DropdownMenuItem>
                              </DropdownMenuContent>
                            </DropdownMenu>
-                           <DropdownMenu>
-                             <DropdownMenuTrigger asChild>
-                               <Button variant="outline" size="sm" title="Archiver les fiches d'évaluation">
-                                 <Archive className="w-4 h-4" />
-                               </Button>
-                             </DropdownMenuTrigger>
-                             <DropdownMenuContent align="end" className="bg-background z-50">
-                               <DropdownMenuItem
-                                 onClick={() => {
-                                   setArchiveChauffeur(chauffeur);
-                                   setArchiveType('theorique');
-                                   setShowArchiveDialog(true);
-                                 }}
-                               >
-                                 Archiver la fiche théorique
-                               </DropdownMenuItem>
-                               <DropdownMenuItem
-                                 onClick={() => {
-                                   setArchiveChauffeur(chauffeur);
-                                   setArchiveType('pratique');
-                                   setShowArchiveDialog(true);
-                                 }}
-                               >
-                                 Archiver la fiche pratique
-                               </DropdownMenuItem>
-                             </DropdownMenuContent>
-                           </DropdownMenu>
+                           <Button
+                             variant="outline"
+                             size="sm"
+                             title="Archiver la fiche théorique"
+                             onClick={() => {
+                               setArchiveChauffeur(chauffeur);
+                               setShowArchiveDialog(true);
+                             }}
+                           >
+                             <Archive className="w-4 h-4" />
+                           </Button>
                          </div>
                       </td>
                     </tr>
@@ -396,7 +379,8 @@ export const FormationsListView = () => {
         open={showArchiveDialog}
         onOpenChange={setShowArchiveDialog}
         chauffeur={archiveChauffeur}
-        defaultType={archiveType}
+        defaultType="theorique"
+        fixedType="theorique"
       />
     </Card>
   );
