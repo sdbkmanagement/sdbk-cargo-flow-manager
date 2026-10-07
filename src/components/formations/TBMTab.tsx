@@ -30,7 +30,8 @@ export const TBMTab = () => {
       if (sessions.length < nbLundis) {
         sessions = await tbmService.initSessions(mois, annee);
       }
-      return sessions;
+      // Ne garder qu'une réunion par lundi du mois
+      return sessions.filter(s => s.numero_reunion <= nbLundis);
     },
   });
 
