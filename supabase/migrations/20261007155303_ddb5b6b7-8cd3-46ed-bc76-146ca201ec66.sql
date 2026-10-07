@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.get_chauffeurs_fonction_rh() FROM PUBLIC, anon;
