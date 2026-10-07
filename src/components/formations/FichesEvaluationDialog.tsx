@@ -16,9 +16,10 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   chauffeur: any;
   defaultType?: 'theorique' | 'pratique';
+  fixedType?: 'theorique' | 'pratique';
 }
 
-export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultType = 'theorique' }: Props) => {
+export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultType = 'theorique', fixedType }: Props) => {
   const queryClient = useQueryClient();
   const [type, setType] = useState<'theorique' | 'pratique'>(defaultType);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
@@ -28,8 +29,8 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
   const [file, setFile] = useState<File | null>(null);
 
   React.useEffect(() => {
-    if (open) setType(defaultType);
-  }, [open, defaultType]);
+    if (open) setType(fixedType || defaultType);
+  }, [open, defaultType, fixedType]);
 
   const { data: fiches = [], isLoading } = useQuery({
     queryKey: ['fiches-evaluation', chauffeur?.id],
@@ -76,6 +77,8 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
 
   if (!chauffeur) return null;
 
+  const fichesAffichees = fixedType ? fiches.filter(f => f.type_fiche === fixedType) : fiches;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
@@ -91,7 +94,7 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Type de fiche</Label>
-                <Select value={type} onValueChange={(v: any) => setType(v)}>
+                <Select value={type} onValueChange={(v: any) => setType(v)} disabled={!!fixedType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-background z-50">
                     <SelectItem value="theorique">Théorique</SelectItem>
@@ -138,11 +141,11 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
             <p className="font-medium text-sm mb-2">Fiches archivées</p>
             {isLoading ? (
               <p className="text-sm text-muted-foreground">Chargement...</p>
-            ) : fiches.length === 0 ? (
+            ) : fichesAffichees.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucune fiche archivée pour ce chauffeur.</p>
             ) : (
               <div className="space-y-2">
-                {fiches.map(f => (
+                {fichesAffichees.map(f => (
                   <div key={f.id} className="flex items-center justify-between border rounded-md p-3">
                     <div className="flex items-start gap-3">
                       <FileText className="w-4 h-4 mt-1 text-muted-foreground" />

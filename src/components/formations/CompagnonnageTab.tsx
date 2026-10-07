@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Download, Users, CheckCircle, AlertTriangle, XCircle, Save, Printer } from 'lucide-react';
+import { Users, CheckCircle, AlertTriangle, XCircle, Save, Printer, Archive } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { compagnonnageService, FicheCompagnonnage } from '@/services/compagnonnageService';
 import { chauffeursService } from '@/services/chauffeurs';
 import { toast } from 'sonner';
+import { FichesEvaluationDialog } from './FichesEvaluationDialog';
 
 
 const DUREE_RECYCLAGE_MOIS = 12; // 1 an par défaut
@@ -56,6 +57,8 @@ export const CompagnonnageTab = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [localEdits, setLocalEdits] = useState<Record<string, { forme?: boolean; dateFormation?: string }>>({});
+  const [archiveChauffeur, setArchiveChauffeur] = useState<any>(null);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
 
   const { data: fiches = [], isLoading: loadingFiches } = useQuery({
     queryKey: ['fiches-compagnonnage'],
@@ -359,6 +362,7 @@ export const CompagnonnageTab = () => {
                     <TableHead>Date Formation</TableHead>
                     <TableHead>Date Recyclage</TableHead>
                     <TableHead>Statut</TableHead>
+                    <TableHead className="text-center">Fiche pratique</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -395,6 +399,25 @@ export const CompagnonnageTab = () => {
                             {config?.label}
                           </Badge>
                         </TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            title="Archiver la fiche pratique"
+                            onClick={() => {
+                              setArchiveChauffeur({
+                                id: row.chauffeurId,
+                                nom: row.nom,
+                                prenom: row.prenom,
+                                matricule: row.matricule,
+                              });
+                              setShowArchiveDialog(true);
+                            }}
+                          >
+                            <Archive className="w-4 h-4 mr-1" />
+                            Archiver
+                          </Button>
+                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -404,6 +427,14 @@ export const CompagnonnageTab = () => {
           )}
         </CardContent>
       </Card>
+
+      <FichesEvaluationDialog
+        open={showArchiveDialog}
+        onOpenChange={setShowArchiveDialog}
+        chauffeur={archiveChauffeur}
+        defaultType="pratique"
+        fixedType="pratique"
+      />
     </div>
   );
 };
