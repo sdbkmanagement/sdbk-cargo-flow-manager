@@ -7093,6 +7093,13 @@ export type Database = {
           type_alerte: string
         }[]
       }
+      get_chauffeurs_fonction_rh: {
+        Args: never
+        Returns: {
+          chauffeur_id: string
+          fonction: string
+        }[]
+      }
       get_my_conversation_ids: { Args: never; Returns: string[] }
       get_or_sync_user_by_auth: {
         Args: never
