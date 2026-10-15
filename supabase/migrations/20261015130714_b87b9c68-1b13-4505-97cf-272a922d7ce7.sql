@@ -1,0 +1,1 @@
+DELETE FROM public.tbm_presences WHERE employe_id = '522e0873-d2b9-4363-8de7-d1c9e50bfc2a'; DELETE FROM public.employes WHERE id = '522e0873-d2b9-4363-8de7-d1c9e50bfc2a' AND poste = 'Stagiaire';
