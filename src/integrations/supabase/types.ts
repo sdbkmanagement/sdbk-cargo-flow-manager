@@ -4164,6 +4164,7 @@ export type Database = {
           emplacement: string | null
           fournisseur_id: string | null
           id: string
+          marque: string | null
           prix_unitaire: number
           quantite_stock: number
           reference: string
@@ -4179,6 +4180,7 @@ export type Database = {
           emplacement?: string | null
           fournisseur_id?: string | null
           id?: string
+          marque?: string | null
           prix_unitaire?: number
           quantite_stock?: number
           reference: string
@@ -4194,6 +4196,7 @@ export type Database = {
           emplacement?: string | null
           fournisseur_id?: string | null
           id?: string
+          marque?: string | null
           prix_unitaire?: number
           quantite_stock?: number
           reference?: string
