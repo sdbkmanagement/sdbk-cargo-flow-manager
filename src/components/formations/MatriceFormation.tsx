@@ -179,22 +179,26 @@ export const MatriceFormation = () => {
     queryFn: chauffeursService.getAll,
   });
 
-  const adminPersons: Person[] = employes.map((e: any) => ({
-    id: e.id,
-    nom: e.nom,
-    prenom: e.prenom,
-    fonction: e.poste || e.service,
-    statut: e.statut,
-  }));
+  // Personnel mécanicien / maintenance : affiché uniquement dans l'onglet Mécaniciens
+  const mecaKeywords = ['mécanicien', 'mecanicien', 'electricien', 'électricien', 'pneumatique', 'riveur', 'graisseur', 'vulcanisateur', 'vulganisateur', 'chef garage', 'maintenancier'];
+  const isMeca = (e: any) => {
+    const poste = (e.poste || '').toLowerCase();
+    const service = (e.service || '').toLowerCase();
+    return mecaKeywords.some(k => poste.includes(k)) || service === 'maintenance';
+  };
 
-  // For mécaniciens, filter employes with maintenance-related fonctions
-  const mecaKeywords = ['mécanicien', 'mecanicien', 'electricien', 'pneumatique', 'riveur', 'graisseur', 'vulcanisateur', 'vulganisateur', 'chef garage', 'chef mécanicien'];
+  const adminPersons: Person[] = employes
+    .filter((e: any) => !isMeca(e))
+    .map((e: any) => ({
+      id: e.id,
+      nom: e.nom,
+      prenom: e.prenom,
+      fonction: e.poste || e.service,
+      statut: e.statut,
+    }));
+
   const mecaPersons: Person[] = employes
-    .filter((e: any) => {
-      const poste = (e.poste || '').toLowerCase();
-      const service = (e.service || '').toLowerCase();
-      return mecaKeywords.some(k => poste.includes(k) || service.includes(k)) || service === 'maintenance';
-    })
+    .filter((e: any) => isMeca(e))
     .map((e: any) => ({
       id: e.id,
       nom: e.nom,
@@ -250,7 +254,7 @@ export const MatriceFormation = () => {
             <MatriceTab
               categorie="mecaniciens"
               modules={MODULES_MECANICIENS}
-              persons={mecaPersons.length > 0 ? mecaPersons : adminPersons}
+              persons={mecaPersons}
               personType="employe"
               isLoading={loadingEmployes}
             />
