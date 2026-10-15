@@ -253,7 +253,7 @@ export const CompagnonnageTab = () => {
               <th class="num-col">N°</th>
               <th class="mat-col">Matricule</th>
               <th class="nom-col">Nom / Prénoms</th>
-              <th class="date-col">Date réalisation</th>
+              <th class="date-col">Date de réalisation</th>
               <th class="date-col">Date recyclage</th>
               <th class="statut-col">Statut</th>
               <th class="obs-col">Obs</th>
@@ -314,7 +314,7 @@ export const CompagnonnageTab = () => {
         </CardContent></Card>
         <Card><CardContent className="pt-4 text-center">
           <p className="text-2xl font-bold text-muted-foreground">{stats.nonFormes}</p>
-          <p className="text-sm text-muted-foreground">Non formés</p>
+          <p className="text-sm text-muted-foreground">Non testés</p>
         </CardContent></Card>
       </div>
 
@@ -359,7 +359,7 @@ export const CompagnonnageTab = () => {
                     <TableHead className="w-12">Formé</TableHead>
                     <TableHead>Matricule</TableHead>
                     <TableHead>Chauffeur</TableHead>
-                    <TableHead>Date Formation</TableHead>
+                    <TableHead>Date de réalisation</TableHead>
                     <TableHead>Date Recyclage</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead className="text-center">Fiche pratique</TableHead>
