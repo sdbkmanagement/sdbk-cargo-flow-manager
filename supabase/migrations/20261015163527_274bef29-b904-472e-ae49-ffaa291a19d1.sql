@@ -1,0 +1,1 @@
+ALTER TABLE public.gmao_pieces ADD COLUMN IF NOT EXISTS marque text;
