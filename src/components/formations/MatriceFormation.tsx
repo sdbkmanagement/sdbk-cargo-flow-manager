@@ -254,7 +254,7 @@ export const MatriceFormation = () => {
             <MatriceTab
               categorie="mecaniciens"
               modules={MODULES_MECANICIENS}
-              persons={mecaPersons.length > 0 ? mecaPersons : adminPersons}
+              persons={mecaPersons}
               personType="employe"
               isLoading={loadingEmployes}
             />
