@@ -132,9 +132,9 @@ export const GmaoPieces: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={7}>Chargement…</TableCell></TableRow>}
+{loading && <TableRow><TableCell colSpan={8}>Chargement…</TableCell></TableRow>}
             {!loading && items.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-muted-foreground">Aucune pièce enregistrée.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-muted-foreground">Aucune pièce enregistrée.</TableCell></TableRow>
             )}
             {items.map((p) => {
               const alerte = Number(p.quantite_stock) <= Number(p.seuil_mini);
