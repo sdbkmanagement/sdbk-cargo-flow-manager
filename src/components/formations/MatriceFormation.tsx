@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Users, Wrench, Truck } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { rhService } from '@/services/rh';
+import { supabase } from '@/integrations/supabase/client';
 import { chauffeursService } from '@/services/chauffeurs';
 import {
   matriceFormationService,
@@ -167,7 +167,11 @@ const MatriceTab = ({ categorie, modules, persons, personType, isLoading }: Matr
 export const MatriceFormation = () => {
   const { data: employes = [], isLoading: loadingEmployes } = useQuery({
     queryKey: ['employes-matrice'],
-    queryFn: () => rhService.getEmployes(),
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc('get_formations_collaborateurs');
+      if (error) throw error;
+      return data || [];
+    },
   });
 
   const { data: chauffeurs = [], isLoading: loadingChauffeurs } = useQuery({
