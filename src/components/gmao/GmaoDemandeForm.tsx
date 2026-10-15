@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Trash2 } from 'lucide-react';
 import { EquipementCombobox } from './EquipementCombobox';
+import { PieceCombobox } from './PieceCombobox';
 import { fmtMontant, PRIORITES, STATUTS_OT, TYPES_MAINTENANCE } from './gmaoUi';
 
 interface Props {
@@ -298,16 +299,11 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
                     return (
                       <TableRow key={i}>
                         <TableCell>
-                          <Select value={l.piece_id} onValueChange={(v) => choisirPiece(i, v)}>
-                            <SelectTrigger><SelectValue placeholder="Sélectionner une pièce" /></SelectTrigger>
-                            <SelectContent className="max-h-72">
-                              {pieces.map((x) => (
-                                <SelectItem key={x.id} value={x.id}>
-                                  {x.reference} — {x.designation} (stock {x.quantite_stock})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <PieceCombobox
+                            pieces={pieces}
+                            value={l.piece_id}
+                            onChange={(v) => choisirPiece(i, v)}
+                          />
                           {p && Number(l.quantite) > Number(p.quantite_stock) && (
                             <p className="mt-1 text-xs text-destructive">Quantité supérieure au stock disponible</p>
                           )}
