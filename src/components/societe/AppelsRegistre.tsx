@@ -189,6 +189,7 @@ export const AppelsRegistre: React.FC = () => {
       return;
     }
     const payload: AppelRegistreInsert = {
+      numero_fiche: editing?.numero_fiche ?? '',
       date_appel: form.date_appel,
       heure_reception: form.heure_reception,
       recepteur_appel: form.recepteur_appel,
