@@ -25,7 +25,7 @@ export const GmaoPieces: React.FC = () => {
   const [reapproForm, setReapproForm] = useState({ quantite: '', prix_unitaire: '', motif: '' });
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({
-    reference: '', designation: '', categorie: '', unite: 'unite',
+    reference: '', designation: '', categorie: '', marque: '', unite: 'unite',
     quantite_stock: 0, seuil_mini: 0, prix_unitaire: 0, emplacement: '',
   });
 
@@ -104,6 +104,7 @@ export const GmaoPieces: React.FC = () => {
               <div><Label>Référence *</Label><Input value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} /></div>
               <div><Label>Désignation *</Label><Input value={form.designation} onChange={(e) => setForm({ ...form, designation: e.target.value })} /></div>
               <div><Label>Catégorie</Label><Input value={form.categorie} onChange={(e) => setForm({ ...form, categorie: e.target.value })} /></div>
+              <div><Label>Marque</Label><Input value={form.marque} onChange={(e) => setForm({ ...form, marque: e.target.value })} /></div>
               <div><Label>Emplacement</Label><Input value={form.emplacement} onChange={(e) => setForm({ ...form, emplacement: e.target.value })} /></div>
               <div><Label>Quantité en stock</Label><Input type="number" value={form.quantite_stock} onChange={(e) => setForm({ ...form, quantite_stock: e.target.value })} /></div>
               <div><Label>Seuil minimum</Label><Input type="number" value={form.seuil_mini} onChange={(e) => setForm({ ...form, seuil_mini: e.target.value })} /></div>
@@ -122,6 +123,7 @@ export const GmaoPieces: React.FC = () => {
             <TableRow>
               <TableHead>Référence</TableHead>
               <TableHead>Désignation</TableHead>
+              <TableHead>Marque</TableHead>
               <TableHead className="text-right">Stock</TableHead>
               <TableHead className="text-right">Seuil</TableHead>
               <TableHead className="text-right">Prix unitaire</TableHead>
@@ -130,9 +132,9 @@ export const GmaoPieces: React.FC = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={7}>Chargement…</TableCell></TableRow>}
+{loading && <TableRow><TableCell colSpan={8}>Chargement…</TableCell></TableRow>}
             {!loading && items.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-muted-foreground">Aucune pièce enregistrée.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={8} className="text-muted-foreground">Aucune pièce enregistrée.</TableCell></TableRow>
             )}
             {items.map((p) => {
               const alerte = Number(p.quantite_stock) <= Number(p.seuil_mini);
@@ -140,6 +142,7 @@ export const GmaoPieces: React.FC = () => {
                 <TableRow key={p.id}>
                   <TableCell className="font-medium">{p.reference}</TableCell>
                   <TableCell>{p.designation}</TableCell>
+                  <TableCell>{p.marque || '—'}</TableCell>
                   <TableCell className="text-right">{p.quantite_stock}</TableCell>
                   <TableCell className="text-right">{p.seuil_mini}</TableCell>
                   <TableCell className="text-right">{Number(p.prix_unitaire).toLocaleString('fr-FR')} GNF</TableCell>

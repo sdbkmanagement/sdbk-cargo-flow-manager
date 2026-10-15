@@ -74,6 +74,7 @@ export type GmaoPiece = {
   reference: string;
   designation: string;
   categorie?: string | null;
+  marque?: string | null;
   unite?: string | null;
   quantite_stock: number;
   seuil_mini: number;
