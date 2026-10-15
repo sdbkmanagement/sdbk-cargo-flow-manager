@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Users, Wrench, Truck } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { rhService } from '@/services/rh';
+import { supabase } from '@/integrations/supabase/client';
 import { chauffeursService } from '@/services/chauffeurs';
 import {
   matriceFormationService,
