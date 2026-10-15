@@ -5818,6 +5818,114 @@ export type Database = {
         }
         Relationships: []
       }
+      registre_appels: {
+        Row: {
+          activation_plan_urgence: boolean | null
+          appelant_nom: string
+          contact_telephonique: string | null
+          created_at: string
+          date_appel: string
+          date_cloture: string | null
+          delai_mobilisation_min: number | null
+          description_faits: string
+          deversement: boolean | null
+          heure_alerte_hierarchie: string | null
+          heure_arrivee_lieu: string | null
+          heure_depart_equipe: string | null
+          heure_fin_intervention: string | null
+          heure_reception: string
+          id: string
+          localisation: string
+          mesures_correctives: string | null
+          mesures_urgence: string | null
+          motif_appel: string
+          niveau_gravite: string
+          nombre_blesses: number | null
+          numero_citerne: string | null
+          numero_fiche: string
+          numero_tracteur: string
+          produit_transporte: string | null
+          qualite_appelant: string | null
+          quantite_chargee: number | null
+          recepteur_appel: string
+          recommandations: string | null
+          secours_externes: string | null
+          statut: string
+          updated_at: string
+          volume_deverse: number | null
+        }
+        Insert: {
+          activation_plan_urgence?: boolean | null
+          appelant_nom: string
+          contact_telephonique?: string | null
+          created_at?: string
+          date_appel: string
+          date_cloture?: string | null
+          delai_mobilisation_min?: number | null
+          description_faits: string
+          deversement?: boolean | null
+          heure_alerte_hierarchie?: string | null
+          heure_arrivee_lieu?: string | null
+          heure_depart_equipe?: string | null
+          heure_fin_intervention?: string | null
+          heure_reception: string
+          id?: string
+          localisation: string
+          mesures_correctives?: string | null
+          mesures_urgence?: string | null
+          motif_appel: string
+          niveau_gravite?: string
+          nombre_blesses?: number | null
+          numero_citerne?: string | null
+          numero_fiche: string
+          numero_tracteur: string
+          produit_transporte?: string | null
+          qualite_appelant?: string | null
+          quantite_chargee?: number | null
+          recepteur_appel: string
+          recommandations?: string | null
+          secours_externes?: string | null
+          statut?: string
+          updated_at?: string
+          volume_deverse?: number | null
+        }
+        Update: {
+          activation_plan_urgence?: boolean | null
+          appelant_nom?: string
+          contact_telephonique?: string | null
+          created_at?: string
+          date_appel?: string
+          date_cloture?: string | null
+          delai_mobilisation_min?: number | null
+          description_faits?: string
+          deversement?: boolean | null
+          heure_alerte_hierarchie?: string | null
+          heure_arrivee_lieu?: string | null
+          heure_depart_equipe?: string | null
+          heure_fin_intervention?: string | null
+          heure_reception?: string
+          id?: string
+          localisation?: string
+          mesures_correctives?: string | null
+          mesures_urgence?: string | null
+          motif_appel?: string
+          niveau_gravite?: string
+          nombre_blesses?: number | null
+          numero_citerne?: string | null
+          numero_fiche?: string
+          numero_tracteur?: string
+          produit_transporte?: string | null
+          qualite_appelant?: string | null
+          quantite_chargee?: number | null
+          recepteur_appel?: string
+          recommandations?: string | null
+          secours_externes?: string | null
+          statut?: string
+          updated_at?: string
+          volume_deverse?: number | null
+        }
+        Relationships: []
+      }
       role_permissions: {
         Row: {
           created_at: string
