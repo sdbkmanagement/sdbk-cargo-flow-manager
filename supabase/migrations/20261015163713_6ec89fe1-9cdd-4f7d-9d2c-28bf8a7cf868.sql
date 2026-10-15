@@ -1,0 +1,1 @@
+ALTER TABLE public.gmao_pieces DROP CONSTRAINT gmao_pieces_reference_key;
