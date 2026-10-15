@@ -90,6 +90,10 @@ const Societe: React.FC = () => {
           <SocieteAlertsDashboard key={`alerts-${refreshKey}`} />
         </TabsContent>
 
+        <TabsContent value="appels" className="mt-6">
+          <AppelsRegistre key={`appels-${refreshKey}`} />
+        </TabsContent>
+
         <TabsContent value="archives" className="mt-6">
           <SocieteArchivesList
             key={`archives-${refreshKey}`}
