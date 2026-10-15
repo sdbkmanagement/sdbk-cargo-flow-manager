@@ -2629,6 +2629,7 @@ export type Database = {
           departement: string | null
           diplome: string | null
           email: string | null
+          exclu_tbm: boolean
           fonction: string | null
           genre: string | null
           groupe_sanguin: string | null
@@ -2687,6 +2688,7 @@ export type Database = {
           departement?: string | null
           diplome?: string | null
           email?: string | null
+          exclu_tbm?: boolean
           fonction?: string | null
           genre?: string | null
           groupe_sanguin?: string | null
@@ -2745,6 +2747,7 @@ export type Database = {
           departement?: string | null
           diplome?: string | null
           email?: string | null
+          exclu_tbm?: boolean
           fonction?: string | null
           genre?: string | null
           groupe_sanguin?: string | null
@@ -7148,6 +7151,7 @@ export type Database = {
           departement: string | null
           diplome: string | null
           email: string | null
+          exclu_tbm: boolean
           fonction: string | null
           genre: string | null
           groupe_sanguin: string | null
