@@ -7103,6 +7103,17 @@ export type Database = {
           fonction: string
         }[]
       }
+      get_formations_collaborateurs: {
+        Args: never
+        Returns: {
+          id: string
+          nom: string
+          poste: string
+          prenom: string
+          service: string
+          statut: string
+        }[]
+      }
       get_my_conversation_ids: { Args: never; Returns: string[] }
       get_or_sync_user_by_auth: {
         Args: never
