@@ -19,7 +19,7 @@ const statutConfig = {
   valide: { label: 'Valide', icon: CheckCircle, className: 'bg-green-500 text-white' },
   a_renouveler: { label: 'À renouveler', icon: AlertTriangle, className: 'bg-orange-500 text-white' },
   expire: { label: 'Expiré', icon: XCircle, className: 'bg-red-500 text-white' },
-  non_forme: { label: 'Non formé', icon: XCircle, className: 'bg-muted text-muted-foreground' },
+  non_forme: { label: 'Non testé', icon: XCircle, className: 'bg-muted text-muted-foreground' },
 };
 
 function calculateEcheance(dateFormation: string): string {
