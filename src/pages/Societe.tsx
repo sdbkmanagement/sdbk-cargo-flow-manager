@@ -6,13 +6,15 @@ import { SocieteAlertsDashboard } from '@/components/societe/SocieteAlertsDashbo
 import { SocieteAuditLog } from '@/components/societe/SocieteAuditLog';
 import { SocieteStats } from '@/components/societe/SocieteStats';
 import { SocieteArchivesList } from '@/components/societe/SocieteArchivesList';
+import { AppelsRegistre } from '@/components/societe/AppelsRegistre';
 import { 
   FileText, 
   AlertTriangle, 
   History, 
   PlusCircle,
   BarChart3,
-  Archive
+  Archive,
+  Phone
 } from 'lucide-react';
 
 const Societe: React.FC = () => {
@@ -49,7 +51,7 @@ const Societe: React.FC = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-grid">
           <TabsTrigger value="documents" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
             <span className="hidden sm:inline">Documents</span>
@@ -57,6 +59,10 @@ const Societe: React.FC = () => {
           <TabsTrigger value="alertes" className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             <span className="hidden sm:inline">Alertes</span>
+          </TabsTrigger>
+          <TabsTrigger value="appels" className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            <span className="hidden sm:inline">Appels</span>
           </TabsTrigger>
           <TabsTrigger value="archives" className="flex items-center gap-2">
             <Archive className="h-4 w-4" />
