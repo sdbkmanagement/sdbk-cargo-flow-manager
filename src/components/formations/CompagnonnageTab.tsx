@@ -253,7 +253,7 @@ export const CompagnonnageTab = () => {
               <th class="num-col">N°</th>
               <th class="mat-col">Matricule</th>
               <th class="nom-col">Nom / Prénoms</th>
-              <th class="date-col">Date réalisation</th>
+              <th class="date-col">Date de réalisation</th>
               <th class="date-col">Date recyclage</th>
               <th class="statut-col">Statut</th>
               <th class="obs-col">Obs</th>
