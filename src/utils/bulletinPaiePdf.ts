@@ -3,7 +3,7 @@ import autoTable from 'jspdf-autotable';
 import type { Tables } from '@/integrations/supabase/types';
 
 export type BulletinPdf = Tables<'bulletins_paie'> & {
-  employe: { nom: string; prenom: string; poste: string | null } | null;
+  employe: Pick<Tables<'employes'>, 'nom' | 'prenom' | 'poste' | 'matricule' | 'immatricule_cnss' | 'adresse'> | null;
   periode: { mois: number; annee: number } | null;
 };
 
@@ -26,13 +26,16 @@ export function creerBulletinPdf(b: BulletinPdf, logo?: string | null) {
   doc.setFontSize(10);
   doc.text(`${moisPaie[b.periode.mois]} ${b.periode.annee}`, 196, 25, { align: 'right' });
   autoTable(doc, {
-    startY: 35, theme: 'plain', styles: { fontSize: 10, cellPadding: 2 },
+    startY: 35, theme: 'plain', styles: { fontSize: 9, cellPadding: 2, overflow: 'linebreak' },
     body: [
-      ['Collaborateur', `${b.employe.prenom} ${b.employe.nom}`],
-      ['Fonction', b.employe.poste || '-'],
-      ['N° bulletin', b.numero || '-'],
-      ['Statut', b.statut === 'paye' ? 'Payé' : b.statut === 'valide' ? 'Validé' : 'Brouillon'],
-    ], columnStyles: { 0: { fontStyle: 'bold', cellWidth: 40 } },
+      ['Collaborateur', `${b.employe.prenom} ${b.employe.nom}`, 'Fonction', b.employe.poste || '-'],
+      ['Matricule', b.employe.matricule || 'Non renseigné', 'N° CNSS', b.employe.immatricule_cnss || 'Non renseigné'],
+      ['Adresse', { content: b.employe.adresse || 'Non renseignée', colSpan: 3 }],
+      ['N° bulletin', b.numero || '-', 'Statut', b.statut === 'paye' ? 'Payé' : b.statut === 'valide' ? 'Validé' : 'Brouillon'],
+    ], columnStyles: {
+      0: { fontStyle: 'bold', cellWidth: 30 }, 1: { cellWidth: 61 },
+      2: { fontStyle: 'bold', cellWidth: 30 }, 3: { cellWidth: 61 },
+    },
   });
   let y = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
   const row = (label: string, gain?: number | null, retenue?: number | null) => [label, gain == null ? '' : montant(gain), retenue == null ? '' : montant(retenue)];

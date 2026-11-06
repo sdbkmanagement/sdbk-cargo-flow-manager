@@ -57,7 +57,7 @@ export const BulletinsPaieList = () => {
     queryKey: ['bulletins-paie'],
     queryFn: async () => {
       const charger = async (offset = 0): Promise<BulletinPdf[]> => {
-        const { data, error } = await supabase.from('bulletins_paie').select('*, employe:employes(nom, prenom, poste), periode:periodes_paie(mois, annee)').order('created_at', { ascending: false }).order('id').range(offset, offset + 999);
+        const { data, error } = await supabase.from('bulletins_paie').select('*, employe:employes(nom, prenom, poste, matricule, immatricule_cnss, adresse), periode:periodes_paie(mois, annee)').order('created_at', { ascending: false }).order('id').range(offset, offset + 999);
         if (error) throw error;
         return data.length === 1000 ? [...data, ...await charger(offset + 1000)] : data;
       };
