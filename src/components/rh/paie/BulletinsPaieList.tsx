@@ -6,12 +6,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Calculator, Pencil } from 'lucide-react';
+import { Plus, Calculator, Pencil, Download, Search } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { getParametresPaie, calculerBulletin } from '@/services/paieConfig';
 import { BulletinEditDialog } from './BulletinEditDialog';
+import { creerBulletinPdf, telechargerBulletin, type BulletinPdf } from '@/utils/bulletinPaiePdf';
 
 const moisNoms = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
@@ -23,13 +24,44 @@ export const BulletinsPaieList = () => {
   const [moisEtat, setMoisEtat] = useState(String(new Date().getMonth() + 1));
   const [anneeEtat, setAnneeEtat] = useState(String(new Date().getFullYear()));
   const [editBulletin, setEditBulletin] = useState<any>(null);
+  const [recherche, setRecherche] = useState('');
+  const [periodeFiltre, setPeriodeFiltre] = useState('toutes');
+
+  const { data: logo } = useQuery({
+    queryKey: ['bulletin-paie-logo'],
+    staleTime: Infinity,
+    queryFn: async () => {
+      const response = await fetch('/images/logo-sdbk.png');
+      if (!response.ok) return null;
+      const blob = await response.blob();
+      return new Promise<string | null>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null);
+        reader.onerror = () => resolve(null);
+        reader.readAsDataURL(blob);
+      });
+    },
+  });
+
+  const telecharger = (bulletin: BulletinPdf) => {
+    try {
+      void telechargerBulletin(creerBulletinPdf(bulletin, logo)).catch(() => {
+        toast({ title: 'Téléchargement impossible', variant: 'destructive' });
+      });
+    } catch (error) {
+      toast({ title: 'Téléchargement impossible', description: error instanceof Error ? error.message : 'Réessayez.', variant: 'destructive' });
+    }
+  };
 
   const { data: bulletins, isLoading } = useQuery({
     queryKey: ['bulletins-paie'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('bulletins_paie').select('*, employe:employes(nom, prenom, poste), periode:periodes_paie(mois, annee)').order('created_at', { ascending: false });
-      if (error) throw error;
-      return data;
+      const charger = async (offset = 0): Promise<BulletinPdf[]> => {
+        const { data, error } = await supabase.from('bulletins_paie').select('*, employe:employes(nom, prenom, poste), periode:periodes_paie(mois, annee)').order('created_at', { ascending: false }).order('id').range(offset, offset + 999);
+        if (error) throw error;
+        return data.length === 1000 ? [...data, ...await charger(offset + 1000)] : data;
+      };
+      return charger();
     }
   });
 
@@ -139,6 +171,12 @@ export const BulletinsPaieList = () => {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['bulletins-paie'] }); toast({ title: 'Bulletin validé' }); }
   });
 
+  const periodesDisponibles = Array.from(new Map((bulletins || []).filter(b => b.periode).map(b => [b.periode_id, b.periode])).entries())
+    .sort((a, b) => (b[1]?.annee ?? 0) - (a[1]?.annee ?? 0) || (b[1]?.mois ?? 0) - (a[1]?.mois ?? 0));
+  const normaliser = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const bulletinsFiltres = bulletins?.filter(b => (periodeFiltre === 'toutes' || b.periode_id === periodeFiltre)
+    && normaliser(`${b.employe?.prenom || ''} ${b.employe?.nom || ''}`).includes(normaliser(recherche.trim())));
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -148,6 +186,19 @@ export const BulletinsPaieList = () => {
           <Button onClick={() => setShowEtatMois(true)}><Plus className="w-4 h-4 mr-2" />Générer l'état du mois</Button>
         </div>
       </div>
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-48">
+          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Input aria-label="Rechercher un collaborateur" placeholder="Rechercher un collaborateur" value={recherche} onChange={e => setRecherche(e.target.value)} className="pl-9" />
+        </div>
+        <Select value={periodeFiltre} onValueChange={setPeriodeFiltre}>
+          <SelectTrigger className="w-56" aria-label="Mois du bulletin"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="toutes">Tous les mois</SelectItem>
+            {periodesDisponibles.map(([id, p]) => p && <SelectItem key={id} value={id}>{moisNoms[p.mois]} {p.annee}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       <Card><CardContent className="p-0 overflow-x-auto">
         <table className="w-max min-w-full text-sm whitespace-nowrap">
           <thead className="border-b bg-muted/50"><tr>
@@ -155,8 +206,8 @@ export const BulletinsPaieList = () => {
           </tr></thead>
           <tbody>
             {isLoading ? <tr><td colSpan={21} className="p-4 text-center text-muted-foreground">Chargement...</td></tr>
-            : bulletins?.length === 0 ? <tr><td colSpan={21} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
-            : bulletins?.map((b: any) => (
+            : bulletinsFiltres?.length === 0 ? <tr><td colSpan={21} className="p-4 text-center text-muted-foreground">Aucun bulletin</td></tr>
+            : bulletinsFiltres?.map((b) => (
               <tr key={b.id} className="border-b hover:bg-muted/30">
                 <td className="p-3 font-medium">{b.employe?.prenom} {b.employe?.nom}</td>
                 <td className="p-3">{b.employe?.poste || '-'}</td>
@@ -178,8 +229,9 @@ export const BulletinsPaieList = () => {
                 <td className="p-3 text-right">{Number(b.onfpp || 0).toLocaleString('fr-FR')}</td>
                 <td className="p-3 text-right">{Number(b.versement_forfaitaire || 0).toLocaleString('fr-FR')}</td>
                 <td className="p-3"><Badge variant={b.statut === 'valide' ? 'default' : b.statut === 'paye' ? 'secondary' : 'outline'}>{b.statut}</Badge></td>
-                <td className="p-3">
+                <td className="p-3 sticky right-0 bg-background">
                   <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => telecharger(b)} aria-label={`Télécharger le bulletin de ${b.employe?.prenom || ''} ${b.employe?.nom || ''}`}><Download className="w-3.5 h-3.5 mr-1" />PDF</Button>
                     {b.statut !== 'paye' && <Button size="sm" variant="outline" onClick={() => setEditBulletin(b)}><Pencil className="w-3.5 h-3.5 mr-1" />Modifier</Button>}
                     {b.statut === 'brouillon' && <Button size="sm" variant="outline" onClick={() => validerMutation.mutate(b.id)}>Valider</Button>}
                   </div>
