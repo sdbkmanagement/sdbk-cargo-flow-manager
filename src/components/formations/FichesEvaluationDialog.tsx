@@ -111,7 +111,7 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
                 <Input type="number" min="0" max="100" value={note} onChange={e => setNote(e.target.value)} placeholder="Optionnel" />
               </div>
               <div>
-                <Label>Formateur</Label>
+                <Label>Moniteur</Label>
                 <Input value={formateur} onChange={e => setFormateur(e.target.value)} placeholder="Optionnel" />
               </div>
             </div>
