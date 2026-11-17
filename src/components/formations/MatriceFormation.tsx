@@ -17,6 +17,7 @@ import {
   MatriceEntry,
 } from '@/services/matriceFormationService';
 import { toast } from '@/hooks/use-toast';
+import { isEmployeeVisibleInMatrix } from './matriceEmployeeVisibility';
 
 interface Person {
   id: string;
@@ -186,7 +187,7 @@ export const MatriceFormation = () => {
     queryFn: async () => {
       const { data, error } = await (supabase as any).rpc('get_formations_collaborateurs');
       if (error) throw error;
-      return data || [];
+      return (data || []).filter(isEmployeeVisibleInMatrix);
     },
   });
 
