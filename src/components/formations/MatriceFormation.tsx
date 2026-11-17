@@ -4,16 +4,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Users, Wrench, Truck } from 'lucide-react';
+import { Search, Users, Wrench, Truck, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { MatricePlanDialog } from './MatricePlanDialog';
+import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { chauffeursService } from '@/services/chauffeurs';
 import {
   matriceFormationService,
   MatriceEntry,
-  MODULES_ADMINISTRATION,
-  MODULES_MECANICIENS,
-  MODULES_CONDUCTEURS,
 } from '@/services/matriceFormationService';
 import { toast } from '@/hooks/use-toast';
 
@@ -31,22 +32,24 @@ interface MatriceTabProps {
   persons: Person[];
   personType: 'employe' | 'chauffeur';
   isLoading: boolean;
+  annee: number;
+  canManage: boolean;
 }
 
-const MatriceTab = ({ categorie, modules, persons, personType, isLoading }: MatriceTabProps) => {
+const MatriceTab = ({ categorie, modules, persons, personType, isLoading, annee, canManage }: MatriceTabProps) => {
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
 
   const { data: entries = [] } = useQuery({
-    queryKey: ['matrice-formation', categorie],
-    queryFn: () => matriceFormationService.getByCategorie(categorie),
+    queryKey: ['matrice-formation', categorie, annee],
+    queryFn: () => matriceFormationService.getByCategorie(categorie, annee),
   });
 
   const toggleMutation = useMutation({
     mutationFn: ({ personId, moduleNom, completed }: { personId: string; moduleNom: string; completed: boolean }) =>
-      matriceFormationService.toggleModule(personType, personId, categorie, moduleNom, completed),
+      matriceFormationService.toggleModule(personType, personId, categorie, moduleNom, completed, annee),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['matrice-formation', categorie] });
+      queryClient.invalidateQueries({ queryKey: ['matrice-formation', categorie, annee] });
     },
     onError: () => {
       toast({ title: 'Erreur', description: 'Impossible de mettre à jour', variant: 'destructive' });
@@ -73,7 +76,7 @@ const MatriceTab = ({ categorie, modules, persons, personType, isLoading }: Matr
     modules.forEach(m => {
       if (entryMap.get(`${personId}-${m}`)) done++;
     });
-    return Math.round((done / modules.length) * 100);
+    return modules.length ? Math.round((done / modules.length) * 100) : 0;
   };
 
   if (isLoading) {
@@ -92,7 +95,9 @@ const MatriceTab = ({ categorie, modules, persons, personType, isLoading }: Matr
         />
       </div>
 
-      {filtered.length === 0 ? (
+      {modules.length === 0 ? (
+        <p className="text-center py-8 text-muted-foreground">Aucune formation au plan {annee} pour cette catégorie.</p>
+      ) : filtered.length === 0 ? (
         <p className="text-center py-8 text-muted-foreground">Aucune personne trouvée</p>
       ) : (
         <div className="overflow-x-auto border rounded-lg">
@@ -135,6 +140,7 @@ const MatriceTab = ({ categorie, modules, persons, personType, isLoading }: Matr
                         <td key={m} className="p-2 text-center">
                           <Checkbox
                             checked={isChecked}
+                            disabled={!canManage || toggleMutation.isPending}
                             onCheckedChange={(checked) => {
                               toggleMutation.mutate({
                                 personId: person.id,
@@ -165,6 +171,16 @@ const MatriceTab = ({ categorie, modules, persons, personType, isLoading }: Matr
 };
 
 export const MatriceFormation = () => {
+  const [annee, setAnnee] = useState(new Date().getFullYear());
+  const [categorie, setCategorie] = useState('administration');
+  const [planOpen, setPlanOpen] = useState(false);
+  const { hasRole } = useAuth();
+  const canManage = ['admin', 'hsecq', 'transport'].some(role => hasRole(role));
+  const { data: planModules = [], isLoading: loadingModules, isError: modulesError } = useQuery({
+    queryKey: ['matrice-modules', annee],
+    queryFn: () => matriceFormationService.getModules(annee),
+  });
+  const modulesFor = (category: string) => planModules.filter(m => m.categorie === category && m.actif).map(m => m.module_nom);
   const { data: employes = [], isLoading: loadingEmployes } = useQuery({
     queryKey: ['employes-matrice'],
     queryFn: async () => {
@@ -218,13 +234,21 @@ export const MatriceFormation = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Matrice de Formation 2026</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          Suivi des formations pour le personnel administratif, mécaniciens et conducteurs
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <CardTitle>Matrice de Formation {annee}</CardTitle>
+          <div className="flex flex-wrap items-center gap-3">
+            <Label htmlFor="matrice-annee">Année</Label>
+            <Input id="matrice-annee" type="number" min={2000} max={2100} value={annee} className="w-24" onChange={e => {
+              const value = Number(e.target.value);
+              if (Number.isInteger(value) && value >= 2000 && value <= 2100) setAnnee(value);
+            }} />
+            {canManage && <Button onClick={() => setPlanOpen(true)} disabled={loadingModules || modulesError}><Plus className="w-4 h-4 mr-2" />Gérer les formations</Button>}
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="administration" className="space-y-4">
+        {modulesError && <p role="alert" className="text-destructive mb-4">Impossible de charger le plan de formation.</p>}
+        <Tabs value={categorie} onValueChange={setCategorie} className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="administration" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
@@ -244,31 +268,38 @@ export const MatriceFormation = () => {
           <TabsContent value="administration">
             <MatriceTab
               categorie="administration"
-              modules={MODULES_ADMINISTRATION}
+              modules={modulesFor('administration')}
+              annee={annee}
+              canManage={canManage}
               persons={adminPersons}
               personType="employe"
-              isLoading={loadingEmployes}
+              isLoading={loadingEmployes || loadingModules}
             />
           </TabsContent>
           <TabsContent value="mecaniciens">
             <MatriceTab
               categorie="mecaniciens"
-              modules={MODULES_MECANICIENS}
+              modules={modulesFor('mecaniciens')}
+              annee={annee}
+              canManage={canManage}
               persons={mecaPersons}
               personType="employe"
-              isLoading={loadingEmployes}
+              isLoading={loadingEmployes || loadingModules}
             />
           </TabsContent>
           <TabsContent value="conducteurs">
             <MatriceTab
               categorie="conducteurs"
-              modules={MODULES_CONDUCTEURS}
+              modules={modulesFor('conducteurs')}
+              annee={annee}
+              canManage={canManage}
               persons={conducteurPersons}
               personType="chauffeur"
-              isLoading={loadingChauffeurs}
+              isLoading={loadingChauffeurs || loadingModules}
             />
           </TabsContent>
         </Tabs>
+        {planOpen && <MatricePlanDialog open={planOpen} onOpenChange={setPlanOpen} annee={annee} modules={planModules} categorie={categorie} />}
       </CardContent>
     </Card>
   );
