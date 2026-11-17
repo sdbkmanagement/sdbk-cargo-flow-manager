@@ -3203,6 +3203,7 @@ export type Database = {
       }
       formations_matrice: {
         Row: {
+          annee: number
           categorie: string
           completed: boolean
           created_at: string
@@ -3214,6 +3215,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          annee?: number
           categorie: string
           completed?: boolean
           created_at?: string
@@ -3225,6 +3227,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          annee?: number
           categorie?: string
           completed?: boolean
           created_at?: string
@@ -3233,6 +3236,39 @@ export type Database = {
           module_nom?: string
           person_id?: string
           person_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      formations_matrice_modules: {
+        Row: {
+          actif: boolean
+          annee: number
+          categorie: string
+          created_at: string
+          id: string
+          module_nom: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          annee: number
+          categorie: string
+          created_at?: string
+          id?: string
+          module_nom: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          annee?: number
+          categorie?: string
+          created_at?: string
+          id?: string
+          module_nom?: string
+          position?: number
           updated_at?: string
         }
         Relationships: []
