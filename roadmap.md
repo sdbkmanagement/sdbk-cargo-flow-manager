@@ -1,4 +1,5 @@
 # Formation matrix
-- [ ] Replace the matrix columns with the eleven requested formations.
-- [ ] Persist editable annual plans and isolate completion tracking by year.
-- [ ] Add direct formation creation and verify the changes.
+- [x] Replace the matrix columns with the eleven requested formations.
+- [x] Persist editable annual plans and isolate completion tracking by year.
+- [x] Add direct formation creation; five service tests pass and the preview compiles.
+- [ ] Verify saving through a signed-in UI session: blocked by external unmanaged authentication.
