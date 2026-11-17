@@ -8,6 +8,7 @@ export interface FicheEvaluation {
   type_fiche: 'theorique' | 'pratique';
   date_fiche: string;
   note_obtenue: number | null;
+  note_initiale: number | null;
   formateur_nom: string | null;
   commentaire: string | null;
   fichier_nom: string | null;

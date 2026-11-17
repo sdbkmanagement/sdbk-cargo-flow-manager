@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fichesEvaluationService } from '@/services/fichesEvaluation';
+import { evaluationNotes } from '@/services/evaluationNotes';
 import { toast } from '@/hooks/use-toast';
 import { Upload, ExternalLink, Trash2, FileText } from 'lucide-react';
 
@@ -23,7 +24,8 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
   const queryClient = useQueryClient();
   const [type, setType] = useState<'theorique' | 'pratique'>(defaultType);
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-  const [note, setNote] = useState('');
+  const [noteInitiale, setNoteInitiale] = useState('');
+  const [noteFinale, setNoteFinale] = useState('');
   const [formateur, setFormateur] = useState('');
   const [commentaire, setCommentaire] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -39,19 +41,20 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
   });
 
   const resetForm = () => {
-    setNote(''); setFormateur(''); setCommentaire(''); setFile(null);
+    setNoteInitiale(''); setNoteFinale(''); setFormateur(''); setCommentaire(''); setFile(null);
     setDate(new Date().toISOString().slice(0, 10));
   };
 
   const archiveMutation = useMutation({
     mutationFn: async () => {
       if (!file) throw new Error('Veuillez sélectionner un fichier à charger');
+      const notes = evaluationNotes(noteInitiale, noteFinale);
       const { url, nom } = await fichesEvaluationService.uploadFichier(file);
       await fichesEvaluationService.create({
         chauffeur_id: chauffeur.id,
         type_fiche: type,
         date_fiche: date,
-        note_obtenue: note === '' ? null : parseFloat(note),
+        ...notes,
         formateur_nom: formateur || null,
         commentaire: commentaire || null,
         fichier_nom: nom,
@@ -107,8 +110,12 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
                 <Input type="date" value={date} onChange={e => setDate(e.target.value)} />
               </div>
               <div>
-                <Label>Note obtenue (%)</Label>
-                <Input type="number" min="0" max="100" value={note} onChange={e => setNote(e.target.value)} placeholder="Optionnel" />
+                <Label htmlFor="evaluation-note-initiale">Note initiale (%)</Label>
+                <Input id="evaluation-note-initiale" type="number" min="0" max="100" step="any" value={noteInitiale} onChange={e => setNoteInitiale(e.target.value)} placeholder="Optionnel" />
+              </div>
+              <div>
+                <Label htmlFor="evaluation-note-finale">Note finale (%)</Label>
+                <Input id="evaluation-note-finale" type="number" min="0" max="100" step="any" value={noteFinale} onChange={e => setNoteFinale(e.target.value)} placeholder="Optionnel" />
               </div>
               <div>
                 <Label>Moniteur</Label>
@@ -150,12 +157,11 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
                     <div className="flex items-start gap-3">
                       <FileText className="w-4 h-4 mt-1 text-muted-foreground" />
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <Badge variant="outline" className="capitalize">{f.type_fiche}</Badge>
                           <span className="text-sm">{new Date(f.date_fiche).toLocaleDateString('fr-FR')}</span>
-                          {f.note_obtenue != null && (
-                            <Badge className="bg-blue-600 text-white border-0">{f.note_obtenue}%</Badge>
-                          )}
+                          <Badge variant="outline">Initiale : {f.note_initiale != null ? `${f.note_initiale}%` : '—'}</Badge>
+                          <Badge variant="secondary">Finale : {f.note_obtenue != null ? `${f.note_obtenue}%` : '—'}</Badge>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">
                           {f.fichier_nom}{f.formateur_nom ? ` — ${f.formateur_nom}` : ''}
@@ -164,7 +170,7 @@ export const FichesEvaluationDialog = ({ open, onOpenChange, chauffeur, defaultT
                     </div>
                     <div className="flex items-center gap-1">
                       {f.fichier_url && (
-                        <Button variant="outline" size="sm" onClick={() => window.open(f.fichier_url!, '_blank')}>
+                        <Button variant="outline" size="sm" onClick={() => { if (f.fichier_url) window.open(f.fichier_url, '_blank'); }}>
                           <ExternalLink className="w-4 h-4" />
                         </Button>
                       )}

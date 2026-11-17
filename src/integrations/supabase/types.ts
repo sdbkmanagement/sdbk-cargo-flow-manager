@@ -3040,6 +3040,7 @@ export type Database = {
           fichier_url: string | null
           formateur_nom: string | null
           id: string
+          note_initiale: number | null
           note_obtenue: number | null
           type_fiche: string
           updated_at: string
@@ -3054,6 +3055,7 @@ export type Database = {
           fichier_url?: string | null
           formateur_nom?: string | null
           id?: string
+          note_initiale?: number | null
           note_obtenue?: number | null
           type_fiche: string
           updated_at?: string
@@ -3068,6 +3070,7 @@ export type Database = {
           fichier_url?: string | null
           formateur_nom?: string | null
           id?: string
+          note_initiale?: number | null
           note_obtenue?: number | null
           type_fiche?: string
           updated_at?: string
