@@ -19,7 +19,7 @@ import {
 import { exporterExcel, exporterPdf } from '@/utils/gmaoExport';
 import { cn } from '@/lib/utils';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
-import { useAuth } from '@/contexts/AuthContext';
+import { GmaoOtDatesDialog, OtDateAction, OtDateTarget } from './GmaoOtDatesDialog';
 import { genererOrdreTravailPdf } from '@/utils/ordreTravailPdf';
 import { Printer } from 'lucide-react';
 
@@ -36,8 +36,6 @@ const RAPIDES = [
 export const GmaoInterventions: React.FC = () => {
   const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : null;
   const imprimer = async (o: any) => {
     try { await genererOrdreTravailPdf(o.id, equipementParId(o.equipement_id)); }
     catch (e: any) { toast({ title: 'Erreur PDF', description: e.message, variant: 'destructive' }); }
@@ -49,6 +47,7 @@ export const GmaoInterventions: React.FC = () => {
   const [filtreStatut, setFiltreStatut] = useState('tous');
   const [open, setOpen] = useState(false);
   const [refreshDemandes, setRefreshDemandes] = useState(0);
+  const [dateTarget, setDateTarget] = useState<{ ordre: OtDateTarget; action: OtDateAction } | null>(null);
 
   const liste = useMemo(() => {
     const q = recherche.trim().toLowerCase();
@@ -86,10 +85,12 @@ export const GmaoInterventions: React.FC = () => {
   }, [ots, recherche, filtreType, filtreStatut, rapide, equipementParId]);
 
   const changerStatut = async (o: any, statut: string) => {
+    if (statut === 'en_cours' || statut === 'termine') {
+      setDateTarget({ ordre: o, action: statut === 'en_cours' ? 'start' : 'finish' });
+      return;
+    }
     try {
       const payload: Record<string, any> = { statut };
-      if (statut === 'en_cours' && !o.date_debut) payload.date_debut = new Date().toISOString();
-      if (statut === 'termine') payload.date_fin = new Date().toISOString();
       await gmaoService.updateOrdreTravail(o.id, payload);
       rafraichir();
     } catch (e: any) {
@@ -97,15 +98,7 @@ export const GmaoInterventions: React.FC = () => {
     }
   };
 
-  const cloturer = async (o: any) => {
-    try {
-      await gmaoService.updateOrdreTravail(o.id, { statut: 'cloture', cloture: true, cloture_par: nomUtilisateur, date_cloture: new Date().toISOString() });
-      toast({ title: 'Intervention validée et clôturée' });
-      rafraichir();
-    } catch (e: any) {
-      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
-    }
-  };
+  const cloturer = (o: OtDateTarget) => setDateTarget({ ordre: o, action: 'close' });
 
   const repasserEnDemande = async (o: any) => {
     if (!window.confirm(`Repasser l'ordre de travail ${o.numero || ''} en demande d'intervention en attente de transfert vers un OT ?`)) return;
@@ -295,6 +288,7 @@ export const GmaoInterventions: React.FC = () => {
       </Tabs>
 
       <GmaoDemandeForm open={open} onOpenChange={setOpen} onSaved={() => setRefreshDemandes((n) => n + 1)} />
+      {dateTarget && <GmaoOtDatesDialog ordre={dateTarget.ordre} action={dateTarget.action} onClose={() => setDateTarget(null)} onSaved={rafraichir} />}
     </div>
   );
 };

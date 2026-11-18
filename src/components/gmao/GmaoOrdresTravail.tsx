@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, CheckCircle } from 'lucide-react';
 import { EquipementCombobox } from './EquipementCombobox';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
+import { GmaoOtDatesDialog, OtDateAction, OtDateTarget } from './GmaoOtDatesDialog';
 
 const TYPES = [
   { value: 'correctif', label: 'Correctif' },
@@ -33,6 +34,7 @@ export const GmaoOrdresTravail: React.FC = () => {
   const [equipements, setEquipements] = useState<GmaoEquipement[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [dateTarget, setDateTarget] = useState<{ ordre: OtDateTarget; action: OtDateAction } | null>(null);
   const [form, setForm] = useState<Record<string, any>>({
     titre: '', description: '', equipement_id: '', type_maintenance: 'correctif',
     priorite: 'normale', statut: 'planifie', date_planifiee: '',
@@ -74,10 +76,12 @@ export const GmaoOrdresTravail: React.FC = () => {
   };
 
   const changerStatut = async (ot: GmaoOrdreTravail, statut: string) => {
+    if (statut === 'en_cours' || statut === 'termine') {
+      setDateTarget({ ordre: ot, action: statut === 'en_cours' ? 'start' : 'finish' });
+      return;
+    }
     try {
       const payload: Record<string, any> = { statut };
-      if (statut === 'en_cours' && !ot.date_debut) payload.date_debut = new Date().toISOString();
-      if (statut === 'termine') payload.date_fin = new Date().toISOString();
       await gmaoService.updateOrdreTravail(ot.id, payload);
       charger();
     } catch (e: any) {
@@ -85,17 +89,7 @@ export const GmaoOrdresTravail: React.FC = () => {
     }
   };
 
-  const cloturer = async (ot: GmaoOrdreTravail) => {
-    try {
-      await gmaoService.updateOrdreTravail(ot.id, {
-        statut: 'cloture', cloture: true, date_cloture: new Date().toISOString(),
-      });
-      toast({ title: 'Ordre de travail clôturé' });
-      charger();
-    } catch (e: any) {
-      toast({ title: 'Erreur', description: e.message, variant: 'destructive' });
-    }
-  };
+  const cloturer = (ot: GmaoOrdreTravail) => setDateTarget({ ordre: ot, action: 'close' });
 
   return (
     <Card>
@@ -129,7 +123,7 @@ export const GmaoOrdresTravail: React.FC = () => {
                 <Label>Statut</Label>
                 <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{STATUTS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+                  <SelectContent>{STATUTS.filter((s) => s.value === 'planifie').map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div><Label>Main d'œuvre (GNF)</Label><Input type="number" value={form.cout_main_oeuvre} onChange={(e) => setForm({ ...form, cout_main_oeuvre: e.target.value })} /></div>
@@ -189,6 +183,7 @@ export const GmaoOrdresTravail: React.FC = () => {
           </TableBody>
         </Table>
       </CardContent>
+      {dateTarget && <GmaoOtDatesDialog ordre={dateTarget.ordre} action={dateTarget.action} onClose={() => setDateTarget(null)} onSaved={charger} />}
     </Card>
   );
 };
