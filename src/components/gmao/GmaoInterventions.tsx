@@ -19,6 +19,9 @@ import {
 import { exporterExcel, exporterPdf } from '@/utils/gmaoExport';
 import { cn } from '@/lib/utils';
 import { useGmaoAccess } from '@/hooks/useGmaoAccess';
+import { useAuth } from '@/contexts/AuthContext';
+import { genererOrdreTravailPdf } from '@/utils/ordreTravailPdf';
+import { Printer } from 'lucide-react';
 
 const RAPIDES = [
   { value: 'toutes', label: 'Toutes' },
@@ -33,6 +36,12 @@ const RAPIDES = [
 export const GmaoInterventions: React.FC = () => {
   const { peutGerer } = useGmaoAccess();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const nomUtilisateur = user ? `${user.prenom || ''} ${user.nom || ''}`.trim() || user.email : null;
+  const imprimer = async (o: any) => {
+    try { await genererOrdreTravailPdf(o.id, equipementParId(o.equipement_id)); }
+    catch (e: any) { toast({ title: 'Erreur PDF', description: e.message, variant: 'destructive' }); }
+  };
   const { ots, chargement, rafraichir, equipementParId, consommerEquipementCible } = useGmao();
   const [rapide, setRapide] = useState('toutes');
   const [recherche, setRecherche] = useState('');
@@ -90,7 +99,7 @@ export const GmaoInterventions: React.FC = () => {
 
   const cloturer = async (o: any) => {
     try {
-      await gmaoService.updateOrdreTravail(o.id, { statut: 'cloture', cloture: true, date_cloture: new Date().toISOString() });
+      await gmaoService.updateOrdreTravail(o.id, { statut: 'cloture', cloture: true, cloture_par: nomUtilisateur, date_cloture: new Date().toISOString() });
       toast({ title: 'Intervention validée et clôturée' });
       rafraichir();
     } catch (e: any) {
@@ -268,6 +277,9 @@ export const GmaoInterventions: React.FC = () => {
                             )}
                             {peutGerer && !o.cloture && o.statut === 'termine' && (
                               <Button size="sm" onClick={() => cloturer(o)}><CheckCircle className="mr-1 h-4 w-4" /> Valider</Button>
+                            )}
+                            {o.cloture && (
+                              <Button size="sm" variant="outline" onClick={() => imprimer(o)}><Printer className="mr-1 h-4 w-4" /> Imprimer</Button>
                             )}
                           </TableCell>
 
