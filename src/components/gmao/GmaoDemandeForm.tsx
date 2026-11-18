@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Trash2 } from 'lucide-react';
 import { EquipementCombobox } from './EquipementCombobox';
 import { PieceCombobox } from './PieceCombobox';
+import { toLocalDateInput } from '@/services/gmaoDates';
 import { fmtMontant, PRIORITES, STATUTS_OT, TYPES_MAINTENANCE } from './gmaoUi';
 
 interface Props {
@@ -82,6 +83,7 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
           priorite: demande.priorite || 'normale',
           statut_souhaite: demande.statut_souhaite || 'planifie',
           date_planifiee: demande.date_planifiee || '',
+          date_demande: demande.date_demande ? toLocalDateInput(demande.date_demande) : '',
           date_debut: demande.date_debut ? new Date(demande.date_debut).toISOString().slice(0, 16) : '',
           date_fin: demande.date_fin ? new Date(demande.date_fin).toISOString().slice(0, 16) : '',
           description: demande.description || '',
@@ -141,9 +143,14 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
       toast({ title: 'Équipement requis', description: 'Chaque demande est rattachée à une immatriculation', variant: 'destructive' });
       return;
     }
+    if (!form.date_demande) {
+      toast({ title: 'Date requise', description: 'Indiquez la date de la demande', variant: 'destructive' });
+      return;
+    }
     setEnregistrement(true);
     try {
       const payload = {
+        date_demande: new Date(form.date_demande).toISOString(),
         titre: form.titre.trim(),
         description: form.description || null,
         equipement_id: form.equipement_id,
@@ -223,6 +230,10 @@ export const GmaoDemandeForm: React.FC<Props> = ({ open, onOpenChange, equipemen
                   placeholder="Sélectionner"
                   searchPlaceholder="Rechercher une immatriculation..."
                 />
+              </div>
+              <div>
+                <Label>Date de la demande *</Label>
+                <Input type="datetime-local" value={form.date_demande || ''} onChange={(e) => set('date_demande', e.target.value)} />
               </div>
               <div>
                 <Label>Type d'intervention</Label>

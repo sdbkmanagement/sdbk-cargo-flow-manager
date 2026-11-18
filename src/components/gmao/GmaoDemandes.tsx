@@ -123,6 +123,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
       date_planifiee: dd.date_planifiee || '',
       commentaire: '',
       motif_rejet: '',
+      date_validation: '',
     });
   };
 
@@ -143,6 +144,10 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
 
   const valider = async () => {
     if (!demandeActive) return;
+    if (!traitement.date_validation) {
+      toast({ title: 'Date requise', description: 'Indiquez la date de validation', variant: 'destructive' });
+      return;
+    }
     setEnCours(true);
     try {
       const d = demandeActive as any;
@@ -180,7 +185,7 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
       }
       await gmaoService.updateDemande(demandeActive.id, {
         statut: 'transformee',
-        date_traitement: new Date().toISOString(),
+        date_traitement: new Date(traitement.date_validation).toISOString(),
         traite_par_nom: nomUtilisateur || null,
         commentaire_validation: traitement.commentaire || null,
       });
@@ -313,6 +318,10 @@ export const GmaoDemandes: React.FC<Props> = ({ refreshKey = 0 }) => {
                         <SelectContent>{PRIORITES.map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
                       </Select>
                     </div>
+                  </div>
+                  <div>
+                    <Label>Date de validation *</Label>
+                    <Input type="datetime-local" value={traitement.date_validation || ''} onChange={(e) => setTraitement({ ...traitement, date_validation: e.target.value })} />
                   </div>
                   <div>
                     <Label>Date planifiée</Label>
