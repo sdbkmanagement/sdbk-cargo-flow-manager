@@ -104,7 +104,7 @@ export async function genererOrdreTravailPdf(otId: string, equipement?: any) {
 
   if (y > 245) { doc.addPage(); y = 20; }
   doc.setFontSize(9).setFont('helvetica', 'bold');
-  ['Le technicien', 'Le responsable maintenance', 'La direction'].forEach((s, i) => {
+  ['Le technicien', 'Le responsable maintenance', 'Le responsable QHSE'].forEach((s, i) => {
     const x = 14 + i * ((W - 28) / 3);
     doc.text(s, x, y + 4);
     doc.line(x, y + 22, x + 50, y + 22);
