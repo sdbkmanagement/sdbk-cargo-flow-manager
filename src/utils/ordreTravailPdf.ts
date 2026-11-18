@@ -93,7 +93,6 @@ export async function genererOrdreTravailPdf(otId: string, equipement?: any) {
     histo.push([fmtD(d.date_demande), `Demande d'intervention ${d.numero || ''} créée`, d.demandeur_nom || '—', d.titre || '']);
     if (d.date_traitement) histo.push([fmtD(d.date_traitement), 'Demande validée et transformée en OT', d.traite_par_nom || '—', d.commentaire_validation || '']);
   }
-  histo.push([fmtD(o.created_at), 'Ordre de travail créé', '—', o.date_planifiee ? `Planifié le ${fmtD(o.date_planifiee)}` : '']);
   if (o.date_debut) histo.push([fmtD(o.date_debut), 'Intervention démarrée', '—', '']);
   if (o.date_fin) histo.push([fmtD(o.date_fin), 'Intervention terminée', '—', '']);
   if (o.cloture) histo.push([fmtD(o.date_cloture), 'Intervention validée et clôturée', o.cloture_par || '—', '']);
