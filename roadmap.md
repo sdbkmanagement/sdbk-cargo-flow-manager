@@ -6,8 +6,9 @@
 
 # BL destinations and clients
 - [x] Check existing destinations, clients and equalization rates: Koba 141.63 and Linsan 242.50 GNF/L exist; Continental Wawa is currently registered only in Conakry.
-- [ ] Add Continental Wawa in Koba and Station Linsan Carrefour in Linsan without changing existing clients.
-- [ ] Verify the two client/destination pairs after saving.
+- [x] Add Continental Wawa in Koba and Station Linsan Carrefour in Linsan without changing existing clients.
+- [x] Verify both saved client/destination pairs and rates through a database read; the BL selector already loads database clients and their cities.
+- [ ] Verify selection and BL creation in a signed-in UI session: blocked by external unmanaged authentication.
 
 # Work-order dates
 - [x] Require manually entered dates for start, completion and validation/closure in both work-order views.
