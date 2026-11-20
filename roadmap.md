@@ -14,3 +14,8 @@
 - [x] Require manually entered dates for start, completion and validation/closure in both work-order views.
 - [x] Four date-rule tests pass; the preview compiles, and PDF history reads the saved completion and closure dates.
 - [ ] Verify saving through a signed-in UI session: blocked by external unmanaged authentication.
+
+# Intervention history
+- [x] Separate completed and closed interventions into a History tab, preserving validation and PDF actions.
+- [x] Three history classification tests pass; the available preview opens the sign-in page without runtime errors.
+- [ ] Verify History navigation with saved interventions in a signed-in UI session: blocked by external unmanaged authentication.

@@ -22,6 +22,7 @@ import { useGmaoAccess } from '@/hooks/useGmaoAccess';
 import { GmaoOtDatesDialog, OtDateAction, OtDateTarget } from './GmaoOtDatesDialog';
 import { genererOrdreTravailPdf } from '@/utils/ordreTravailPdf';
 import { Printer } from 'lucide-react';
+import { isInterventionInHistory } from './interventionHistory';
 
 const RAPIDES = [
   { value: 'toutes', label: 'Toutes' },
@@ -30,7 +31,6 @@ const RAPIDES = [
   { value: 'retard', label: 'En retard' },
   { value: 'urgentes', label: 'Urgentes' },
   { value: 'en_cours', label: 'En cours' },
-  { value: 'terminees', label: 'Terminées' },
 ];
 
 export const GmaoInterventions: React.FC = () => {
@@ -42,6 +42,9 @@ export const GmaoInterventions: React.FC = () => {
   };
   const { ots, chargement, rafraichir, equipementParId, consommerEquipementCible } = useGmao();
   const [rapide, setRapide] = useState('toutes');
+  const [onglet, setOnglet] = useState('demandes');
+  const historique = onglet === 'historique';
+  const nombreHistorique = ots.filter(isInterventionInHistory).length;
   const [recherche, setRecherche] = useState('');
   const [filtreType, setFiltreType] = useState('tous');
   const [filtreStatut, setFiltreStatut] = useState('tous');
@@ -57,6 +60,7 @@ export const GmaoInterventions: React.FC = () => {
     const jour = maintenant.toISOString().slice(0, 10);
 
     return ots.filter((o) => {
+      if (isInterventionInHistory(o) !== historique) return false;
       const eq = equipementParId(o.equipement_id);
       if (q) {
         const texte = `${o.numero || ''} ${o.titre} ${eq?.immatriculation || ''} ${eq?.code || ''} ${o.diagnostic || ''} ${o.travaux_realises || ''}`.toLowerCase();
@@ -76,13 +80,11 @@ export const GmaoInterventions: React.FC = () => {
           return o.priorite === 'urgente' || o.priorite === 'haute';
         case 'en_cours':
           return !o.cloture && (o.statut === 'en_cours' || o.statut === 'attente_piece');
-        case 'terminees':
-          return o.cloture || o.statut === 'termine';
         default:
           return true;
       }
     });
-  }, [ots, recherche, filtreType, filtreStatut, rapide, equipementParId]);
+  }, [ots, recherche, filtreType, filtreStatut, rapide, equipementParId, historique]);
 
   const changerStatut = async (o: any, statut: string) => {
     if (statut === 'en_cours' || statut === 'termine') {
@@ -133,23 +135,24 @@ export const GmaoInterventions: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="demandes">
-        <TabsList>
+      <Tabs value={onglet} onValueChange={(value) => { setOnglet(value); setFiltreStatut('tous'); setRapide('toutes'); }}>
+        <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="demandes">Demandes d'intervention</TabsTrigger>
-          <TabsTrigger value="ot">Ordres de travail</TabsTrigger>
+          <TabsTrigger value="ot">Ordres de travail ({ots.length - nombreHistorique})</TabsTrigger>
+          <TabsTrigger value="historique">Historique ({nombreHistorique})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="demandes" className="mt-4">
           <GmaoDemandes refreshKey={refreshDemandes} />
         </TabsContent>
 
-        <TabsContent value="ot" className="mt-4">
+        <TabsContent value={historique ? 'historique' : 'ot'} className="mt-4">
           <Card>
             <CardHeader className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <CardTitle>Interventions</CardTitle>
+                <CardTitle>{historique ? 'Historique des interventions' : 'Interventions'}</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  À planifier → Planifiée → En cours → En attente pièce → Terminée → Validée
+                  {historique ? 'Terminées et validées' : 'À planifier → Planifiée → En cours → En attente pièce'}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -173,10 +176,12 @@ export const GmaoInterventions: React.FC = () => {
             </CardHeader>
 
             <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
+              {!historique && <div className="flex flex-wrap gap-2">
                 {RAPIDES.map((f) => (
-                  <button
+                  <Button
                     key={f.value}
+                    variant="outline"
+                    size="sm"
                     onClick={() => setRapide(f.value)}
                     className={cn(
                       'rounded-full border px-3 py-1.5 text-sm transition-colors',
@@ -186,9 +191,9 @@ export const GmaoInterventions: React.FC = () => {
                     )}
                   >
                     {f.label}
-                  </button>
+                  </Button>
                 ))}
-              </div>
+              </div>}
 
               <div className="grid gap-3 rounded-lg border border-border/60 bg-muted/30 p-3 md:grid-cols-4">
                 <div className="relative md:col-span-2">
@@ -206,7 +211,7 @@ export const GmaoInterventions: React.FC = () => {
                   <SelectTrigger><SelectValue placeholder="Statut" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="tous">Tous les statuts</SelectItem>
-                    {STATUTS_OT.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                    {STATUTS_OT.filter((s) => isInterventionInHistory({ statut: s.value }) === historique).map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <div className="md:col-span-4">
