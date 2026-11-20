@@ -4,4 +4,4 @@
 - Training matrix columns are persisted per year and personnel category; completion records include the year, and removing a column only archives its plan entry so historical tracking survives annual plan changes.
 - Archived evaluation sheets store the initial score in `note_initiale` and the final score in the existing `note_obtenue` field to preserve historical scores and compatibility.
 - Both work-order views use the shared date dialog and payload helper for lifecycle transitions so manually entered dates are required consistently and preserved in PDF history.
-- The interventions screen partitions work orders into active and history tabs with one shared history predicate; completion or closure moves an order to history without changing stored records or validation actions.
+- The interventions screen partitions work orders into active and history tabs with one shared history predicate; only validated (closed) orders move to history, so completed-but-unvalidated orders stay actionable without changing stored records.

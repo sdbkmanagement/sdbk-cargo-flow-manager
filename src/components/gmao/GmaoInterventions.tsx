@@ -152,7 +152,7 @@ export const GmaoInterventions: React.FC = () => {
               <div>
                 <CardTitle>{historique ? 'Historique des interventions' : 'Interventions'}</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {historique ? 'Terminées et validées' : 'À planifier → Planifiée → En cours → En attente pièce'}
+                  {historique ? 'Interventions validées' : 'À planifier → Planifiée → En cours → En attente pièce → Terminée'}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
