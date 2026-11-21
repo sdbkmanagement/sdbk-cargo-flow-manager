@@ -122,7 +122,7 @@ export const INOPINE_CATEGORIES: InopineCategory[] = [
       { code: 'MARTEAU_BRISE_VITRE', libelle: 'Marteau brise-vitre', critical: false },
       { code: 'CRIC', libelle: 'Cric', critical: false },
       { code: 'PELLE', libelle: 'Pelle', critical: false },
-      { code: 'SEAU_ALU', libelle: 'Seau alu', critical: false },
+      { code: 'SEAU_ALU', libelle: 'Sceau alu', critical: false },
       { code: 'MEGAPHONE', libelle: 'Mégaphone fonctionnel', critical: true },
       { code: 'TROUSSE_SECOURS', libelle: 'Trousse de secours complète', critical: true },
       { code: 'TRIANGLE', libelle: 'Triangle de signalisation', critical: true },
